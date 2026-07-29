@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+
+<html dir="rtl" lang="ar"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>محامي - الرئيسية</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "surface-tint": "#4e5e82",
+                      "surface-container-low": "#f2f4f7",
+                      "primary-fixed-dim": "#b6c6f0",
+                      "surface-variant": "#e0e3e6",
+                      "error-container": "#ffdad6",
+                      "error": "#ba1a1a",
+                      "tertiary-fixed": "#dde3eb",
+                      "on-background": "#191c1e",
+                      "on-tertiary-fixed-variant": "#41474e",
+                      "surface-container": "#eceef1",
+                      "on-primary-fixed": "#071b3b",
+                      "on-error": "#ffffff",
+                      "on-tertiary-fixed": "#161c22",
+                      "surface-bright": "#f7f9fc",
+                      "primary-fixed": "#d8e2ff",
+                      "secondary-fixed": "#ffdea5",
+                      "tertiary-fixed-dim": "#c1c7cf",
+                      "surface-container-highest": "#e0e3e6",
+                      "surface-container-lowest": "#ffffff",
+                      "secondary": "#775a19",
+                      "secondary-container": "#fed488",
+                      "on-tertiary": "#ffffff",
+                      "on-primary": "#ffffff",
+                      "inverse-on-surface": "#eff1f4",
+                      "inverse-surface": "#2d3133",
+                      "on-surface": "#191c1e",
+                      "background": "#f7f9fc",
+                      "on-secondary-container": "#785a1a",
+                      "surface-container-high": "#e6e8eb",
+                      "on-primary-fixed-variant": "#364669",
+                      "on-primary-container": "#8293ba",
+                      "on-secondary-fixed-variant": "#5d4201",
+                      "on-secondary": "#ffffff",
+                      "on-secondary-fixed": "#261900",
+                      "surface-dim": "#d8dadd",
+                      "on-surface-variant": "#44474e",
+                      "primary": "#031636",
+                      "tertiary": "#11181d",
+                      "on-error-container": "#93000a",
+                      "primary-container": "#1a2b4c",
+                      "outline": "#75777f",
+                      "tertiary-container": "#262c32",
+                      "surface": "#f7f9fc",
+                      "inverse-primary": "#b6c6f0",
+                      "secondary-fixed-dim": "#e9c176",
+                      "on-tertiary-container": "#8d939b",
+                      "outline-variant": "#c5c6cf"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.125rem",
+                      "lg": "0.25rem",
+                      "xl": "0.5rem",
+                      "full": "0.75rem"
+              },
+              "spacing": {
+                      "md": "24px",
+                      "gutter": "20px",
+                      "container-max": "1200px",
+                      "sm": "12px",
+                      "base": "8px",
+                      "xs": "4px",
+                      "lg": "40px",
+                      "xl": "64px"
+              },
+              "fontFamily": {
+                      "body-md": [
+                              "IBM Plex Sans Arabic"
+                      ],
+                      "label-md": [
+                              "IBM Plex Sans Arabic"
+                      ],
+                      "display-lg-mobile": [
+                              "IBM Plex Sans Arabic"
+                      ],
+                      "body-sm": [
+                              "IBM Plex Sans Arabic"
+                      ],
+                      "display-lg": [
+                              "IBM Plex Sans Arabic"
+                      ],
+                      "headline-md": [
+                              "IBM Plex Sans Arabic"
+                      ],
+                      "title-lg": [
+                              "IBM Plex Sans Arabic"
+                      ]
+              },
+              "fontSize": {
+                      "body-md": [
+                              "16px",
+                              {
+                                      "lineHeight": "24px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "label-md": [
+                              "12px",
+                              {
+                                      "lineHeight": "16px",
+                                      "letterSpacing": "0.05em",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "display-lg-mobile": [
+                              "32px",
+                              {
+                                      "lineHeight": "40px",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "body-sm": [
+                              "14px",
+                              {
+                                      "lineHeight": "20px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "display-lg": [
+                              "40px",
+                              {
+                                      "lineHeight": "52px",
+                                      "letterSpacing": "-0.02em",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "headline-md": [
+                              "24px",
+                              {
+                                      "lineHeight": "32px",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "title-lg": [
+                              "20px",
+                              {
+                                      "lineHeight": "28px",
+                                      "fontWeight": "600"
+                              }
+                      ]
+              }
+      },
+          },
+        }
+      </script>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-background font-body-md min-h-screen pb-20 md:pb-0">
+<!-- TopAppBar -->
+<header class="bg-surface dark:bg-surface-dim text-primary dark:text-primary-fixed-dim font-headline-md text-headline-md font-title-lg text-title-lg font-display-lg text-display-lg text-primary dark:text-primary-fixed tracking-tight docked full-width top-0 bg-surface dark:bg-surface-dim shadow-sm shadow-[0px_4px_12px_rgba(26,43,76,0.05)] text-primary dark:text-primary-fixed font-bold text-on-surface-variant dark:text-surface-variant hover:bg-surface-container-high transition-colors scale-95 active:opacity-80 transition-transform flex justify-between items-center px-gutter h-16 w-full fixed z-50">
+<button class="material-symbols-outlined hover:bg-surface-container-high transition-colors p-2 rounded-full">menu</button>
+<div class="font-display-lg-mobile md:font-display-lg font-bold">محامي</div>
+<button class="material-symbols-outlined hover:bg-surface-container-high transition-colors p-2 rounded-full">notifications</button>
+</header>
+<main class="max-w-container-max mx-auto px-gutter pt-24 pb-md">
+<!-- Search -->
+<section class="mb-lg">
+<div class="relative">
+<span class="material-symbols-outlined absolute right-sm top-1/2 -translate-y-1/2 text-outline">search</span>
+<input class="w-full pl-sm pr-10 py-sm bg-surface-container-lowest border border-outline-variant rounded-full font-body-md focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors text-on-surface" placeholder="ابحث عن تخصص أو اسم محامي..." type="text"/>
+</div>
+</section>
+<!-- Categories (Bento style) -->
+<section class="mb-lg">
+<h2 class="font-title-lg text-title-lg font-bold mb-md">التخصصات</h2>
+<div class="grid grid-cols-2 md:grid-cols-4 gap-sm">
+<!-- Criminal -->
+<div class="bg-surface-container-lowest p-md rounded-xl shadow-[0px_4px_12px_rgba(26,43,76,0.05)] hover:shadow-[0px_8px_20px_rgba(26,43,76,0.10)] transition-shadow cursor-pointer flex flex-col items-center justify-center text-center">
+<span class="material-symbols-outlined text-4xl text-primary mb-sm">gavel</span>
+<span class="font-body-md font-semibold">جنائي</span>
+</div>
+<!-- Civil -->
+<div class="bg-surface-container-lowest p-md rounded-xl shadow-[0px_4px_12px_rgba(26,43,76,0.05)] hover:shadow-[0px_8px_20px_rgba(26,43,76,0.10)] transition-shadow cursor-pointer flex flex-col items-center justify-center text-center">
+<span class="material-symbols-outlined text-4xl text-primary mb-sm">account_balance</span>
+<span class="font-body-md font-semibold">مدني</span>
+</div>
+<!-- Family -->
+<div class="bg-surface-container-lowest p-md rounded-xl shadow-[0px_4px_12px_rgba(26,43,76,0.05)] hover:shadow-[0px_8px_20px_rgba(26,43,76,0.10)] transition-shadow cursor-pointer flex flex-col items-center justify-center text-center">
+<span class="material-symbols-outlined text-4xl text-primary mb-sm">family_restroom</span>
+<span class="font-body-md font-semibold">أحوال شخصية</span>
+</div>
+<!-- Commercial -->
+<div class="bg-surface-container-lowest p-md rounded-xl shadow-[0px_4px_12px_rgba(26,43,76,0.05)] hover:shadow-[0px_8px_20px_rgba(26,43,76,0.10)] transition-shadow cursor-pointer flex flex-col items-center justify-center text-center">
+<span class="material-symbols-outlined text-4xl text-primary mb-sm">business_center</span>
+<span class="font-body-md font-semibold">تجاري</span>
+</div>
+</div>
+</section>
+<!-- Top Rated Lawyers -->
+<section>
+<h2 class="font-title-lg text-title-lg font-bold mb-md">المحامون الأعلى تقييماً</h2>
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-md">
+<!-- Lawyer Card 1 -->
+<div class="bg-surface-container-lowest p-sm rounded-xl shadow-[0px_4px_12px_rgba(26,43,76,0.05)] hover:shadow-[0px_8px_20px_rgba(26,43,76,0.10)] transition-shadow flex items-start gap-sm">
+<img class="w-16 h-16 rounded-full object-cover" data-alt="A professional headshot of a distinguished Iraqi lawyer in his 40s. He is wearing a dark navy suit with a crisp white shirt and a subtle patterned tie. The background is a slightly blurred modern law office with natural light illuminating his face softly. The mood is confident, trustworthy, and authoritative." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCZukXoBSqttXkBOuoGyzmmr5PW1qECE3bfdWMkeM-vyYHV9rWnMmNDAOW9UYlbcrNhtw7qK-vjA56WpZsMXAnlP47sSok5HpHMhK3YaOTOHhO4raJnFHbZ-8JPI0t165zuH4kHsKDGwv1KTP-8nb3O2qnKsrFt3WP6akxwW5nLT4mdNfiumZVsFVjtLu56haXcHW3DiL5HxiuzN67aLC-ggLBYx7M_rz7cQS_yY47OrcibsCRcY_cv43r4zfBkU-t2B8G_bHog0XNk"/>
+<div class="flex-1">
+<div class="flex justify-between items-start">
+<div>
+<h3 class="font-title-lg text-title-lg text-primary mb-xs">أحمد العبيدي <span class="material-symbols-outlined text-secondary text-sm align-middle" style="font-variation-settings: 'FILL' 1;">verified</span></h3>
+<p class="font-body-sm text-on-surface-variant">محامي جنائي</p>
+</div>
+<div class="flex items-center text-secondary">
+<span class="material-symbols-outlined text-sm" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="font-label-md mr-1">4.9</span>
+</div>
+</div>
+<div class="mt-sm flex justify-between items-center">
+<span class="font-label-md text-primary font-bold">30,000 د.ع</span>
+<button class="bg-secondary text-on-secondary px-sm py-xs rounded-lg font-label-md hover:bg-secondary-container hover:text-on-secondary-container transition-colors">حجز</button>
+</div>
+</div>
+</div>
+<!-- Lawyer Card 2 -->
+<div class="bg-surface-container-lowest p-sm rounded-xl shadow-[0px_4px_12px_rgba(26,43,76,0.05)] hover:shadow-[0px_8px_20px_rgba(26,43,76,0.10)] transition-shadow flex items-start gap-sm">
+<img class="w-16 h-16 rounded-full object-cover" data-alt="A professional headshot of an elegant female Iraqi lawyer in her 30s. She wears a tailored charcoal blazer and a subtle hijab. The background is a bright, minimal corporate environment with soft, high-key lighting. The aesthetic conveys professionalism, modern legal practice, and approachable expertise." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDEl3o3VqNCF1_WCV6XgOowIvH4oaMhWHoVlEqPyT-312tRYKNCWxTnUoWZmhGwLWY5MW7J6O1bNNGPdsbw5es0q_gBa2l89iK1PiQgSqMJkBMchgoU5caivURssMtCd0J5hPSE_xTrzYv-GGYO5pama4vuulI_PDZyDtDpiyd_TUFYIMvaPiIGQBAMYjK5Ojp01dtwVVgm0BDIKAx_XUbkGg94jTAFez772mOQGhIZQmVoMqQ63uaSmxnuycWZA4AVJ7AA6ReRF8pO"/>
+<div class="flex-1">
+<div class="flex justify-between items-start">
+<div>
+<h3 class="font-title-lg text-title-lg text-primary mb-xs">سارة محمد <span class="material-symbols-outlined text-secondary text-sm align-middle" style="font-variation-settings: 'FILL' 1;">verified</span></h3>
+<p class="font-body-sm text-on-surface-variant">أحوال شخصية</p>
+</div>
+<div class="flex items-center text-secondary">
+<span class="material-symbols-outlined text-sm" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="font-label-md mr-1">4.8</span>
+</div>
+</div>
+<div class="mt-sm flex justify-between items-center">
+<span class="font-label-md text-primary font-bold">25,000 د.ع</span>
+<button class="bg-secondary text-on-secondary px-sm py-xs rounded-lg font-label-md hover:bg-secondary-container hover:text-on-secondary-container transition-colors">حجز</button>
+</div>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- BottomNavBar (Mobile only) -->
+<nav class="md:hidden bg-surface-container-lowest dark:bg-surface-container-low text-secondary dark:text-secondary-fixed-dim font-label-md text-label-md font-display-lg-mobile text-display-lg-mobile text-primary docked full-width bottom-0 rounded-t-xl bg-surface-container-lowest dark:bg-surface-container-low border-t border-outline-variant shadow-[0px_-4px_12px_rgba(26,43,76,0.05)] transition-all duration-200 ease-in-out fixed bottom-0 w-full z-50 flex justify-around items-center px-4 py-2">
+<div class="flex flex-col items-center justify-center bg-primary-container text-on-primary-container rounded-full px-4 py-1 hover:bg-surface-variant/50 cursor-pointer">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">home</span>
+<span>الرئيسية</span>
+</div>
+<div class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline hover:bg-surface-variant/50 cursor-pointer px-4 py-1">
+<span class="material-symbols-outlined">gavel</span>
+<span>استشاراتي</span>
+</div>
+<div class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline hover:bg-surface-variant/50 cursor-pointer px-4 py-1">
+<span class="material-symbols-outlined">search</span>
+<span>المحامون</span>
+</div>
+<div class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline hover:bg-surface-variant/50 cursor-pointer px-4 py-1">
+<span class="material-symbols-outlined">person</span>
+<span>الحساب</span>
+</div>
+</nav>
+</body></html>
