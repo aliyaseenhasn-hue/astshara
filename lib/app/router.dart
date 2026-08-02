@@ -98,16 +98,16 @@ GoRouter router(RouterRef ref) {
         return null;
       }
 
-      // الخروج من صفحات الدخول بمجرد الدخول بنجاح
-      if (isLoggingIn || isSigningUp || isOtp) {
+      // توجيه المستخدم المكتمل بعيداً عن صفحات الدخول والإكمال
+      final isProfileComplete =
+          user.fullName != null && user.fullName!.isNotEmpty;
+      if (isLoggingIn ||
+          isSigningUp ||
+          isOtp ||
+          (isCompletingProfile && isProfileComplete) ||
+          (isPendingPage && user.isVerified)) {
         return '/';
       }
-
-      // التأكد من عدم العودة لصفحات الإكمال إذا كانت البيانات مكتملة
-      if (isCompletingProfile &&
-          user.fullName != null &&
-          user.fullName!.isNotEmpty) return '/';
-      if (isPendingPage && user.isVerified) return '/';
 
       return null;
     },
