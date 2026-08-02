@@ -15,6 +15,7 @@ _$AppUserModelImpl _$$AppUserModelImplFromJson(Map<String, dynamic> json) =>
       avatarUrl: json['avatar_url'] as String?,
       role: json['role'] as String? ?? 'user',
       isVerified: json['is_verified'] as bool? ?? false,
+      hasProfessionalProfile: json['hasProfessionalProfile'] as bool? ?? false,
     );
 
 Map<String, dynamic> _$$AppUserModelImplToJson(_$AppUserModelImpl instance) =>
@@ -26,4 +27,5 @@ Map<String, dynamic> _$$AppUserModelImplToJson(_$AppUserModelImpl instance) =>
       'avatar_url': instance.avatarUrl,
       'role': instance.role,
       'is_verified': instance.isVerified,
+      'hasProfessionalProfile': instance.hasProfessionalProfile,
     };

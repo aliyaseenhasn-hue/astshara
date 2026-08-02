@@ -16,6 +16,7 @@ class AppUserModel with _$AppUserModel {
     @JsonKey(name: 'avatar_url') String? avatarUrl,
     @Default('user') String role,
     @JsonKey(name: 'is_verified') @Default(false) bool isVerified,
+    @Default(false) bool hasProfessionalProfile,
   }) = _AppUserModel;
 
   factory AppUserModel.fromJson(Map<String, dynamic> json) =>
@@ -30,5 +31,6 @@ class AppUserModel with _$AppUserModel {
         avatarUrl: avatarUrl,
         role: role,
         isVerified: isVerified,
+        hasProfessionalProfile: hasProfessionalProfile,
       );
 }

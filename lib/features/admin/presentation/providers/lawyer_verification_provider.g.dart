@@ -7,7 +7,7 @@ part of 'lawyer_verification_provider.dart';
 // **************************************************************************
 
 String _$lawyerVerificationHash() =>
-    r'f133e02b2dc2642789550b83491283b0f002c695';
+    r'23c81085d6b62344eec0a05c1ce61a86fee1fa35';
 
 /// See also [LawyerVerification].
 @ProviderFor(LawyerVerification)

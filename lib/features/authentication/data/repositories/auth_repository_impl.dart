@@ -35,27 +35,25 @@ class AuthRepositoryImpl implements AuthRepository {
 
       // 2. التحقق من حالة التوثيق في جدول lawyer_profiles إذا كان المستخدم محامياً
       bool isVerified = false;
+      bool hasProfessionalProfile = false;
       if (profileResponse['role'] == 'lawyer') {
         final lawyerResponse = await _supabase
             .from('lawyer_profiles')
             .select('verified')
-            .eq('profile_id', user.id) // نستخدم auth_id الموحد
+            .eq('profile_id', user.id)
             .maybeSingle();
 
-        // إذا لم يجد سجلاً في lawyer_profiles، فهذا يعني أنه تم رفضه وحذفه
-        // أو أنه لم يكمل إعداد الملف المهني بعد
         if (lawyerResponse != null) {
           isVerified = lawyerResponse['verified'] ?? false;
-        } else {
-          // حالة خاصة: إذا كان محامياً في profiles ولكن لا يوجد له سجل في lawyer_profiles
-          // هذا يعني أن الأدمن رفضه (لأن الرفض يحذف السجل)
-          // سنقوم بإعادته لدور 'user' مؤقتاً لكي يرى إشعار الرفض أو يعيد التقديم
-          isVerified = false;
+          hasProfessionalProfile = true;
         }
       }
 
       final appUser = AppUserModel.fromJson(profileResponse).toEntity();
-      return appUser.copyWith(isVerified: isVerified);
+      return appUser.copyWith(
+        isVerified: isVerified,
+        hasProfessionalProfile: hasProfessionalProfile,
+      );
     } catch (e) {
       debugPrint('Error fetching user profile from DB: $e');
       return AppUser(
