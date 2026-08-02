@@ -6,6 +6,7 @@ import '../features/authentication/presentation/pages/login_page.dart';
 import '../features/authentication/presentation/pages/signup_page.dart';
 import '../features/authentication/presentation/pages/otp_page.dart';
 import '../features/authentication/presentation/pages/complete_profile_page.dart';
+import '../features/authentication/presentation/pages/lawyer_onboarding_page.dart';
 import '../features/admin/presentation/pages/admin_dashboard_page.dart';
 import '../features/admin/presentation/pages/lawyer_verification_page.dart';
 import '../features/admin/presentation/pages/payment_management_page.dart';
@@ -129,6 +130,16 @@ GoRouter router(RouterRef ref) {
       GoRoute(
         path: '/complete-profile',
         builder: (context, state) => const CompleteProfilePage(),
+      ),
+      GoRoute(
+        path: '/lawyer-onboarding',
+        builder: (context, state) {
+          final extras = state.extra as Map<String, dynamic>? ?? {};
+          return LawyerOnboardingPage(
+            fullName: extras['fullName'] ?? '',
+            email: extras['email'] ?? '',
+          );
+        },
       ),
       GoRoute(
         path: '/otp',
