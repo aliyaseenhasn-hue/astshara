@@ -15,5 +15,6 @@ abstract class AuthRepository {
   Future<void> verifyOTP({required String phone, required String token});
   Future<void> signInWithGoogle();
   Future<void> updateProfile({String? fullName, String? email, String? role});
+  Future<void> deleteAccount();
   Stream<AppUser?> authStateChanges();
 }

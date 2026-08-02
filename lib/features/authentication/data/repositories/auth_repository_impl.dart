@@ -119,6 +119,24 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
+  Future<void> deleteAccount() async {
+    final user = _supabase.auth.currentUser;
+    if (user == null) return;
+
+    // حذف سجل البروفايل (سيقوم الـ CASCADE بحذف البيانات المرتبطة)
+    await _supabase.from('profiles').delete().eq('auth_id', user.id);
+
+    // استدعاء دالة RPC لحذف المستخدم من سجلات المصادقة نهائياً
+    try {
+      await _supabase.rpc('delete_user_account');
+    } catch (e) {
+      debugPrint('RPC delete failed: $e');
+    }
+
+    await signOut();
+  }
+
+  @override
   Stream<AppUser?> authStateChanges() {
     return _supabase.auth.onAuthStateChange.asyncMap((data) async {
       final user = data.session?.user;

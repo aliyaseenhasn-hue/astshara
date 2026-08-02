@@ -73,9 +73,41 @@ class ProfilePage extends ConsumerWidget {
                     onTap: () =>
                         ref.read(authControllerProvider.notifier).logout(),
                   ),
+                  const SizedBox(height: 12),
+                  TextButton.icon(
+                    onPressed: () => _showDeleteConfirmation(context, ref),
+                    icon: const Icon(Icons.delete_forever,
+                        color: Colors.grey, size: 18),
+                    label: const Text('حذف الحساب نهائياً',
+                        style: TextStyle(color: Colors.grey, fontSize: 13)),
+                  ),
                 ],
               ),
             ),
+    );
+  }
+
+  void _showDeleteConfirmation(BuildContext context, WidgetRef ref) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('حذف الحساب؟'),
+        content: const Text(
+            'هل أنت متأكد من حذف حسابك نهائياً؟ لا يمكن التراجع عن هذا الإجراء وسيتم حذف كافة بياناتك وحجوزاتك.'),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('إلغاء')),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              ref.read(authControllerProvider.notifier).deleteAccount();
+            },
+            child: const Text('نعم، احذف نهائياً',
+                style: TextStyle(color: AppColors.error)),
+          ),
+        ],
+      ),
     );
   }
 

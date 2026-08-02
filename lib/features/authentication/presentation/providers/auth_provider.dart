@@ -78,6 +78,9 @@ class MockAuthRepository implements AuthRepository {
       {String? fullName, String? email, String? role}) async {}
 
   @override
+  Future<void> deleteAccount() async {}
+
+  @override
   Stream<AppUser?> authStateChanges() => _authStateController.stream;
 }
 
@@ -115,6 +118,13 @@ class AuthController extends _$AuthController {
 
   Future<void> logout() async {
     await ref.read(authRepositoryProvider).signOut();
+  }
+
+  Future<void> deleteAccount() async {
+    state = const AsyncLoading();
+    state = await AsyncValue.guard(
+      () => ref.read(authRepositoryProvider).deleteAccount(),
+    );
   }
 
   Future<void> signInWithPhone(String phone) async {
