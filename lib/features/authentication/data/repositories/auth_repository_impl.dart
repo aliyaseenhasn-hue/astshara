@@ -23,13 +23,13 @@ class AuthRepositoryImpl implements AuthRepository {
 
       if (response == null) {
         debugPrint('Profile not found in database for auth_id: ${user.id}');
-        // نرجع بيانات أساسية من الـ Auth Metadata لضمان استمرارية التطبيق
+        // نرجع fullName كـ null لكي يكتشف الـ Router أنه مستخدم جديد ويحتاج لإكمال بياناته واختيار دوره
         return AppUser(
           id: user.id,
           email: user.email,
-          fullName: user.userMetadata?['full_name'] as String?,
+          fullName: null, // تعمدنا جعله null هنا
           phone: user.phone,
-          role: (user.userMetadata?['role'] as String?) ?? 'user',
+          role: 'user',
         );
       }
 

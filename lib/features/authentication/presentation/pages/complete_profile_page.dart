@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_sizes.dart';
 import '../../../../shared/widgets/loading_widget.dart';
@@ -19,6 +20,25 @@ class _CompleteProfilePageState extends ConsumerState<CompleteProfilePage> {
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
   String _selectedRole = 'user';
+
+  @override
+  void initState() {
+    super.initState();
+    // محاولة جلب الاسم من بيانات Google إذا كانت متوفرة
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final user = Supabase.instance.client.auth.currentUser;
+      if (user != null && user.userMetadata != null) {
+        final googleName =
+            user.userMetadata?['full_name'] ?? user.userMetadata?['name'];
+        if (googleName != null) {
+          _nameController.text = googleName;
+        }
+        if (user.email != null) {
+          _emailController.text = user.email!;
+        }
+      }
+    });
+  }
 
   @override
   void dispose() {
