@@ -109,10 +109,18 @@ class _CompleteProfilePageState extends ConsumerState<CompleteProfilePage> {
                 TextFormField(
                   controller: _emailController,
                   decoration: const InputDecoration(
-                    labelText: 'البريد الإلكتروني (اختياري)',
+                    labelText: 'البريد الإلكتروني',
                     prefixIcon: Icon(Icons.email_outlined),
                     border: OutlineInputBorder(),
                   ),
+                  keyboardType: TextInputType.emailAddress,
+                  validator: (val) {
+                    if (val == null || val.isEmpty)
+                      return 'البريد الإلكتروني مطلوب';
+                    if (!val.contains('@') || !val.contains('.'))
+                      return 'يرجى إدخال بريد إلكتروني صحيح';
+                    return null;
+                  },
                 ),
                 const SizedBox(height: 32),
                 const Text('نوع الحساب:',
