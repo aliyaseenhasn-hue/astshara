@@ -14,7 +14,7 @@ jobs:
         with:
           channel: 'stable'
       - run: flutter pub get
-      - run: flutter build web --release --base-href "/astshara/"
+      - run: flutter build web --release --base-href "/astshara/" --web-renderer canvaskit
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3 # تحديث للنسخة الأحدث المتوافقة
         with:
