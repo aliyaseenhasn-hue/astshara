@@ -84,6 +84,7 @@ class AuthRepositoryImpl implements AuthRepository {
   Future<void> signInWithGoogle() async {
     await _supabase.auth.signInWithOAuth(
       OAuthProvider.google,
+      redirectTo: 'https://aliyaseenhasn-hue.github.io/astshara/',
       queryParams: {
         'prompt': 'select_account',
       },
