@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_sizes.dart';
+import '../../../authentication/presentation/providers/auth_provider.dart';
 import '../providers/admin_provider.dart';
 
 class AdminDashboardPage extends ConsumerWidget {
@@ -19,6 +20,13 @@ class AdminDashboardPage extends ConsumerWidget {
         backgroundColor: AppColors.primary,
         foregroundColor: Colors.white,
         elevation: 0,
+        actions: [
+          IconButton(
+            onPressed: () => ref.read(authControllerProvider.notifier).logout(),
+            icon: const Icon(Icons.logout),
+            tooltip: 'تسجيل الخروج',
+          ),
+        ],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(AppSizes.p20),
