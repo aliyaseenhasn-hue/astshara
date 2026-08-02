@@ -81,6 +81,16 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
+  Future<void> signInWithGoogle() async {
+    await _supabase.auth.signInWithOAuth(
+      OAuthProvider.google,
+      queryParams: {
+        'prompt': 'select_account',
+      },
+    );
+  }
+
+  @override
   Future<void> verifyOTP({required String phone, required String token}) async {
     await _supabase.auth.verifyOTP(
       phone: phone,

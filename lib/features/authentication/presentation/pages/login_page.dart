@@ -188,6 +188,33 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                               fontSize: 16, fontWeight: FontWeight.bold),
                         ),
                       ),
+                if (!widget.isAdminLogin) ...[
+                  const SizedBox(height: 24),
+                  const Row(
+                    children: [
+                      Expanded(child: Divider()),
+                      Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 16),
+                        child: Text('أو',
+                            style: TextStyle(color: AppColors.outline)),
+                      ),
+                      Expanded(child: Divider()),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
+                  OutlinedButton.icon(
+                    onPressed: () => ref
+                        .read(authControllerProvider.notifier)
+                        .signInWithGoogle(),
+                    icon: const Icon(Icons.account_circle,
+                        size: 24, color: Colors.blue),
+                    label: const Text('المتابعة باستخدام Google'),
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      side: const BorderSide(color: AppColors.surfaceVariant),
+                    ),
+                  ),
+                ],
               ],
             ),
           ),

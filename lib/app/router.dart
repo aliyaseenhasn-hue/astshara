@@ -60,10 +60,10 @@ GoRouter router(RouterRef ref) {
       final isAdminPage = state.matchedLocation.startsWith('/admin') &&
           state.matchedLocation != '/admin-login';
 
-      debugPrint('Router Redirect Check:');
-      debugPrint(' - Path: ${state.matchedLocation}');
-      debugPrint(' - User ID: ${user?.id}');
-      debugPrint(' - User Role: ${user?.role}');
+      if (user != null) {
+        debugPrint('--- AUTH SUCCESS ---');
+        debugPrint('User: ${user.fullName}, Role: ${user.role}');
+      }
 
       if (user == null) {
         if (isLoggingIn || isSigningUp || isOtp) return null;

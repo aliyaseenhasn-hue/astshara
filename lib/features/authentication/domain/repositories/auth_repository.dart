@@ -13,6 +13,7 @@ abstract class AuthRepository {
   Future<void> signOut();
   Future<void> signInWithPhone(String phone);
   Future<void> verifyOTP({required String phone, required String token});
+  Future<void> signInWithGoogle();
   Future<void> updateProfile({String? fullName, String? email, String? role});
   Stream<AppUser?> authStateChanges();
 }

@@ -52,6 +52,11 @@ class MockAuthRepository implements AuthRepository {
   }
 
   @override
+  Future<void> signInWithGoogle() async {
+    await Future.delayed(const Duration(seconds: 1));
+  }
+
+  @override
   Future<void> verifyOTP({required String phone, required String token}) async {
     await Future.delayed(const Duration(seconds: 1));
 
@@ -116,6 +121,13 @@ class AuthController extends _$AuthController {
     state = const AsyncLoading();
     state = await AsyncValue.guard(
       () => ref.read(authRepositoryProvider).signInWithPhone(phone),
+    );
+  }
+
+  Future<void> signInWithGoogle() async {
+    state = const AsyncLoading();
+    state = await AsyncValue.guard(
+      () => ref.read(authRepositoryProvider).signInWithGoogle(),
     );
   }
 
