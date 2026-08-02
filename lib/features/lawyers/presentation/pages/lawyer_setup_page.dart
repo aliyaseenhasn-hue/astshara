@@ -44,6 +44,16 @@ class _LawyerSetupPageState extends ConsumerState<LawyerSetupPage> {
   }
 
   Future<void> _submit() async {
+    if (_selectedIdImage == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('يرجى رفع صورة هوية النقابة'),
+          backgroundColor: AppColors.error,
+        ),
+      );
+      return;
+    }
+
     if (_formKey.currentState?.validate() ?? false) {
       final user = ref.read(authStateChangesProvider).value;
       if (user == null) return;
@@ -58,11 +68,34 @@ class _LawyerSetupPageState extends ConsumerState<LawyerSetupPage> {
           );
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('تم إرسال البيانات للمراجعة')),
-        );
+        _showSuccessDialog();
       }
     }
+  }
+
+  void _showSuccessDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        title: const Text('تم الإرسال بنجاح'),
+        content: const Text(
+            'لقد تم استلام بياناتك المهنية وهي الآن قيد المراجعة من قبل الإدارة. سيتم إخطارك فور تفعيل حسابك.'),
+        actions: [
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context); // إغلاق الديالوج
+              ref
+                  .read(authControllerProvider.notifier)
+                  .logout(); // العودة لصفحة تسجيل الدخول
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
+            child: const Text('العودة لتسجيل الدخول',
+                style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -70,7 +103,16 @@ class _LawyerSetupPageState extends ConsumerState<LawyerSetupPage> {
     final state = ref.watch(lawyerSetupControllerProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('إعداد ملف المحامي')),
+      appBar: AppBar(
+        title: const Text('إعداد ملف المحامي'),
+        actions: [
+          IconButton(
+            onPressed: () => ref.read(authControllerProvider.notifier).logout(),
+            icon: const Icon(Icons.logout),
+            tooltip: 'تسجيل الخروج',
+          ),
+        ],
+      ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(AppSizes.p24),
         child: Form(
@@ -126,7 +168,7 @@ class _LawyerSetupPageState extends ConsumerState<LawyerSetupPage> {
                 ],
               ),
               const SizedBox(height: AppSizes.p24),
-              const Text('هوية النقابة (صورة):',
+              const Text('هوية النقابة (صورة): * إلزامي',
                   style: TextStyle(fontWeight: FontWeight.bold)),
               const SizedBox(height: AppSizes.p8),
               InkWell(
@@ -134,15 +176,22 @@ class _LawyerSetupPageState extends ConsumerState<LawyerSetupPage> {
                 child: Container(
                   height: 150,
                   decoration: BoxDecoration(
-                    border: Border.all(color: Colors.grey),
+                    border: Border.all(
+                      color: _selectedIdImage == null
+                          ? Colors.red.withValues(alpha: 0.5)
+                          : Colors.grey,
+                      width: _selectedIdImage == null ? 2 : 1,
+                    ),
                     borderRadius: BorderRadius.circular(AppSizes.r8),
                   ),
                   child: _selectedIdImage == null
                       ? const Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Icon(Icons.add_a_photo, size: 40),
-                            Text('اضغط لرفع الصورة')
+                            Icon(Icons.add_a_photo,
+                                size: 40, color: Colors.red),
+                            Text('اضغط لرفع هوية النقابة',
+                                style: TextStyle(color: Colors.red))
                           ],
                         )
                       : kIsWeb
