@@ -61,6 +61,7 @@ GoRouter router(RouterRef ref) {
       final isSigningUp = matchedLocation == '/signup';
       final isOtp = matchedLocation == '/otp';
       final isCompletingProfile = matchedLocation == '/complete-profile';
+      final isOnboardingLawyer = matchedLocation == '/lawyer-onboarding';
       final isPendingPage = matchedLocation == '/lawyer-pending';
       final isAdminPage = matchedLocation.startsWith('/admin') &&
           matchedLocation != '/admin-login';
@@ -85,7 +86,7 @@ GoRouter router(RouterRef ref) {
       // توجيه المستخدم الجديد لإكمال بياناته
       if ((user.role ?? 'user') != 'admin' &&
           (user.fullName == null || user.fullName!.isEmpty)) {
-        if (isCompletingProfile) return null;
+        if (isCompletingProfile || isOnboardingLawyer) return null;
         return '/complete-profile';
       }
 
