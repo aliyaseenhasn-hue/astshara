@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_sizes.dart';
 import '../../../authentication/presentation/providers/auth_provider.dart';
@@ -47,6 +48,10 @@ class ProfilePage extends ConsumerWidget {
                   ),
                   const SizedBox(height: 40),
                   _buildProfileTile(Icons.history, 'سجل الاستشارات', () {}),
+                  _buildProfileTile(
+                      Icons.notifications_active_outlined,
+                      'إعدادات الإشعارات',
+                      () => context.push('/notification-settings')),
                   _buildProfileTile(Icons.payment, 'طرق الدفع', () {}),
                   _buildProfileTile(
                       Icons.settings_outlined, 'إعدادات التطبيق', () {}),

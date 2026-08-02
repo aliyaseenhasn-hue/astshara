@@ -17,6 +17,7 @@ import '../features/bookings/presentation/pages/bookings_list_page.dart';
 import '../features/chat/presentation/pages/chat_page.dart';
 import '../features/payments/presentation/pages/payment_upload_page.dart';
 import '../features/profile/presentation/pages/profile_page.dart';
+import '../features/profile/presentation/pages/notification_settings_page.dart';
 import '../features/bookings/domain/entities/booking.dart';
 import '../features/lawyers/domain/entities/lawyer_profile.dart';
 import '../features/authentication/presentation/providers/auth_provider.dart';
@@ -164,6 +165,10 @@ GoRouter router(RouterRef ref) {
       GoRoute(
         path: '/profile',
         builder: (context, state) => const ProfilePage(),
+      ),
+      GoRoute(
+        path: '/notification-settings',
+        builder: (context, state) => const NotificationSettingsPage(),
       ),
       GoRoute(
         path: '/admin',
