@@ -10,16 +10,17 @@ part 'lawyer_verification_provider.g.dart';
 class LawyerVerification extends _$LawyerVerification {
   @override
   FutureOr<List<LawyerProfile>> build() async {
+    // جلب المحامين غير الموثقين مع بيانات أسمائهم من جدول profiles
     final response = await SupabaseConfig.client
         .from('lawyer_profiles')
-        .select('*, profiles(full_name)')
+        .select('*, profiles!inner(full_name)')
         .eq('verified', false);
 
     return (response as List).map((json) {
-      final profile = json['profiles'];
-      return LawyerProfileModel.fromJson(json)
-          .toEntity()
-          .copyWith(fullName: profile['full_name']);
+      final profileData = json['profiles'];
+      final lawyer = LawyerProfileModel.fromJson(json).toEntity();
+      // دمج الاسم من الجدول المرتبط
+      return lawyer.copyWith(fullName: profileData['full_name']);
     }).toList();
   }
 
