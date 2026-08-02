@@ -12,6 +12,7 @@ import '../features/admin/presentation/pages/payment_management_page.dart';
 import '../features/lawyers/presentation/pages/lawyers_list_page.dart';
 import '../features/lawyers/presentation/pages/lawyer_details_page.dart';
 import '../features/lawyers/presentation/pages/lawyer_setup_page.dart';
+import '../features/lawyers/presentation/pages/lawyer_pending_page.dart';
 import '../features/bookings/presentation/pages/create_booking_page.dart';
 import '../features/bookings/presentation/pages/bookings_list_page.dart';
 import '../features/chat/presentation/pages/chat_page.dart';
@@ -52,7 +53,6 @@ GoRouter router(RouterRef ref) {
     ),
     redirect: (context, state) {
       final user = authState.valueOrNull;
-
       final matchedLocation = state.matchedLocation;
 
       final isLoggingIn =
@@ -60,6 +60,7 @@ GoRouter router(RouterRef ref) {
       final isSigningUp = matchedLocation == '/signup';
       final isOtp = matchedLocation == '/otp';
       final isCompletingProfile = matchedLocation == '/complete-profile';
+      final isPendingPage = matchedLocation == '/lawyer-pending';
       final isAdminPage = matchedLocation.startsWith('/admin') &&
           matchedLocation != '/admin-login';
 
@@ -74,37 +75,37 @@ GoRouter router(RouterRef ref) {
         return '/login';
       }
 
-      // توجيه الأدمن تلقائياً إلى لوحة التحكم فور دخوله
+      // توجيه الأدمن تلقائياً
       if ((user.role ?? 'user') == 'admin') {
-        debugPrint(' - Redirecting Admin to /admin');
         if (!isAdminPage) return '/admin';
         return null;
       }
 
-      // توجيه المستخدم الجديد لإكمال بياناته (فقط إذا لم يكن أدمن)
+      // توجيه المستخدم الجديد لإكمال بياناته
       if ((user.role ?? 'user') != 'admin' &&
           (user.fullName == null || user.fullName!.isEmpty) &&
           !isCompletingProfile) {
         return '/complete-profile';
       }
 
-      if (isAdminPage && (user.role ?? 'user') != 'admin') {
-        return '/';
+      // حماية صفحات الأدمن
+      if (isAdminPage && (user.role ?? 'user') != 'admin') return '/';
+
+      // توجيه المحامي غير الموثق
+      if ((user.role ?? 'user') == 'lawyer' && !user.isVerified) {
+        if (matchedLocation == '/lawyer-setup') return null;
+        if (!isPendingPage) return '/lawyer-pending';
+        return null;
       }
 
-      if ((user.role ?? 'user') == 'lawyer' &&
-          !user.isVerified &&
-          matchedLocation != '/lawyer-setup' &&
-          !isCompletingProfile) {
-        return '/lawyer-setup';
-      }
-
+      // توجيه عام للصفحة الرئيسية عند الدخول بنجاح
       if (isLoggingIn ||
           isSigningUp ||
           isOtp ||
-          (isCompletingProfile &&
-              user.fullName != null &&
-              user.fullName!.isNotEmpty)) return '/';
+          isCompletingProfile ||
+          (isPendingPage && user.isVerified)) {
+        return '/';
+      }
 
       return null;
     },
@@ -135,6 +136,10 @@ GoRouter router(RouterRef ref) {
       GoRoute(
         path: '/lawyer-setup',
         builder: (context, state) => const LawyerSetupPage(),
+      ),
+      GoRoute(
+        path: '/lawyer-pending',
+        builder: (context, state) => const LawyerPendingPage(),
       ),
       GoRoute(
         path: '/lawyer-details/:id',
