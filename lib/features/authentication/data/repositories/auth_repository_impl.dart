@@ -15,28 +15,49 @@ class AuthRepositoryImpl implements AuthRepository {
     if (user == null) return null;
 
     try {
-      final response = await _supabase
+      // 1. جلب بيانات البروفايل الأساسية
+      final profileResponse = await _supabase
           .from('profiles')
           .select()
           .eq('auth_id', user.id)
           .maybeSingle();
 
-      if (response == null) {
+      if (profileResponse == null) {
         debugPrint('Profile not found in database for auth_id: ${user.id}');
-        // نرجع fullName كـ null لكي يكتشف الـ Router أنه مستخدم جديد ويحتاج لإكمال بياناته واختيار دوره
         return AppUser(
           id: user.id,
           email: user.email,
-          fullName: null, // تعمدنا جعله null هنا
+          fullName: null,
           phone: user.phone,
           role: 'user',
         );
       }
 
-      return AppUserModel.fromJson(response).toEntity();
+      // 2. التحقق من حالة التوثيق في جدول lawyer_profiles إذا كان المستخدم محامياً
+      bool isVerified = false;
+      if (profileResponse['role'] == 'lawyer') {
+        final lawyerResponse = await _supabase
+            .from('lawyer_profiles')
+            .select('verified')
+            .eq('profile_id', user.id) // نستخدم auth_id الموحد
+            .maybeSingle();
+
+        // إذا لم يجد سجلاً في lawyer_profiles، فهذا يعني أنه تم رفضه وحذفه
+        // أو أنه لم يكمل إعداد الملف المهني بعد
+        if (lawyerResponse != null) {
+          isVerified = lawyerResponse['verified'] ?? false;
+        } else {
+          // حالة خاصة: إذا كان محامياً في profiles ولكن لا يوجد له سجل في lawyer_profiles
+          // هذا يعني أن الأدمن رفضه (لأن الرفض يحذف السجل)
+          // سنقوم بإعادته لدور 'user' مؤقتاً لكي يرى إشعار الرفض أو يعيد التقديم
+          isVerified = false;
+        }
+      }
+
+      final appUser = AppUserModel.fromJson(profileResponse).toEntity();
+      return appUser.copyWith(isVerified: isVerified);
     } catch (e) {
       debugPrint('Error fetching user profile from DB: $e');
-      // في حالة حدوث خطأ تقني، نستخدم بيانات الجلسة كخيار احتياطي
       return AppUser(
         id: user.id,
         email: user.email,

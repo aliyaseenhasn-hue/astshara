@@ -93,6 +93,8 @@ GoRouter router(RouterRef ref) {
 
       // توجيه المحامي غير الموثق
       if ((user.role ?? 'user') == 'lawyer' && !user.isVerified) {
+        // التحقق مما إذا كان المحامي قد تم رفضه (أي لا يوجد له سجل في lawyer_profiles)
+        // في هذه الحالة، سنوجهه لصفحة الإعداد ليعيد المحاولة بدلاً من صفحة الانتظار
         if (matchedLocation == '/lawyer-setup') return null;
         if (!isPendingPage) return '/lawyer-pending';
         return null;
