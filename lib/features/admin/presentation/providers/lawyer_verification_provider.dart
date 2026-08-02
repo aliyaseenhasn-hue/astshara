@@ -1,4 +1,5 @@
 import 'package:astshara/features/lawyers/data/models/lawyer_profile_model.dart';
+import 'package:flutter/foundation.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../../lawyers/domain/entities/lawyer_profile.dart';
 import '../../../lawyers/presentation/providers/lawyers_provider.dart';
@@ -10,18 +11,32 @@ part 'lawyer_verification_provider.g.dart';
 class LawyerVerification extends _$LawyerVerification {
   @override
   FutureOr<List<LawyerProfile>> build() async {
-    // جلب المحامين غير الموثقين مع بيانات أسمائهم من جدول profiles
-    final response = await SupabaseConfig.client
-        .from('lawyer_profiles')
-        .select('*, profiles!inner(full_name)')
-        .eq('verified', false);
+    try {
+      // محاولة جلب البيانات مع ربط الجداول
+      // سنستخدم ربطاً مرناً لضمان عدم استثناء السجلات إذا كان هناك مشكلة في الربط الإلزامي
+      final response = await SupabaseConfig.client
+          .from('lawyer_profiles')
+          .select('*, profiles(full_name)')
+          .eq('verified', false);
 
-    return (response as List).map((json) {
-      final profileData = json['profiles'];
-      final lawyer = LawyerProfileModel.fromJson(json).toEntity();
-      // دمج الاسم من الجدول المرتبط
-      return lawyer.copyWith(fullName: profileData['full_name']);
-    }).toList();
+      debugPrint('Admin Lawyer Requests Response: $response');
+
+      if (response == null) return [];
+
+      return (response as List).map((json) {
+        final profileData = json['profiles'];
+        final lawyer = LawyerProfileModel.fromJson(json).toEntity();
+
+        // دمج الاسم إذا وجد، وإلا وضع اسم افتراضي
+        final fullName =
+            profileData != null ? profileData['full_name'] : 'محامي مجهول';
+        return lawyer.copyWith(fullName: fullName);
+      }).toList();
+    } catch (e, stack) {
+      debugPrint('Error fetching lawyer verification requests: $e');
+      debugPrint('Stack trace: $stack');
+      return [];
+    }
   }
 
   Future<void> approveLawyer(String profileId) async {
@@ -31,7 +46,7 @@ class LawyerVerification extends _$LawyerVerification {
           .from('lawyer_profiles')
           .update({'verified': true}).eq('profile_id', profileId);
 
-      // تحديث قائمة المحامين الموثقين أيضاً
+      // تحديث قائمة المحامين الموثقين
       ref.invalidate(lawyersListProvider);
       return build();
     });
@@ -40,7 +55,6 @@ class LawyerVerification extends _$LawyerVerification {
   Future<void> rejectLawyer(String profileId) async {
     state = const AsyncLoading();
     state = await AsyncValue.guard(() async {
-      // يمكنك إضافة منطق لحذف السجل أو تحديث حالته كمرفوض
       await SupabaseConfig.client
           .from('lawyer_profiles')
           .delete()
