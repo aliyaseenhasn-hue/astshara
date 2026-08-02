@@ -1,5 +1,6 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../../../core/config/supabase_config.dart';
+import '../../../../shared/providers/global_loading_provider.dart';
 import '../../../payments/data/models/payment_model.dart';
 import '../../../payments/domain/entities/payment.dart';
 import '../../../bookings/presentation/providers/bookings_provider.dart';
@@ -22,6 +23,7 @@ class PaymentManagement extends _$PaymentManagement {
   }
 
   Future<void> approvePayment(Payment payment) async {
+    ref.read(globalLoadingProvider.notifier).setLoading(true);
     state = const AsyncLoading();
     state = await AsyncValue.guard(() async {
       // 1. تحديث حالة الدفعة
@@ -38,9 +40,11 @@ class PaymentManagement extends _$PaymentManagement {
       ref.invalidate(userBookingsProvider);
       return build();
     });
+    ref.read(globalLoadingProvider.notifier).setLoading(false);
   }
 
   Future<void> rejectPayment(Payment payment) async {
+    ref.read(globalLoadingProvider.notifier).setLoading(true);
     state = const AsyncLoading();
     state = await AsyncValue.guard(() async {
       await SupabaseConfig.client
@@ -49,5 +53,6 @@ class PaymentManagement extends _$PaymentManagement {
 
       return build();
     });
+    ref.read(globalLoadingProvider.notifier).setLoading(false);
   }
 }

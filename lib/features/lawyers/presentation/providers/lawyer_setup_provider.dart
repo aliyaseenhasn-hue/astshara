@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import '../../../../shared/providers/global_loading_provider.dart';
 import '../../domain/entities/lawyer_profile.dart';
 import 'lawyers_provider.dart';
 
@@ -19,6 +20,7 @@ class LawyerSetupController extends _$LawyerSetupController {
     required double price,
     XFile? idDocument,
   }) async {
+    ref.read(globalLoadingProvider.notifier).setLoading(true);
     state = const AsyncLoading();
     state = await AsyncValue.guard(() async {
       final repository = ref.read(lawyersRepositoryProvider);
@@ -31,13 +33,12 @@ class LawyerSetupController extends _$LawyerSetupController {
           await repository.uploadDocument(idDocument.path, fileName);
         } catch (e) {
           debugPrint('Storage upload failed: $e');
-          // نكمل العملية حتى لو فشل الرفع حالياً لتجنب توقف التطبيق
         }
       }
 
       // 2. Update profile
       final profile = LawyerProfile(
-        id: '', // Supabase handles UUID if upserting/inserting properly
+        id: '',
         profileId: profileId,
         licenseNumber: licenseNumber,
         bio: bio,
@@ -47,5 +48,6 @@ class LawyerSetupController extends _$LawyerSetupController {
 
       await repository.updateLawyerProfile(profile);
     });
+    ref.read(globalLoadingProvider.notifier).setLoading(false);
   }
 }

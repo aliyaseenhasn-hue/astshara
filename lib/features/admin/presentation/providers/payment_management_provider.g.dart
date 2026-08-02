@@ -6,7 +6,7 @@ part of 'payment_management_provider.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$paymentManagementHash() => r'f81c0edef9545fc9e83d059da1d0e7bd40684f13';
+String _$paymentManagementHash() => r'a4da7a54350d6633ee4113093ca055745f113c61';
 
 /// See also [PaymentManagement].
 @ProviderFor(PaymentManagement)

@@ -3,7 +3,7 @@
 // **************************************************************************
 
 String _$lawyerSetupControllerHash() =>
-    r'3fe3eedc9d0a6e19b7e3565993ed05276f208b24';
+    r'5c2711f22905d992613158fef3b98a4ed04c7a0e';
 
 /// See also [LawyerSetupController].
 @ProviderFor(LawyerSetupController)

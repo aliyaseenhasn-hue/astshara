@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:astshara/core/config/supabase_config.dart';
+import '../../../../shared/providers/global_loading_provider.dart';
 import '../../data/repositories/auth_repository_impl.dart';
 import '../../domain/entities/app_user.dart';
 import '../../domain/repositories/auth_repository.dart';
@@ -95,16 +96,19 @@ class AuthController extends _$AuthController {
   FutureOr<void> build() {}
 
   Future<void> signIn(String email, String password) async {
+    ref.read(globalLoadingProvider.notifier).setLoading(true);
     state = const AsyncLoading();
     state = await AsyncValue.guard(
       () => ref
           .read(authRepositoryProvider)
           .signInWithEmail(email: email, password: password),
     );
+    ref.read(globalLoadingProvider.notifier).setLoading(false);
   }
 
   Future<void> signUp(
       String email, String password, String fullName, String role) async {
+    ref.read(globalLoadingProvider.notifier).setLoading(true);
     state = const AsyncLoading();
     state = await AsyncValue.guard(
       () => ref.read(authRepositoryProvider).signUpWithEmail(
@@ -114,40 +118,51 @@ class AuthController extends _$AuthController {
             role: role,
           ),
     );
+    ref.read(globalLoadingProvider.notifier).setLoading(false);
   }
 
   Future<void> logout() async {
+    ref.read(globalLoadingProvider.notifier).setLoading(true);
     await ref.read(authRepositoryProvider).signOut();
+    ref.read(globalLoadingProvider.notifier).setLoading(false);
   }
 
   Future<void> deleteAccount() async {
+    ref.read(globalLoadingProvider.notifier).setLoading(true);
     state = const AsyncLoading();
     state = await AsyncValue.guard(
       () => ref.read(authRepositoryProvider).deleteAccount(),
     );
+    ref.read(globalLoadingProvider.notifier).setLoading(false);
   }
 
   Future<void> signInWithPhone(String phone) async {
+    ref.read(globalLoadingProvider.notifier).setLoading(true);
     state = const AsyncLoading();
     state = await AsyncValue.guard(
       () => ref.read(authRepositoryProvider).signInWithPhone(phone),
     );
+    ref.read(globalLoadingProvider.notifier).setLoading(false);
   }
 
   Future<void> signInWithGoogle() async {
+    ref.read(globalLoadingProvider.notifier).setLoading(true);
     state = const AsyncLoading();
     state = await AsyncValue.guard(
       () => ref.read(authRepositoryProvider).signInWithGoogle(),
     );
+    ref.read(globalLoadingProvider.notifier).setLoading(false);
   }
 
   Future<void> verifyOTP(String phone, String token) async {
+    ref.read(globalLoadingProvider.notifier).setLoading(true);
     state = const AsyncLoading();
     state = await AsyncValue.guard(
       () => ref
           .read(authRepositoryProvider)
           .verifyOTP(phone: phone, token: token),
     );
+    ref.read(globalLoadingProvider.notifier).setLoading(false);
   }
 
   Future<void> updateInitialProfile({
@@ -155,6 +170,7 @@ class AuthController extends _$AuthController {
     String? email,
     required String role,
   }) async {
+    ref.read(globalLoadingProvider.notifier).setLoading(true);
     state = const AsyncLoading();
     state = await AsyncValue.guard(() async {
       await ref.read(authRepositoryProvider).updateProfile(
@@ -163,5 +179,6 @@ class AuthController extends _$AuthController {
             role: role,
           );
     });
+    ref.read(globalLoadingProvider.notifier).setLoading(false);
   }
 }
