@@ -12,29 +12,44 @@ class LawyerVerification extends _$LawyerVerification {
   @override
   FutureOr<List<LawyerProfile>> build() async {
     try {
-      // محاولة جلب البيانات مع ربط الجداول
-      // سنستخدم ربطاً مرناً لضمان عدم استثناء السجلات إذا كان هناك مشكلة في الربط الإلزامي
-      final response = await SupabaseConfig.client
+      // 1. جلب بيانات المحامين غير الموثقين
+      final lawyerResponse = await SupabaseConfig.client
           .from('lawyer_profiles')
-          .select('*, profiles(full_name)')
+          .select()
           .eq('verified', false);
 
-      debugPrint('Admin Lawyer Requests Response: $response');
+      if (lawyerResponse == null) return [];
 
-      if (response == null) return [];
+      final List<LawyerProfile> lawyers = [];
 
-      return (response as List).map((json) {
-        final profileData = json['profiles'];
+      for (var json in (lawyerResponse as List)) {
         final lawyer = LawyerProfileModel.fromJson(json).toEntity();
 
-        // دمج الاسم إذا وجد، وإلا وضع اسم افتراضي
-        final fullName =
-            profileData != null ? profileData['full_name'] : 'محامي مجهول';
-        return lawyer.copyWith(fullName: fullName);
-      }).toList();
-    } catch (e, stack) {
-      debugPrint('Error fetching lawyer verification requests: $e');
-      debugPrint('Stack trace: $stack');
+        // 2. البحث عن اسم المحامي - نجرب البحث بكلا المعرفين لضمان النتيجة
+        var profileResponse = await SupabaseConfig.client
+            .from('profiles')
+            .select('full_name')
+            .eq('auth_id', lawyer.profileId)
+            .maybeSingle();
+
+        // إذا لم يجد بالـ auth_id، نجرب المعرف الداخلي id
+        if (profileResponse == null) {
+          profileResponse = await SupabaseConfig.client
+              .from('profiles')
+              .select('full_name')
+              .eq('id', lawyer.profileId)
+              .maybeSingle();
+        }
+
+        final fullName = profileResponse != null
+            ? profileResponse['full_name']
+            : 'محامي مجهول';
+        lawyers.add(lawyer.copyWith(fullName: fullName));
+      }
+
+      return lawyers;
+    } catch (e) {
+      debugPrint('Critical Error in LawyerVerification: $e');
       return [];
     }
   }
@@ -46,7 +61,14 @@ class LawyerVerification extends _$LawyerVerification {
           .from('lawyer_profiles')
           .update({'verified': true}).eq('profile_id', profileId);
 
-      // تحديث قائمة المحامين الموثقين
+      // إرسال إشعار للمحامي بالموافقة
+      await _sendNotification(
+        profileId: profileId,
+        title: 'تم توثيق حسابك بنجاح ✅',
+        body:
+            'مرحباً بك! لقد تمت الموافقة على انضمامك، يمكنك الآن البدء في استقبال الاستشارات وتعديل ملفك المهني.',
+      );
+
       ref.invalidate(lawyersListProvider);
       return build();
     });
@@ -55,6 +77,14 @@ class LawyerVerification extends _$LawyerVerification {
   Future<void> rejectLawyer(String profileId) async {
     state = const AsyncLoading();
     state = await AsyncValue.guard(() async {
+      // إرسال إشعار للمحامي بالرفض قبل حذف الطلب
+      await _sendNotification(
+        profileId: profileId,
+        title: 'بخصوص طلب الانضمام ⚖️',
+        body:
+            'نعتذر منك، لم نتمكن من توثيق حسابك حالياً. يرجى التأكد من صحة الوثائق المرفوعة والمحاولة مرة أخرى.',
+      );
+
       await SupabaseConfig.client
           .from('lawyer_profiles')
           .delete()
@@ -62,5 +92,39 @@ class LawyerVerification extends _$LawyerVerification {
 
       return build();
     });
+  }
+
+  Future<void> _sendNotification({
+    required String profileId,
+    required String title,
+    required String body,
+  }) async {
+    try {
+      // البحث عن المعرف الداخلي للمستخدم
+      var userResponse = await SupabaseConfig.client
+          .from('profiles')
+          .select('id')
+          .eq('auth_id', profileId)
+          .maybeSingle();
+
+      if (userResponse == null) {
+        userResponse = await SupabaseConfig.client
+            .from('profiles')
+            .select('id')
+            .eq('id', profileId)
+            .maybeSingle();
+      }
+
+      if (userResponse != null) {
+        await SupabaseConfig.client.from('notifications').insert({
+          'user_id': userResponse['id'],
+          'title': title,
+          'body': body,
+          'type': 'system',
+        });
+      }
+    } catch (e) {
+      debugPrint('Error sending verification notification: $e');
+    }
   }
 }
