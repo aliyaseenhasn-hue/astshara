@@ -6,11 +6,22 @@ import '../core/config/supabase_config.dart';
 Future<ProviderContainer> bootstrap() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // تحميل ملف البيئة
-  await dotenv.load(fileName: ".env");
+  try {
+    // تحميل ملف البيئة مع معالجة الخطأ إذا لم يجد الملف
+    await dotenv
+        .load(fileName: ".env")
+        .catchError((e) => debugPrint('Warning: .env file not found'));
 
-  // تهيئة Supabase
-  await SupabaseConfig.initialize();
+    // تهيئة Supabase فقط إذا كانت القيم موجودة
+    if (dotenv.env['SUPABASE_URL'] != null &&
+        dotenv.env['SUPABASE_ANON_KEY'] != null) {
+      await SupabaseConfig.initialize();
+    } else {
+      debugPrint('Error: Supabase credentials missing in .env');
+    }
+  } catch (e) {
+    debugPrint('Bootstrap Error: $e');
+  }
 
   final container = ProviderContainer(
     overrides: [],

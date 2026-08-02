@@ -52,17 +52,21 @@ GoRouter router(RouterRef ref) {
     ),
     redirect: (context, state) {
       final user = authState.valueOrNull;
-      final isLoggingIn = state.matchedLocation == '/login' ||
-          state.matchedLocation == '/admin-login';
-      final isSigningUp = state.matchedLocation == '/signup';
-      final isOtp = state.matchedLocation == '/otp';
-      final isCompletingProfile = state.matchedLocation == '/complete-profile';
-      final isAdminPage = state.matchedLocation.startsWith('/admin') &&
-          state.matchedLocation != '/admin-login';
+
+      final matchedLocation = state.matchedLocation;
+
+      final isLoggingIn =
+          matchedLocation == '/login' || matchedLocation == '/admin-login';
+      final isSigningUp = matchedLocation == '/signup';
+      final isOtp = matchedLocation == '/otp';
+      final isCompletingProfile = matchedLocation == '/complete-profile';
+      final isAdminPage = matchedLocation.startsWith('/admin') &&
+          matchedLocation != '/admin-login';
 
       if (user != null) {
         debugPrint('--- AUTH SUCCESS ---');
-        debugPrint('User: ${user.fullName}, Role: ${user.role}');
+        debugPrint(
+            'User: ${user.fullName ?? "No Name"}, Role: ${user.role ?? "No Role"}');
       }
 
       if (user == null) {
@@ -71,26 +75,26 @@ GoRouter router(RouterRef ref) {
       }
 
       // توجيه الأدمن تلقائياً إلى لوحة التحكم فور دخوله
-      if (user.role == 'admin') {
+      if ((user.role ?? 'user') == 'admin') {
         debugPrint(' - Redirecting Admin to /admin');
         if (!isAdminPage) return '/admin';
         return null;
       }
 
       // توجيه المستخدم الجديد لإكمال بياناته (فقط إذا لم يكن أدمن)
-      if (user.role != 'admin' &&
+      if ((user.role ?? 'user') != 'admin' &&
           (user.fullName == null || user.fullName!.isEmpty) &&
           !isCompletingProfile) {
         return '/complete-profile';
       }
 
-      if (isAdminPage && user.role != 'admin') {
+      if (isAdminPage && (user.role ?? 'user') != 'admin') {
         return '/';
       }
 
-      if (user.role == 'lawyer' &&
+      if ((user.role ?? 'user') == 'lawyer' &&
           !user.isVerified &&
-          state.matchedLocation != '/lawyer-setup' &&
+          matchedLocation != '/lawyer-setup' &&
           !isCompletingProfile) {
         return '/lawyer-setup';
       }
