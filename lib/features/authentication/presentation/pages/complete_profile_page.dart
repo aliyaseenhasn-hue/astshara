@@ -77,7 +77,16 @@ class _CompleteProfilePageState extends ConsumerState<CompleteProfilePage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                const SizedBox(height: 40),
+                Align(
+                  alignment: Alignment.topRight,
+                  child: IconButton(
+                    onPressed: () =>
+                        ref.read(authControllerProvider.notifier).logout(),
+                    icon: const Icon(Icons.close),
+                    tooltip: 'إلغاء والعودة لتسجيل الدخول',
+                  ),
+                ),
+                const SizedBox(height: 20),
                 const Icon(Icons.person_add_outlined,
                     size: 80, color: AppColors.primary),
                 const SizedBox(height: 24),
