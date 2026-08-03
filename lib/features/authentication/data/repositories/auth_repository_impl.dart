@@ -40,10 +40,7 @@ class AuthRepositoryImpl implements AuthRepository {
         final lawyerResponse = await _supabase
             .from('lawyer_profiles')
             .select('verified')
-            .eq(
-                'profile_id',
-                profileResponse[
-                    'id']) // استخدام المعرف الأساسي للبروفايل لضمان الدقة
+            .eq('profile_id', user.id) // استخدام معرف المصادقة الموثوق به
             .maybeSingle();
 
         if (lawyerResponse != null) {

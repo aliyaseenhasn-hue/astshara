@@ -9,11 +9,11 @@ class LawyerProfileModel with _$LawyerProfileModel {
   const LawyerProfileModel._();
 
   const factory LawyerProfileModel({
-    required String id,
-    @JsonKey(name: 'profile_id') required String profileId,
+    String? id, // جعلها اختيارية لتجنب الانهيار عند القراءة
+    @JsonKey(name: 'profile_id') String? profileId,
     @JsonKey(name: 'license_number') String? licenseNumber,
     String? bio,
-    String? specialization, // إضافة التخصص هنا
+    String? specialization,
     @JsonKey(name: 'years_experience') int? yearsExperience,
     @JsonKey(name: 'consultation_price', fromJson: _doubleFromPossibleString)
     double? consultationPrice,
@@ -29,11 +29,11 @@ class LawyerProfileModel with _$LawyerProfileModel {
       _$LawyerProfileModelFromJson(json);
 
   LawyerProfile toEntity() => LawyerProfile(
-        id: id,
-        profileId: profileId,
+        id: id ?? '',
+        profileId: profileId ?? '',
         licenseNumber: licenseNumber,
         bio: bio,
-        specialization: specialization, // تعيين التخصص
+        specialization: specialization,
         yearsExperience: yearsExperience,
         consultationPrice: consultationPrice,
         whatsapp: whatsapp,

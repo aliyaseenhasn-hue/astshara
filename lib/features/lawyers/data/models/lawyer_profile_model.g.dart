@@ -9,8 +9,8 @@ part of 'lawyer_profile_model.dart';
 _$LawyerProfileModelImpl _$$LawyerProfileModelImplFromJson(
         Map<String, dynamic> json) =>
     _$LawyerProfileModelImpl(
-      id: json['id'] as String,
-      profileId: json['profile_id'] as String,
+      id: json['id'] as String?,
+      profileId: json['profile_id'] as String?,
       licenseNumber: json['license_number'] as String?,
       bio: json['bio'] as String?,
       specialization: json['specialization'] as String?,

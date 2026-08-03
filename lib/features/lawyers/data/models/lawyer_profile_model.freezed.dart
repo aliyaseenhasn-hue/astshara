@@ -20,14 +20,14 @@ LawyerProfileModel _$LawyerProfileModelFromJson(Map<String, dynamic> json) {
 
 /// @nodoc
 mixin _$LawyerProfileModel {
-  String get id => throw _privateConstructorUsedError;
+  String? get id =>
+      throw _privateConstructorUsedError; // جعلها اختيارية لتجنب الانهيار عند القراءة
   @JsonKey(name: 'profile_id')
-  String get profileId => throw _privateConstructorUsedError;
+  String? get profileId => throw _privateConstructorUsedError;
   @JsonKey(name: 'license_number')
   String? get licenseNumber => throw _privateConstructorUsedError;
   String? get bio => throw _privateConstructorUsedError;
-  String? get specialization =>
-      throw _privateConstructorUsedError; // إضافة التخصص هنا
+  String? get specialization => throw _privateConstructorUsedError;
   @JsonKey(name: 'years_experience')
   int? get yearsExperience => throw _privateConstructorUsedError;
   @JsonKey(name: 'consultation_price', fromJson: _doubleFromPossibleString)
@@ -58,8 +58,8 @@ abstract class $LawyerProfileModelCopyWith<$Res> {
       _$LawyerProfileModelCopyWithImpl<$Res, LawyerProfileModel>;
   @useResult
   $Res call(
-      {String id,
-      @JsonKey(name: 'profile_id') String profileId,
+      {String? id,
+      @JsonKey(name: 'profile_id') String? profileId,
       @JsonKey(name: 'license_number') String? licenseNumber,
       String? bio,
       String? specialization,
@@ -89,8 +89,8 @@ class _$LawyerProfileModelCopyWithImpl<$Res, $Val extends LawyerProfileModel>
   @pragma('vm:prefer-inline')
   @override
   $Res call({
-    Object? id = null,
-    Object? profileId = null,
+    Object? id = freezed,
+    Object? profileId = freezed,
     Object? licenseNumber = freezed,
     Object? bio = freezed,
     Object? specialization = freezed,
@@ -104,14 +104,14 @@ class _$LawyerProfileModelCopyWithImpl<$Res, $Val extends LawyerProfileModel>
     Object? availability = null,
   }) {
     return _then(_value.copyWith(
-      id: null == id
+      id: freezed == id
           ? _value.id
           : id // ignore: cast_nullable_to_non_nullable
-              as String,
-      profileId: null == profileId
+              as String?,
+      profileId: freezed == profileId
           ? _value.profileId
           : profileId // ignore: cast_nullable_to_non_nullable
-              as String,
+              as String?,
       licenseNumber: freezed == licenseNumber
           ? _value.licenseNumber
           : licenseNumber // ignore: cast_nullable_to_non_nullable
@@ -169,8 +169,8 @@ abstract class _$$LawyerProfileModelImplCopyWith<$Res>
   @override
   @useResult
   $Res call(
-      {String id,
-      @JsonKey(name: 'profile_id') String profileId,
+      {String? id,
+      @JsonKey(name: 'profile_id') String? profileId,
       @JsonKey(name: 'license_number') String? licenseNumber,
       String? bio,
       String? specialization,
@@ -198,8 +198,8 @@ class __$$LawyerProfileModelImplCopyWithImpl<$Res>
   @pragma('vm:prefer-inline')
   @override
   $Res call({
-    Object? id = null,
-    Object? profileId = null,
+    Object? id = freezed,
+    Object? profileId = freezed,
     Object? licenseNumber = freezed,
     Object? bio = freezed,
     Object? specialization = freezed,
@@ -213,14 +213,14 @@ class __$$LawyerProfileModelImplCopyWithImpl<$Res>
     Object? availability = null,
   }) {
     return _then(_$LawyerProfileModelImpl(
-      id: null == id
+      id: freezed == id
           ? _value.id
           : id // ignore: cast_nullable_to_non_nullable
-              as String,
-      profileId: null == profileId
+              as String?,
+      profileId: freezed == profileId
           ? _value.profileId
           : profileId // ignore: cast_nullable_to_non_nullable
-              as String,
+              as String?,
       licenseNumber: freezed == licenseNumber
           ? _value.licenseNumber
           : licenseNumber // ignore: cast_nullable_to_non_nullable
@@ -273,8 +273,8 @@ class __$$LawyerProfileModelImplCopyWithImpl<$Res>
 @JsonSerializable()
 class _$LawyerProfileModelImpl extends _LawyerProfileModel {
   const _$LawyerProfileModelImpl(
-      {required this.id,
-      @JsonKey(name: 'profile_id') required this.profileId,
+      {this.id,
+      @JsonKey(name: 'profile_id') this.profileId,
       @JsonKey(name: 'license_number') this.licenseNumber,
       this.bio,
       this.specialization,
@@ -293,10 +293,11 @@ class _$LawyerProfileModelImpl extends _LawyerProfileModel {
       _$$LawyerProfileModelImplFromJson(json);
 
   @override
-  final String id;
+  final String? id;
+// جعلها اختيارية لتجنب الانهيار عند القراءة
   @override
   @JsonKey(name: 'profile_id')
-  final String profileId;
+  final String? profileId;
   @override
   @JsonKey(name: 'license_number')
   final String? licenseNumber;
@@ -304,7 +305,6 @@ class _$LawyerProfileModelImpl extends _LawyerProfileModel {
   final String? bio;
   @override
   final String? specialization;
-// إضافة التخصص هنا
   @override
   @JsonKey(name: 'years_experience')
   final int? yearsExperience;
@@ -401,8 +401,8 @@ class _$LawyerProfileModelImpl extends _LawyerProfileModel {
 
 abstract class _LawyerProfileModel extends LawyerProfileModel {
   const factory _LawyerProfileModel(
-      {required final String id,
-      @JsonKey(name: 'profile_id') required final String profileId,
+      {final String? id,
+      @JsonKey(name: 'profile_id') final String? profileId,
       @JsonKey(name: 'license_number') final String? licenseNumber,
       final String? bio,
       final String? specialization,
@@ -421,17 +421,17 @@ abstract class _LawyerProfileModel extends LawyerProfileModel {
       _$LawyerProfileModelImpl.fromJson;
 
   @override
-  String get id;
+  String? get id; // جعلها اختيارية لتجنب الانهيار عند القراءة
   @override
   @JsonKey(name: 'profile_id')
-  String get profileId;
+  String? get profileId;
   @override
   @JsonKey(name: 'license_number')
   String? get licenseNumber;
   @override
   String? get bio;
   @override
-  String? get specialization; // إضافة التخصص هنا
+  String? get specialization;
   @override
   @JsonKey(name: 'years_experience')
   int? get yearsExperience;
