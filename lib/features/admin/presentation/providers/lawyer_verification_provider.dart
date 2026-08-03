@@ -23,19 +23,12 @@ class LawyerVerification extends _$LawyerVerification {
       for (var json in (lawyerResponse as List)) {
         final lawyer = LawyerProfileModel.fromJson(json).toEntity();
 
-        // 2. البحث عن اسم المحامي - نجرب البحث بكلا المعرفين لضمان النتيجة
-        var profileResponse = await SupabaseConfig.client
+        // 2. البحث عن اسم المحامي - نستخدم id مباشرة لأنه المعرف الأساسي المربوط بـ Auth
+        final profileResponse = await SupabaseConfig.client
             .from('profiles')
             .select('full_name')
-            .eq('auth_id', lawyer.profileId)
+            .eq('id', lawyer.profileId)
             .maybeSingle();
-
-        // إذا لم يجد بالـ auth_id، نجرب المعرف الداخلي id
-        profileResponse ??= await SupabaseConfig.client
-              .from('profiles')
-              .select('full_name')
-              .eq('id', lawyer.profileId)
-              .maybeSingle();
 
         final fullName = profileResponse != null
             ? profileResponse['full_name']
@@ -96,18 +89,12 @@ class LawyerVerification extends _$LawyerVerification {
     required String body,
   }) async {
     try {
-      // البحث عن المعرف الداخلي للمستخدم
-      var userResponse = await SupabaseConfig.client
+      // نستخدم id مباشرة للبحث عن المستخدم
+      final userResponse = await SupabaseConfig.client
           .from('profiles')
           .select('id')
-          .eq('auth_id', profileId)
+          .eq('id', profileId)
           .maybeSingle();
-
-      userResponse ??= await SupabaseConfig.client
-            .from('profiles')
-            .select('id')
-            .eq('id', profileId)
-            .maybeSingle();
 
       if (userResponse != null) {
         await SupabaseConfig.client.from('notifications').insert({
