@@ -9,22 +9,40 @@ Future<ProviderContainer> bootstrap() async {
 
   try {
     // تحميل ملف البيئة مع معالجة الخطأ إذا لم يجد الملف
-    await dotenv
-        .load(fileName: ".env")
-        .catchError((e) => debugPrint('Warning: .env file not found'));
+    try {
+      await dotenv.load(fileName: ".env");
+    } catch (e) {
+      debugPrint('⚠️ Warning: .env file not found - $e');
+    }
 
     // تهيئة Supabase فقط إذا كانت القيم موجودة
-    if (dotenv.env['SUPABASE_URL'] != null &&
-        dotenv.env['SUPABASE_ANON_KEY'] != null) {
-      await SupabaseConfig.initialize();
+    final supabaseUrl = dotenv.env['SUPABASE_URL'];
+    final supabaseAnonKey = dotenv.env['SUPABASE_ANON_KEY'];
+
+    if (supabaseUrl != null && supabaseAnonKey != null) {
+      try {
+        await SupabaseConfig.initialize();
+        debugPrint('✅ Supabase initialized successfully');
+      } catch (e) {
+        debugPrint('❌ Error initializing Supabase: $e');
+        rethrow;
+      }
     } else {
-      debugPrint('Error: Supabase credentials missing in .env');
+      debugPrint('❌ Error: Supabase credentials missing in .env');
+      throw Exception('Supabase credentials not found');
     }
 
     // تهيئة خدمة الإشعارات المحلية
-    await NotificationService.initialize();
+    try {
+      await NotificationService.initialize();
+      debugPrint('✅ Notification service initialized successfully');
+    } catch (e) {
+      debugPrint('⚠️ Warning: Failed to initialize notification service: $e');
+      // لا نوقف التطبيق إذا فشلت خدمة الإشعارات
+    }
   } catch (e) {
-    debugPrint('Bootstrap Error: $e');
+    debugPrint('🚨 Critical Bootstrap Error: $e');
+    rethrow;
   }
 
   final container = ProviderContainer(

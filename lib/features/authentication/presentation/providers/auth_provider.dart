@@ -24,73 +24,139 @@ class AuthController extends _$AuthController {
   FutureOr<void> build() {}
 
   Future<void> signIn(String email, String password) async {
+    if (email.isEmpty || password.isEmpty) {
+      state = AsyncValue.error(
+        Exception('البريد الإلكتروني وكلمة المرور مطلوبة'),
+        StackTrace.current,
+      );
+      return;
+    }
+
     ref.read(globalLoadingProvider.notifier).setLoading(true);
     state = const AsyncLoading();
-    state = await AsyncValue.guard(
-      () => ref
-          .read(authRepositoryProvider)
-          .signInWithEmail(email: email, password: password),
-    );
-    ref.read(globalLoadingProvider.notifier).setLoading(false);
+    try {
+      state = await AsyncValue.guard(
+        () => ref
+            .read(authRepositoryProvider)
+            .signInWithEmail(email: email, password: password),
+      );
+    } finally {
+      ref.read(globalLoadingProvider.notifier).setLoading(false);
+    }
   }
 
   Future<void> signUp(
       String email, String password, String fullName, String role) async {
+    if (email.isEmpty || password.isEmpty || fullName.isEmpty || role.isEmpty) {
+      state = AsyncValue.error(
+        Exception('جميع الحقول مطلوبة'),
+        StackTrace.current,
+      );
+      return;
+    }
+
+    if (password.length < 6) {
+      state = AsyncValue.error(
+        Exception('كلمة المرور يجب أن تكون 6 أحرف على الأقل'),
+        StackTrace.current,
+      );
+      return;
+    }
+
     ref.read(globalLoadingProvider.notifier).setLoading(true);
     state = const AsyncLoading();
-    state = await AsyncValue.guard(
-      () => ref.read(authRepositoryProvider).signUpWithEmail(
-            email: email,
-            password: password,
-            fullName: fullName,
-            role: role,
-          ),
-    );
-    ref.read(globalLoadingProvider.notifier).setLoading(false);
+    try {
+      state = await AsyncValue.guard(
+        () => ref.read(authRepositoryProvider).signUpWithEmail(
+              email: email,
+              password: password,
+              fullName: fullName,
+              role: role,
+            ),
+      );
+    } finally {
+      ref.read(globalLoadingProvider.notifier).setLoading(false);
+    }
   }
 
   Future<void> logout() async {
     ref.read(globalLoadingProvider.notifier).setLoading(true);
-    await ref.read(authRepositoryProvider).signOut();
-    ref.read(globalLoadingProvider.notifier).setLoading(false);
+    try {
+      await ref.read(authRepositoryProvider).signOut();
+      state = const AsyncData(null);
+    } catch (e, st) {
+      state = AsyncValue.error(e, st);
+    } finally {
+      ref.read(globalLoadingProvider.notifier).setLoading(false);
+    }
   }
 
   Future<void> deleteAccount() async {
     ref.read(globalLoadingProvider.notifier).setLoading(true);
     state = const AsyncLoading();
-    state = await AsyncValue.guard(
-      () => ref.read(authRepositoryProvider).deleteAccount(),
-    );
-    ref.read(globalLoadingProvider.notifier).setLoading(false);
+    try {
+      state = await AsyncValue.guard(
+        () => ref.read(authRepositoryProvider).deleteAccount(),
+      );
+      // مسح الحالة بعد الحذف
+      state = const AsyncData(null);
+    } finally {
+      ref.read(globalLoadingProvider.notifier).setLoading(false);
+    }
   }
 
   Future<void> signInWithPhone(String phone) async {
+    if (phone.isEmpty) {
+      state = AsyncValue.error(
+        Exception('رقم الهاتف مطلوب'),
+        StackTrace.current,
+      );
+      return;
+    }
+
     ref.read(globalLoadingProvider.notifier).setLoading(true);
     state = const AsyncLoading();
-    state = await AsyncValue.guard(
-      () => ref.read(authRepositoryProvider).signInWithPhone(phone),
-    );
-    ref.read(globalLoadingProvider.notifier).setLoading(false);
+    try {
+      state = await AsyncValue.guard(
+        () => ref.read(authRepositoryProvider).signInWithPhone(phone),
+      );
+    } finally {
+      ref.read(globalLoadingProvider.notifier).setLoading(false);
+    }
   }
 
   Future<void> signInWithGoogle() async {
     ref.read(globalLoadingProvider.notifier).setLoading(true);
     state = const AsyncLoading();
-    state = await AsyncValue.guard(
-      () => ref.read(authRepositoryProvider).signInWithGoogle(),
-    );
-    ref.read(globalLoadingProvider.notifier).setLoading(false);
+    try {
+      state = await AsyncValue.guard(
+        () => ref.read(authRepositoryProvider).signInWithGoogle(),
+      );
+    } finally {
+      ref.read(globalLoadingProvider.notifier).setLoading(false);
+    }
   }
 
   Future<void> verifyOTP(String phone, String token) async {
+    if (phone.isEmpty || token.isEmpty) {
+      state = AsyncValue.error(
+        Exception('رقم الهاتف والرمز مطلوبان'),
+        StackTrace.current,
+      );
+      return;
+    }
+
     ref.read(globalLoadingProvider.notifier).setLoading(true);
     state = const AsyncLoading();
-    state = await AsyncValue.guard(
-      () => ref
-          .read(authRepositoryProvider)
-          .verifyOTP(phone: phone, token: token),
-    );
-    ref.read(globalLoadingProvider.notifier).setLoading(false);
+    try {
+      state = await AsyncValue.guard(
+        () => ref
+            .read(authRepositoryProvider)
+            .verifyOTP(phone: phone, token: token),
+      );
+    } finally {
+      ref.read(globalLoadingProvider.notifier).setLoading(false);
+    }
   }
 
   Future<void> updateInitialProfile({
@@ -99,18 +165,29 @@ class AuthController extends _$AuthController {
     required String role,
     bool onboardingCompleted = true,
   }) async {
+    if (fullName.isEmpty || role.isEmpty) {
+      state = AsyncValue.error(
+        Exception('الاسم الكامل والدور مطلوبان'),
+        StackTrace.current,
+      );
+      return;
+    }
+
     ref.read(globalLoadingProvider.notifier).setLoading(true);
     state = const AsyncLoading();
-    state = await AsyncValue.guard(() async {
-      await ref.read(authRepositoryProvider).updateProfile(
-            fullName: fullName,
-            email: email,
-            role: role,
-            onboardingCompleted: onboardingCompleted,
-          );
-      // إعادة تحميل حالة المستخدم بعد التحديث
-      ref.invalidate(authStateChangesProvider);
-    });
-    ref.read(globalLoadingProvider.notifier).setLoading(false);
+    try {
+      state = await AsyncValue.guard(() async {
+        await ref.read(authRepositoryProvider).updateProfile(
+              fullName: fullName,
+              email: email,
+              role: role,
+              onboardingCompleted: onboardingCompleted,
+            );
+        // إعادة تحميل حالة المستخدم بعد التحديث
+        ref.invalidate(authStateChangesProvider);
+      });
+    } finally {
+      ref.read(globalLoadingProvider.notifier).setLoading(false);
+    }
   }
 }

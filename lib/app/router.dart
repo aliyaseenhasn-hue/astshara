@@ -68,8 +68,7 @@ GoRouter router(RouterRef ref) {
 
       if (user != null) {
         debugPrint('--- AUTH SUCCESS ---');
-        debugPrint(
-            'User: ${user.fullName ?? "No Name"}, Role: ${user.role ?? "No Role"}');
+        debugPrint('User: ${user.fullName ?? "No Name"}, Role: ${user.role}');
       }
 
       if (user == null) {
@@ -78,22 +77,22 @@ GoRouter router(RouterRef ref) {
       }
 
       // توجيه الأدمن تلقائياً
-      if ((user.role ?? 'user') == 'admin') {
+      if (user.role == 'admin') {
         if (!isAdminPage) return '/admin';
         return null;
       }
 
       // توجيه المستخدم الجديد لإكمال بياناته
-      if ((user.role ?? 'user') != 'admin' && !user.isOnboardingComplete) {
+      if (user.role != 'admin' && !user.isOnboardingComplete) {
         if (isCompletingProfile || isOnboardingLawyer) return null;
         return '/complete-profile';
       }
 
       // حماية صفحات الأدمن
-      if (isAdminPage && (user.role ?? 'user') != 'admin') return '/';
+      if (isAdminPage && user.role != 'admin') return '/';
 
       // توجيه المحامي غير الموثق
-      if ((user.role ?? 'user') == 'lawyer' && !user.isVerified) {
+      if (user.role == 'lawyer' && !user.isVerified) {
         // التحقق مما إذا كان المحامي قد تم رفضه (أي لا يوجد له سجل في lawyer_profiles)
         // في هذه الحالة، سنوجهه لصفحة الإعداد ليعيد المحاولة بدلاً من صفحة الانتظار
         if (matchedLocation == '/lawyer-setup') return null;
