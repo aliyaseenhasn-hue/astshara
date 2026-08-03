@@ -253,6 +253,9 @@ class _LawyerOnboardingPageState extends ConsumerState<LawyerOnboardingPage> {
                       style: TextStyle(color: AppColors.outline)),
                 ],
               )
+            : ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: Image.memory(_idCardBytes!, fit: BoxFit.cover)),
       ),
     );
   }

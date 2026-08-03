@@ -43,7 +43,7 @@ class AuthRepositoryImpl implements AuthRepository {
           .maybeSingle();
 
       if (profileResponse == null) {
-        debugPrint('Profile not found in database for auth_id: ${user.id}');
+        debugPrint('Profile not found in database for user_id: ${user.id}');
         return AppUser(
           id: user.id,
           email: user.email,

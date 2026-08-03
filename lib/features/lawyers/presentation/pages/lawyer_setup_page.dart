@@ -60,8 +60,10 @@ class _LawyerSetupPageState extends ConsumerState<LawyerSetupPage> {
             whatsapp: _whatsappController.text.trim(),
             licenseNumber: _licenseController.text.trim(),
             bio: _bioController.text.trim(),
-            yearsExperience: int.tryParse(_experienceController.text.trim()) ?? 0,
-            consultationPrice: double.tryParse(_priceController.text.trim()) ?? 0,
+            yearsExperience:
+                int.tryParse(_experienceController.text.trim()) ?? 0,
+            consultationPrice:
+                double.tryParse(_priceController.text.trim()) ?? 0,
             profilePhotoBytes: _profilePhotoBytes,
             idCardBytes: _idCardBytes,
           );
@@ -177,8 +179,9 @@ class _LawyerSetupPageState extends ConsumerState<LawyerSetupPage> {
                             ])
                       : ClipRRect(
                           borderRadius: BorderRadius.circular(AppSizes.r8),
-                          child:
-                              Image.memory(_idCardBytes!, fit: BoxFit.cover)),
+                          child: _idCardBytes != null
+                              ? Image.memory(_idCardBytes!, fit: BoxFit.cover)
+                              : const SizedBox()),
                 ),
               ),
               const SizedBox(height: AppSizes.p32),
