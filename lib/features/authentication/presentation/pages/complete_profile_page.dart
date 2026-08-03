@@ -73,57 +73,120 @@ class _CompleteProfilePageState extends ConsumerState<CompleteProfilePage> {
   Future<void> _submit() async {
     if (_formKey.currentState?.validate() ?? false) {
       final authId = Supabase.instance.client.auth.currentUser?.id;
-      if (authId == null) return;
+      if (authId == null) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('❌ خطأ: لم نتمكن من الحصول على معرف المستخدم'),
+              backgroundColor: AppColors.error,
+            ),
+          );
+        }
+        return;
+      }
 
       if (_selectedRole == 'lawyer') {
         if (_profilePhotoBytes == null || _idCardBytes == null) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-                content: Text('يرجى رفع الصورة الشخصية وصورة الهوية'),
-                backgroundColor: AppColors.error),
+              content: Text('⚠️ يرجى رفع الصورة الشخصية وصورة الهوية'),
+              backgroundColor: AppColors.error,
+            ),
           );
           return;
         }
 
-        await ref.read(lawyerSetupControllerProvider.notifier).completeProfile(
-              profileId: authId,
-              fullName: _nameController.text.trim(),
-              email: _emailController.text.trim(),
-              whatsapp: _whatsappController.text.trim(),
-              profilePhotoBytes: _profilePhotoBytes,
-              idCardBytes: _idCardBytes,
-            );
+        try {
+          debugPrint('📤 بدء عملية إرسال بيانات المحامي...');
 
-        final state = ref.read(lawyerSetupControllerProvider);
-        if (state.hasError) {
+          // استدعاء العملية
+          await ref
+              .read(lawyerSetupControllerProvider.notifier)
+              .completeProfile(
+                profileId: authId,
+                fullName: _nameController.text.trim(),
+                email: _emailController.text.trim(),
+                whatsapp: _whatsappController.text.trim(),
+                profilePhotoBytes: _profilePhotoBytes,
+                idCardBytes: _idCardBytes,
+              );
+
+          // انتظر قليلاً للتأكد من تحديث الحالة
+          await Future.delayed(const Duration(milliseconds: 500));
+
+          if (mounted) {
+            // اقرأ الحالة بعد التأكد من التحديث
+            final state = ref.read(lawyerSetupControllerProvider);
+            debugPrint('📊 حالة النتيجة: ${state.runtimeType}');
+
+            if (state.hasError) {
+              debugPrint('❌ خطأ: ${state.error}');
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('❌ خطأ أثناء الحفظ: ${state.error}'),
+                  backgroundColor: AppColors.error,
+                  duration: const Duration(seconds: 5),
+                ),
+              );
+            } else {
+              debugPrint('✅ تم الحفظ بنجاح');
+              _showSuccessDialog();
+            }
+          }
+        } catch (e) {
+          debugPrint('🚨 استثناء: $e');
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                  content: Text('خطأ أثناء الحفظ: ${state.error}'),
-                  backgroundColor: AppColors.error),
+                content: Text('❌ خطأ غير متوقع: $e'),
+                backgroundColor: AppColors.error,
+                duration: const Duration(seconds: 5),
+              ),
             );
           }
-        } else {
-          if (mounted) _showSuccessDialog();
         }
       } else {
-        await ref.read(authControllerProvider.notifier).updateInitialProfile(
-              fullName: _nameController.text.trim(),
-              email: _emailController.text.trim(),
-              role: _selectedRole,
-            );
+        try {
+          debugPrint('📤 بدء تحديث بيانات المستخدم العادي...');
 
-        final authState = ref.read(authControllerProvider);
-        if (authState.hasError) {
+          await ref.read(authControllerProvider.notifier).updateInitialProfile(
+                fullName: _nameController.text.trim(),
+                email: _emailController.text.trim(),
+                role: _selectedRole,
+              );
+
+          // انتظر قليلاً للتأكد من تحديث الحالة
+          await Future.delayed(const Duration(milliseconds: 500));
+
+          if (mounted) {
+            final authState = ref.read(authControllerProvider);
+            debugPrint('📊 حالة المستخدم: ${authState.runtimeType}');
+
+            if (authState.hasError) {
+              debugPrint('❌ خطأ: ${authState.error}');
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('❌ خطأ أثناء الحفظ: ${authState.error}'),
+                  backgroundColor: AppColors.error,
+                  duration: const Duration(seconds: 5),
+                ),
+              );
+            } else {
+              debugPrint('✅ تم الحفظ والدخول بنجاح');
+              context.go('/');
+            }
+          }
+        } catch (e) {
+          debugPrint('🚨 استثناء: $e');
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                  content: Text('خطأ أثناء الحفظ: ${authState.error}'),
-                  backgroundColor: AppColors.error),
+                content: Text('❌ خطأ غير متوقع: $e'),
+                backgroundColor: AppColors.error,
+                duration: const Duration(seconds: 5),
+              ),
             );
           }
-        } else {
-          if (mounted) context.go('/');
         }
       }
     }
