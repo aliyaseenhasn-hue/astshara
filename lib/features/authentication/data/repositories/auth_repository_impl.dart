@@ -75,12 +75,20 @@ class AuthRepositoryImpl implements AuthRepository {
       }
 
       final appUser = AppUserModel.fromJson(profileResponse).toEntity();
+
+      // بما أن عمود onboarding_completed مفقود من قاعدة البيانات، سنعتمد على منطق بديل:
+      // إذا كان الاسم مسجلاً وغير مساوٍ للقيمة الافتراضية، نعتبر البيانات مكتملة.
+      final bool isActuallyOnboarded = appUser.fullName != null &&
+          appUser.fullName != 'مستخدم جديد' &&
+          appUser.fullName!.trim().isNotEmpty;
+
       debugPrint(
-          'DB Profile: ${profileResponse['full_name']}, Onboarding: ${profileResponse['onboarding_completed']}');
+          'DB Profile: ${profileResponse['full_name']}, Onboarding Calc: $isActuallyOnboarded');
 
       return appUser.copyWith(
         isVerified: isVerified,
         hasProfessionalProfile: hasProfessionalProfile,
+        isOnboardingComplete: isActuallyOnboarded,
       );
     } catch (e) {
       debugPrint('Error fetching user profile from DB: $e');
@@ -180,9 +188,12 @@ class AuthRepositoryImpl implements AuthRepository {
     if (avatarUrl != null && avatarUrl.trim().isNotEmpty) {
       data['avatar_url'] = avatarUrl.trim();
     }
+    // تم تعطيل إرسال onboarding_completed لأن العمود غير موجود في المخطط الفعلي
+    /* 
     if (onboardingCompleted != null) {
       data['onboarding_completed'] = onboardingCompleted;
     }
+    */
 
     // ملاحظة: لا نرسل phone هنا لأن Supabase Auth يديره تلقائياً
     // وإرساله قد يسبب تعارضاً مع قيد UNIQUE في جدول profiles
