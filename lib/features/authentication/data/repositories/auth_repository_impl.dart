@@ -193,27 +193,29 @@ class AuthRepositoryImpl implements AuthRepository {
       return;
     }
 
-    debugPrint('📝 بيانات التحديث: $data');
-    debugPrint('🔑 المعرف: ${user.id}');
+    debugPrint('📝 بيانات التحديث المرسلة: $data');
+    debugPrint('🔑 معرف المستخدم: ${user.id}');
 
     try {
-      // السجل موجود بفضل الـ Trigger handle_new_user - نستخدم update مباشرة
-      // نستخدم id لأن سياسة RLS "Self Manage" تتحقق من auth.uid() = id
       await _supabase
           .from('profiles')
-          .update({
-            ...data,
-            'updated_at': DateTime.now().toIso8601String(),
-          })
-          .eq('id', user.id)
-          .then((value) {
-            debugPrint('✅ تم تحديث الملف الشخصي بنجاح');
-          });
+          .update(
+              data) // نرسل البيانات فقط بدون updated_at يدوياً لنرى إن كان السبب
+          .eq('id', user.id);
+
+      debugPrint('✅ تم تحديث الملف الشخصي بنجاح');
 
       // بثّ الحالة المحدثة للمستخدم
       await refreshUser();
+    } on PostgrestException catch (e) {
+      debugPrint('❌ خطأ Supabase (400):');
+      debugPrint('Message: ${e.message}');
+      debugPrint('Details: ${e.details}');
+      debugPrint('Hint: ${e.hint}');
+      debugPrint('Code: ${e.code}');
+      rethrow;
     } catch (e) {
-      debugPrint('❌ خطأ في تحديث الملف: $e');
+      debugPrint('❌ خطأ غير متوقع في تحديث الملف: $e');
       rethrow;
     }
   }
