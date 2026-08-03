@@ -155,29 +155,60 @@ class AuthRepositoryImpl implements AuthRepository {
     bool? onboardingCompleted,
   }) async {
     final user = _supabase.auth.currentUser;
-    if (user == null) return;
+    if (user == null) {
+      throw Exception('❌ لا يوجد مستخدم مسجل دخول');
+    }
 
     final data = <String, dynamic>{};
-    if (fullName != null && fullName.isNotEmpty) data['full_name'] = fullName;
-    if (email != null && email.isNotEmpty) data['email'] = email;
-    if (role != null && role.isNotEmpty) data['role'] = role;
-    if (avatarUrl != null && avatarUrl.isNotEmpty) data['avatar_url'] = avatarUrl;
+
+    // إضافة البيانات فقط إذا كانت غير فارغة
+    if (fullName != null && fullName.trim().isNotEmpty) {
+      data['full_name'] = fullName.trim();
+    }
+    if (email != null && email.trim().isNotEmpty) {
+      data['email'] = email.trim();
+    }
+    if (role != null && role.trim().isNotEmpty) {
+      data['role'] = role.trim();
+    }
+    if (avatarUrl != null && avatarUrl.trim().isNotEmpty) {
+      data['avatar_url'] = avatarUrl.trim();
+    }
     if (onboardingCompleted != null) {
       data['onboarding_completed'] = onboardingCompleted;
     }
-    if (user.phone != null && user.phone!.isNotEmpty) data['phone'] = user.phone;
 
-    // السجل موجود بفضل الـ Trigger handle_new_user - نستخدم update مباشرة
-    await _supabase
-        .from('profiles')
-        .update({
-          ...data,
-          'updated_at': DateTime.now().toIso8601String(),
-        })
-        .eq('auth_id', user.id);
+    // ملاحظة: لا نرسل phone هنا لأن Supabase Auth يديره تلقائياً
+    // وإرساله قد يسبب تعارضاً مع قيد UNIQUE في جدول profiles
 
-    // بثّ الحالة المحدثة للمستخدم
-    await refreshUser();
+    // تأكد أن هناك بيانات للتحديث
+    if (data.isEmpty) {
+      debugPrint('⚠️ لا توجد بيانات للتحديث');
+      return;
+    }
+
+    debugPrint('📝 بيانات التحديث: $data');
+    debugPrint('🔑 المعرف: ${user.id}');
+
+    try {
+      // السجل موجود بفضل الـ Trigger handle_new_user - نستخدم update مباشرة
+      await _supabase
+          .from('profiles')
+          .update({
+            ...data,
+            'updated_at': DateTime.now().toIso8601String(),
+          })
+          .eq('auth_id', user.id)
+          .then((value) {
+            debugPrint('✅ تم تحديث الملف الشخصي بنجاح');
+          });
+
+      // بثّ الحالة المحدثة للمستخدم
+      await refreshUser();
+    } catch (e) {
+      debugPrint('❌ خطأ في تحديث الملف: $e');
+      rethrow;
+    }
   }
 
   // بثّ حالة المستخدم المحدثة بعد تعديل البروفايل
