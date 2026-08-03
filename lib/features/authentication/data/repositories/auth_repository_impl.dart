@@ -56,15 +56,20 @@ class AuthRepositoryImpl implements AuthRepository {
       // 2. التحقق من حالة التوثيق في جدول lawyer_profiles إذا كان المستخدم محامياً
       bool isVerified = false;
       bool hasProfessionalProfile = false;
-      if (profileResponse['role'] == 'lawyer') {
+
+      final dynamic roleValue = profileResponse['role'];
+      final String roleStr =
+          (roleValue is String) ? roleValue : (roleValue?.toString() ?? 'user');
+
+      if (roleStr == 'lawyer') {
         final lawyerResponse = await _supabase
             .from('lawyer_profiles')
             .select('verified')
-            .eq('profile_id', user.id) // استخدام معرف المصادقة الموثوق به
+            .eq('profile_id', user.id)
             .maybeSingle();
 
         if (lawyerResponse != null) {
-          isVerified = lawyerResponse['verified'] ?? false;
+          isVerified = (lawyerResponse['verified'] == true);
           hasProfessionalProfile = true;
         }
       }
