@@ -123,7 +123,7 @@ CREATE TRIGGER on_auth_user_created AFTER INSERT ON auth.users FOR EACH ROW EXEC
 CREATE OR REPLACE FUNCTION public.is_admin()
 RETURNS boolean AS $$
 BEGIN
-  RETURN (SELECT (role = 'admin') FROM public.profiles WHERE id = auth.uid());
+  RETURN (SELECT (role = 'admin') FROM public.profiles WHERE id = auth.uid() OR auth_id = auth.uid());
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
@@ -148,8 +148,8 @@ ALTER TABLE public.notifications ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.reviews ENABLE ROW LEVEL SECURITY;
 
 -- Policies for Profiles
-CREATE POLICY "Public Lawyers" ON public.profiles FOR SELECT USING (role = 'lawyer' OR auth.uid() = id OR is_admin());
-CREATE POLICY "Self Manage" ON public.profiles FOR ALL USING (auth.uid() = id);
+CREATE POLICY "Public Lawyers" ON public.profiles FOR SELECT USING (role = 'lawyer' OR auth.uid() = id OR auth.uid() = auth_id OR is_admin());
+CREATE POLICY "Self Manage" ON public.profiles FOR ALL USING (auth.uid() = id OR auth.uid() = auth_id);
 
 -- Policies for Lawyer Profiles
 -- العملاء يرون المحامين الموثقين فقط، والمحامي يرى ملفه، والأدمن يرى الكل
