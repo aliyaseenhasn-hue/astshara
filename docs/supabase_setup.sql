@@ -148,33 +148,44 @@ ALTER TABLE public.notifications ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.reviews ENABLE ROW LEVEL SECURITY;
 
 -- Policies for Profiles
+DROP POLICY IF EXISTS "Public Lawyers" ON public.profiles;
 CREATE POLICY "Public Lawyers" ON public.profiles FOR SELECT USING (role = 'lawyer' OR auth.uid() = id OR auth.uid() = auth_id OR is_admin());
+DROP POLICY IF EXISTS "Self Manage" ON public.profiles;
 CREATE POLICY "Self Manage" ON public.profiles FOR ALL USING (auth.uid() = id OR auth.uid() = auth_id);
 
 -- Policies for Lawyer Profiles
 -- العملاء يرون المحامين الموثقين فقط، والمحامي يرى ملفه، والأدمن يرى الكل
+DROP POLICY IF EXISTS "View Verified Lawyers" ON public.lawyer_profiles;
 CREATE POLICY "View Verified Lawyers" ON public.lawyer_profiles FOR SELECT USING (
     verified = true OR auth.uid() = profile_id OR is_admin()
 );
+DROP POLICY IF EXISTS "Manage Own Lawyer Profile" ON public.lawyer_profiles;
 CREATE POLICY "Manage Own Lawyer Profile" ON public.lawyer_profiles FOR ALL USING (auth.uid() = profile_id);
+DROP POLICY IF EXISTS "Admin Manage All" ON public.lawyer_profiles;
 CREATE POLICY "Admin Manage All" ON public.lawyer_profiles FOR ALL USING (is_admin());
 
 -- Policies for Bookings
+DROP POLICY IF EXISTS "Access Own Bookings" ON public.bookings;
 CREATE POLICY "Access Own Bookings" ON public.bookings FOR ALL USING (auth.uid() IN (SELECT auth_id FROM public.profiles WHERE id = user_id OR id = lawyer_id) OR is_admin());
 
 -- Policies for Reviews
+DROP POLICY IF EXISTS "View Reviews" ON public.reviews;
 CREATE POLICY "View Reviews" ON public.reviews FOR SELECT USING (true);
+DROP POLICY IF EXISTS "Insert Own Review" ON public.reviews;
 CREATE POLICY "Insert Own Review" ON public.reviews FOR INSERT WITH CHECK (auth.uid() = user_id);
+DROP POLICY IF EXISTS "Manage Own Review" ON public.reviews;
 CREATE POLICY "Manage Own Review" ON public.reviews FOR UPDATE USING (auth.uid() = user_id);
 
 -- Storage Buckets & Policies
 -- Create buckets if not exist (Run this in Supabase Storage UI or via RPC)
 -- Policy: Anyone logged in can upload to their own folder in avatars, lawyer_documents, receipts
+DROP POLICY IF EXISTS "Storage Upload Policy" ON storage.objects;
 CREATE POLICY "Storage Upload Policy" ON storage.objects FOR INSERT WITH CHECK (
     bucket_id IN ('avatars', 'lawyer_documents', 'receipts')
     AND (auth.uid()::text = (storage.foldername(name))[1])
 );
 -- فقط المالك أو الأدمن يمكنهم رؤية الملفات
+DROP POLICY IF EXISTS "Storage View Policy" ON storage.objects;
 CREATE POLICY "Storage View Policy" ON storage.objects FOR SELECT USING (
     auth.uid()::text = (storage.foldername(name))[1] OR is_admin()
 );
