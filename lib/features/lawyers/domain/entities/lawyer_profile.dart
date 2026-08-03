@@ -13,6 +13,8 @@ class LawyerProfile with _$LawyerProfile {
     String? specialization, // إضافة التخصص
     int? yearsExperience,
     double? consultationPrice,
+    String? whatsapp,
+    String? idCardUrl,
     @Default(0.0) double rating,
     @Default(0) int reviewCount,
     @Default(false) bool verified,

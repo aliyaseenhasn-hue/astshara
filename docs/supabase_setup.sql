@@ -16,6 +16,7 @@ CREATE TABLE public.profiles (
     avatar_url TEXT,
     city TEXT,
     is_verified BOOLEAN DEFAULT false,
+    onboarding_completed BOOLEAN DEFAULT false, -- أضيف هنا
     status account_status DEFAULT 'active',
     created_at TIMESTAMPTZ DEFAULT now(),
     updated_at TIMESTAMPTZ DEFAULT now()
@@ -29,6 +30,8 @@ CREATE TABLE public.lawyer_profiles (
     bio TEXT,
     years_experience INT,
     consultation_price DECIMAL(12,2),
+    whatsapp TEXT, -- أضيف هنا
+    id_card_url TEXT, -- أضيف هنا
     rating DECIMAL(3,2) DEFAULT 0,
     review_count INT DEFAULT 0,
     verified BOOLEAN DEFAULT false,
@@ -52,8 +55,9 @@ CREATE POLICY "المستخدم يمكنه تعديل بياناته فقط" ON 
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS trigger AS $$
 BEGIN
-  INSERT INTO public.profiles (auth_id, full_name, phone, email, role)
+  INSERT INTO public.profiles (id, auth_id, full_name, phone, email, role)
   VALUES (
+    new.id, -- جعل المعرف الأساسي هو نفسه معرف المصادقة لتوحيد الجداول
     new.id,
     new.raw_user_meta_data->>'full_name',
     new.phone,

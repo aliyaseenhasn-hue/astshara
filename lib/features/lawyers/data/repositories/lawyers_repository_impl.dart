@@ -11,24 +11,34 @@ class LawyersRepositoryImpl implements LawyersRepository {
 
   @override
   Future<List<LawyerProfile>> getLawyers() async {
-    final response =
-        await _supabase.from('lawyer_profiles').select().eq('verified', true);
+    final response = await _supabase
+        .from('lawyer_profiles')
+        .select('*, profiles(full_name)')
+        .eq('verified', true);
 
-    return (response as List)
-        .map((json) => LawyerProfileModel.fromJson(json).toEntity())
-        .toList();
+    return (response as List).map((json) {
+      final model = LawyerProfileModel.fromJson(json);
+      final profile = json['profiles'] as Map<String, dynamic>?;
+      return model.toEntity().copyWith(
+            fullName: profile?['full_name'],
+          );
+    }).toList();
   }
 
   @override
   Future<LawyerProfile?> getLawyerProfile(String profileId) async {
     final response = await _supabase
         .from('lawyer_profiles')
-        .select()
+        .select('*, profiles(full_name)')
         .eq('profile_id', profileId)
         .maybeSingle();
 
     if (response == null) return null;
-    return LawyerProfileModel.fromJson(response).toEntity();
+    final model = LawyerProfileModel.fromJson(response);
+    final profile = response['profiles'] as Map<String, dynamic>?;
+    return model.toEntity().copyWith(
+          fullName: profile?['full_name'],
+        );
   }
 
   @override
@@ -39,23 +49,20 @@ class LawyersRepositoryImpl implements LawyersRepository {
       'bio': profile.bio,
       'years_experience': profile.yearsExperience,
       'consultation_price': profile.consultationPrice,
+      'whatsapp': profile.whatsapp,
+      'id_card_url': profile.idCardUrl,
       'availability': profile.availability,
     });
   }
 
   @override
-  Future<String> uploadDocument(String path, String fileName) async {
+  Future<String> uploadFile(
+      Uint8List bytes, String fileName, String bucket) async {
     final user = _supabase.auth.currentUser;
-    // تنظيم الملفات داخل مجلدات باسم المعرف الخاص بالمستخدم لسهولة تطبيق RLS
     final filePath = '${user?.id}/$fileName';
 
-    await _supabase.storage
-        .from('lawyer_documents')
-        .uploadBinary(filePath, Uint8List(0));
+    await _supabase.storage.from(bucket).uploadBinary(filePath, bytes);
 
-    // توليد رابط موقع (Signed URL) صالح لمدة ساعة واحدة
-    return _supabase.storage
-        .from('lawyer_documents')
-        .createSignedUrl(filePath, 3600);
+    return _supabase.storage.from(bucket).createSignedUrl(filePath, 3600);
   }
 }

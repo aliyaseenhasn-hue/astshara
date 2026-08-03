@@ -32,6 +32,8 @@ mixin _$AppUserModel {
   @JsonKey(name: 'is_verified')
   bool get isVerified => throw _privateConstructorUsedError;
   bool get hasProfessionalProfile => throw _privateConstructorUsedError;
+  @JsonKey(name: 'onboarding_completed')
+  bool get isOnboardingComplete => throw _privateConstructorUsedError;
 
   /// Serializes this AppUserModel to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
@@ -57,7 +59,8 @@ abstract class $AppUserModelCopyWith<$Res> {
       @JsonKey(name: 'avatar_url') String? avatarUrl,
       String role,
       @JsonKey(name: 'is_verified') bool isVerified,
-      bool hasProfessionalProfile});
+      bool hasProfessionalProfile,
+      @JsonKey(name: 'onboarding_completed') bool isOnboardingComplete});
 }
 
 /// @nodoc
@@ -83,6 +86,7 @@ class _$AppUserModelCopyWithImpl<$Res, $Val extends AppUserModel>
     Object? role = null,
     Object? isVerified = null,
     Object? hasProfessionalProfile = null,
+    Object? isOnboardingComplete = null,
   }) {
     return _then(_value.copyWith(
       id: null == id
@@ -117,6 +121,10 @@ class _$AppUserModelCopyWithImpl<$Res, $Val extends AppUserModel>
           ? _value.hasProfessionalProfile
           : hasProfessionalProfile // ignore: cast_nullable_to_non_nullable
               as bool,
+      isOnboardingComplete: null == isOnboardingComplete
+          ? _value.isOnboardingComplete
+          : isOnboardingComplete // ignore: cast_nullable_to_non_nullable
+              as bool,
     ) as $Val);
   }
 }
@@ -137,7 +145,8 @@ abstract class _$$AppUserModelImplCopyWith<$Res>
       @JsonKey(name: 'avatar_url') String? avatarUrl,
       String role,
       @JsonKey(name: 'is_verified') bool isVerified,
-      bool hasProfessionalProfile});
+      bool hasProfessionalProfile,
+      @JsonKey(name: 'onboarding_completed') bool isOnboardingComplete});
 }
 
 /// @nodoc
@@ -161,6 +170,7 @@ class __$$AppUserModelImplCopyWithImpl<$Res>
     Object? role = null,
     Object? isVerified = null,
     Object? hasProfessionalProfile = null,
+    Object? isOnboardingComplete = null,
   }) {
     return _then(_$AppUserModelImpl(
       id: null == id
@@ -195,6 +205,10 @@ class __$$AppUserModelImplCopyWithImpl<$Res>
           ? _value.hasProfessionalProfile
           : hasProfessionalProfile // ignore: cast_nullable_to_non_nullable
               as bool,
+      isOnboardingComplete: null == isOnboardingComplete
+          ? _value.isOnboardingComplete
+          : isOnboardingComplete // ignore: cast_nullable_to_non_nullable
+              as bool,
     ));
   }
 }
@@ -210,7 +224,8 @@ class _$AppUserModelImpl extends _AppUserModel {
       @JsonKey(name: 'avatar_url') this.avatarUrl,
       this.role = 'user',
       @JsonKey(name: 'is_verified') this.isVerified = false,
-      this.hasProfessionalProfile = false})
+      this.hasProfessionalProfile = false,
+      @JsonKey(name: 'onboarding_completed') this.isOnboardingComplete = false})
       : super._();
 
   factory _$AppUserModelImpl.fromJson(Map<String, dynamic> json) =>
@@ -238,10 +253,13 @@ class _$AppUserModelImpl extends _AppUserModel {
   @override
   @JsonKey()
   final bool hasProfessionalProfile;
+  @override
+  @JsonKey(name: 'onboarding_completed')
+  final bool isOnboardingComplete;
 
   @override
   String toString() {
-    return 'AppUserModel(id: $id, email: $email, fullName: $fullName, phone: $phone, avatarUrl: $avatarUrl, role: $role, isVerified: $isVerified, hasProfessionalProfile: $hasProfessionalProfile)';
+    return 'AppUserModel(id: $id, email: $email, fullName: $fullName, phone: $phone, avatarUrl: $avatarUrl, role: $role, isVerified: $isVerified, hasProfessionalProfile: $hasProfessionalProfile, isOnboardingComplete: $isOnboardingComplete)';
   }
 
   @override
@@ -260,13 +278,24 @@ class _$AppUserModelImpl extends _AppUserModel {
             (identical(other.isVerified, isVerified) ||
                 other.isVerified == isVerified) &&
             (identical(other.hasProfessionalProfile, hasProfessionalProfile) ||
-                other.hasProfessionalProfile == hasProfessionalProfile));
+                other.hasProfessionalProfile == hasProfessionalProfile) &&
+            (identical(other.isOnboardingComplete, isOnboardingComplete) ||
+                other.isOnboardingComplete == isOnboardingComplete));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
-  int get hashCode => Object.hash(runtimeType, id, email, fullName, phone,
-      avatarUrl, role, isVerified, hasProfessionalProfile);
+  int get hashCode => Object.hash(
+      runtimeType,
+      id,
+      email,
+      fullName,
+      phone,
+      avatarUrl,
+      role,
+      isVerified,
+      hasProfessionalProfile,
+      isOnboardingComplete);
 
   /// Create a copy of AppUserModel
   /// with the given fields replaced by the non-null parameter values.
@@ -293,7 +322,9 @@ abstract class _AppUserModel extends AppUserModel {
       @JsonKey(name: 'avatar_url') final String? avatarUrl,
       final String role,
       @JsonKey(name: 'is_verified') final bool isVerified,
-      final bool hasProfessionalProfile}) = _$AppUserModelImpl;
+      final bool hasProfessionalProfile,
+      @JsonKey(name: 'onboarding_completed')
+      final bool isOnboardingComplete}) = _$AppUserModelImpl;
   const _AppUserModel._() : super._();
 
   factory _AppUserModel.fromJson(Map<String, dynamic> json) =
@@ -318,6 +349,9 @@ abstract class _AppUserModel extends AppUserModel {
   bool get isVerified;
   @override
   bool get hasProfessionalProfile;
+  @override
+  @JsonKey(name: 'onboarding_completed')
+  bool get isOnboardingComplete;
 
   /// Create a copy of AppUserModel
   /// with the given fields replaced by the non-null parameter values.

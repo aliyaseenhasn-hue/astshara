@@ -30,6 +30,9 @@ mixin _$LawyerProfileModel {
   int? get yearsExperience => throw _privateConstructorUsedError;
   @JsonKey(name: 'consultation_price')
   double? get consultationPrice => throw _privateConstructorUsedError;
+  String? get whatsapp => throw _privateConstructorUsedError;
+  @JsonKey(name: 'id_card_url')
+  String? get idCardUrl => throw _privateConstructorUsedError;
   double get rating => throw _privateConstructorUsedError;
   @JsonKey(name: 'review_count')
   int get reviewCount => throw _privateConstructorUsedError;
@@ -59,6 +62,8 @@ abstract class $LawyerProfileModelCopyWith<$Res> {
       String? bio,
       @JsonKey(name: 'years_experience') int? yearsExperience,
       @JsonKey(name: 'consultation_price') double? consultationPrice,
+      String? whatsapp,
+      @JsonKey(name: 'id_card_url') String? idCardUrl,
       double rating,
       @JsonKey(name: 'review_count') int reviewCount,
       bool verified,
@@ -86,6 +91,8 @@ class _$LawyerProfileModelCopyWithImpl<$Res, $Val extends LawyerProfileModel>
     Object? bio = freezed,
     Object? yearsExperience = freezed,
     Object? consultationPrice = freezed,
+    Object? whatsapp = freezed,
+    Object? idCardUrl = freezed,
     Object? rating = null,
     Object? reviewCount = null,
     Object? verified = null,
@@ -116,6 +123,14 @@ class _$LawyerProfileModelCopyWithImpl<$Res, $Val extends LawyerProfileModel>
           ? _value.consultationPrice
           : consultationPrice // ignore: cast_nullable_to_non_nullable
               as double?,
+      whatsapp: freezed == whatsapp
+          ? _value.whatsapp
+          : whatsapp // ignore: cast_nullable_to_non_nullable
+              as String?,
+      idCardUrl: freezed == idCardUrl
+          ? _value.idCardUrl
+          : idCardUrl // ignore: cast_nullable_to_non_nullable
+              as String?,
       rating: null == rating
           ? _value.rating
           : rating // ignore: cast_nullable_to_non_nullable
@@ -151,6 +166,8 @@ abstract class _$$LawyerProfileModelImplCopyWith<$Res>
       String? bio,
       @JsonKey(name: 'years_experience') int? yearsExperience,
       @JsonKey(name: 'consultation_price') double? consultationPrice,
+      String? whatsapp,
+      @JsonKey(name: 'id_card_url') String? idCardUrl,
       double rating,
       @JsonKey(name: 'review_count') int reviewCount,
       bool verified,
@@ -176,6 +193,8 @@ class __$$LawyerProfileModelImplCopyWithImpl<$Res>
     Object? bio = freezed,
     Object? yearsExperience = freezed,
     Object? consultationPrice = freezed,
+    Object? whatsapp = freezed,
+    Object? idCardUrl = freezed,
     Object? rating = null,
     Object? reviewCount = null,
     Object? verified = null,
@@ -206,6 +225,14 @@ class __$$LawyerProfileModelImplCopyWithImpl<$Res>
           ? _value.consultationPrice
           : consultationPrice // ignore: cast_nullable_to_non_nullable
               as double?,
+      whatsapp: freezed == whatsapp
+          ? _value.whatsapp
+          : whatsapp // ignore: cast_nullable_to_non_nullable
+              as String?,
+      idCardUrl: freezed == idCardUrl
+          ? _value.idCardUrl
+          : idCardUrl // ignore: cast_nullable_to_non_nullable
+              as String?,
       rating: null == rating
           ? _value.rating
           : rating // ignore: cast_nullable_to_non_nullable
@@ -236,6 +263,8 @@ class _$LawyerProfileModelImpl extends _LawyerProfileModel {
       this.bio,
       @JsonKey(name: 'years_experience') this.yearsExperience,
       @JsonKey(name: 'consultation_price') this.consultationPrice,
+      this.whatsapp,
+      @JsonKey(name: 'id_card_url') this.idCardUrl,
       this.rating = 0.0,
       @JsonKey(name: 'review_count') this.reviewCount = 0,
       this.verified = false,
@@ -262,6 +291,11 @@ class _$LawyerProfileModelImpl extends _LawyerProfileModel {
   @JsonKey(name: 'consultation_price')
   final double? consultationPrice;
   @override
+  final String? whatsapp;
+  @override
+  @JsonKey(name: 'id_card_url')
+  final String? idCardUrl;
+  @override
   @JsonKey()
   final double rating;
   @override
@@ -276,7 +310,7 @@ class _$LawyerProfileModelImpl extends _LawyerProfileModel {
 
   @override
   String toString() {
-    return 'LawyerProfileModel(id: $id, profileId: $profileId, licenseNumber: $licenseNumber, bio: $bio, yearsExperience: $yearsExperience, consultationPrice: $consultationPrice, rating: $rating, reviewCount: $reviewCount, verified: $verified, availability: $availability)';
+    return 'LawyerProfileModel(id: $id, profileId: $profileId, licenseNumber: $licenseNumber, bio: $bio, yearsExperience: $yearsExperience, consultationPrice: $consultationPrice, whatsapp: $whatsapp, idCardUrl: $idCardUrl, rating: $rating, reviewCount: $reviewCount, verified: $verified, availability: $availability)';
   }
 
   @override
@@ -294,6 +328,10 @@ class _$LawyerProfileModelImpl extends _LawyerProfileModel {
                 other.yearsExperience == yearsExperience) &&
             (identical(other.consultationPrice, consultationPrice) ||
                 other.consultationPrice == consultationPrice) &&
+            (identical(other.whatsapp, whatsapp) ||
+                other.whatsapp == whatsapp) &&
+            (identical(other.idCardUrl, idCardUrl) ||
+                other.idCardUrl == idCardUrl) &&
             (identical(other.rating, rating) || other.rating == rating) &&
             (identical(other.reviewCount, reviewCount) ||
                 other.reviewCount == reviewCount) &&
@@ -313,6 +351,8 @@ class _$LawyerProfileModelImpl extends _LawyerProfileModel {
       bio,
       yearsExperience,
       consultationPrice,
+      whatsapp,
+      idCardUrl,
       rating,
       reviewCount,
       verified,
@@ -343,6 +383,8 @@ abstract class _LawyerProfileModel extends LawyerProfileModel {
       final String? bio,
       @JsonKey(name: 'years_experience') final int? yearsExperience,
       @JsonKey(name: 'consultation_price') final double? consultationPrice,
+      final String? whatsapp,
+      @JsonKey(name: 'id_card_url') final String? idCardUrl,
       final double rating,
       @JsonKey(name: 'review_count') final int reviewCount,
       final bool verified,
@@ -368,6 +410,11 @@ abstract class _LawyerProfileModel extends LawyerProfileModel {
   @override
   @JsonKey(name: 'consultation_price')
   double? get consultationPrice;
+  @override
+  String? get whatsapp;
+  @override
+  @JsonKey(name: 'id_card_url')
+  String? get idCardUrl;
   @override
   double get rating;
   @override

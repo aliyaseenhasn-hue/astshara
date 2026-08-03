@@ -75,8 +75,12 @@ class MockAuthRepository implements AuthRepository {
   }
 
   @override
-  Future<void> updateProfile(
-      {String? fullName, String? email, String? role}) async {}
+  Future<void> updateProfile({
+    String? fullName,
+    String? email,
+    String? role,
+    String? avatarUrl,
+  }) async {}
 
   @override
   Future<void> deleteAccount() async {}
@@ -169,6 +173,7 @@ class AuthController extends _$AuthController {
     required String fullName,
     String? email,
     required String role,
+    bool onboardingCompleted = true,
   }) async {
     ref.read(globalLoadingProvider.notifier).setLoading(true);
     state = const AsyncLoading();
@@ -177,6 +182,7 @@ class AuthController extends _$AuthController {
             fullName: fullName,
             email: email,
             role: role,
+            onboardingCompleted: onboardingCompleted,
           );
     });
     ref.read(globalLoadingProvider.notifier).setLoading(false);

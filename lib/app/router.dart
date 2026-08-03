@@ -84,8 +84,7 @@ GoRouter router(RouterRef ref) {
       }
 
       // توجيه المستخدم الجديد لإكمال بياناته
-      if ((user.role ?? 'user') != 'admin' &&
-          (user.fullName == null || user.fullName!.isEmpty)) {
+      if ((user.role ?? 'user') != 'admin' && !user.isOnboardingComplete) {
         if (isCompletingProfile || isOnboardingLawyer) return null;
         return '/complete-profile';
       }
@@ -103,12 +102,10 @@ GoRouter router(RouterRef ref) {
       }
 
       // توجيه المستخدم المكتمل بعيداً عن صفحات الدخول والإكمال
-      final isProfileComplete =
-          user.fullName != null && user.fullName!.isNotEmpty;
       if (isLoggingIn ||
           isSigningUp ||
           isOtp ||
-          (isCompletingProfile && isProfileComplete) ||
+          (isCompletingProfile && user.isOnboardingComplete) ||
           (isPendingPage && user.isVerified)) {
         return '/';
       }

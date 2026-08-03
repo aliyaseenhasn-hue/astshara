@@ -1,3 +1,4 @@
+import 'dart:typed_data';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:astshara/core/config/supabase_config.dart';
 import '../../data/repositories/lawyers_repository_impl.dart';
@@ -87,7 +88,9 @@ class MockLawyersRepository implements LawyersRepository {
   Future<void> updateLawyerProfile(LawyerProfile profile) async {}
 
   @override
-  Future<String> uploadDocument(String path, String fileName) async => '';
+  Future<String> uploadFile(
+          Uint8List bytes, String fileName, String bucket) async =>
+      '';
 }
 
 @riverpod

@@ -40,7 +40,10 @@ class AuthRepositoryImpl implements AuthRepository {
         final lawyerResponse = await _supabase
             .from('lawyer_profiles')
             .select('verified')
-            .eq('profile_id', user.id)
+            .eq(
+                'profile_id',
+                profileResponse[
+                    'id']) // استخدام المعرف الأساسي للبروفايل لضمان الدقة
             .maybeSingle();
 
         if (lawyerResponse != null) {
@@ -50,6 +53,9 @@ class AuthRepositoryImpl implements AuthRepository {
       }
 
       final appUser = AppUserModel.fromJson(profileResponse).toEntity();
+      debugPrint(
+          'DB Profile: ${profileResponse['full_name']}, Onboarding: ${profileResponse['onboarding_completed']}');
+
       return appUser.copyWith(
         isVerified: isVerified,
         hasProfessionalProfile: hasProfessionalProfile,
@@ -96,7 +102,12 @@ class AuthRepositoryImpl implements AuthRepository {
 
   @override
   Future<void> signInWithPhone(String phone) async {
-    await _supabase.auth.signInWithOtp(phone: phone);
+    // التأكد من تنسيق الرقم العراقي
+    String formattedPhone = phone.trim().replaceAll(' ', '');
+    if (!formattedPhone.startsWith('+')) {
+      formattedPhone = '+$formattedPhone';
+    }
+    await _supabase.auth.signInWithOtp(phone: formattedPhone);
   }
 
   @override
@@ -120,8 +131,13 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
-  Future<void> updateProfile(
-      {String? fullName, String? email, String? role}) async {
+  Future<void> updateProfile({
+    String? fullName,
+    String? email,
+    String? role,
+    String? avatarUrl,
+    bool? onboardingCompleted,
+  }) async {
     final user = _supabase.auth.currentUser;
     if (user == null) return;
 
@@ -129,8 +145,13 @@ class AuthRepositoryImpl implements AuthRepository {
     if (fullName != null) data['full_name'] = fullName;
     if (email != null) data['email'] = email;
     if (role != null) data['role'] = role;
+    if (avatarUrl != null) data['avatar_url'] = avatarUrl;
+    if (onboardingCompleted != null) {
+      data['onboarding_completed'] = onboardingCompleted;
+    }
 
     await _supabase.from('profiles').upsert({
+      'id': user.id, // ضمان تطابق المعرف الأساسي مع معرف المصادقة
       'auth_id': user.id,
       'phone': user.phone,
       ...data,

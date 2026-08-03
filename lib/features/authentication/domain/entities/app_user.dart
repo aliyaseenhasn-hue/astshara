@@ -12,7 +12,8 @@ class AppUser with _$AppUser {
     String? avatarUrl,
     @Default('user') String role,
     @Default(false) bool isVerified,
+    @Default(false) bool hasProfessionalProfile,
     @Default(false)
-    bool hasProfessionalProfile, // حقل جديد لمعرفة إذا أكمل المحامي بياناته
+    bool isOnboardingComplete, // حقل جديد للتأكد من اختيار الدور
   }) = _AppUser;
 }

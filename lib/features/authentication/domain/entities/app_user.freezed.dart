@@ -24,6 +24,7 @@ mixin _$AppUser {
   String get role => throw _privateConstructorUsedError;
   bool get isVerified => throw _privateConstructorUsedError;
   bool get hasProfessionalProfile => throw _privateConstructorUsedError;
+  bool get isOnboardingComplete => throw _privateConstructorUsedError;
 
   /// Create a copy of AppUser
   /// with the given fields replaced by the non-null parameter values.
@@ -44,7 +45,8 @@ abstract class $AppUserCopyWith<$Res> {
       String? avatarUrl,
       String role,
       bool isVerified,
-      bool hasProfessionalProfile});
+      bool hasProfessionalProfile,
+      bool isOnboardingComplete});
 }
 
 /// @nodoc
@@ -70,6 +72,7 @@ class _$AppUserCopyWithImpl<$Res, $Val extends AppUser>
     Object? role = null,
     Object? isVerified = null,
     Object? hasProfessionalProfile = null,
+    Object? isOnboardingComplete = null,
   }) {
     return _then(_value.copyWith(
       id: null == id
@@ -104,6 +107,10 @@ class _$AppUserCopyWithImpl<$Res, $Val extends AppUser>
           ? _value.hasProfessionalProfile
           : hasProfessionalProfile // ignore: cast_nullable_to_non_nullable
               as bool,
+      isOnboardingComplete: null == isOnboardingComplete
+          ? _value.isOnboardingComplete
+          : isOnboardingComplete // ignore: cast_nullable_to_non_nullable
+              as bool,
     ) as $Val);
   }
 }
@@ -123,7 +130,8 @@ abstract class _$$AppUserImplCopyWith<$Res> implements $AppUserCopyWith<$Res> {
       String? avatarUrl,
       String role,
       bool isVerified,
-      bool hasProfessionalProfile});
+      bool hasProfessionalProfile,
+      bool isOnboardingComplete});
 }
 
 /// @nodoc
@@ -147,6 +155,7 @@ class __$$AppUserImplCopyWithImpl<$Res>
     Object? role = null,
     Object? isVerified = null,
     Object? hasProfessionalProfile = null,
+    Object? isOnboardingComplete = null,
   }) {
     return _then(_$AppUserImpl(
       id: null == id
@@ -181,6 +190,10 @@ class __$$AppUserImplCopyWithImpl<$Res>
           ? _value.hasProfessionalProfile
           : hasProfessionalProfile // ignore: cast_nullable_to_non_nullable
               as bool,
+      isOnboardingComplete: null == isOnboardingComplete
+          ? _value.isOnboardingComplete
+          : isOnboardingComplete // ignore: cast_nullable_to_non_nullable
+              as bool,
     ));
   }
 }
@@ -196,7 +209,8 @@ class _$AppUserImpl implements _AppUser {
       this.avatarUrl,
       this.role = 'user',
       this.isVerified = false,
-      this.hasProfessionalProfile = false});
+      this.hasProfessionalProfile = false,
+      this.isOnboardingComplete = false});
 
   @override
   final String id;
@@ -217,10 +231,13 @@ class _$AppUserImpl implements _AppUser {
   @override
   @JsonKey()
   final bool hasProfessionalProfile;
+  @override
+  @JsonKey()
+  final bool isOnboardingComplete;
 
   @override
   String toString() {
-    return 'AppUser(id: $id, email: $email, fullName: $fullName, phone: $phone, avatarUrl: $avatarUrl, role: $role, isVerified: $isVerified, hasProfessionalProfile: $hasProfessionalProfile)';
+    return 'AppUser(id: $id, email: $email, fullName: $fullName, phone: $phone, avatarUrl: $avatarUrl, role: $role, isVerified: $isVerified, hasProfessionalProfile: $hasProfessionalProfile, isOnboardingComplete: $isOnboardingComplete)';
   }
 
   @override
@@ -239,12 +256,23 @@ class _$AppUserImpl implements _AppUser {
             (identical(other.isVerified, isVerified) ||
                 other.isVerified == isVerified) &&
             (identical(other.hasProfessionalProfile, hasProfessionalProfile) ||
-                other.hasProfessionalProfile == hasProfessionalProfile));
+                other.hasProfessionalProfile == hasProfessionalProfile) &&
+            (identical(other.isOnboardingComplete, isOnboardingComplete) ||
+                other.isOnboardingComplete == isOnboardingComplete));
   }
 
   @override
-  int get hashCode => Object.hash(runtimeType, id, email, fullName, phone,
-      avatarUrl, role, isVerified, hasProfessionalProfile);
+  int get hashCode => Object.hash(
+      runtimeType,
+      id,
+      email,
+      fullName,
+      phone,
+      avatarUrl,
+      role,
+      isVerified,
+      hasProfessionalProfile,
+      isOnboardingComplete);
 
   /// Create a copy of AppUser
   /// with the given fields replaced by the non-null parameter values.
@@ -264,7 +292,8 @@ abstract class _AppUser implements AppUser {
       final String? avatarUrl,
       final String role,
       final bool isVerified,
-      final bool hasProfessionalProfile}) = _$AppUserImpl;
+      final bool hasProfessionalProfile,
+      final bool isOnboardingComplete}) = _$AppUserImpl;
 
   @override
   String get id;
@@ -282,6 +311,8 @@ abstract class _AppUser implements AppUser {
   bool get isVerified;
   @override
   bool get hasProfessionalProfile;
+  @override
+  bool get isOnboardingComplete;
 
   /// Create a copy of AppUser
   /// with the given fields replaced by the non-null parameter values.

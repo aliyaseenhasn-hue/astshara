@@ -1,5 +1,4 @@
-import 'dart:io';
-import 'package:flutter/foundation.dart' show kIsWeb;
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -30,8 +29,8 @@ class _LawyerOnboardingPageState extends ConsumerState<LawyerOnboardingPage> {
   final _formKey = GlobalKey<FormState>();
   final _whatsappController = TextEditingController();
 
-  XFile? _profilePhoto;
-  XFile? _idCardPhoto;
+  Uint8List? _profilePhotoBytes;
+  Uint8List? _idCardBytes;
 
   @override
   void dispose() {
@@ -40,22 +39,33 @@ class _LawyerOnboardingPageState extends ConsumerState<LawyerOnboardingPage> {
   }
 
   Future<void> _pickImage(String type) async {
-    final picker = ImagePicker();
-    final image =
-        await picker.pickImage(source: ImageSource.gallery, imageQuality: 70);
-    if (image != null) {
-      setState(() {
-        if (type == 'profile') _profilePhoto = image;
-        if (type == 'id') _idCardPhoto = image;
-      });
+    try {
+      final picker = ImagePicker();
+      final image =
+          await picker.pickImage(source: ImageSource.gallery, imageQuality: 70);
+      if (image != null) {
+        final bytes = await image.readAsBytes();
+        setState(() {
+          if (type == 'profile') _profilePhotoBytes = bytes;
+          if (type == 'id') _idCardBytes = bytes;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+              content: Text('خطأ في اختيار الصورة: $e'),
+              backgroundColor: AppColors.error),
+        );
+      }
     }
   }
 
   Future<void> _submit() async {
-    if (_profilePhoto == null || _idCardPhoto == null) {
+    if (_profilePhotoBytes == null || _idCardBytes == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-            content: Text('يرجى رفع الصورة الشخصية وصورة الهوية'),
+            content: Text('يرجى رفع الصورة الشخصية وصورة هوية النقابة'),
             backgroundColor: AppColors.error),
       );
       return;
@@ -65,24 +75,14 @@ class _LawyerOnboardingPageState extends ConsumerState<LawyerOnboardingPage> {
       final authId = Supabase.instance.client.auth.currentUser?.id;
       if (authId == null) return;
 
-      // 1. تحديث البروفايل الأساسي
-      await ref.read(authControllerProvider.notifier).updateInitialProfile(
-            fullName: widget.fullName,
-            email: widget.email,
-            role: 'lawyer',
-          );
-
-      // 2. إكمال بيانات المحامي
       await ref.read(lawyerSetupControllerProvider.notifier).completeProfile(
             profileId: authId,
-            licenseNumber: 'NEW_REQUEST',
-            bio: 'طلب انضمام جديد - محامي',
-            yearsExperience: 0,
-            price: 0,
-            idDocument: _idCardPhoto,
+            fullName: widget.fullName,
+            email: widget.email,
+            whatsapp: _whatsappController.text.trim(),
+            profilePhotoBytes: _profilePhotoBytes,
+            idCardBytes: _idCardBytes,
           );
-
-      // ملاحظة: يمكن هنا إضافة منطق لرفع الصورة الشخصية كـ Avatar في المستقبل
 
       if (mounted) {
         _showSuccessDialog();
@@ -97,11 +97,12 @@ class _LawyerOnboardingPageState extends ConsumerState<LawyerOnboardingPage> {
       builder: (context) => AlertDialog(
         title: const Text('تم إرسال الطلب بنجاح'),
         content: const Text(
-            'شكراً لانضمامك! ملفك الآن قيد المراجعة. سنتواصل معك عبر الواتساب فور التفعيل.'),
+            'شكراً لانضمامك! ملفك الآن قيد المراجعة والتدقيق. سنتواصل معك عبر الواتساب فور التفعيل.'),
         actions: [
           ElevatedButton(
             onPressed: () => ref.read(authControllerProvider.notifier).logout(),
-            child: const Text('حسناً'),
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
+            child: const Text('حسناً', style: TextStyle(color: Colors.white)),
           ),
         ],
       ),
@@ -110,14 +111,14 @@ class _LawyerOnboardingPageState extends ConsumerState<LawyerOnboardingPage> {
 
   @override
   Widget build(BuildContext context) {
-    final state = ref.watch(authControllerProvider);
     final lawyerState = ref.watch(lawyerSetupControllerProvider);
-    final isLoading = state.isLoading || lawyerState.isLoading;
+    final isLoading = lawyerState.isLoading;
 
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
         title: const Text('بيانات المحامي المهنية'),
+        centerTitle: true,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () => context.pop(),
@@ -131,49 +132,12 @@ class _LawyerOnboardingPageState extends ConsumerState<LawyerOnboardingPage> {
               child: Form(
                 key: _formKey,
                 child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    // 1. الصورة الشخصية (Avatar) في الأعلى
-                    Center(
-                      child: Stack(
-                        children: [
-                          CircleAvatar(
-                            radius: 60,
-                            backgroundColor: AppColors.surfaceVariant,
-                            backgroundImage: _profilePhoto != null
-                                ? (kIsWeb
-                                    ? NetworkImage(_profilePhoto!.path)
-                                    : FileImage(File(_profilePhoto!.path))
-                                        as ImageProvider)
-                                : null,
-                            child: _profilePhoto == null
-                                ? const Icon(Icons.person,
-                                    size: 60, color: AppColors.outline)
-                                : null,
-                          ),
-                          Positioned(
-                            bottom: 0,
-                            right: 0,
-                            child: CircleAvatar(
-                              backgroundColor: AppColors.primary,
-                              radius: 18,
-                              child: IconButton(
-                                icon: const Icon(Icons.camera_alt,
-                                    size: 18, color: Colors.white),
-                                onPressed: () => _pickImage('profile'),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    const Text('الصورة الشخصية (تظهر للعملاء)',
-                        style:
-                            TextStyle(fontSize: 12, color: AppColors.outline)),
-
+                    _buildAvatarSection(),
                     const SizedBox(height: 40),
-
-                    // 2. حقل الواتساب
+                    _buildSectionTitle('معلومات التواصل'),
+                    const SizedBox(height: 16),
                     TextFormField(
                       controller: _whatsappController,
                       decoration: const InputDecoration(
@@ -183,90 +147,148 @@ class _LawyerOnboardingPageState extends ConsumerState<LawyerOnboardingPage> {
                         border: OutlineInputBorder(),
                       ),
                       keyboardType: TextInputType.phone,
-                      validator: (val) =>
-                          val?.isEmpty ?? true ? 'مطلوب للتواصل' : null,
+                      validator: (val) => val?.trim().isEmpty ?? true
+                          ? 'رقم الواتساب مطلوب'
+                          : null,
                     ),
-
                     const SizedBox(height: 32),
-
-                    // 3. صورة هوية النقابة
-                    const Align(
-                      alignment: Alignment.centerRight,
-                      child: Text('هوية النقابة (للتوثيق فقط):',
-                          style: TextStyle(fontWeight: FontWeight.bold)),
-                    ),
+                    _buildSectionTitle('وثائق التحقق'),
+                    const SizedBox(height: 16),
+                    const Text('صورة هوية النقابة:',
+                        style: TextStyle(
+                            fontWeight: FontWeight.bold, fontSize: 14)),
                     const SizedBox(height: 12),
-                    InkWell(
-                      onTap: () => _pickImage('id'),
-                      child: Container(
-                        height: 160,
-                        width: double.infinity,
-                        decoration: BoxDecoration(
-                          border: Border.all(
-                              color: _idCardPhoto == null
-                                  ? AppColors.error.withValues(alpha: 0.5)
-                                  : AppColors.outline),
-                          borderRadius: BorderRadius.circular(12),
-                          color: Colors.white,
-                        ),
-                        child: _idCardPhoto == null
-                            ? const Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(Icons.badge_outlined,
-                                      size: 40, color: AppColors.outline),
-                                  Text('اضغط لرفع صورة هوية النقابة',
-                                      style:
-                                          TextStyle(color: AppColors.outline)),
-                                ],
-                              )
-                            : ClipRRect(
-                                borderRadius: BorderRadius.circular(12),
-                                child: kIsWeb
-                                    ? Image.network(_idCardPhoto!.path,
-                                        fit: BoxFit.cover)
-                                    : Image.file(File(_idCardPhoto!.path),
-                                        fit: BoxFit.cover),
-                              ),
-                      ),
-                    ),
+                    _buildIdCardPicker(),
                   ],
                 ),
               ),
             ),
           ),
-
-          // 4. الأزرار في أسفل الصفحة
-          Container(
-            padding: const EdgeInsets.all(AppSizes.p24),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              boxShadow: [
-                BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.05),
-                    blurRadius: 10,
-                    offset: const Offset(0, -5))
-              ],
-            ),
-            child: isLoading
-                ? const LoadingWidget()
-                : ElevatedButton(
-                    onPressed: _submit,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primary,
-                      minimumSize: const Size(double.infinity, 56),
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12)),
-                    ),
-                    child: const Text('إرسال طلب الانضمام',
-                        style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white)),
-                  ),
-          ),
+          _buildBottomSection(isLoading),
         ],
       ),
+    );
+  }
+
+  Widget _buildAvatarSection() {
+    return Center(
+      child: Column(
+        children: [
+          Stack(
+            children: [
+              CircleAvatar(
+                radius: 60,
+                backgroundColor: AppColors.surfaceVariant,
+                backgroundImage: _profilePhotoBytes != null
+                    ? MemoryImage(_profilePhotoBytes!)
+                    : null,
+                child: _profilePhotoBytes == null
+                    ? const Icon(Icons.person,
+                        size: 60, color: AppColors.outline)
+                    : null,
+              ),
+              Positioned(
+                bottom: 0,
+                right: 0,
+                child: CircleAvatar(
+                  backgroundColor: AppColors.primary,
+                  radius: 20,
+                  child: IconButton(
+                    icon: const Icon(Icons.camera_alt,
+                        size: 20, color: Colors.white),
+                    onPressed: () => _pickImage('profile'),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          const Text('الصورة الشخصية',
+              style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+          const Text('سوف تظهر للعملاء في نتائج البحث',
+              style: TextStyle(fontSize: 11, color: AppColors.outline)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSectionTitle(String title) {
+    return Row(
+      children: [
+        Container(
+            width: 4,
+            height: 18,
+            decoration: BoxDecoration(
+                color: AppColors.primary,
+                borderRadius: BorderRadius.circular(2))),
+        const SizedBox(width: 8),
+        Text(title,
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+      ],
+    );
+  }
+
+  Widget _buildIdCardPicker() {
+    return InkWell(
+      onTap: () => _pickImage('id'),
+      child: Container(
+        height: 180,
+        decoration: BoxDecoration(
+          border: Border.all(
+              color: _idCardBytes == null
+                  ? AppColors.error.withValues(alpha: 0.3)
+                  : AppColors.outline,
+              width: 2),
+          borderRadius: BorderRadius.circular(12),
+          color: Colors.white,
+        ),
+        child: _idCardBytes == null
+            ? const Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.badge_outlined,
+                      size: 48, color: AppColors.outline),
+                  SizedBox(height: 8),
+                  Text('اضغط لرفع صورة هوية النقابة',
+                      style: TextStyle(color: AppColors.outline)),
+                ],
+              )
+            : ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: Image.memory(_idCardBytes!, fit: BoxFit.cover),
+              ),
+      ),
+    );
+  }
+
+  Widget _buildBottomSection(bool isLoading) {
+    return Container(
+      padding: const EdgeInsets.all(AppSizes.p24),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        boxShadow: [
+          BoxShadow(
+              color: Colors.black.withValues(alpha: 0.05),
+              blurRadius: 10,
+              offset: const Offset(0, -5))
+        ],
+      ),
+      child: isLoading
+          ? const LoadingWidget()
+          : ElevatedButton(
+              onPressed: _submit,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                minimumSize: const Size(double.infinity, 56),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12)),
+              ),
+              child: const Text('إرسال طلب الانضمام',
+                  style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white)),
+            ),
     );
   }
 }

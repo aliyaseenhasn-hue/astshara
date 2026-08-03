@@ -17,6 +17,7 @@ class AppUserModel with _$AppUserModel {
     @Default('user') String role,
     @JsonKey(name: 'is_verified') @Default(false) bool isVerified,
     @Default(false) bool hasProfessionalProfile,
+    @JsonKey(name: 'onboarding_completed') bool? isOnboardingComplete,
   }) = _AppUserModel;
 
   factory AppUserModel.fromJson(Map<String, dynamic> json) =>
@@ -32,5 +33,6 @@ class AppUserModel with _$AppUserModel {
         role: role,
         isVerified: isVerified,
         hasProfessionalProfile: hasProfessionalProfile,
+        isOnboardingComplete: isOnboardingComplete ?? false,
       );
 }

@@ -25,6 +25,8 @@ mixin _$LawyerProfile {
       throw _privateConstructorUsedError; // إضافة التخصص
   int? get yearsExperience => throw _privateConstructorUsedError;
   double? get consultationPrice => throw _privateConstructorUsedError;
+  String? get whatsapp => throw _privateConstructorUsedError;
+  String? get idCardUrl => throw _privateConstructorUsedError;
   double get rating => throw _privateConstructorUsedError;
   int get reviewCount => throw _privateConstructorUsedError;
   bool get verified => throw _privateConstructorUsedError;
@@ -52,6 +54,8 @@ abstract class $LawyerProfileCopyWith<$Res> {
       String? specialization,
       int? yearsExperience,
       double? consultationPrice,
+      String? whatsapp,
+      String? idCardUrl,
       double rating,
       int reviewCount,
       bool verified,
@@ -81,6 +85,8 @@ class _$LawyerProfileCopyWithImpl<$Res, $Val extends LawyerProfile>
     Object? specialization = freezed,
     Object? yearsExperience = freezed,
     Object? consultationPrice = freezed,
+    Object? whatsapp = freezed,
+    Object? idCardUrl = freezed,
     Object? rating = null,
     Object? reviewCount = null,
     Object? verified = null,
@@ -119,6 +125,14 @@ class _$LawyerProfileCopyWithImpl<$Res, $Val extends LawyerProfile>
           ? _value.consultationPrice
           : consultationPrice // ignore: cast_nullable_to_non_nullable
               as double?,
+      whatsapp: freezed == whatsapp
+          ? _value.whatsapp
+          : whatsapp // ignore: cast_nullable_to_non_nullable
+              as String?,
+      idCardUrl: freezed == idCardUrl
+          ? _value.idCardUrl
+          : idCardUrl // ignore: cast_nullable_to_non_nullable
+              as String?,
       rating: null == rating
           ? _value.rating
           : rating // ignore: cast_nullable_to_non_nullable
@@ -156,6 +170,8 @@ abstract class _$$LawyerProfileImplCopyWith<$Res>
       String? specialization,
       int? yearsExperience,
       double? consultationPrice,
+      String? whatsapp,
+      String? idCardUrl,
       double rating,
       int reviewCount,
       bool verified,
@@ -183,6 +199,8 @@ class __$$LawyerProfileImplCopyWithImpl<$Res>
     Object? specialization = freezed,
     Object? yearsExperience = freezed,
     Object? consultationPrice = freezed,
+    Object? whatsapp = freezed,
+    Object? idCardUrl = freezed,
     Object? rating = null,
     Object? reviewCount = null,
     Object? verified = null,
@@ -221,6 +239,14 @@ class __$$LawyerProfileImplCopyWithImpl<$Res>
           ? _value.consultationPrice
           : consultationPrice // ignore: cast_nullable_to_non_nullable
               as double?,
+      whatsapp: freezed == whatsapp
+          ? _value.whatsapp
+          : whatsapp // ignore: cast_nullable_to_non_nullable
+              as String?,
+      idCardUrl: freezed == idCardUrl
+          ? _value.idCardUrl
+          : idCardUrl // ignore: cast_nullable_to_non_nullable
+              as String?,
       rating: null == rating
           ? _value.rating
           : rating // ignore: cast_nullable_to_non_nullable
@@ -253,6 +279,8 @@ class _$LawyerProfileImpl implements _LawyerProfile {
       this.specialization,
       this.yearsExperience,
       this.consultationPrice,
+      this.whatsapp,
+      this.idCardUrl,
       this.rating = 0.0,
       this.reviewCount = 0,
       this.verified = false,
@@ -276,6 +304,10 @@ class _$LawyerProfileImpl implements _LawyerProfile {
   @override
   final double? consultationPrice;
   @override
+  final String? whatsapp;
+  @override
+  final String? idCardUrl;
+  @override
   @JsonKey()
   final double rating;
   @override
@@ -290,7 +322,7 @@ class _$LawyerProfileImpl implements _LawyerProfile {
 
   @override
   String toString() {
-    return 'LawyerProfile(id: $id, profileId: $profileId, fullName: $fullName, licenseNumber: $licenseNumber, bio: $bio, specialization: $specialization, yearsExperience: $yearsExperience, consultationPrice: $consultationPrice, rating: $rating, reviewCount: $reviewCount, verified: $verified, availability: $availability)';
+    return 'LawyerProfile(id: $id, profileId: $profileId, fullName: $fullName, licenseNumber: $licenseNumber, bio: $bio, specialization: $specialization, yearsExperience: $yearsExperience, consultationPrice: $consultationPrice, whatsapp: $whatsapp, idCardUrl: $idCardUrl, rating: $rating, reviewCount: $reviewCount, verified: $verified, availability: $availability)';
   }
 
   @override
@@ -312,6 +344,10 @@ class _$LawyerProfileImpl implements _LawyerProfile {
                 other.yearsExperience == yearsExperience) &&
             (identical(other.consultationPrice, consultationPrice) ||
                 other.consultationPrice == consultationPrice) &&
+            (identical(other.whatsapp, whatsapp) ||
+                other.whatsapp == whatsapp) &&
+            (identical(other.idCardUrl, idCardUrl) ||
+                other.idCardUrl == idCardUrl) &&
             (identical(other.rating, rating) || other.rating == rating) &&
             (identical(other.reviewCount, reviewCount) ||
                 other.reviewCount == reviewCount) &&
@@ -332,6 +368,8 @@ class _$LawyerProfileImpl implements _LawyerProfile {
       specialization,
       yearsExperience,
       consultationPrice,
+      whatsapp,
+      idCardUrl,
       rating,
       reviewCount,
       verified,
@@ -356,6 +394,8 @@ abstract class _LawyerProfile implements LawyerProfile {
       final String? specialization,
       final int? yearsExperience,
       final double? consultationPrice,
+      final String? whatsapp,
+      final String? idCardUrl,
       final double rating,
       final int reviewCount,
       final bool verified,
@@ -377,6 +417,10 @@ abstract class _LawyerProfile implements LawyerProfile {
   int? get yearsExperience;
   @override
   double? get consultationPrice;
+  @override
+  String? get whatsapp;
+  @override
+  String? get idCardUrl;
   @override
   double get rating;
   @override

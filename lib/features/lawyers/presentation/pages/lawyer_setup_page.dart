@@ -1,8 +1,7 @@
-import 'dart:io';
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
+import 'dart:typed_data';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_sizes.dart';
 import '../../../../shared/widgets/loading_widget.dart';
@@ -22,7 +21,10 @@ class _LawyerSetupPageState extends ConsumerState<LawyerSetupPage> {
   final _bioController = TextEditingController();
   final _experienceController = TextEditingController();
   final _priceController = TextEditingController();
-  XFile? _selectedIdImage;
+  final _whatsappController = TextEditingController();
+
+  Uint8List? _idCardBytes;
+  Uint8List? _profilePhotoBytes;
 
   @override
   void dispose() {
@@ -30,72 +32,42 @@ class _LawyerSetupPageState extends ConsumerState<LawyerSetupPage> {
     _bioController.dispose();
     _experienceController.dispose();
     _priceController.dispose();
+    _whatsappController.dispose();
     super.dispose();
   }
 
-  Future<void> _pickImage() async {
+  Future<void> _pickImage(String type) async {
     final picker = ImagePicker();
     final image = await picker.pickImage(source: ImageSource.gallery);
     if (image != null) {
+      final bytes = await image.readAsBytes();
       setState(() {
-        _selectedIdImage = image;
+        if (type == 'id') _idCardBytes = bytes;
+        if (type == 'profile') _profilePhotoBytes = bytes;
       });
     }
   }
 
   Future<void> _submit() async {
-    if (_selectedIdImage == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('يرجى رفع صورة هوية النقابة'),
-          backgroundColor: AppColors.error,
-        ),
-      );
-      return;
-    }
-
     if (_formKey.currentState?.validate() ?? false) {
       final user = ref.read(authStateChangesProvider).value;
       if (user == null) return;
 
       await ref.read(lawyerSetupControllerProvider.notifier).completeProfile(
             profileId: user.id,
-            licenseNumber: _licenseController.text,
-            bio: _bioController.text,
-            yearsExperience: int.parse(_experienceController.text),
-            price: double.parse(_priceController.text),
-            idDocument: _selectedIdImage,
+            fullName: user.fullName ?? '',
+            email: user.email,
+            whatsapp: _whatsappController.text.trim(),
+            profilePhotoBytes: _profilePhotoBytes,
+            idCardBytes: _idCardBytes,
           );
 
       if (mounted) {
-        _showSuccessDialog();
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('تم تحديث البيانات بنجاح')),
+        );
       }
     }
-  }
-
-  void _showSuccessDialog() {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => AlertDialog(
-        title: const Text('تم الإرسال بنجاح'),
-        content: const Text(
-            'لقد تم استلام بياناتك المهنية وهي الآن قيد المراجعة من قبل الإدارة. سيتم إخطارك فور تفعيل حسابك.'),
-        actions: [
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context); // إغلاق الديالوج
-              ref
-                  .read(authControllerProvider.notifier)
-                  .logout(); // العودة لصفحة تسجيل الدخول
-            },
-            style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
-            child: const Text('العودة لتسجيل الدخول',
-                style: TextStyle(color: Colors.white)),
-          ),
-        ],
-      ),
-    );
   }
 
   @override
@@ -130,6 +102,13 @@ class _LawyerSetupPageState extends ConsumerState<LawyerSetupPage> {
                 decoration: const InputDecoration(
                     labelText: 'رقم هوية النقابة',
                     border: OutlineInputBorder()),
+                validator: (val) => val?.isEmpty ?? true ? 'مطلوب' : null,
+              ),
+              const SizedBox(height: AppSizes.p16),
+              TextFormField(
+                controller: _whatsappController,
+                decoration: const InputDecoration(
+                    labelText: 'رقم الواتساب', border: OutlineInputBorder()),
                 validator: (val) => val?.isEmpty ?? true ? 'مطلوب' : null,
               ),
               const SizedBox(height: AppSizes.p16),
@@ -172,33 +151,30 @@ class _LawyerSetupPageState extends ConsumerState<LawyerSetupPage> {
                   style: TextStyle(fontWeight: FontWeight.bold)),
               const SizedBox(height: AppSizes.p8),
               InkWell(
-                onTap: _pickImage,
+                onTap: () => _pickImage('id'),
                 child: Container(
                   height: 150,
                   decoration: BoxDecoration(
                     border: Border.all(
-                      color: _selectedIdImage == null
-                          ? Colors.red.withValues(alpha: 0.5)
-                          : Colors.grey,
-                      width: _selectedIdImage == null ? 2 : 1,
-                    ),
+                        color: _idCardBytes == null
+                            ? AppColors.error.withValues(alpha: 0.5)
+                            : Colors.grey,
+                        width: 2),
                     borderRadius: BorderRadius.circular(AppSizes.r8),
                   ),
-                  child: _selectedIdImage == null
+                  child: _idCardBytes == null
                       ? const Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Icon(Icons.add_a_photo,
-                                size: 40, color: Colors.red),
-                            Text('اضغط لرفع هوية النقابة',
-                                style: TextStyle(color: Colors.red))
-                          ],
-                        )
-                      : kIsWeb
-                          ? Image.network(_selectedIdImage!.path,
-                              fit: BoxFit.cover)
-                          : Image.file(File(_selectedIdImage!.path),
-                              fit: BoxFit.cover),
+                              Icon(Icons.add_a_photo,
+                                  size: 40, color: Colors.red),
+                              Text('اضغط لرفع هوية النقابة',
+                                  style: TextStyle(color: Colors.red))
+                            ])
+                      : ClipRRect(
+                          borderRadius: BorderRadius.circular(AppSizes.r8),
+                          child:
+                              Image.memory(_idCardBytes!, fit: BoxFit.cover)),
                 ),
               ),
               const SizedBox(height: AppSizes.p32),
@@ -207,11 +183,10 @@ class _LawyerSetupPageState extends ConsumerState<LawyerSetupPage> {
                   : ElevatedButton(
                       onPressed: _submit,
                       style: ElevatedButton.styleFrom(
-                        padding:
-                            const EdgeInsets.symmetric(vertical: AppSizes.p16),
-                        backgroundColor: AppColors.primary,
-                        foregroundColor: Colors.white,
-                      ),
+                          padding: const EdgeInsets.symmetric(
+                              vertical: AppSizes.p16),
+                          backgroundColor: AppColors.primary,
+                          foregroundColor: Colors.white),
                       child: const Text('حفظ وإرسال للمراجعة'),
                     ),
             ],
