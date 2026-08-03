@@ -148,12 +148,12 @@ class AuthRepositoryImpl implements AuthRepository {
     }
 
     await _supabase.from('profiles').upsert({
-      'id': user.id, // ضمان تطابق المعرف الأساسي مع معرف المصادقة
+      'id': user.id, // استخدام المعرف الموحد
       'auth_id': user.id,
       'phone': user.phone,
       ...data,
       'updated_at': DateTime.now().toIso8601String(),
-    }, onConflict: 'auth_id');
+    }); // Upsert uses PK by default
   }
 
   @override

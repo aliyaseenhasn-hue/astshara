@@ -22,7 +22,7 @@ final paymentsRepositoryProvider =
 // ignore: unused_element
 typedef PaymentsRepositoryRef = AutoDisposeProviderRef<PaymentsRepository>;
 String _$paymentsControllerHash() =>
-    r'ce94c445c393aed3b5d422582619e45e7761737d';
+    r'4e55819e537ca4a72f4929d71d4688fdb6f29664';
 
 /// See also [PaymentsController].
 @ProviderFor(PaymentsController)

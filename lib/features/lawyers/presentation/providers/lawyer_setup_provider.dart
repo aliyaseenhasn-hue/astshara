@@ -25,27 +25,42 @@ class LawyerSetupController extends _$LawyerSetupController {
     state = const AsyncLoading();
     state = await AsyncValue.guard(() async {
       final lawyersRepo = ref.read(lawyersRepositoryProvider);
+      final authRepo = ref.read(authRepositoryProvider);
+
+      debugPrint('--- بدء عملية إكمال الملف للمحامي ---');
+
+      // 1. تحديث البروفايل الأساسي أولاً لضمان وجود السجل (تجنب مشاكل الـ FK)
+      debugPrint('Step 1: Updating main profile (initial)...');
+      await authRepo.updateProfile(
+        fullName: fullName,
+        email: email,
+        role: 'lawyer',
+        onboardingCompleted: false,
+      );
 
       String? avatarUrl;
       String? idCardUrl;
 
-      // 1. Upload Profile Photo if exists (avatars bucket)
+      // 2. رفع الصورة الشخصية
       if (profilePhotoBytes != null) {
+        debugPrint('Step 2: Uploading profile photo...');
         final fileName =
             'avatar_${profileId}_${DateTime.now().millisecondsSinceEpoch}.jpg';
         avatarUrl = await lawyersRepo.uploadFile(
             profilePhotoBytes, fileName, 'avatars');
       }
 
-      // 2. Upload ID Card if exists (lawyer_documents bucket)
+      // 3. رفع هوية النقابة
       if (idCardBytes != null) {
+        debugPrint('Step 3: Uploading ID card...');
         final fileName =
             'id_${profileId}_${DateTime.now().millisecondsSinceEpoch}.jpg';
         idCardUrl = await lawyersRepo.uploadFile(
             idCardBytes, fileName, 'lawyer_documents');
       }
 
-      // 3. Update Lawyer Specific Profile (with whatsapp and id_card_url)
+      // 4. إنشاء سجل المحامي المهني
+      debugPrint('Step 4: Updating lawyer professional profile...');
       final lawyerProfile = LawyerProfile(
         id: '', // Handled by DB
         profileId: profileId,
@@ -61,14 +76,14 @@ class LawyerSetupController extends _$LawyerSetupController {
 
       await lawyersRepo.updateLawyerProfile(lawyerProfile);
 
-      // 4. Update the main profile with name, email, role, and avatar_url
-      await ref.read(authRepositoryProvider).updateProfile(
-            fullName: fullName,
-            email: email,
-            role: 'lawyer',
-            avatarUrl: avatarUrl,
-            onboardingCompleted: true,
-          );
+      // 5. التحديث النهائي للبروفايل مع رابط الصورة وعلامة الإكمال
+      debugPrint('Step 5: Finalizing main profile...');
+      await authRepo.updateProfile(
+        avatarUrl: avatarUrl,
+        onboardingCompleted: true,
+      );
+
+      debugPrint('--- تمت العملية بنجاح ---');
     });
     ref.read(globalLoadingProvider.notifier).setLoading(false);
   }
