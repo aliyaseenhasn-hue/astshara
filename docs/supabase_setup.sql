@@ -113,19 +113,22 @@ CREATE TABLE IF NOT EXISTS public.reviews (
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS trigger AS $$
 BEGIN
-  INSERT INTO public.profiles (id, auth_id, full_name, phone, email, role)
+  INSERT INTO public.profiles (id, auth_id, full_name, phone, email, role, onboarding_completed)
   VALUES (
     new.id, 
     new.id, 
     COALESCE(new.raw_user_meta_data->>'full_name', 'مستخدم جديد'),
     new.phone,
     new.email,
-    'user'
+    COALESCE(new.raw_user_meta_data->>'role', 'user')::user_role,
+    CASE WHEN (new.raw_user_meta_data->>'role') = 'admin' THEN true ELSE false END
   )
   ON CONFLICT (id) DO UPDATE SET
     email = EXCLUDED.email,
     phone = EXCLUDED.phone,
     full_name = COALESCE(EXCLUDED.full_name, public.profiles.full_name),
+    role = COALESCE(EXCLUDED.role, public.profiles.role),
+    onboarding_completed = CASE WHEN EXCLUDED.role = 'admin' THEN true ELSE public.profiles.onboarding_completed END,
     updated_at = now();
   RETURN new;
 END;

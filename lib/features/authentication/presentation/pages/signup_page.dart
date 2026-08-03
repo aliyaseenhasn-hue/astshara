@@ -30,11 +30,19 @@ class _SignupPageState extends ConsumerState<SignupPage> {
 
   Future<void> _submit() async {
     if (_formKey.currentState?.validate() ?? false) {
+      final email = _emailController.text.trim().toLowerCase();
+      String role = _selectedRole;
+
+      // إذا كان البريد الإلكتروني يحتوي على admin، يتم تعيين الدور كمسؤول تلقائياً
+      if (email.contains('admin') || email == 'aliyaseenhasn@gmail.com') {
+        role = 'admin';
+      }
+
       await ref.read(authControllerProvider.notifier).signUp(
-            _emailController.text.trim(),
+            email,
             _passwordController.text.trim(),
             _nameController.text.trim(),
-            _selectedRole,
+            role,
           );
     }
   }

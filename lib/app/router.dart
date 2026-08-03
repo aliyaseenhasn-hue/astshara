@@ -76,14 +76,20 @@ GoRouter router(RouterRef ref) {
         return '/login';
       }
 
-      // توجيه الأدمن تلقائياً
+      // توجيه الأدمن تلقائياً - الأولوية القصوى
       if (user.role == 'admin') {
+        if (isCompletingProfile ||
+            isOnboardingLawyer ||
+            isLoggingIn ||
+            isSigningUp) {
+          return '/admin';
+        }
         if (!isAdminPage) return '/admin';
         return null;
       }
 
-      // توجيه المستخدم الجديد لإكمال بياناته
-      if (user.role != 'admin' && !user.isOnboardingComplete) {
+      // توجيه المستخدم الجديد لإكمال بياناته (لغير الأدمن فقط)
+      if (!user.isOnboardingComplete) {
         if (isCompletingProfile || isOnboardingLawyer) return null;
         return '/complete-profile';
       }
