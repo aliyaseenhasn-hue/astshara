@@ -208,13 +208,16 @@ class AuthRepositoryImpl implements AuthRepository {
     debugPrint('🔑 معرف المستخدم: ${user.id}');
 
     try {
-      await _supabase
-          .from('profiles')
-          .update(
-              data) // نرسل البيانات فقط بدون updated_at يدوياً لنرى إن كان السبب
-          .eq('id', user.id);
+      // نستخدم upsert لضمان إنشاء السجل إذا لم يكن موجوداً (حل لمشكلة فشل الـ Trigger)
+      // ونحدد onConflict: 'id' لضمان التحديث في حال الوجود
+      await _supabase.from('profiles').upsert({
+        'id': user.id,
+        'auth_id': user.id,
+        ...data,
+        'updated_at': DateTime.now().toIso8601String(),
+      }, onConflict: 'id');
 
-      debugPrint('✅ تم تحديث الملف الشخصي بنجاح');
+      debugPrint('✅ تم حفظ/تحديث الملف الشخصي بنجاح (Upsert)');
 
       // بثّ الحالة المحدثة للمستخدم
       await refreshUser();
