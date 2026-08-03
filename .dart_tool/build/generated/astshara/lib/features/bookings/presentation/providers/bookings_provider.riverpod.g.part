@@ -3,7 +3,7 @@
 // **************************************************************************
 
 String _$bookingsRepositoryHash() =>
-    r'8e1520261efc4512ebea165344626859346b038d';
+    r'0f2e9089ae436541cfb851a66986c47c4d0e886e';
 
 /// See also [bookingsRepository].
 @ProviderFor(bookingsRepository)

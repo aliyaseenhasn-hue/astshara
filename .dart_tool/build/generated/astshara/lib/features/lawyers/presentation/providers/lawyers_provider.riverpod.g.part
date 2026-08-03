@@ -2,7 +2,7 @@
 // RiverpodGenerator
 // **************************************************************************
 
-String _$lawyersRepositoryHash() => r'9e8b6077f86ea5f9246854ee65e0a59899b8385c';
+String _$lawyersRepositoryHash() => r'e408f7eb69d98a71f55840f02a1bb4775a28e3ca';
 
 /// See also [lawyersRepository].
 @ProviderFor(lawyersRepository)

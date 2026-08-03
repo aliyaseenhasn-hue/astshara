@@ -11,6 +11,8 @@ class LawyerProfileModel with _$LawyerProfileModel {
   const factory LawyerProfileModel({
     String? id, // جعلها اختيارية لتجنب الانهيار عند القراءة
     @JsonKey(name: 'profile_id') String? profileId,
+    @JsonKey(name: 'full_name')
+    String? fullName, // إضافة الحقل لدعم القراءة من الجداول الموحدة
     @JsonKey(name: 'license_number') String? licenseNumber,
     String? bio,
     String? specialization,
@@ -31,6 +33,7 @@ class LawyerProfileModel with _$LawyerProfileModel {
   LawyerProfile toEntity() => LawyerProfile(
         id: id ?? '',
         profileId: profileId ?? '',
+        fullName: fullName,
         licenseNumber: licenseNumber,
         bio: bio,
         specialization: specialization,

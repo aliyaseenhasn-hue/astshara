@@ -11,6 +11,7 @@ _$LawyerProfileModelImpl _$$LawyerProfileModelImplFromJson(
     _$LawyerProfileModelImpl(
       id: json['id'] as String?,
       profileId: json['profile_id'] as String?,
+      fullName: json['full_name'] as String?,
       licenseNumber: json['license_number'] as String?,
       bio: json['bio'] as String?,
       specialization: json['specialization'] as String?,
@@ -29,6 +30,7 @@ Map<String, dynamic> _$$LawyerProfileModelImplToJson(
     <String, dynamic>{
       'id': instance.id,
       'profile_id': instance.profileId,
+      'full_name': instance.fullName,
       'license_number': instance.licenseNumber,
       'bio': instance.bio,
       'specialization': instance.specialization,

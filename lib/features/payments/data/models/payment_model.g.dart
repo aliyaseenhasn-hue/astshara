@@ -13,7 +13,7 @@ _$PaymentModelImpl _$$PaymentModelImplFromJson(Map<String, dynamic> json) =>
       amount: (json['amount'] as num).toDouble(),
       paymentMethod: json['payment_method'] as String,
       transactionNumber: json['transaction_number'] as String?,
-      receiptUrl: json['receipt'] as String?,
+      receiptUrl: json['receipt_url'] as String?,
       status: json['status'] as String? ?? 'pending',
       createdAt: json['created_at'] == null
           ? null
@@ -27,7 +27,7 @@ Map<String, dynamic> _$$PaymentModelImplToJson(_$PaymentModelImpl instance) =>
       'amount': instance.amount,
       'payment_method': instance.paymentMethod,
       'transaction_number': instance.transactionNumber,
-      'receipt': instance.receiptUrl,
+      'receipt_url': instance.receiptUrl,
       'status': instance.status,
       'created_at': instance.createdAt?.toIso8601String(),
     };

@@ -28,7 +28,7 @@ mixin _$PaymentModel {
   String get paymentMethod => throw _privateConstructorUsedError;
   @JsonKey(name: 'transaction_number')
   String? get transactionNumber => throw _privateConstructorUsedError;
-  @JsonKey(name: 'receipt')
+  @JsonKey(name: 'receipt_url')
   String? get receiptUrl => throw _privateConstructorUsedError;
   String get status => throw _privateConstructorUsedError;
   @JsonKey(name: 'created_at')
@@ -56,7 +56,7 @@ abstract class $PaymentModelCopyWith<$Res> {
       double amount,
       @JsonKey(name: 'payment_method') String paymentMethod,
       @JsonKey(name: 'transaction_number') String? transactionNumber,
-      @JsonKey(name: 'receipt') String? receiptUrl,
+      @JsonKey(name: 'receipt_url') String? receiptUrl,
       String status,
       @JsonKey(name: 'created_at') DateTime? createdAt});
 }
@@ -136,7 +136,7 @@ abstract class _$$PaymentModelImplCopyWith<$Res>
       double amount,
       @JsonKey(name: 'payment_method') String paymentMethod,
       @JsonKey(name: 'transaction_number') String? transactionNumber,
-      @JsonKey(name: 'receipt') String? receiptUrl,
+      @JsonKey(name: 'receipt_url') String? receiptUrl,
       String status,
       @JsonKey(name: 'created_at') DateTime? createdAt});
 }
@@ -209,7 +209,7 @@ class _$PaymentModelImpl extends _PaymentModel {
       required this.amount,
       @JsonKey(name: 'payment_method') required this.paymentMethod,
       @JsonKey(name: 'transaction_number') this.transactionNumber,
-      @JsonKey(name: 'receipt') this.receiptUrl,
+      @JsonKey(name: 'receipt_url') this.receiptUrl,
       this.status = 'pending',
       @JsonKey(name: 'created_at') this.createdAt})
       : super._();
@@ -231,7 +231,7 @@ class _$PaymentModelImpl extends _PaymentModel {
   @JsonKey(name: 'transaction_number')
   final String? transactionNumber;
   @override
-  @JsonKey(name: 'receipt')
+  @JsonKey(name: 'receipt_url')
   final String? receiptUrl;
   @override
   @JsonKey()
@@ -293,7 +293,7 @@ abstract class _PaymentModel extends PaymentModel {
           required final double amount,
           @JsonKey(name: 'payment_method') required final String paymentMethod,
           @JsonKey(name: 'transaction_number') final String? transactionNumber,
-          @JsonKey(name: 'receipt') final String? receiptUrl,
+          @JsonKey(name: 'receipt_url') final String? receiptUrl,
           final String status,
           @JsonKey(name: 'created_at') final DateTime? createdAt}) =
       _$PaymentModelImpl;
@@ -316,7 +316,7 @@ abstract class _PaymentModel extends PaymentModel {
   @JsonKey(name: 'transaction_number')
   String? get transactionNumber;
   @override
-  @JsonKey(name: 'receipt')
+  @JsonKey(name: 'receipt_url')
   String? get receiptUrl;
   @override
   String get status;

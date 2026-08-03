@@ -210,14 +210,47 @@ class _CompleteProfilePageState extends ConsumerState<CompleteProfilePage> {
     );
   }
 
+  void _cancelAndLogout() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('إلغاء العملية؟'),
+        content: const Text(
+            'سيتم تسجيل خروجك، ولن يتم حفظ البيانات المدخلة. هل تريد الاستمرار؟'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('رجوع'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              ref.read(authControllerProvider.notifier).logout();
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
+            child: const Text('تأكيد الإلغاء',
+                style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final isLoading = ref.watch(globalLoadingProvider);
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar:
-          AppBar(title: const Text('إكمال الملف الشخصي'), centerTitle: true),
+      appBar: AppBar(
+        title: const Text('إكمال الملف الشخصي'),
+        centerTitle: true,
+        leading: IconButton(
+          icon: const Icon(Icons.close, color: AppColors.error),
+          onPressed: _cancelAndLogout,
+          tooltip: 'إلغاء وتسجيل الخروج',
+        ),
+      ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(AppSizes.p24),
         child: Form(

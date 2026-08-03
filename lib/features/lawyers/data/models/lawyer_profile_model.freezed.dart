@@ -24,6 +24,9 @@ mixin _$LawyerProfileModel {
       throw _privateConstructorUsedError; // جعلها اختيارية لتجنب الانهيار عند القراءة
   @JsonKey(name: 'profile_id')
   String? get profileId => throw _privateConstructorUsedError;
+  @JsonKey(name: 'full_name')
+  String? get fullName =>
+      throw _privateConstructorUsedError; // إضافة الحقل لدعم القراءة من الجداول الموحدة
   @JsonKey(name: 'license_number')
   String? get licenseNumber => throw _privateConstructorUsedError;
   String? get bio => throw _privateConstructorUsedError;
@@ -60,6 +63,7 @@ abstract class $LawyerProfileModelCopyWith<$Res> {
   $Res call(
       {String? id,
       @JsonKey(name: 'profile_id') String? profileId,
+      @JsonKey(name: 'full_name') String? fullName,
       @JsonKey(name: 'license_number') String? licenseNumber,
       String? bio,
       String? specialization,
@@ -91,6 +95,7 @@ class _$LawyerProfileModelCopyWithImpl<$Res, $Val extends LawyerProfileModel>
   $Res call({
     Object? id = freezed,
     Object? profileId = freezed,
+    Object? fullName = freezed,
     Object? licenseNumber = freezed,
     Object? bio = freezed,
     Object? specialization = freezed,
@@ -111,6 +116,10 @@ class _$LawyerProfileModelCopyWithImpl<$Res, $Val extends LawyerProfileModel>
       profileId: freezed == profileId
           ? _value.profileId
           : profileId // ignore: cast_nullable_to_non_nullable
+              as String?,
+      fullName: freezed == fullName
+          ? _value.fullName
+          : fullName // ignore: cast_nullable_to_non_nullable
               as String?,
       licenseNumber: freezed == licenseNumber
           ? _value.licenseNumber
@@ -171,6 +180,7 @@ abstract class _$$LawyerProfileModelImplCopyWith<$Res>
   $Res call(
       {String? id,
       @JsonKey(name: 'profile_id') String? profileId,
+      @JsonKey(name: 'full_name') String? fullName,
       @JsonKey(name: 'license_number') String? licenseNumber,
       String? bio,
       String? specialization,
@@ -200,6 +210,7 @@ class __$$LawyerProfileModelImplCopyWithImpl<$Res>
   $Res call({
     Object? id = freezed,
     Object? profileId = freezed,
+    Object? fullName = freezed,
     Object? licenseNumber = freezed,
     Object? bio = freezed,
     Object? specialization = freezed,
@@ -220,6 +231,10 @@ class __$$LawyerProfileModelImplCopyWithImpl<$Res>
       profileId: freezed == profileId
           ? _value.profileId
           : profileId // ignore: cast_nullable_to_non_nullable
+              as String?,
+      fullName: freezed == fullName
+          ? _value.fullName
+          : fullName // ignore: cast_nullable_to_non_nullable
               as String?,
       licenseNumber: freezed == licenseNumber
           ? _value.licenseNumber
@@ -275,6 +290,7 @@ class _$LawyerProfileModelImpl extends _LawyerProfileModel {
   const _$LawyerProfileModelImpl(
       {this.id,
       @JsonKey(name: 'profile_id') this.profileId,
+      @JsonKey(name: 'full_name') this.fullName,
       @JsonKey(name: 'license_number') this.licenseNumber,
       this.bio,
       this.specialization,
@@ -298,6 +314,10 @@ class _$LawyerProfileModelImpl extends _LawyerProfileModel {
   @override
   @JsonKey(name: 'profile_id')
   final String? profileId;
+  @override
+  @JsonKey(name: 'full_name')
+  final String? fullName;
+// إضافة الحقل لدعم القراءة من الجداول الموحدة
   @override
   @JsonKey(name: 'license_number')
   final String? licenseNumber;
@@ -331,7 +351,7 @@ class _$LawyerProfileModelImpl extends _LawyerProfileModel {
 
   @override
   String toString() {
-    return 'LawyerProfileModel(id: $id, profileId: $profileId, licenseNumber: $licenseNumber, bio: $bio, specialization: $specialization, yearsExperience: $yearsExperience, consultationPrice: $consultationPrice, whatsapp: $whatsapp, idCardUrl: $idCardUrl, rating: $rating, reviewCount: $reviewCount, verified: $verified, availability: $availability)';
+    return 'LawyerProfileModel(id: $id, profileId: $profileId, fullName: $fullName, licenseNumber: $licenseNumber, bio: $bio, specialization: $specialization, yearsExperience: $yearsExperience, consultationPrice: $consultationPrice, whatsapp: $whatsapp, idCardUrl: $idCardUrl, rating: $rating, reviewCount: $reviewCount, verified: $verified, availability: $availability)';
   }
 
   @override
@@ -342,6 +362,8 @@ class _$LawyerProfileModelImpl extends _LawyerProfileModel {
             (identical(other.id, id) || other.id == id) &&
             (identical(other.profileId, profileId) ||
                 other.profileId == profileId) &&
+            (identical(other.fullName, fullName) ||
+                other.fullName == fullName) &&
             (identical(other.licenseNumber, licenseNumber) ||
                 other.licenseNumber == licenseNumber) &&
             (identical(other.bio, bio) || other.bio == bio) &&
@@ -370,6 +392,7 @@ class _$LawyerProfileModelImpl extends _LawyerProfileModel {
       runtimeType,
       id,
       profileId,
+      fullName,
       licenseNumber,
       bio,
       specialization,
@@ -403,6 +426,7 @@ abstract class _LawyerProfileModel extends LawyerProfileModel {
   const factory _LawyerProfileModel(
       {final String? id,
       @JsonKey(name: 'profile_id') final String? profileId,
+      @JsonKey(name: 'full_name') final String? fullName,
       @JsonKey(name: 'license_number') final String? licenseNumber,
       final String? bio,
       final String? specialization,
@@ -425,6 +449,9 @@ abstract class _LawyerProfileModel extends LawyerProfileModel {
   @override
   @JsonKey(name: 'profile_id')
   String? get profileId;
+  @override
+  @JsonKey(name: 'full_name')
+  String? get fullName; // إضافة الحقل لدعم القراءة من الجداول الموحدة
   @override
   @JsonKey(name: 'license_number')
   String? get licenseNumber;

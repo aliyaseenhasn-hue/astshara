@@ -2,7 +2,7 @@
 // RiverpodGenerator
 // **************************************************************************
 
-String _$authRepositoryHash() => r'8642d134c128d56095864bbabec9d87920a844d3';
+String _$authRepositoryHash() => r'8be43c642fcd127ba426a05e2eccc3c654f11bf6';
 
 /// See also [authRepository].
 @ProviderFor(authRepository)
@@ -36,7 +36,7 @@ final authStateChangesProvider = AutoDisposeStreamProvider<AppUser?>.internal(
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
 typedef AuthStateChangesRef = AutoDisposeStreamProviderRef<AppUser?>;
-String _$authControllerHash() => r'92648cb080939ecf87da63c4cde19c2357733080';
+String _$authControllerHash() => r'4d20d57d84dbd1ae7a1beae0e3ac5544565ba1f0';
 
 /// See also [AuthController].
 @ProviderFor(AuthController)

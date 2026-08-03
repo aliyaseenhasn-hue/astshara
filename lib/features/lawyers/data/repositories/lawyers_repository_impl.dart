@@ -61,18 +61,31 @@ class LawyersRepositoryImpl implements LawyersRepository {
 
   @override
   Future<void> updateLawyerProfile(LawyerProfile profile) async {
-    await _supabase.from('lawyer_profiles').upsert({
-      'profile_id': profile.profileId,
-      'full_name': profile.fullName, // إضافة الحقل المفقود
-      'license_number': profile.licenseNumber,
-      'bio': profile.bio,
-      'specialization': profile.specialization,
-      'years_experience': profile.yearsExperience,
-      'consultation_price': profile.consultationPrice,
-      'whatsapp': profile.whatsapp,
-      'id_card_url': profile.idCardUrl,
-      'availability': profile.availability,
-    }, onConflict: 'profile_id');
+    try {
+      debugPrint('⚖️ Updating lawyer profile for: ${profile.profileId}');
+      await _supabase.from('lawyer_profiles').upsert({
+        'profile_id': profile.profileId,
+        // 'full_name': profile.fullName, // Removed redundant field causing 400 error
+        'license_number': profile.licenseNumber,
+        'bio': profile.bio,
+        'specialization': profile.specialization,
+        'years_experience': profile.yearsExperience,
+        'consultation_price': profile.consultationPrice,
+        'whatsapp': profile.whatsapp,
+        'id_card_url': profile.idCardUrl,
+        'availability': profile.availability,
+      }, onConflict: 'profile_id');
+      debugPrint('✅ Lawyer profile updated successfully');
+    } on PostgrestException catch (e) {
+      debugPrint('❌ Supabase error (400) updating lawyer profile:');
+      debugPrint('Message: ${e.message}');
+      debugPrint('Details: ${e.details}');
+      debugPrint('Hint: ${e.hint}');
+      rethrow;
+    } catch (e) {
+      debugPrint('❌ Unexpected error updating lawyer profile: $e');
+      rethrow;
+    }
   }
 
   @override
