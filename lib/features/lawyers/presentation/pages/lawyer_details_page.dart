@@ -263,16 +263,16 @@ class LawyerDetailsPage extends ConsumerWidget {
   }
 
   Widget _buildServicesGrid(dynamic lawyer) {
+    final double price = lawyer.consultationPrice ?? 0.0;
     return Row(
       children: [
-        _buildServiceItem(Icons.chat, 'مراسلة نصية',
-            '${(lawyer.consultationPrice * 0.5).toInt()}'),
+        _buildServiceItem(
+            Icons.chat, 'مراسلة نصية', '${(price * 0.5).toInt()}'),
+        const SizedBox(width: 8),
+        _buildServiceItem(Icons.call, 'مكالمة صوتية', '${price.toInt()}'),
         const SizedBox(width: 8),
         _buildServiceItem(
-            Icons.call, 'مكالمة صوتية', '${lawyer.consultationPrice}'),
-        const SizedBox(width: 8),
-        _buildServiceItem(Icons.videocam, 'مكالمة فيديو',
-            '${(lawyer.consultationPrice * 1.5).toInt()}'),
+            Icons.videocam, 'مكالمة فيديو', '${(price * 1.5).toInt()}'),
       ],
     );
   }

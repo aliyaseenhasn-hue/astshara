@@ -13,8 +13,10 @@ class LawyerProfileModel with _$LawyerProfileModel {
     @JsonKey(name: 'profile_id') required String profileId,
     @JsonKey(name: 'license_number') String? licenseNumber,
     String? bio,
+    String? specialization, // إضافة التخصص هنا
     @JsonKey(name: 'years_experience') int? yearsExperience,
-    @JsonKey(name: 'consultation_price') double? consultationPrice,
+    @JsonKey(name: 'consultation_price', fromJson: _doubleFromPossibleString)
+    double? consultationPrice,
     String? whatsapp,
     @JsonKey(name: 'id_card_url') String? idCardUrl,
     @Default(0.0) double rating,
@@ -31,6 +33,7 @@ class LawyerProfileModel with _$LawyerProfileModel {
         profileId: profileId,
         licenseNumber: licenseNumber,
         bio: bio,
+        specialization: specialization, // تعيين التخصص
         yearsExperience: yearsExperience,
         consultationPrice: consultationPrice,
         whatsapp: whatsapp,
@@ -40,4 +43,11 @@ class LawyerProfileModel with _$LawyerProfileModel {
         verified: verified,
         availability: availability,
       );
+}
+
+double? _doubleFromPossibleString(dynamic value) {
+  if (value == null) return null;
+  if (value is num) return value.toDouble();
+  if (value is String) return double.tryParse(value);
+  return null;
 }

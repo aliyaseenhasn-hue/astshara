@@ -26,9 +26,11 @@ mixin _$LawyerProfileModel {
   @JsonKey(name: 'license_number')
   String? get licenseNumber => throw _privateConstructorUsedError;
   String? get bio => throw _privateConstructorUsedError;
+  String? get specialization =>
+      throw _privateConstructorUsedError; // إضافة التخصص هنا
   @JsonKey(name: 'years_experience')
   int? get yearsExperience => throw _privateConstructorUsedError;
-  @JsonKey(name: 'consultation_price')
+  @JsonKey(name: 'consultation_price', fromJson: _doubleFromPossibleString)
   double? get consultationPrice => throw _privateConstructorUsedError;
   String? get whatsapp => throw _privateConstructorUsedError;
   @JsonKey(name: 'id_card_url')
@@ -60,8 +62,10 @@ abstract class $LawyerProfileModelCopyWith<$Res> {
       @JsonKey(name: 'profile_id') String profileId,
       @JsonKey(name: 'license_number') String? licenseNumber,
       String? bio,
+      String? specialization,
       @JsonKey(name: 'years_experience') int? yearsExperience,
-      @JsonKey(name: 'consultation_price') double? consultationPrice,
+      @JsonKey(name: 'consultation_price', fromJson: _doubleFromPossibleString)
+      double? consultationPrice,
       String? whatsapp,
       @JsonKey(name: 'id_card_url') String? idCardUrl,
       double rating,
@@ -89,6 +93,7 @@ class _$LawyerProfileModelCopyWithImpl<$Res, $Val extends LawyerProfileModel>
     Object? profileId = null,
     Object? licenseNumber = freezed,
     Object? bio = freezed,
+    Object? specialization = freezed,
     Object? yearsExperience = freezed,
     Object? consultationPrice = freezed,
     Object? whatsapp = freezed,
@@ -114,6 +119,10 @@ class _$LawyerProfileModelCopyWithImpl<$Res, $Val extends LawyerProfileModel>
       bio: freezed == bio
           ? _value.bio
           : bio // ignore: cast_nullable_to_non_nullable
+              as String?,
+      specialization: freezed == specialization
+          ? _value.specialization
+          : specialization // ignore: cast_nullable_to_non_nullable
               as String?,
       yearsExperience: freezed == yearsExperience
           ? _value.yearsExperience
@@ -164,8 +173,10 @@ abstract class _$$LawyerProfileModelImplCopyWith<$Res>
       @JsonKey(name: 'profile_id') String profileId,
       @JsonKey(name: 'license_number') String? licenseNumber,
       String? bio,
+      String? specialization,
       @JsonKey(name: 'years_experience') int? yearsExperience,
-      @JsonKey(name: 'consultation_price') double? consultationPrice,
+      @JsonKey(name: 'consultation_price', fromJson: _doubleFromPossibleString)
+      double? consultationPrice,
       String? whatsapp,
       @JsonKey(name: 'id_card_url') String? idCardUrl,
       double rating,
@@ -191,6 +202,7 @@ class __$$LawyerProfileModelImplCopyWithImpl<$Res>
     Object? profileId = null,
     Object? licenseNumber = freezed,
     Object? bio = freezed,
+    Object? specialization = freezed,
     Object? yearsExperience = freezed,
     Object? consultationPrice = freezed,
     Object? whatsapp = freezed,
@@ -216,6 +228,10 @@ class __$$LawyerProfileModelImplCopyWithImpl<$Res>
       bio: freezed == bio
           ? _value.bio
           : bio // ignore: cast_nullable_to_non_nullable
+              as String?,
+      specialization: freezed == specialization
+          ? _value.specialization
+          : specialization // ignore: cast_nullable_to_non_nullable
               as String?,
       yearsExperience: freezed == yearsExperience
           ? _value.yearsExperience
@@ -261,8 +277,10 @@ class _$LawyerProfileModelImpl extends _LawyerProfileModel {
       @JsonKey(name: 'profile_id') required this.profileId,
       @JsonKey(name: 'license_number') this.licenseNumber,
       this.bio,
+      this.specialization,
       @JsonKey(name: 'years_experience') this.yearsExperience,
-      @JsonKey(name: 'consultation_price') this.consultationPrice,
+      @JsonKey(name: 'consultation_price', fromJson: _doubleFromPossibleString)
+      this.consultationPrice,
       this.whatsapp,
       @JsonKey(name: 'id_card_url') this.idCardUrl,
       this.rating = 0.0,
@@ -285,10 +303,13 @@ class _$LawyerProfileModelImpl extends _LawyerProfileModel {
   @override
   final String? bio;
   @override
+  final String? specialization;
+// إضافة التخصص هنا
+  @override
   @JsonKey(name: 'years_experience')
   final int? yearsExperience;
   @override
-  @JsonKey(name: 'consultation_price')
+  @JsonKey(name: 'consultation_price', fromJson: _doubleFromPossibleString)
   final double? consultationPrice;
   @override
   final String? whatsapp;
@@ -310,7 +331,7 @@ class _$LawyerProfileModelImpl extends _LawyerProfileModel {
 
   @override
   String toString() {
-    return 'LawyerProfileModel(id: $id, profileId: $profileId, licenseNumber: $licenseNumber, bio: $bio, yearsExperience: $yearsExperience, consultationPrice: $consultationPrice, whatsapp: $whatsapp, idCardUrl: $idCardUrl, rating: $rating, reviewCount: $reviewCount, verified: $verified, availability: $availability)';
+    return 'LawyerProfileModel(id: $id, profileId: $profileId, licenseNumber: $licenseNumber, bio: $bio, specialization: $specialization, yearsExperience: $yearsExperience, consultationPrice: $consultationPrice, whatsapp: $whatsapp, idCardUrl: $idCardUrl, rating: $rating, reviewCount: $reviewCount, verified: $verified, availability: $availability)';
   }
 
   @override
@@ -324,6 +345,8 @@ class _$LawyerProfileModelImpl extends _LawyerProfileModel {
             (identical(other.licenseNumber, licenseNumber) ||
                 other.licenseNumber == licenseNumber) &&
             (identical(other.bio, bio) || other.bio == bio) &&
+            (identical(other.specialization, specialization) ||
+                other.specialization == specialization) &&
             (identical(other.yearsExperience, yearsExperience) ||
                 other.yearsExperience == yearsExperience) &&
             (identical(other.consultationPrice, consultationPrice) ||
@@ -349,6 +372,7 @@ class _$LawyerProfileModelImpl extends _LawyerProfileModel {
       profileId,
       licenseNumber,
       bio,
+      specialization,
       yearsExperience,
       consultationPrice,
       whatsapp,
@@ -381,8 +405,10 @@ abstract class _LawyerProfileModel extends LawyerProfileModel {
       @JsonKey(name: 'profile_id') required final String profileId,
       @JsonKey(name: 'license_number') final String? licenseNumber,
       final String? bio,
+      final String? specialization,
       @JsonKey(name: 'years_experience') final int? yearsExperience,
-      @JsonKey(name: 'consultation_price') final double? consultationPrice,
+      @JsonKey(name: 'consultation_price', fromJson: _doubleFromPossibleString)
+      final double? consultationPrice,
       final String? whatsapp,
       @JsonKey(name: 'id_card_url') final String? idCardUrl,
       final double rating,
@@ -405,10 +431,12 @@ abstract class _LawyerProfileModel extends LawyerProfileModel {
   @override
   String? get bio;
   @override
+  String? get specialization; // إضافة التخصص هنا
+  @override
   @JsonKey(name: 'years_experience')
   int? get yearsExperience;
   @override
-  @JsonKey(name: 'consultation_price')
+  @JsonKey(name: 'consultation_price', fromJson: _doubleFromPossibleString)
   double? get consultationPrice;
   @override
   String? get whatsapp;

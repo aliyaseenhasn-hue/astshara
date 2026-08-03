@@ -18,7 +18,16 @@ class LawyersRepositoryImpl implements LawyersRepository {
 
     return (response as List).map((json) {
       final model = LawyerProfileModel.fromJson(json);
-      final profile = json['profiles'] as Map<String, dynamic>?;
+      final profileData = json['profiles'];
+
+      // معالجة مرنة للـ Join (سواء كان كائن أو قائمة)
+      Map<String, dynamic>? profile;
+      if (profileData is List && profileData.isNotEmpty) {
+        profile = profileData.first as Map<String, dynamic>;
+      } else if (profileData is Map) {
+        profile = profileData as Map<String, dynamic>;
+      }
+
       return model.toEntity().copyWith(
             fullName: profile?['full_name'],
           );
@@ -34,8 +43,17 @@ class LawyersRepositoryImpl implements LawyersRepository {
         .maybeSingle();
 
     if (response == null) return null;
+
     final model = LawyerProfileModel.fromJson(response);
-    final profile = response['profiles'] as Map<String, dynamic>?;
+    final profileData = response['profiles'];
+
+    Map<String, dynamic>? profile;
+    if (profileData is List && profileData.isNotEmpty) {
+      profile = profileData.first as Map<String, dynamic>;
+    } else if (profileData is Map) {
+      profile = profileData as Map<String, dynamic>;
+    }
+
     return model.toEntity().copyWith(
           fullName: profile?['full_name'],
         );
