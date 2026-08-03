@@ -292,7 +292,8 @@ class _CreateBookingPageState extends ConsumerState<CreateBookingPage> {
       title: Text(title),
       value: method,
       groupValue: _paymentMethod,
-      onChanged: (val) => setState(() => _paymentMethod = val!),
+      onChanged: (val) =>
+          val != null ? setState(() => _paymentMethod = val) : null,
       contentPadding: EdgeInsets.zero,
       activeColor: AppColors.primary,
     );

@@ -39,7 +39,7 @@ class _CompleteProfilePageState extends ConsumerState<CompleteProfilePage> {
         final googleName =
             user.userMetadata?['full_name'] ?? user.userMetadata?['name'];
         if (googleName != null) _nameController.text = googleName;
-        if (user.email != null) _emailController.text = user.email!;
+        if (user.email != null) _emailController.text = user.email ?? '';
       }
       _isInitialized = true;
     }

@@ -90,7 +90,8 @@ class _PaymentUploadPageState extends ConsumerState<PaymentUploadPage> {
                 items: ['ZainCash', 'Asia Hawala', 'Qi Card', 'MasterCard']
                     .map((m) => DropdownMenuItem(value: m, child: Text(m)))
                     .toList(),
-                onChanged: (val) => setState(() => _selectedMethod = val!),
+                onChanged: (val) =>
+                    val != null ? setState(() => _selectedMethod = val) : null,
                 decoration: const InputDecoration(border: OutlineInputBorder()),
               ),
               const SizedBox(height: AppSizes.p16),
@@ -122,11 +123,13 @@ class _PaymentUploadPageState extends ConsumerState<PaymentUploadPage> {
                             Text('اضغط لاختيار صورة الإيصال')
                           ],
                         )
-                      : kIsWeb
-                          ? Image.network(_receiptImage!.path,
-                              fit: BoxFit.contain)
-                          : Image.file(File(_receiptImage!.path),
-                              fit: BoxFit.contain),
+                      : _receiptImage != null
+                          ? (kIsWeb
+                              ? Image.network(_receiptImage!.path,
+                                  fit: BoxFit.contain)
+                              : Image.file(File(_receiptImage!.path),
+                                  fit: BoxFit.contain))
+                          : const SizedBox(),
                 ),
               ),
               const SizedBox(height: AppSizes.p32),

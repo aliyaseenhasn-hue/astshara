@@ -68,7 +68,7 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
       title: Text(title),
       value: value,
       groupValue: _selectedSound,
-      onChanged: (val) => _saveSound(val!),
+      onChanged: (val) => val != null ? _saveSound(val) : null,
       activeColor: AppColors.primary,
     );
   }

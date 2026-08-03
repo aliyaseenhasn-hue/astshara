@@ -35,10 +35,11 @@ class AuthRepositoryImpl implements AuthRepository {
 
     try {
       // 1. جلب بيانات البروفايل الأساسية
+      // نستخدم id لأن سياسة RLS "Self Manage" تتحقق من auth.uid() = id
       final profileResponse = await _supabase
           .from('profiles')
           .select()
-          .eq('auth_id', user.id)
+          .eq('id', user.id)
           .maybeSingle();
 
       if (profileResponse == null) {
@@ -192,13 +193,14 @@ class AuthRepositoryImpl implements AuthRepository {
 
     try {
       // السجل موجود بفضل الـ Trigger handle_new_user - نستخدم update مباشرة
+      // نستخدم id لأن سياسة RLS "Self Manage" تتحقق من auth.uid() = id
       await _supabase
           .from('profiles')
           .update({
             ...data,
             'updated_at': DateTime.now().toIso8601String(),
           })
-          .eq('auth_id', user.id)
+          .eq('id', user.id)
           .then((value) {
             debugPrint('✅ تم تحديث الملف الشخصي بنجاح');
           });
@@ -224,7 +226,8 @@ class AuthRepositoryImpl implements AuthRepository {
     if (user == null) return;
 
     // حذف سجل البروفايل (سيقوم الـ CASCADE بحذف البيانات المرتبطة)
-    await _supabase.from('profiles').delete().eq('auth_id', user.id);
+    // نستخدم id لأن سياسة RLS "Self Manage" تتحقق من auth.uid() = id
+    await _supabase.from('profiles').delete().eq('id', user.id);
 
     // استدعاء دالة RPC لحذف المستخدم من سجلات المصادقة نهائياً
     try {

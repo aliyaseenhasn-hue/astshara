@@ -99,8 +99,12 @@ class LawyerVerificationPage extends ConsumerWidget {
                               if (lawyer.idCardUrl != null)
                                 Expanded(
                                   child: InkWell(
-                                    onTap: () => _showImageDialog(
-                                        context, lawyer.idCardUrl!),
+                                                                        onTap: () {
+                                      if (lawyer.idCardUrl != null) {
+                                        _showImageDialog(
+                                            context, lawyer.idCardUrl!);
+                                      }
+                                    },
                                     child: Container(
                                       height: 100,
                                       decoration: BoxDecoration(

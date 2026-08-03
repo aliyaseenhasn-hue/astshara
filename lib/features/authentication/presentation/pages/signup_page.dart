@@ -105,7 +105,8 @@ class _SignupPageState extends ConsumerState<SignupPage> {
                       title: const Text('عميل'),
                       value: 'user',
                       groupValue: _selectedRole,
-                      onChanged: (val) => setState(() => _selectedRole = val!),
+                      onChanged: (val) =>
+                          setState(() => _selectedRole = val ?? 'user'),
                     ),
                   ),
                   Expanded(
@@ -113,7 +114,8 @@ class _SignupPageState extends ConsumerState<SignupPage> {
                       title: const Text('محامي'),
                       value: 'lawyer',
                       groupValue: _selectedRole,
-                      onChanged: (val) => setState(() => _selectedRole = val!),
+                      onChanged: (val) =>
+                          setState(() => _selectedRole = val ?? 'lawyer'),
                     ),
                   ),
                 ],
