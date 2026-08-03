@@ -34,12 +34,11 @@ class AuthRepositoryImpl implements AuthRepository {
     if (user == null) return null;
 
     try {
-      // 1. جلب بيانات البروفايل الأساسية
-      // نستخدم id لأن سياسة RLS "Self Manage" تتحقق من auth.uid() = id
+      // 1. جلب بيانات البروفايل الأساسية باستخدام auth_id
       final profileResponse = await _supabase
           .from('profiles')
           .select()
-          .eq('id', user.id)
+          .eq('auth_id', user.id)
           .maybeSingle();
 
       if (profileResponse == null) {
@@ -62,10 +61,12 @@ class AuthRepositoryImpl implements AuthRepository {
           (roleValue is String) ? roleValue : (roleValue?.toString() ?? 'user');
 
       if (roleStr == 'lawyer') {
+        // نستخدم profiles.id للبحث في lawyer_profiles
+        final profileId = profileResponse['id'] as String;
         final lawyerResponse = await _supabase
             .from('lawyer_profiles')
             .select('verified')
-            .eq('profile_id', user.id)
+            .eq('profile_id', profileId)
             .maybeSingle();
 
         if (lawyerResponse != null) {
@@ -76,19 +77,16 @@ class AuthRepositoryImpl implements AuthRepository {
 
       final appUser = AppUserModel.fromJson(profileResponse).toEntity();
 
-      // بما أن عمود onboarding_completed مفقود من قاعدة البيانات، سنعتمد على منطق بديل:
-      // إذا كان الاسم مسجلاً وغير مساوٍ للقيمة الافتراضية، نعتبر البيانات مكتملة.
-      final bool isActuallyOnboarded = appUser.fullName != null &&
-          appUser.fullName != 'مستخدم جديد' &&
-          appUser.fullName!.trim().isNotEmpty;
+      // قراءة القيمة الفعلية من DB
+      final bool isOnboarded = profileResponse['onboarding_completed'] == true;
 
       debugPrint(
-          'DB Profile: ${profileResponse['full_name']}, Onboarding Calc: $isActuallyOnboarded');
+          'DB Profile: ${profileResponse['full_name']}, Onboarding Status: $isOnboarded');
 
       return appUser.copyWith(
         isVerified: isVerified,
         hasProfessionalProfile: hasProfessionalProfile,
-        isOnboardingComplete: isActuallyOnboarded,
+        isOnboardingComplete: isOnboarded,
       );
     } catch (e) {
       debugPrint('Error fetching user profile from DB: $e');
@@ -188,15 +186,11 @@ class AuthRepositoryImpl implements AuthRepository {
     if (avatarUrl != null && avatarUrl.trim().isNotEmpty) {
       data['avatar_url'] = avatarUrl.trim();
     }
-    // تم تعطيل إرسال onboarding_completed لأن العمود غير موجود في المخطط الفعلي
-    /* 
+
+    // تفعيل إرسال onboarding_completed
     if (onboardingCompleted != null) {
       data['onboarding_completed'] = onboardingCompleted;
     }
-    */
-
-    // ملاحظة: لا نرسل phone هنا لأن Supabase Auth يديره تلقائياً
-    // وإرساله قد يسبب تعارضاً مع قيد UNIQUE في جدول profiles
 
     // تأكد أن هناك بيانات للتحديث
     if (data.isEmpty) {
@@ -205,31 +199,24 @@ class AuthRepositoryImpl implements AuthRepository {
     }
 
     debugPrint('📝 بيانات التحديث المرسلة: $data');
-    debugPrint('🔑 معرف المستخدم: ${user.id}');
+    debugPrint('🔑 معرف المصادقة: ${user.id}');
 
     try {
-      // نستخدم upsert لضمان إنشاء السجل إذا لم يكن موجوداً (حل لمشكلة فشل الـ Trigger)
-      // ونحدد onConflict: 'id' لضمان التحديث في حال الوجود
-      await _supabase.from('profiles').upsert({
-        'id': user.id,
-        'auth_id': user.id,
+      // استخدام update مع الفلترة بـ auth_id
+      await _supabase.from('profiles').update({
         ...data,
         'updated_at': DateTime.now().toIso8601String(),
-      }, onConflict: 'id');
+      }).eq('auth_id', user.id);
 
-      debugPrint('✅ تم حفظ/تحديث الملف الشخصي بنجاح (Upsert)');
+      debugPrint('✅ تم تحديث الملف الشخصي بنجاح');
 
       // بثّ الحالة المحدثة للمستخدم
       await refreshUser();
     } on PostgrestException catch (e) {
-      debugPrint('❌ خطأ Supabase (400):');
-      debugPrint('Message: ${e.message}');
-      debugPrint('Details: ${e.details}');
-      debugPrint('Hint: ${e.hint}');
-      debugPrint('Code: ${e.code}');
+      debugPrint('❌ خطأ Supabase: ${e.message}');
       rethrow;
     } catch (e) {
-      debugPrint('❌ خطأ غير متوقع في تحديث الملف: $e');
+      debugPrint('❌ خطأ غير متوقع: $e');
       rethrow;
     }
   }
@@ -246,9 +233,8 @@ class AuthRepositoryImpl implements AuthRepository {
     final user = _supabase.auth.currentUser;
     if (user == null) return;
 
-    // حذف سجل البروفايل (سيقوم الـ CASCADE بحذف البيانات المرتبطة)
-    // نستخدم id لأن سياسة RLS "Self Manage" تتحقق من auth.uid() = id
-    await _supabase.from('profiles').delete().eq('id', user.id);
+    // حذف سجل البروفايل باستخدام auth_id
+    await _supabase.from('profiles').delete().eq('auth_id', user.id);
 
     // استدعاء دالة RPC لحذف المستخدم من سجلات المصادقة نهائياً
     try {

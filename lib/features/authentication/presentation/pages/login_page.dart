@@ -29,24 +29,11 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     if (_formKey.currentState?.validate() ?? false) {
       String phone = _phoneController.text.trim().replaceAll(' ', '');
 
-      // معالجة الرقم العراقي بدقة: حذف الصفر الأول ورمز الدولة إذا وجد
       if (phone.startsWith('+964')) phone = phone.substring(4);
       if (phone.startsWith('964')) phone = phone.substring(3);
       if (phone.startsWith('0')) phone = phone.substring(1);
 
-      // الصيغة النهائية التي وضعناها في السيرفر (964 + الرقم)
       final formattedPhone = '964$phone';
-
-      // تأمين دخول الأدمن: السماح فقط برقمك الخاص
-      if (widget.isAdminLogin && formattedPhone != '9647744844877') {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-              content: Text('هذا الرقم لا يملك صلاحية دخول المسؤولين'),
-              backgroundColor: AppColors.error),
-        );
-        return;
-      }
-
       debugPrint('Submitting phone: $formattedPhone');
 
       try {
@@ -82,142 +69,201 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     });
 
     return Scaffold(
-      backgroundColor:
-          widget.isAdminLogin ? AppColors.primary : AppColors.surface,
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(
-              horizontal: AppSizes.p32, vertical: 60),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Icon(
-                  widget.isAdminLogin
-                      ? Icons.admin_panel_settings
-                      : Icons.account_balance,
-                  size: 80,
-                  color: widget.isAdminLogin ? Colors.white : AppColors.primary,
-                ),
-                const SizedBox(height: 24),
-                Text(
-                  widget.isAdminLogin ? 'دخول المسؤولين' : 'استشارة',
-                  style: TextStyle(
-                    fontSize: 32,
-                    fontWeight: FontWeight.bold,
-                    color:
-                        widget.isAdminLogin ? Colors.white : AppColors.primary,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  widget.isAdminLogin
-                      ? 'نظام الإدارة المركزي'
-                      : 'منصتك القانونية الموثوقة في العراق',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: widget.isAdminLogin
-                        ? Colors.white70
-                        : AppColors.outline,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 60),
-                Text(
-                  'يرجى إدخال رقم الهاتف المسجل',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: widget.isAdminLogin ? Colors.white : Colors.black,
+      body: Container(
+        width: double.infinity,
+        height: double.infinity,
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: AppColors.loginGradient,
+            stops: [0.6, 1.0],
+          ),
+        ),
+        child: Stack(
+          children: [
+            // Decorative Circles from Design System
+            Positioned(
+              top: -40,
+              left: -40,
+              child: Container(
+                width: 180,
+                height: 180,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: AppColors.gold.withValues(alpha: 0.1),
+                    width: 30,
                   ),
                 ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: _phoneController,
-                  style: TextStyle(
-                      color: widget.isAdminLogin ? Colors.white : Colors.black),
-                  decoration: InputDecoration(
-                    labelText: 'رقم الهاتف',
-                    labelStyle: TextStyle(
-                        color: widget.isAdminLogin
-                            ? Colors.white70
-                            : AppColors.outline),
-                    hintText: '77xxxxxxxx',
-                    hintStyle: TextStyle(
-                        color: widget.isAdminLogin
-                            ? Colors.white30
-                            : AppColors.outline),
-                    prefixIcon: Icon(Icons.phone_android,
-                        color: widget.isAdminLogin
-                            ? Colors.white70
-                            : AppColors.primary),
-                    border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12)),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(
-                          color: widget.isAdminLogin
-                              ? Colors.white30
-                              : AppColors.surfaceVariant),
-                    ),
+              ),
+            ),
+            Positioned(
+              bottom: -30,
+              right: -20,
+              child: Container(
+                width: 120,
+                height: 120,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: AppColors.gold.withValues(alpha: 0.08),
+                    width: 20,
                   ),
-                  keyboardType: TextInputType.phone,
-                  validator: (val) => val?.isEmpty ?? true ? 'مطلوب' : null,
                 ),
-                const SizedBox(height: 24),
-                state.isLoading
-                    ? const LoadingWidget()
-                    : ElevatedButton(
-                        onPressed: _submit,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: widget.isAdminLogin
-                              ? Colors.white
-                              : AppColors.primary,
-                          foregroundColor: widget.isAdminLogin
-                              ? AppColors.primary
-                              : Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 18),
-                        ),
-                        child: Text(
-                          widget.isAdminLogin
-                              ? 'تسجيل دخول الأدمن'
-                              : 'إرسال رمز التحقق',
-                          style: const TextStyle(
-                              fontSize: 16, fontWeight: FontWeight.bold),
-                        ),
-                      ),
-                if (!widget.isAdminLogin) ...[
-                  const SizedBox(height: 24),
-                  const Row(
+              ),
+            ),
+
+            SafeArea(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.symmetric(
+                    horizontal: AppSizes.p32, vertical: 40),
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      Expanded(child: Divider()),
-                      Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 16),
-                        child: Text('أو',
-                            style: TextStyle(color: AppColors.outline)),
+                      const SizedBox(height: 20),
+                      // Brand Mark
+                      Row(
+                        children: [
+                          Container(
+                            width: 50,
+                            height: 50,
+                            decoration: BoxDecoration(
+                              color: AppColors.gold.withValues(alpha: 0.2),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: AppColors.gold.withValues(alpha: 0.4),
+                                width: 1.5,
+                              ),
+                            ),
+                            child: const Icon(Icons.account_balance,
+                                color: AppColors.gold, size: 28),
+                          ),
+                          const SizedBox(width: 12),
+                          const Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'استشارة',
+                                style: TextStyle(
+                                  fontSize: 22,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                  letterSpacing: 0.5,
+                                ),
+                              ),
+                              Text(
+                                'ISTISHARA',
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  color: Colors.white54,
+                                  letterSpacing: 2.0,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
                       ),
-                      Expanded(child: Divider()),
+                      const SizedBox(height: 40),
+                      const Text(
+                        'مرحباً بك',
+                        style: TextStyle(
+                          fontSize: 28,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      const Text(
+                        'منصتك القانونية الموثوقة\nفي العراق',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.white70,
+                          height: 1.5,
+                        ),
+                      ),
+                      const SizedBox(height: 50),
+
+                      // Phone Input Styled as per Design System
+                      TextFormField(
+                        controller: _phoneController,
+                        style: const TextStyle(color: Colors.white),
+                        decoration: InputDecoration(
+                          hintText: 'رقم الهاتف — 07xxxxxxxx',
+                          prefixIcon: const Icon(Icons.phone_android,
+                              color: Colors.white54),
+                          fillColor: Colors.white.withValues(alpha: 0.1),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(10),
+                            borderSide: BorderSide(
+                                color: Colors.white.withValues(alpha: 0.15)),
+                          ),
+                        ),
+                        keyboardType: TextInputType.phone,
+                        validator: (val) =>
+                            val?.isEmpty ?? true ? 'مطلوب' : null,
+                      ),
+
+                      const SizedBox(height: 20),
+                      state.isLoading
+                          ? const LoadingWidget()
+                          : ElevatedButton(
+                              onPressed: _submit,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppColors.gold,
+                                foregroundColor: AppColors.primary,
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 16),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                              ),
+                              child: const Text(
+                                'إرسال رمز التحقق',
+                                style: TextStyle(
+                                    fontSize: 15, fontWeight: FontWeight.bold),
+                              ),
+                            ),
+
+                      const SizedBox(height: 24),
+                      const Row(
+                        children: [
+                          Expanded(child: Divider(color: Colors.white10)),
+                          Padding(
+                            padding: EdgeInsets.symmetric(horizontal: 16),
+                            child: Text('أو',
+                                style: TextStyle(
+                                    color: Colors.white24, fontSize: 12)),
+                          ),
+                          Expanded(child: Divider(color: Colors.white10)),
+                        ],
+                      ),
+                      const SizedBox(height: 24),
+                      OutlinedButton.icon(
+                        onPressed: () => ref
+                            .read(authControllerProvider.notifier)
+                            .signInWithGoogle(),
+                        icon: const Icon(Icons.g_mobiledata,
+                            size: 30, color: Colors.white),
+                        label: const Text('المتابعة باستخدام Google'),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: Colors.white70,
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          side: BorderSide(
+                              color: Colors.white.withValues(alpha: 0.15)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                        ),
+                      ),
                     ],
                   ),
-                  const SizedBox(height: 24),
-                  OutlinedButton.icon(
-                    onPressed: () => ref
-                        .read(authControllerProvider.notifier)
-                        .signInWithGoogle(),
-                    icon: const Icon(Icons.account_circle,
-                        size: 24, color: Colors.blue),
-                    label: const Text('المتابعة باستخدام Google'),
-                    style: OutlinedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      side: const BorderSide(color: AppColors.surfaceVariant),
-                    ),
-                  ),
-                ],
-              ],
+                ),
+              ),
             ),
-          ),
+          ],
         ),
       ),
     );

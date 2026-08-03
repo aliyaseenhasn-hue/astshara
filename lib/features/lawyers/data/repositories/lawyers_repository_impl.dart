@@ -109,7 +109,7 @@ class LawyersRepositoryImpl implements LawyersRepository {
       debugPrint('تم رفع الملف بنجاح');
       return await _supabase.storage
           .from(bucket)
-          .createSignedUrl(filePath, 3600);
+          .createSignedUrl(filePath, 31536000);
     } catch (e) {
       debugPrint('خطأ في رفع الملف إلى Supabase: $e');
       rethrow;

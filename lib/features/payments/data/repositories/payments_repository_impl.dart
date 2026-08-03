@@ -40,7 +40,7 @@ class PaymentsRepositoryImpl implements PaymentsRepository {
           );
       return await _supabase.storage
           .from('receipts')
-          .createSignedUrl(filePath, 3600);
+          .createSignedUrl(filePath, 604800);
     } catch (e) {
       debugPrint('خطأ في رفع الإيصال: $e');
       rethrow;

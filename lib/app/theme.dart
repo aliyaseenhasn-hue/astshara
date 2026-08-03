@@ -7,49 +7,83 @@ class AppTheme {
     final baseTheme = ThemeData(
       useMaterial3: true,
       brightness: Brightness.light,
-      colorScheme: const ColorScheme.light(
+      colorScheme: ColorScheme.fromSeed(
+        seedColor: AppColors.primary,
         primary: AppColors.primary,
         onPrimary: AppColors.onPrimary,
-        secondary: AppColors.secondary,
-        onSecondary: AppColors.onSecondary,
+        secondary: AppColors.gold,
+        onSecondary: AppColors.primary,
         surface: AppColors.surface,
         error: AppColors.error,
         outline: AppColors.outline,
       ),
       scaffoldBackgroundColor: AppColors.background,
       appBarTheme: const AppBarTheme(
-        backgroundColor: AppColors.surface,
-        foregroundColor: AppColors.primary,
+        backgroundColor: AppColors.primary,
+        foregroundColor: Colors.white,
         elevation: 0,
         centerTitle: true,
         titleTextStyle: TextStyle(
-          fontSize: 20,
+          fontSize: 18,
           fontWeight: FontWeight.bold,
-          color: AppColors.primary,
+          color: Colors.white,
+          letterSpacing: 0.5,
         ),
       ),
       cardTheme: CardThemeData(
         color: AppColors.surface,
-        elevation: 2,
-        shadowColor: AppColors.primary.withValues(alpha: 0.05),
+        elevation: 0,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
+          side: BorderSide(
+              color: AppColors.surfaceVariant.withValues(alpha: 0.5), width: 1),
         ),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.primary,
-          foregroundColor: Colors.white,
-          minimumSize: const Size.fromHeight(50),
+          backgroundColor: AppColors.gold,
+          foregroundColor: AppColors.primary,
+          minimumSize: const Size.fromHeight(52),
+          textStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(10),
           ),
+          elevation: 0,
         ),
+      ),
+      inputDecorationTheme: InputDecorationTheme(
+        filled: true,
+        fillColor: Colors.black.withValues(alpha: 0.05),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide:
+              BorderSide(color: AppColors.outline.withValues(alpha: 0.2)),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide:
+              BorderSide(color: AppColors.outline.withValues(alpha: 0.2)),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: AppColors.gold, width: 2),
+        ),
+        hintStyle: TextStyle(
+            color: AppColors.outline.withValues(alpha: 0.6), fontSize: 12),
       ),
     );
 
     return baseTheme.copyWith(
-      textTheme: GoogleFonts.ibmPlexSansArabicTextTheme(baseTheme.textTheme),
+      textTheme:
+          GoogleFonts.ibmPlexSansArabicTextTheme(baseTheme.textTheme).copyWith(
+        titleLarge: GoogleFonts.ibmPlexSansArabic(
+          fontWeight: FontWeight.bold,
+          color: AppColors.primary,
+        ),
+        bodyMedium: GoogleFonts.ibmPlexSansArabic(
+          color: AppColors.primary.withValues(alpha: 0.8),
+        ),
+      ),
     );
   }
 
@@ -60,20 +94,20 @@ class AppTheme {
       colorScheme: const ColorScheme.dark(
         primary: AppColors.gold,
         onPrimary: AppColors.primary,
-        secondary: AppColors.secondary,
+        secondary: AppColors.accent,
         onSecondary: Colors.white,
         surface: Color(0xFF1a1a2e),
         error: AppColors.error,
         outline: Color(0xFF9e9e9e),
       ),
-      scaffoldBackgroundColor: const Color(0xFF121212),
+      scaffoldBackgroundColor: const Color(0xFF0F1D3A),
       appBarTheme: const AppBarTheme(
-        backgroundColor: Color(0xFF1a1a2e),
+        backgroundColor: Color(0xFF0F1D3A),
         foregroundColor: AppColors.gold,
         elevation: 0,
         centerTitle: true,
         titleTextStyle: TextStyle(
-          fontSize: 20,
+          fontSize: 18,
           fontWeight: FontWeight.bold,
           color: AppColors.gold,
         ),
@@ -89,9 +123,9 @@ class AppTheme {
         style: ElevatedButton.styleFrom(
           backgroundColor: AppColors.gold,
           foregroundColor: AppColors.primary,
-          minimumSize: const Size.fromHeight(50),
+          minimumSize: const Size.fromHeight(52),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(10),
           ),
         ),
       ),

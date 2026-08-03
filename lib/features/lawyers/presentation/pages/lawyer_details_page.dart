@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/constants/app_colors.dart';
-import '../../../../core/constants/app_sizes.dart';
 import '../../../../shared/widgets/loading_widget.dart';
 import '../providers/lawyers_provider.dart';
 
@@ -15,85 +14,95 @@ class LawyerDetailsPage extends ConsumerWidget {
     final lawyerAsync = ref.watch(lawyerProfileProvider(profileId));
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('الملف الشخصي'),
-        actions: [
-          IconButton(onPressed: () {}, icon: const Icon(Icons.share)),
-        ],
-      ),
+      backgroundColor: AppColors.background,
       body: lawyerAsync.when(
         data: (lawyer) => lawyer == null
             ? const Center(child: Text('المحامي غير موجود'))
             : Stack(
                 children: [
                   SingleChildScrollView(
-                    padding: const EdgeInsets.only(
-                      left: AppSizes.p20,
-                      right: AppSizes.p20,
-                      top: AppSizes.p16,
-                      bottom: 100, // مساحة للزر العائم في الأسفل
-                    ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        // Profile Header
-                        _buildProfileHeader(lawyer),
-                        const SizedBox(height: AppSizes.p24),
+                        // Hero Section with Gradient
+                        _buildHeroSection(context, lawyer),
 
-                        // Stats Grid
-                        _buildStatsGrid(lawyer),
-                        const SizedBox(height: AppSizes.p24),
-
-                        // About Section
-                        _buildAboutSection(lawyer),
-                        const SizedBox(height: AppSizes.p24),
-
-                        // Services Section
-                        const Text(
-                          'خدمات الاستشارة',
-                          style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              color: AppColors.primary),
+                        // Stats Row
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(16, 20, 16, 10),
+                          child: Row(
+                            children: [
+                              _buildStatItem(
+                                  '${lawyer.yearsExperience}+', 'سنة خبرة'),
+                              const SizedBox(width: 8),
+                              _buildStatItem('${lawyer.rating}★', 'التقييم',
+                                  color: AppColors.gold),
+                              const SizedBox(width: 8),
+                              _buildStatItem(
+                                  '${lawyer.reviewCount}', 'استشارة'),
+                            ],
+                          ),
                         ),
-                        const SizedBox(height: AppSizes.p16),
-                        _buildServicesGrid(lawyer),
-                        const SizedBox(height: AppSizes.p24),
 
-                        // Reviews Section
-                        _buildReviewsSection(lawyer),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              // About Card
+                              _buildAboutCard(lawyer),
+                              const SizedBox(height: 20),
+
+                              // Services Row
+                              const Text(
+                                'أنواع الاستشارة',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.bold,
+                                  color: AppColors.primary,
+                                ),
+                              ),
+                              const SizedBox(height: 12),
+                              _buildServicesRow(lawyer),
+                              const SizedBox(
+                                  height: 100), // Space for bottom bar
+                            ],
+                          ),
+                        ),
                       ],
                     ),
                   ),
 
-                  // Fixed Button at bottom
+                  // Bottom CTA Bar
                   Positioned(
                     bottom: 0,
                     left: 0,
                     right: 0,
                     child: Container(
-                      padding: const EdgeInsets.all(AppSizes.p16),
+                      padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
                         color: Colors.white,
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.05),
-                            blurRadius: 10,
-                            offset: const Offset(0, -4),
-                          ),
-                        ],
+                        border: Border(
+                            top: BorderSide(
+                                color: AppColors.surfaceVariant, width: 1)),
                       ),
-                      child: ElevatedButton.icon(
+                      child: ElevatedButton(
                         onPressed: () =>
                             context.push('/create-booking', extra: lawyer),
-                        icon: const Icon(Icons.event_available),
-                        label: const Text('طلب استشارة'),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.secondary,
-                          foregroundColor: Colors.white,
+                          backgroundColor: AppColors.primary,
+                          foregroundColor: AppColors.gold,
                           padding: const EdgeInsets.symmetric(vertical: 16),
                           shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12)),
+                              borderRadius: BorderRadius.circular(10)),
+                        ),
+                        child: const Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.calendar_today, size: 18),
+                            SizedBox(width: 8),
+                            Text('طلب استشارة الآن'),
+                          ],
                         ),
                       ),
                     ),
@@ -106,61 +115,85 @@ class LawyerDetailsPage extends ConsumerWidget {
     );
   }
 
-  Widget _buildProfileHeader(dynamic lawyer) {
+  Widget _buildHeroSection(BuildContext context, dynamic lawyer) {
     return Container(
-      padding: const EdgeInsets.all(AppSizes.p16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
-              blurRadius: 10,
-              offset: const Offset(0, 4)),
-        ],
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(20, 50, 20, 30),
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: AppColors.detailsGradient,
+        ),
       ),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Stack(
-            children: [
-              const CircleAvatar(
-                radius: 50,
-                backgroundColor: AppColors.surfaceVariant,
-                child: Icon(Icons.person, size: 50, color: AppColors.primary),
+          // Back Button
+          InkWell(
+            onTap: () => Navigator.pop(context),
+            child: Container(
+              width: 32,
+              height: 32,
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(8),
               ),
-              if (lawyer.verified)
-                Positioned(
-                  bottom: 0,
-                  right: 0,
-                  child: Container(
-                    padding: const EdgeInsets.all(4),
-                    decoration: const BoxDecoration(
-                        color: AppColors.secondary, shape: BoxShape.circle),
-                    child: const Icon(Icons.verified,
-                        color: Colors.white, size: 16),
+              child:
+                  const Icon(Icons.arrow_back, color: Colors.white70, size: 18),
+            ),
+          ),
+          const SizedBox(height: 20),
+          Row(
+            children: [
+              Container(
+                width: 60,
+                height: 60,
+                decoration: BoxDecoration(
+                  color: AppColors.gold.withValues(alpha: 0.2),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                      color: AppColors.gold.withValues(alpha: 0.4), width: 2),
+                ),
+                child: Center(
+                  child: Text(
+                    (lawyer.fullName ?? 'م')[0],
+                    style: const TextStyle(
+                        fontSize: 28,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.gold),
                   ),
                 ),
-            ],
-          ),
-          const SizedBox(height: AppSizes.p16),
-          Text(
-            lawyer.fullName ?? 'محامي',
-            style: const TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.bold,
-                color: AppColors.primary),
-          ),
-          const Text(
-            'محامي متخصص في القانون التجاري والجنائي',
-            style: TextStyle(color: AppColors.outline),
-          ),
-          const SizedBox(height: AppSizes.p12),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              _buildBadge(Icons.location_on, 'بغداد، العراق'),
-              const SizedBox(width: 8),
-              _buildBadge(Icons.work, 'محامي استئناف'),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      lawyer.fullName ?? 'محامي',
+                      style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white),
+                    ),
+                    const Text(
+                      'محامي · عضو نقابة المحامين العراقيين',
+                      style: TextStyle(fontSize: 12, color: Colors.white54),
+                    ),
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 6,
+                      runSpacing: 6,
+                      children: [
+                        _buildBadge('✓ موثق'),
+                        _buildBadge('⚖️ ${lawyer.specialization ?? "جنائي"}'),
+                        _buildBadge('📍 بغداد'),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
             ],
           ),
         ],
@@ -168,74 +201,71 @@ class LawyerDetailsPage extends ConsumerWidget {
     );
   }
 
-  Widget _buildBadge(IconData icon, String label) {
+  Widget _buildBadge(String text) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-          color: AppColors.background, borderRadius: BorderRadius.circular(20)),
-      child: Row(
-        children: [
-          Icon(icon, size: 14, color: AppColors.outline),
-          const SizedBox(width: 4),
-          Text(label,
-              style: const TextStyle(fontSize: 12, color: AppColors.outline)),
-        ],
+        color: AppColors.gold.withValues(alpha: 0.2),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppColors.gold.withValues(alpha: 0.3)),
+      ),
+      child: Text(
+        text,
+        style: const TextStyle(
+            fontSize: 10, color: AppColors.gold, fontWeight: FontWeight.bold),
       ),
     );
   }
 
-  Widget _buildStatsGrid(dynamic lawyer) {
-    return Row(
-      children: [
-        _buildStatItem('${lawyer.yearsExperience}+', 'سنوات خبرة'),
-        const SizedBox(width: 12),
-        _buildStatItem('98%', 'نسبة النجاح'),
-        const SizedBox(width: 12),
-        _buildStatItem('1.2K', 'استشارة'),
-      ],
-    );
-  }
-
-  Widget _buildStatItem(String value, String label) {
+  Widget _buildStatItem(String value, String label, {Color? color}) {
     return Expanded(
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 12),
+        padding: const EdgeInsets.symmetric(vertical: 16),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(12),
           boxShadow: [
             BoxShadow(
-                color: Colors.black.withValues(alpha: 0.05),
-                blurRadius: 10,
-                offset: const Offset(0, 4)),
+              color: AppColors.primary.withValues(alpha: 0.06),
+              blurRadius: 3,
+              offset: const Offset(0, 1),
+            ),
           ],
         ),
         child: Column(
           children: [
-            Text(value,
-                style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.primary)),
-            Text(label,
-                style: const TextStyle(fontSize: 12, color: AppColors.outline)),
+            Text(
+              value,
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: color ?? AppColors.primary,
+              ),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              label,
+              style: const TextStyle(fontSize: 10, color: Colors.grey),
+            ),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildAboutSection(dynamic lawyer) {
+  Widget _buildAboutCard(dynamic lawyer) {
     return Container(
-      padding: const EdgeInsets.all(AppSizes.p16),
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
-              blurRadius: 10,
-              offset: const Offset(0, 4)),
+            color: AppColors.primary.withValues(alpha: 0.06),
+            blurRadius: 3,
+            offset: const Offset(0, 1),
+          ),
         ],
       ),
       child: Column(
@@ -243,136 +273,90 @@ class LawyerDetailsPage extends ConsumerWidget {
         children: [
           const Row(
             children: [
-              Icon(Icons.info, color: AppColors.secondary, size: 20),
+              Icon(Icons.info_outline, color: AppColors.gold, size: 16),
               SizedBox(width: 8),
-              Text('نبذة تعريفية',
-                  style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.primary)),
+              Text(
+                'نبذة تعريفية',
+                style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.primary),
+              ),
             ],
           ),
           const SizedBox(height: 8),
           Text(
-            lawyer.bio ?? 'لا يوجد وصف',
-            style: const TextStyle(height: 1.6, color: AppColors.outline),
+            lawyer.bio ??
+                'محامي متخصص في القانون العراقي بخبرة طويلة في الدفاع والمشاورات القانونية.',
+            style:
+                const TextStyle(fontSize: 12, color: Colors.grey, height: 1.6),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildServicesGrid(dynamic lawyer) {
-    final double price = lawyer.consultationPrice ?? 0.0;
+  Widget _buildServicesRow(dynamic lawyer) {
+    final double price = lawyer.consultationPrice ?? 50000.0;
     return Row(
       children: [
-        _buildServiceItem(
-            Icons.chat, 'مراسلة نصية', '${(price * 0.5).toInt()}'),
+        _buildServiceCard(
+            Icons.chat_bubble_outline,
+            'نصية',
+            '${(price * 0.75).toInt()}',
+            const Color(0xFFEEF3FA),
+            const Color(0xFF1B4F8A)),
         const SizedBox(width: 8),
-        _buildServiceItem(Icons.call, 'مكالمة صوتية', '${price.toInt()}'),
+        _buildServiceCard(Icons.call_outlined, 'صوتية', '${price.toInt()}',
+            const Color(0xFFFFFBF0), const Color(0xFFC9A84C)),
         const SizedBox(width: 8),
-        _buildServiceItem(
-            Icons.videocam, 'مكالمة فيديو', '${(price * 1.5).toInt()}'),
+        _buildServiceCard(
+            Icons.videocam_outlined,
+            'فيديو',
+            '${(price * 1.5).toInt()}',
+            const Color(0xFFF0F8F0),
+            const Color(0xFF2E7D32)),
       ],
     );
   }
 
-  Widget _buildServiceItem(IconData icon, String label, String price) {
+  Widget _buildServiceCard(
+      IconData icon, String label, String price, Color bg, Color iconColor) {
     return Expanded(
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: AppColors.surfaceVariant),
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.primary.withValues(alpha: 0.06),
+              blurRadius: 3,
+              offset: const Offset(0, 1),
+            ),
+          ],
         ),
         child: Column(
           children: [
-            CircleAvatar(
-              radius: 20,
-              backgroundColor: AppColors.primary.withValues(alpha: 0.1),
-              child: Icon(icon, color: AppColors.primary, size: 20),
+            Container(
+              width: 32,
+              height: 32,
+              decoration: BoxDecoration(
+                  color: bg, borderRadius: BorderRadius.circular(8)),
+              child: Icon(icon, size: 18, color: iconColor),
             ),
             const SizedBox(height: 8),
             Text(label,
-                textAlign: TextAlign.center,
                 style:
-                    const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 8),
-            Text('$price د.ع',
+                    const TextStyle(fontSize: 10, fontWeight: FontWeight.w500)),
+            const SizedBox(height: 4),
+            Text(price,
                 style: const TextStyle(
-                    fontSize: 12,
-                    color: AppColors.secondary,
-                    fontWeight: FontWeight.bold)),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildReviewsSection(dynamic lawyer) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            const Text('تقييمات العملاء',
-                style: TextStyle(
-                    fontSize: 18,
+                    fontSize: 11,
                     fontWeight: FontWeight.bold,
-                    color: AppColors.primary)),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-              decoration: BoxDecoration(
-                  color: AppColors.gold.withValues(alpha: 0.2),
-                  borderRadius: BorderRadius.circular(20)),
-              child: Text('${lawyer.rating} (${lawyer.reviewCount} تقييم)',
-                  style: const TextStyle(
-                      fontSize: 12,
-                      color: AppColors.secondary,
-                      fontWeight: FontWeight.bold)),
-            ),
+                    color: AppColors.gold)),
           ],
         ),
-        const SizedBox(height: 16),
-        _buildReviewCard('م. ح.',
-            'استشارة ممتازة ومفيدة جداً. الأستاذ كان مستمعاً جيداً وقدم لي حلولاً قانونية واضحة.'),
-        const SizedBox(height: 12),
-        OutlinedButton(
-          onPressed: () {},
-          style: OutlinedButton.styleFrom(
-              minimumSize: const Size.fromHeight(40),
-              side: const BorderSide(color: AppColors.primary)),
-          child: const Text('عرض المزيد من التقييمات'),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildReviewCard(String name, String comment) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-              color: AppColors.surfaceVariant.withValues(alpha: 0.3))),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: List.generate(
-                5,
-                (index) =>
-                    const Icon(Icons.star, color: Colors.amber, size: 14)),
-          ),
-          const SizedBox(height: 8),
-          Text(name, style: const TextStyle(fontWeight: FontWeight.bold)),
-          const SizedBox(height: 4),
-          Text(comment,
-              style: const TextStyle(fontSize: 13, color: AppColors.outline)),
-        ],
       ),
     );
   }

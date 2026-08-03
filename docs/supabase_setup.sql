@@ -31,16 +31,19 @@ CREATE TABLE IF NOT EXISTS public.lawyer_profiles (
     profile_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE UNIQUE,
     license_number TEXT,
     bio TEXT,
-    specialization TEXT,
+    specialization TEXT, -- تخصص المحامي
     years_experience INT DEFAULT 0,
     consultation_price DECIMAL(12,2) DEFAULT 0,
     whatsapp TEXT,
     id_card_url TEXT,
     rating DECIMAL(3,2) DEFAULT 0,
+    review_count INT DEFAULT 0, -- إجمالي عدد التقييمات
     verified BOOLEAN DEFAULT false,
     availability BOOLEAN DEFAULT true,
     created_at TIMESTAMPTZ DEFAULT now()
 );
+
+CREATE INDEX IF NOT EXISTS idx_lawyer_profiles_specialization ON public.lawyer_profiles(specialization);
 
 -- 5. Bookings Table
 CREATE TABLE IF NOT EXISTS public.bookings (
@@ -69,8 +72,8 @@ CREATE TABLE IF NOT EXISTS public.payments (
 CREATE TABLE IF NOT EXISTS public.conversations (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     booking_id UUID REFERENCES public.bookings(id) ON DELETE CASCADE,
-    participant_one UUID REFERENCES public.profiles(id),
-    participant_two UUID REFERENCES public.profiles(id),
+    user_id UUID REFERENCES public.profiles(id),
+    lawyer_id UUID REFERENCES public.profiles(id),
     last_message TEXT,
     updated_at TIMESTAMPTZ DEFAULT now()
 );
@@ -153,6 +156,36 @@ BEGIN
   DELETE FROM auth.users WHERE id = uid;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+
+-- دالة تحديث تقييم المحامي تلقائياً عند إضافة تقييم جديد
+CREATE OR REPLACE FUNCTION update_lawyer_rating()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  UPDATE lawyer_profiles
+  SET
+    rating = (
+      SELECT ROUND(AVG(rating)::numeric, 2)
+      FROM reviews
+      WHERE lawyer_id = NEW.lawyer_id
+    ),
+    review_count = (
+      SELECT COUNT(*)
+      FROM reviews
+      WHERE lawyer_id = NEW.lawyer_id
+    )
+  WHERE profile_id = NEW.lawyer_id;
+  RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS on_review_added ON public.reviews;
+CREATE TRIGGER on_review_added
+  AFTER INSERT ON public.reviews
+  FOR EACH ROW EXECUTE FUNCTION update_lawyer_rating();
 
 -- 10. Security (RLS)
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
