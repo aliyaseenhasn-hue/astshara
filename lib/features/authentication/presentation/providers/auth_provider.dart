@@ -80,6 +80,7 @@ class MockAuthRepository implements AuthRepository {
     String? email,
     String? role,
     String? avatarUrl,
+    bool? onboardingCompleted,
   }) async {}
 
   @override

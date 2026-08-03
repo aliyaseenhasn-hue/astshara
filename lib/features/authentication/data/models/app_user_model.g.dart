@@ -16,7 +16,7 @@ _$AppUserModelImpl _$$AppUserModelImplFromJson(Map<String, dynamic> json) =>
       role: json['role'] as String? ?? 'user',
       isVerified: json['is_verified'] as bool? ?? false,
       hasProfessionalProfile: json['hasProfessionalProfile'] as bool? ?? false,
-      isOnboardingComplete: json['onboarding_completed'] as bool? ?? false,
+      isOnboardingComplete: json['onboarding_completed'] as bool?,
     );
 
 Map<String, dynamic> _$$AppUserModelImplToJson(_$AppUserModelImpl instance) =>
