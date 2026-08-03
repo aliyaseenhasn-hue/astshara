@@ -10,84 +10,7 @@ part 'auth_provider.g.dart';
 
 @riverpod
 AuthRepository authRepository(AuthRepositoryRef ref) {
-  // للاتصال بـ Supabase الحقيقي، اجعل هذه القيمة false
-  const bool useMock = false;
-  if (useMock) {
-    return MockAuthRepository.instance;
-  }
   return AuthRepositoryImpl(SupabaseConfig.client);
-}
-
-class MockAuthRepository implements AuthRepository {
-  static final MockAuthRepository instance = MockAuthRepository._();
-  final _authStateController = StreamController<AppUser?>.broadcast();
-  AppUser? _currentUser;
-
-  MockAuthRepository._() {
-    _authStateController.add(null);
-  }
-
-  @override
-  Future<AppUser?> getCurrentUser() async => _currentUser;
-
-  @override
-  Future<void> signInWithEmail(
-      {required String email, required String password}) async {}
-
-  @override
-  Future<void> signUpWithEmail(
-      {required String email,
-      required String password,
-      required String fullName,
-      required String role}) async {}
-
-  @override
-  Future<void> signOut() async {
-    _currentUser = null;
-    _authStateController.add(null);
-  }
-
-  @override
-  Future<void> signInWithPhone(String phone) async {
-    await Future.delayed(const Duration(seconds: 1));
-  }
-
-  @override
-  Future<void> signInWithGoogle() async {
-    await Future.delayed(const Duration(seconds: 1));
-  }
-
-  @override
-  Future<void> verifyOTP({required String phone, required String token}) async {
-    await Future.delayed(const Duration(seconds: 1));
-
-    // للتجربة المحلية:
-    // إذا كان رقم الهاتف ينتهي بـ 000، سيعتبره النظام أدمن
-    final bool isAdmin = phone.endsWith('000');
-
-    _currentUser = AppUser(
-      id: isAdmin ? 'admin_id' : 'user_id',
-      email: isAdmin ? 'admin@astshara.com' : 'user@test.com',
-      fullName: isAdmin ? 'مدير النظام' : 'مستخدم تجريبي',
-      role: isAdmin ? 'admin' : 'user',
-    );
-    _authStateController.add(_currentUser);
-  }
-
-  @override
-  Future<void> updateProfile({
-    String? fullName,
-    String? email,
-    String? role,
-    String? avatarUrl,
-    bool? onboardingCompleted,
-  }) async {}
-
-  @override
-  Future<void> deleteAccount() async {}
-
-  @override
-  Stream<AppUser?> authStateChanges() => _authStateController.stream;
 }
 
 @riverpod
@@ -185,6 +108,8 @@ class AuthController extends _$AuthController {
             role: role,
             onboardingCompleted: onboardingCompleted,
           );
+      // إعادة تحميل حالة المستخدم بعد التحديث
+      ref.invalidate(authStateChangesProvider);
     });
     ref.read(globalLoadingProvider.notifier).setLoading(false);
   }

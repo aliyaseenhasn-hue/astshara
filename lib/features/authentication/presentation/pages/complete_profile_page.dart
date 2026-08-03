@@ -112,7 +112,19 @@ class _CompleteProfilePageState extends ConsumerState<CompleteProfilePage> {
               email: _emailController.text.trim(),
               role: _selectedRole,
             );
-        if (mounted) context.go('/');
+
+        final authState = ref.read(authControllerProvider);
+        if (authState.hasError) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                  content: Text('خطأ أثناء الحفظ: ${authState.error}'),
+                  backgroundColor: AppColors.error),
+            );
+          }
+        } else {
+          if (mounted) context.go('/');
+        }
       }
     }
   }
@@ -194,12 +206,13 @@ class _CompleteProfilePageState extends ConsumerState<CompleteProfilePage> {
               TextFormField(
                 controller: _emailController,
                 decoration: const InputDecoration(
-                    labelText: 'البريد الإلكتروني',
+                    labelText: 'البريد الإلكتروني (اختياري)',
                     prefixIcon: Icon(Icons.email_outlined),
                     border: OutlineInputBorder()),
-                validator: (val) => (val == null || !val.contains('@'))
-                    ? 'بريد غير صحيح'
-                    : null,
+                validator: (val) =>
+                    (val != null && val.isNotEmpty && !val.contains('@'))
+                        ? 'بريد غير صحيح'
+                        : null,
               ),
 
               // 3. قسم المحامي (يظهر بانسيابية أسفل البيانات)

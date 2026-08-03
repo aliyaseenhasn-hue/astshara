@@ -8,6 +8,25 @@ import '../providers/lawyer_verification_provider.dart';
 class LawyerVerificationPage extends ConsumerWidget {
   const LawyerVerificationPage({super.key});
 
+  void _showImageDialog(BuildContext context, String url) {
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            AppBar(
+                title: const Text('صورة الهوية'),
+                leading: IconButton(
+                    icon: const Icon(Icons.close),
+                    onPressed: () => Navigator.pop(context))),
+            Image.network(url, fit: BoxFit.contain),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final pendingLawyersAsync = ref.watch(lawyerVerificationProvider);
@@ -70,6 +89,41 @@ class LawyerVerificationPage extends ConsumerWidget {
                               overflow: TextOverflow.ellipsis,
                               style: const TextStyle(
                                   color: Colors.grey, fontSize: 13)),
+                          const SizedBox(height: 16),
+                          const Text('الوثائق المرفوعة:',
+                              style: TextStyle(
+                                  fontWeight: FontWeight.bold, fontSize: 13)),
+                          const SizedBox(height: 8),
+                          Row(
+                            children: [
+                              if (lawyer.idCardUrl != null)
+                                Expanded(
+                                  child: InkWell(
+                                    onTap: () => _showImageDialog(
+                                        context, lawyer.idCardUrl!),
+                                    child: Container(
+                                      height: 100,
+                                      decoration: BoxDecoration(
+                                        border: Border.all(
+                                            color: AppColors.surfaceVariant),
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      child: ClipRRect(
+                                        borderRadius: BorderRadius.circular(8),
+                                        child: Image.network(
+                                          lawyer.idCardUrl!,
+                                          fit: BoxFit.cover,
+                                          errorBuilder: (_, __, ___) =>
+                                              const Icon(Icons.broken_image),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              const SizedBox(width: 8),
+                              // يمكن إضافة الصورة الشخصية هنا أيضاً إذا لزم الأمر
+                            ],
+                          ),
                           const SizedBox(height: 16),
                           Row(
                             children: [

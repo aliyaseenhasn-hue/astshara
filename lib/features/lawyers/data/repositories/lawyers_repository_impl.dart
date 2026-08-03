@@ -1,4 +1,3 @@
-import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../domain/entities/lawyer_profile.dart';
@@ -66,12 +65,13 @@ class LawyersRepositoryImpl implements LawyersRepository {
       'profile_id': profile.profileId,
       'license_number': profile.licenseNumber,
       'bio': profile.bio,
+      'specialization': profile.specialization,
       'years_experience': profile.yearsExperience,
       'consultation_price': profile.consultationPrice,
       'whatsapp': profile.whatsapp,
       'id_card_url': profile.idCardUrl,
       'availability': profile.availability,
-    });
+    }, onConflict: 'profile_id');
   }
 
   @override

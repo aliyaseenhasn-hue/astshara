@@ -14,7 +14,7 @@ class PaymentModel with _$PaymentModel {
     required double amount,
     @JsonKey(name: 'payment_method') required String paymentMethod,
     @JsonKey(name: 'transaction_number') String? transactionNumber,
-    @JsonKey(name: 'receipt') String? receiptUrl,
+    @JsonKey(name: 'receipt_url') String? receiptUrl,
     @Default('pending') String status,
     @JsonKey(name: 'created_at') DateTime? createdAt,
   }) = _PaymentModel;

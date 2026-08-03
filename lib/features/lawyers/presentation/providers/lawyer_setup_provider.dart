@@ -1,4 +1,3 @@
-import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../../../shared/providers/global_loading_provider.dart';
@@ -18,6 +17,10 @@ class LawyerSetupController extends _$LawyerSetupController {
     required String fullName,
     String? email,
     required String whatsapp,
+    String? licenseNumber,
+    String? bio,
+    int? yearsExperience,
+    double? consultationPrice,
     Uint8List? profilePhotoBytes,
     Uint8List? idCardBytes,
   }) async {
@@ -68,10 +71,10 @@ class LawyerSetupController extends _$LawyerSetupController {
         whatsapp: whatsapp,
         idCardUrl: idCardUrl,
         verified: false,
-        licenseNumber: 'PENDING',
-        bio: 'طلب انضمام جديد',
-        yearsExperience: 0,
-        consultationPrice: 0,
+        licenseNumber: licenseNumber ?? 'PENDING',
+        bio: bio ?? 'طلب انضمام جديد',
+        yearsExperience: yearsExperience ?? 0,
+        consultationPrice: consultationPrice ?? 0,
       );
 
       await lawyersRepo.updateLawyerProfile(lawyerProfile);
@@ -82,6 +85,9 @@ class LawyerSetupController extends _$LawyerSetupController {
         avatarUrl: avatarUrl,
         onboardingCompleted: true,
       );
+
+      // 6. تحديث حالة المستخدم ليعيد التوجيه
+      ref.invalidate(authStateChangesProvider);
 
       debugPrint('--- تمت العملية بنجاح ---');
     });

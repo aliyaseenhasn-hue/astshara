@@ -86,7 +86,7 @@ class _PaymentUploadPageState extends ConsumerState<PaymentUploadPage> {
               const Text('اختر وسيلة الدفع:',
                   style: TextStyle(fontWeight: FontWeight.bold)),
               DropdownButtonFormField<String>(
-                value: _selectedMethod,
+                initialValue: _selectedMethod,
                 items: ['ZainCash', 'Asia Hawala', 'Qi Card', 'MasterCard']
                     .map((m) => DropdownMenuItem(value: m, child: Text(m)))
                     .toList(),

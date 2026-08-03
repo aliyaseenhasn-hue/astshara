@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../domain/entities/app_user.dart';
@@ -6,8 +7,26 @@ import '../models/app_user_model.dart';
 
 class AuthRepositoryImpl implements AuthRepository {
   final SupabaseClient _supabase;
+  final _userStateController = StreamController<AppUser?>.broadcast();
+  bool _isListening = false;
 
-  AuthRepositoryImpl(this._supabase);
+  AuthRepositoryImpl(this._supabase) {
+    _setupAuthListener();
+  }
+
+  void _setupAuthListener() {
+    if (_isListening) return;
+    _isListening = true;
+
+    _supabase.auth.onAuthStateChange.listen((data) async {
+      final user = data.session?.user;
+      if (user == null) {
+        _userStateController.add(null);
+      } else {
+        _userStateController.add(await getCurrentUser());
+      }
+    });
+  }
 
   @override
   Future<AppUser?> getCurrentUser() async {
@@ -139,21 +158,33 @@ class AuthRepositoryImpl implements AuthRepository {
     if (user == null) return;
 
     final data = <String, dynamic>{};
-    if (fullName != null) data['full_name'] = fullName;
-    if (email != null) data['email'] = email;
-    if (role != null) data['role'] = role;
-    if (avatarUrl != null) data['avatar_url'] = avatarUrl;
+    if (fullName != null && fullName.isNotEmpty) data['full_name'] = fullName;
+    if (email != null && email.isNotEmpty) data['email'] = email;
+    if (role != null && role.isNotEmpty) data['role'] = role;
+    if (avatarUrl != null && avatarUrl.isNotEmpty) data['avatar_url'] = avatarUrl;
     if (onboardingCompleted != null) {
       data['onboarding_completed'] = onboardingCompleted;
     }
+    if (user.phone != null && user.phone!.isNotEmpty) data['phone'] = user.phone;
 
-    await _supabase.from('profiles').upsert({
-      'id': user.id, // استخدام المعرف الموحد
-      'auth_id': user.id,
-      'phone': user.phone,
-      ...data,
-      'updated_at': DateTime.now().toIso8601String(),
-    }); // Upsert uses PK by default
+    // السجل موجود بفضل الـ Trigger handle_new_user - نستخدم update مباشرة
+    await _supabase
+        .from('profiles')
+        .update({
+          ...data,
+          'updated_at': DateTime.now().toIso8601String(),
+        })
+        .eq('auth_id', user.id);
+
+    // بثّ الحالة المحدثة للمستخدم
+    await refreshUser();
+  }
+
+  // بثّ حالة المستخدم المحدثة بعد تعديل البروفايل
+  Future<void> refreshUser() async {
+    final user = _supabase.auth.currentUser;
+    if (user == null) return;
+    _userStateController.add(await getCurrentUser());
   }
 
   @override
@@ -176,10 +207,6 @@ class AuthRepositoryImpl implements AuthRepository {
 
   @override
   Stream<AppUser?> authStateChanges() {
-    return _supabase.auth.onAuthStateChange.asyncMap((data) async {
-      final user = data.session?.user;
-      if (user == null) return null;
-      return await getCurrentUser();
-    });
+    return _userStateController.stream;
   }
 }

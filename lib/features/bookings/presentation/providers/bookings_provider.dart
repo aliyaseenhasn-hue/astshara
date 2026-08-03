@@ -9,53 +9,7 @@ part 'bookings_provider.g.dart';
 
 @riverpod
 BookingsRepository bookingsRepository(BookingsRepositoryRef ref) {
-  // للاتصال بـ Supabase الحقيقي، اجعل هذه القيمة false
-  const bool useMock = false;
-  if (useMock) {
-    return MockBookingsRepository();
-  }
   return BookingsRepositoryImpl(SupabaseConfig.client);
-}
-
-class MockBookingsRepository implements BookingsRepository {
-  final List<Booking> _mockBookings = [
-    Booking(
-      id: 'b1',
-      userId: '123',
-      lawyerId: 'p1',
-      status: 'pending',
-      scheduledAt: DateTime.now().add(const Duration(days: 1)),
-      price: 50000,
-    ),
-    Booking(
-      id: 'b2',
-      userId: '123',
-      lawyerId: 'p2',
-      status: 'accepted',
-      scheduledAt: DateTime.now().subtract(const Duration(days: 2)),
-      price: 40000,
-    ),
-  ];
-
-  @override
-  Future<void> createBooking(Booking booking) async {
-    await Future.delayed(const Duration(seconds: 1));
-    _mockBookings.add(booking.copyWith(id: DateTime.now().toString()));
-  }
-
-  @override
-  Future<List<Booking>> getUserBookings(String userId) async {
-    await Future.delayed(const Duration(milliseconds: 500));
-    return _mockBookings.where((b) => b.userId == userId).toList();
-  }
-
-  @override
-  Future<List<Booking>> getLawyerBookings(String lawyerId) async {
-    return _mockBookings.where((b) => b.lawyerId == lawyerId).toList();
-  }
-
-  @override
-  Future<void> updateBookingStatus(String bookingId, String status) async {}
 }
 
 @riverpod

@@ -58,6 +58,10 @@ class _LawyerSetupPageState extends ConsumerState<LawyerSetupPage> {
             fullName: user.fullName ?? '',
             email: user.email,
             whatsapp: _whatsappController.text.trim(),
+            licenseNumber: _licenseController.text.trim(),
+            bio: _bioController.text.trim(),
+            yearsExperience: int.tryParse(_experienceController.text.trim()) ?? 0,
+            consultationPrice: double.tryParse(_priceController.text.trim()) ?? 0,
             profilePhotoBytes: _profilePhotoBytes,
             idCardBytes: _idCardBytes,
           );

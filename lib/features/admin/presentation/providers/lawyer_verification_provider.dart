@@ -18,8 +18,6 @@ class LawyerVerification extends _$LawyerVerification {
           .select()
           .eq('verified', false);
 
-      if (lawyerResponse == null) return [];
-
       final List<LawyerProfile> lawyers = [];
 
       for (var json in (lawyerResponse as List)) {
@@ -33,13 +31,11 @@ class LawyerVerification extends _$LawyerVerification {
             .maybeSingle();
 
         // إذا لم يجد بالـ auth_id، نجرب المعرف الداخلي id
-        if (profileResponse == null) {
-          profileResponse = await SupabaseConfig.client
+        profileResponse ??= await SupabaseConfig.client
               .from('profiles')
               .select('full_name')
               .eq('id', lawyer.profileId)
               .maybeSingle();
-        }
 
         final fullName = profileResponse != null
             ? profileResponse['full_name']
@@ -107,13 +103,11 @@ class LawyerVerification extends _$LawyerVerification {
           .eq('auth_id', profileId)
           .maybeSingle();
 
-      if (userResponse == null) {
-        userResponse = await SupabaseConfig.client
+      userResponse ??= await SupabaseConfig.client
             .from('profiles')
             .select('id')
             .eq('id', profileId)
             .maybeSingle();
-      }
 
       if (userResponse != null) {
         await SupabaseConfig.client.from('notifications').insert({
