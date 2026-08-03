@@ -32,7 +32,8 @@ class PaymentsController extends _$PaymentsController {
       if (receiptFile != null) {
         final fileName =
             'receipt_${bookingId}_${DateTime.now().millisecondsSinceEpoch}.jpg';
-        receiptUrl = await repository.uploadReceipt(receiptFile.path, fileName);
+        final bytes = await receiptFile.readAsBytes();
+        receiptUrl = await repository.uploadReceipt(bytes, fileName);
       }
 
       final payment = Payment(

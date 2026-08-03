@@ -1,4 +1,5 @@
 import 'dart:typed_data';
+import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../domain/entities/payment.dart';
 import '../../domain/repositories/payments_repository.dart';
@@ -22,15 +23,29 @@ class PaymentsRepositoryImpl implements PaymentsRepository {
   }
 
   @override
-  Future<String> uploadReceipt(String path, String fileName) async {
+  Future<String> uploadReceipt(Uint8List bytes, String fileName) async {
     final user = _supabase.auth.currentUser;
-    final filePath = '${user?.id}/$fileName';
+    if (user == null) throw Exception('المستخدم غير مسجل دخول');
 
-    await _supabase.storage
-        .from('receipts')
-        .uploadBinary(filePath, Uint8List(0));
+    final filePath = '${user.id}/$fileName';
 
-    return _supabase.storage.from('receipts').createSignedUrl(filePath, 3600);
+    try {
+      debugPrint('جاري رفع إيصال الدفع: $filePath');
+      await _supabase.storage.from('receipts').uploadBinary(
+            filePath,
+            bytes,
+            fileOptions: const FileOptions(
+              contentType: 'image/jpeg',
+              upsert: true,
+            ),
+          );
+      return await _supabase.storage
+          .from('receipts')
+          .createSignedUrl(filePath, 3600);
+    } catch (e) {
+      debugPrint('خطأ في رفع الإيصال: $e');
+      rethrow;
+    }
   }
 
   @override

@@ -1,4 +1,5 @@
 import 'dart:typed_data';
+import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../domain/entities/lawyer_profile.dart';
 import '../../domain/repositories/lawyers_repository.dart';
@@ -77,10 +78,27 @@ class LawyersRepositoryImpl implements LawyersRepository {
   Future<String> uploadFile(
       Uint8List bytes, String fileName, String bucket) async {
     final user = _supabase.auth.currentUser;
-    final filePath = '${user?.id}/$fileName';
+    if (user == null) throw Exception('المستخدم غير مسجل دخول');
 
-    await _supabase.storage.from(bucket).uploadBinary(filePath, bytes);
+    final filePath = '${user.id}/$fileName';
 
-    return _supabase.storage.from(bucket).createSignedUrl(filePath, 3600);
+    try {
+      debugPrint('جاري رفع الملف: $filePath في الوعاء: $bucket');
+      await _supabase.storage.from(bucket).uploadBinary(
+            filePath,
+            bytes,
+            fileOptions: const FileOptions(
+              contentType: 'image/jpeg',
+              upsert: true,
+            ),
+          );
+      debugPrint('تم رفع الملف بنجاح');
+      return await _supabase.storage
+          .from(bucket)
+          .createSignedUrl(filePath, 3600);
+    } catch (e) {
+      debugPrint('خطأ في رفع الملف إلى Supabase: $e');
+      rethrow;
+    }
   }
 }

@@ -93,7 +93,19 @@ class _CompleteProfilePageState extends ConsumerState<CompleteProfilePage> {
               profilePhotoBytes: _profilePhotoBytes,
               idCardBytes: _idCardBytes,
             );
-        if (mounted) _showSuccessDialog();
+
+        final state = ref.read(lawyerSetupControllerProvider);
+        if (state.hasError) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                  content: Text('خطأ أثناء الحفظ: ${state.error}'),
+                  backgroundColor: AppColors.error),
+            );
+          }
+        } else {
+          if (mounted) _showSuccessDialog();
+        }
       } else {
         await ref.read(authControllerProvider.notifier).updateInitialProfile(
               fullName: _nameController.text.trim(),
