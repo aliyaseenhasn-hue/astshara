@@ -63,6 +63,7 @@ class LawyersRepositoryImpl implements LawyersRepository {
   Future<void> updateLawyerProfile(LawyerProfile profile) async {
     await _supabase.from('lawyer_profiles').upsert({
       'profile_id': profile.profileId,
+      'full_name': profile.fullName, // إضافة الحقل المفقود
       'license_number': profile.licenseNumber,
       'bio': profile.bio,
       'specialization': profile.specialization,
