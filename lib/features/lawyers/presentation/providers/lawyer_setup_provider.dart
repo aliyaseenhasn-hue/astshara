@@ -31,7 +31,7 @@ class LawyerSetupController extends _$LawyerSetupController {
 
     ref.read(globalLoadingProvider.notifier).setLoading(true);
     state = const AsyncLoading();
-    
+
     try {
       state = await AsyncValue.guard(() async {
         final lawyersRepo = ref.read(lawyersRepositoryProvider);

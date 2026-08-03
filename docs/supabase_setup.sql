@@ -111,8 +111,19 @@ CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS trigger AS $$
 BEGIN
   INSERT INTO public.profiles (id, auth_id, full_name, phone, email, role)
-  VALUES (new.id, new.id, new.raw_user_meta_data->>'full_name', new.phone, new.email, 'user')
-  ON CONFLICT (id) DO NOTHING;
+  VALUES (
+    new.id, 
+    new.id, 
+    COALESCE(new.raw_user_meta_data->>'full_name', 'مستخدم جديد'),
+    new.phone,
+    new.email,
+    'user'
+  )
+  ON CONFLICT (id) DO UPDATE SET
+    email = EXCLUDED.email,
+    phone = EXCLUDED.phone,
+    full_name = COALESCE(EXCLUDED.full_name, public.profiles.full_name),
+    updated_at = now();
   RETURN new;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
@@ -122,8 +133,14 @@ CREATE TRIGGER on_auth_user_created AFTER INSERT ON auth.users FOR EACH ROW EXEC
 
 CREATE OR REPLACE FUNCTION public.is_admin()
 RETURNS boolean AS $$
+DECLARE
+  admin_role boolean;
 BEGIN
-  RETURN (SELECT (role = 'admin') FROM public.profiles WHERE id = auth.uid() OR auth_id = auth.uid());
+  SELECT (role = 'admin') INTO admin_role 
+  FROM public.profiles 
+  WHERE id = auth.uid();
+  
+  RETURN COALESCE(admin_role, false);
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
@@ -166,7 +183,12 @@ CREATE POLICY "Admin Manage All" ON public.lawyer_profiles FOR ALL USING (is_adm
 
 -- Policies for Bookings
 DROP POLICY IF EXISTS "Access Own Bookings" ON public.bookings;
-CREATE POLICY "Access Own Bookings" ON public.bookings FOR ALL USING (auth.uid() IN (SELECT auth_id FROM public.profiles WHERE id = user_id OR id = lawyer_id) OR is_admin());
+CREATE POLICY "Access Own Bookings" ON public.bookings 
+FOR ALL USING (
+  (user_id = (SELECT id FROM public.profiles WHERE id = auth.uid() LIMIT 1)) OR
+  (lawyer_id = (SELECT id FROM public.profiles WHERE id = auth.uid() LIMIT 1)) OR
+  EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin')
+);
 
 -- Policies for Reviews
 DROP POLICY IF EXISTS "View Reviews" ON public.reviews;
@@ -189,3 +211,22 @@ DROP POLICY IF EXISTS "Storage View Policy" ON storage.objects;
 CREATE POLICY "Storage View Policy" ON storage.objects FOR SELECT USING (
     auth.uid()::text = (storage.foldername(name))[1] OR is_admin()
 );
+
+-- 11. Performance Indexes (v3.1)
+-- تم إضافة الفهارس لتحسين أداء الاستعلامات
+CREATE INDEX IF NOT EXISTS idx_profiles_role ON public.profiles(role);
+CREATE INDEX IF NOT EXISTS idx_profiles_auth_id ON public.profiles(auth_id);
+CREATE INDEX IF NOT EXISTS idx_bookings_user_id ON public.bookings(user_id);
+CREATE INDEX IF NOT EXISTS idx_bookings_lawyer_id ON public.bookings(lawyer_id);
+CREATE INDEX IF NOT EXISTS idx_bookings_status ON public.bookings(status);
+CREATE INDEX IF NOT EXISTS idx_messages_conversation_id ON public.messages(conversation_id);
+CREATE INDEX IF NOT EXISTS idx_messages_created_at ON public.messages(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_notifications_user_id ON public.notifications(user_id);
+CREATE INDEX IF NOT EXISTS idx_notifications_is_read ON public.notifications(is_read);
+CREATE INDEX IF NOT EXISTS idx_lawyer_profiles_profile_id ON public.lawyer_profiles(profile_id);
+CREATE INDEX IF NOT EXISTS idx_lawyer_profiles_verified ON public.lawyer_profiles(verified);
+
+-- 12. Additional Columns (v3.1)
+-- إضافة عمود الاسم الكامل لجدول محامي
+ALTER TABLE public.lawyer_profiles
+ADD COLUMN IF NOT EXISTS full_name TEXT;
