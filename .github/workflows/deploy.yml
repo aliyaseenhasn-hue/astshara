@@ -49,15 +49,10 @@ jobs:
             exit 1
           fi
 
-          if [ -z "${HUGGING_FACE_TOKEN:-}" ]; then
-            echo "::error::HUGGING_FACE_TOKEN secret is missing in GitHub repository settings."
-            exit 1
-          fi
-
           cat > .env <<EOF_ENV
           SUPABASE_URL=${SUPABASE_URL}
           SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY}
-          HUGGING_FACE_TOKEN=${HUGGING_FACE_TOKEN}
+          HUGGING_FACE_TOKEN=${HUGGING_FACE_TOKEN:-}
           EOF_ENV
 
           echo "✅ .env file created from GitHub Secrets."

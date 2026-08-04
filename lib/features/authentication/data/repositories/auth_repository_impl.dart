@@ -144,15 +144,19 @@ class AuthRepositoryImpl implements AuthRepository {
   @override
   Future<void> signInWithGoogle() async {
     try {
+      final String redirectUrl = kIsWeb
+          ? 'https://aliyaseenhasn-hue.github.io/astshara/'
+          : 'io.supabase.astshara://login-callback';
+
       if (kDebugMode) {
         debugPrint(
-          'Starting Google OAuth with redirect URL: $_googleOAuthRedirectUrl',
+          'Starting Google OAuth with redirect URL: $redirectUrl',
         );
       }
 
       await _supabase.auth.signInWithOAuth(
         OAuthProvider.google,
-        redirectTo: _googleOAuthRedirectUrl,
+        redirectTo: redirectUrl,
         queryParams: {
           'prompt': 'select_account',
         },
