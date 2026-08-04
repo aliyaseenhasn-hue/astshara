@@ -20,10 +20,17 @@ class ProfilePage extends ConsumerWidget {
               padding: const EdgeInsets.all(AppSizes.p24),
               child: Column(
                 children: [
-                  const CircleAvatar(
+                  CircleAvatar(
                     radius: 50,
                     backgroundColor: AppColors.primary,
-                    child: Icon(Icons.person, size: 50, color: Colors.white),
+                    backgroundImage:
+                        user.avatarUrl != null && user.avatarUrl!.isNotEmpty
+                            ? NetworkImage(user.avatarUrl!)
+                            : null,
+                    child: user.avatarUrl == null || user.avatarUrl!.isEmpty
+                        ? const Icon(Icons.person,
+                            size: 50, color: Colors.white)
+                        : null,
                   ),
                   const SizedBox(height: AppSizes.p16),
                   Text(

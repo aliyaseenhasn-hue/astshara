@@ -15,7 +15,9 @@ class LawyerProfileModel with _$LawyerProfileModel {
     String? fullName, // إضافة الحقل لدعم القراءة من الجداول الموحدة
     @JsonKey(name: 'license_number') String? licenseNumber,
     String? bio,
-    @JsonKey(name: 'specialization') @Default([]) List<String> specializations,
+    @JsonKey(name: 'specialization', fromJson: _specializationsFromJson)
+    @Default([])
+    List<String> specializations,
     @JsonKey(name: 'years_experience') int? yearsExperience,
     @JsonKey(name: 'consultation_price', fromJson: _doubleFromPossibleString)
     double? consultationPrice,
@@ -46,6 +48,28 @@ class LawyerProfileModel with _$LawyerProfileModel {
         verified: verified,
         availability: availability,
       );
+}
+
+List<String> _specializationsFromJson(dynamic value) {
+  if (value == null) return [];
+  if (value is List) return value.map((e) => e.toString()).toList();
+  if (value is String) {
+    if (value.startsWith('{') && value.endsWith('}')) {
+      // Handle PostgreSQL array format if it comes as a string
+      return value
+          .substring(1, value.length - 1)
+          .split(',')
+          .map((e) => e.trim().replaceAll('"', ''))
+          .where((e) => e.isNotEmpty)
+          .toList();
+    }
+    return value
+        .split(',')
+        .map((e) => e.trim())
+        .where((e) => e.isNotEmpty)
+        .toList();
+  }
+  return [];
 }
 
 double? _doubleFromPossibleString(dynamic value) {

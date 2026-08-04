@@ -127,73 +127,74 @@ class LawyerDetailsPage extends ConsumerWidget {
         ),
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           // Back Button
-          InkWell(
-            onTap: () => Navigator.pop(context),
-            child: Container(
-              width: 32,
-              height: 32,
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(8),
+          Align(
+            alignment: Alignment.topRight,
+            child: InkWell(
+              onTap: () => Navigator.pop(context),
+              child: Container(
+                width: 32,
+                height: 32,
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(Icons.arrow_forward,
+                    color: Colors.white70, size: 18),
               ),
-              child:
-                  const Icon(Icons.arrow_back, color: Colors.white70, size: 18),
             ),
           ),
-          const SizedBox(height: 20),
-          Row(
-            children: [
-              Container(
-                width: 60,
-                height: 60,
-                decoration: BoxDecoration(
-                  color: AppColors.gold.withValues(alpha: 0.2),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                      color: AppColors.gold.withValues(alpha: 0.4), width: 2),
-                ),
-                child: Center(
-                  child: Text(
-                    (lawyer.fullName ?? 'م')[0],
-                    style: const TextStyle(
-                        fontSize: 28,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.gold),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      lawyer.fullName ?? 'محامي',
+          const SizedBox(height: 10),
+          Container(
+            width: 80,
+            height: 80,
+            decoration: BoxDecoration(
+              color: AppColors.gold.withValues(alpha: 0.2),
+              borderRadius: BorderRadius.circular(40),
+              border: Border.all(
+                  color: AppColors.gold.withValues(alpha: 0.4), width: 2),
+              image: lawyer.avatarUrl != null && lawyer.avatarUrl!.isNotEmpty
+                  ? DecorationImage(
+                      image: NetworkImage(lawyer.avatarUrl!),
+                      fit: BoxFit.cover,
+                    )
+                  : null,
+            ),
+            child: lawyer.avatarUrl == null || lawyer.avatarUrl!.isEmpty
+                ? Center(
+                    child: Text(
+                      (lawyer.fullName ?? 'م')[0],
                       style: const TextStyle(
-                          fontSize: 18,
+                          fontSize: 32,
                           fontWeight: FontWeight.bold,
-                          color: Colors.white),
+                          color: AppColors.gold),
                     ),
-                    const Text(
-                      'محامي · عضو نقابة المحامين العراقيين',
-                      style: TextStyle(fontSize: 12, color: Colors.white54),
-                    ),
-                    const SizedBox(height: 8),
-                    Wrap(
-                      spacing: 6,
-                      runSpacing: 6,
-                      children: [
-                        _buildBadge('✓ موثق'),
-                        _buildBadge('⚖️ ${lawyer.specialization ?? "جنائي"}'),
-                        _buildBadge('📍 بغداد'),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
+                  )
+                : null,
+          ),
+          const SizedBox(height: 16),
+          Text(
+            lawyer.fullName ?? 'محامي',
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+                fontSize: 22, fontWeight: FontWeight.bold, color: Colors.white),
+          ),
+          const Text(
+            'محامي · عضو نقابة المحامين العراقيين',
+            textAlign: TextAlign.center,
+            style: TextStyle(fontSize: 13, color: Colors.white54),
+          ),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 6,
+            runSpacing: 6,
+            alignment: WrapAlignment.center,
+            children: [
+              _buildBadge('✓ موثق'),
+              _buildBadge('⚖️ ${lawyer.specialization ?? "جنائي"}'),
+              _buildBadge('📍 بغداد'),
             ],
           ),
         ],

@@ -19,5 +19,6 @@ class LawyerProfile with _$LawyerProfile {
     @Default(0) int reviewCount,
     @Default(false) bool verified,
     @Default(true) bool availability,
+    String? avatarUrl,
   }) = _LawyerProfile;
 }

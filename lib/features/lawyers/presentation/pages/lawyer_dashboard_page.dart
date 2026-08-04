@@ -52,7 +52,7 @@ class LawyerDashboardPage extends ConsumerWidget {
                         },
                       ),
                     const SizedBox(height: AppSizes.p24),
-                    _buildQuickActions(context),
+                    _buildQuickActions(context, ref),
                   ],
                 ),
               ),
@@ -99,46 +99,41 @@ class LawyerDashboardPage extends ConsumerWidget {
               SafeArea(
                 child: Padding(
                   padding: const EdgeInsets.all(AppSizes.p20),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text(
-                                'مرحباً بك دكتور،',
-                                style: TextStyle(
-                                  color: Colors.white54,
-                                  fontSize: 14,
-                                ),
-                              ),
-                              Text(
-                                user?.fullName ?? 'أستاذ قانون',
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 22,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ],
+                  child: Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        CircleAvatar(
+                          radius: 35,
+                          backgroundColor: Colors.white.withValues(alpha: 0.2),
+                          backgroundImage: user?.avatarUrl != null &&
+                                  user!.avatarUrl!.isNotEmpty
+                              ? NetworkImage(user.avatarUrl!)
+                              : null,
+                          child: user?.avatarUrl == null ||
+                                  user!.avatarUrl!.isEmpty
+                              ? const Icon(Icons.person,
+                                  size: 40, color: Colors.white)
+                              : null,
+                        ),
+                        const SizedBox(height: 12),
+                        const Text(
+                          'مرحباً بك دكتور،',
+                          style: TextStyle(
+                            color: Colors.white54,
+                            fontSize: 14,
                           ),
-                          Container(
-                            width: 48,
-                            height: 48,
-                            decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.1),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: const Icon(Icons.notifications_none,
-                                color: Colors.white),
+                        ),
+                        Text(
+                          user?.fullName ?? 'أستاذ قانون',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 22,
+                            fontWeight: FontWeight.bold,
                           ),
-                        ],
-                      ),
-                    ],
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
@@ -197,7 +192,7 @@ class LawyerDashboardPage extends ConsumerWidget {
     );
   }
 
-  Widget _buildQuickActions(BuildContext context) {
+  Widget _buildQuickActions(BuildContext context, WidgetRef ref) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -206,12 +201,6 @@ class LawyerDashboardPage extends ConsumerWidget {
           style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 16),
-        _ActionTile(
-          title: 'تعديل الملف المهني',
-          subtitle: 'تحديث التخصصات والأسعار',
-          icon: Icons.edit_note,
-          onTap: () => context.push('/lawyer-setup'),
-        ),
         _ActionTile(
           title: 'جدول المواعيد',
           subtitle: 'عرض كافة الحجوزات المؤكدة',
@@ -224,7 +213,47 @@ class LawyerDashboardPage extends ConsumerWidget {
           icon: Icons.account_balance_wallet,
           onTap: () {},
         ),
+        const SizedBox(height: 24),
+        const Divider(),
+        const SizedBox(height: 16),
+        ListTile(
+          leading: const Icon(Icons.logout, color: AppColors.error),
+          title: const Text('تسجيل الخروج',
+              style: TextStyle(
+                  color: AppColors.error, fontWeight: FontWeight.bold)),
+          onTap: () => ref.read(authControllerProvider.notifier).logout(),
+        ),
+        ListTile(
+          leading: const Icon(Icons.delete_forever, color: Colors.grey),
+          title: const Text('حذف الحساب نهائياً',
+              style: TextStyle(color: Colors.grey, fontSize: 13)),
+          onTap: () => _showDeleteConfirmation(context, ref),
+        ),
       ],
+    );
+  }
+
+  void _showDeleteConfirmation(BuildContext context, WidgetRef ref) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('حذف الحساب؟'),
+        content: const Text(
+            'هل أنت متأكد من حذف حسابك نهائياً؟ لا يمكن التراجع عن هذا الإجراء وسيتم حذف كافة بياناتك وحجوزاتك.'),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('إلغاء')),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              ref.read(authControllerProvider.notifier).deleteAccount();
+            },
+            child: const Text('نعم، احذف نهائياً',
+                style: TextStyle(color: AppColors.error)),
+          ),
+        ],
+      ),
     );
   }
 }

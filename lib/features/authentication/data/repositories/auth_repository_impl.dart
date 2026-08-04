@@ -46,9 +46,10 @@ class AuthRepositoryImpl implements AuthRepository {
         return AppUser(
           id: user.id,
           email: user.email,
-          fullName: null,
+          fullName: user.userMetadata?['full_name'] as String?,
           phone: user.phone,
           role: 'user',
+          isOnboardingComplete: false,
         );
       }
 
@@ -231,13 +232,16 @@ class AuthRepositoryImpl implements AuthRepository {
     debugPrint('🔑 معرف المصادقة: ${user.id}');
 
     try {
-      // استخدام update مع الفلترة بـ auth_id بدلاً من التلاعب بـ id الأساسي
-      await _supabase.from('profiles').update({
+      // استخدام upsert بدلاً من update لضمان وجود السجل حتى لو فشل الـ Trigger
+      // مع التأكد من أن id = auth_id حسب سياسة توحيد المعرفات
+      await _supabase.from('profiles').upsert({
         ...data,
+        'auth_id': user.id,
+        'id': user.id,
         'updated_at': DateTime.now().toIso8601String(),
-      }).eq('auth_id', user.id);
+      }, onConflict: 'auth_id');
 
-      debugPrint('✅ تم تحديث الملف الشخصي بنجاح');
+      debugPrint('✅ تم تحديث/إنشاء الملف الشخصي بنجاح');
 
       // بثّ الحالة المحدثة للمستخدم
       await refreshUser();

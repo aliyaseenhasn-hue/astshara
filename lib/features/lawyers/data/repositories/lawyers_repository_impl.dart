@@ -13,7 +13,7 @@ class LawyersRepositoryImpl implements LawyersRepository {
   Future<List<LawyerProfile>> getLawyers() async {
     final response = await _supabase
         .from('lawyer_profiles')
-        .select('*, profiles(full_name)')
+        .select('*, profiles(full_name, avatar_url)')
         .eq('verified', true);
 
     return (response as List).map((json) {
@@ -30,6 +30,7 @@ class LawyersRepositoryImpl implements LawyersRepository {
 
       return model.toEntity().copyWith(
             fullName: profile?['full_name'],
+            avatarUrl: profile?['avatar_url'],
           );
     }).toList();
   }
@@ -38,7 +39,7 @@ class LawyersRepositoryImpl implements LawyersRepository {
   Future<LawyerProfile?> getLawyerProfile(String profileId) async {
     final response = await _supabase
         .from('lawyer_profiles')
-        .select('*, profiles(full_name)')
+        .select('*, profiles(full_name, avatar_url)')
         .eq('profile_id', profileId)
         .maybeSingle();
 
@@ -56,6 +57,7 @@ class LawyersRepositoryImpl implements LawyersRepository {
 
     return model.toEntity().copyWith(
           fullName: profile?['full_name'],
+          avatarUrl: profile?['avatar_url'],
         );
   }
 
@@ -68,8 +70,8 @@ class LawyersRepositoryImpl implements LawyersRepository {
         // 'full_name': profile.fullName, // Removed redundant field causing 400 error
         'license_number': profile.licenseNumber,
         'bio': profile.bio,
-        'specialization':
-            profile.specializations, // Will be stored as TEXT[] in DB
+        'specialization': profile.specializations
+            .join(','), // Joined as string to match TEXT column
         'years_experience': profile.yearsExperience,
         'consultation_price': profile.consultationPrice,
         'whatsapp': profile.whatsapp,
