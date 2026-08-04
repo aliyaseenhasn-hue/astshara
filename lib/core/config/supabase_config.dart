@@ -42,7 +42,7 @@ class SupabaseConfig {
     try {
       await Supabase.initialize(
         url: url,
-        anonKey: anonKey,
+        publishableKey: anonKey,
       );
       debugPrint('✅ Supabase initialized successfully');
     } catch (e) {
