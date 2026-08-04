@@ -23,16 +23,25 @@ class ChatController extends _$ChatController {
   FutureOr<void> build() {}
 
   Future<void> send(String conversationId, String content) async {
-    final user = ref.read(authStateChangesProvider).value;
-    if (user == null) return;
+    final trimmedContent = content.trim();
+    if (trimmedContent.isEmpty) return;
 
-    // AppUser.id is the profiles.id from DB
+    final user = ref.read(authStateChangesProvider).value;
+    if (user == null) {
+      throw StateError('يجب تسجيل الدخول لإرسال رسالة');
+    }
+
+    if (conversationId.trim().isEmpty) {
+      throw ArgumentError('معرّف المحادثة غير صالح');
+    }
+
+    // AppUser.id is the profiles.id from DB.
     final profileId = user.id;
 
     await ref.read(chatRepositoryProvider).sendMessage(
           conversationId,
           profileId,
-          content,
+          trimmedContent,
         );
   }
 }
