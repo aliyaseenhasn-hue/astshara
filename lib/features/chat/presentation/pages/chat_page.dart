@@ -16,6 +16,7 @@ class ChatPage extends ConsumerStatefulWidget {
 
 class _ChatPageState extends ConsumerState<ChatPage> {
   final _messageController = TextEditingController();
+  bool _isSending = false;
 
   @override
   void dispose() {
@@ -23,14 +24,42 @@ class _ChatPageState extends ConsumerState<ChatPage> {
     super.dispose();
   }
 
-  void _send() {
-    if (_messageController.text.trim().isNotEmpty) {
-      ref.read(chatControllerProvider.notifier).send(
+  Future<void> _send() async {
+    final content = _messageController.text.trim();
+    if (content.isEmpty || _isSending) return;
+
+    final user = ref.read(authStateChangesProvider).value;
+    if (user == null) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('يجب تسجيل الدخول لإرسال رسالة')),
+        );
+      }
+      return;
+    }
+
+    setState(() => _isSending = true);
+
+    try {
+      await ref.read(chatControllerProvider.notifier).send(
             widget.conversationId,
-            _messageController.text.trim(),
+            content,
           );
-      _messageController.clear();
-      setState(() {}); // لتحديث أيقونة الإرسال
+
+      if (mounted) {
+        _messageController.clear();
+        setState(() {});
+      }
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('تعذر إرسال الرسالة: $error')),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isSending = false);
+      }
     }
   }
 
@@ -105,6 +134,8 @@ class _ChatPageState extends ConsumerState<ChatPage> {
   }
 
   Widget _buildInputArea() {
+    final canSend = _messageController.text.trim().isNotEmpty && !_isSending;
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: const BoxDecoration(
@@ -114,43 +145,56 @@ class _ChatPageState extends ConsumerState<ChatPage> {
       child: SafeArea(
         child: Row(
           children: [
-            Container(
-              decoration: BoxDecoration(
-                color: AppColors.background,
-                borderRadius: BorderRadius.circular(24),
-              ),
-              child: Row(
-                children: [
-                  IconButton(
-                      onPressed: () {},
-                      icon: const Icon(Icons.attach_file,
-                          color: AppColors.outline)),
-                  SizedBox(
-                    width: MediaQuery.of(context).size.width * 0.6,
-                    child: TextField(
-                      controller: _messageController,
-                      onChanged: (v) => setState(() {}),
-                      maxLines: null,
-                      decoration: const InputDecoration(
-                        hintText: 'اكتب رسالتك هنا...',
-                        border: InputBorder.none,
-                        contentPadding: EdgeInsets.symmetric(horizontal: 8),
+            Expanded(
+              child: Container(
+                decoration: BoxDecoration(
+                  color: AppColors.background,
+                  borderRadius: BorderRadius.circular(24),
+                ),
+                child: Row(
+                  children: [
+                    IconButton(
+                        onPressed: _isSending ? null : () {},
+                        icon: const Icon(Icons.attach_file,
+                            color: AppColors.outline)),
+                    Expanded(
+                      child: TextField(
+                        controller: _messageController,
+                        enabled: !_isSending,
+                        onChanged: (_) => setState(() {}),
+                        onSubmitted: (_) {
+                          if (canSend) _send();
+                        },
+                        textInputAction: TextInputAction.send,
+                        maxLines: null,
+                        decoration: const InputDecoration(
+                          hintText: 'اكتب رسالتك هنا...',
+                          border: InputBorder.none,
+                          contentPadding: EdgeInsets.symmetric(horizontal: 8),
+                        ),
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
-            const Spacer(),
+            const SizedBox(width: 8),
             CircleAvatar(
-              backgroundColor: AppColors.primary,
+              backgroundColor:
+                  canSend ? AppColors.primary : AppColors.surfaceVariant,
               child: IconButton(
-                onPressed: _send,
-                icon: Icon(
-                  _messageController.text.isEmpty ? Icons.mic : Icons.send,
-                  color: Colors.white,
-                  size: 20,
-                ),
+                onPressed: canSend ? _send : null,
+                icon: _isSending
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : Icon(
+                        canSend ? Icons.send : Icons.mic,
+                        color: canSend ? Colors.white : AppColors.outline,
+                        size: 20,
+                      ),
               ),
             ),
           ],
