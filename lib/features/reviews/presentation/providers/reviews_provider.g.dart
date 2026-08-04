@@ -176,7 +176,7 @@ class _LawyerReviewsProviderElement
   String get lawyerId => (origin as LawyerReviewsProvider).lawyerId;
 }
 
-String _$reviewControllerHash() => r'0cb5455a0d1ed3ac517df0880855e7170936eeca';
+String _$reviewControllerHash() => r'811868cffa0444ed82846f3f726767b0c6933bff';
 
 /// See also [ReviewController].
 @ProviderFor(ReviewController)

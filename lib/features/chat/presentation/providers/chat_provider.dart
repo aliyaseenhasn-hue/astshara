@@ -26,9 +26,12 @@ class ChatController extends _$ChatController {
     final user = ref.read(authStateChangesProvider).value;
     if (user == null) return;
 
+    // AppUser.id is the profiles.id from DB
+    final profileId = user.id;
+
     await ref.read(chatRepositoryProvider).sendMessage(
           conversationId,
-          user.id,
+          profileId,
           content,
         );
   }

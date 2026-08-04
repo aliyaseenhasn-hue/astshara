@@ -183,8 +183,13 @@ class AuthController extends _$AuthController {
               role: role,
               onboardingCompleted: onboardingCompleted,
             );
-        // إعادة تحميل حالة المستخدم بعد التحديث
+
+        // 1. إبطال الحالة القديمة
         ref.invalidate(authStateChangesProvider);
+
+        // 2. الانتظار حتى يتم تحميل البيانات الجديدة فعلياً من السيرفر
+        // هذا يضمن أن GoRouter سيرى isOnboardingComplete = true عند إعادة التوجيه
+        await ref.read(authStateChangesProvider.future);
       });
     } finally {
       ref.read(globalLoadingProvider.notifier).setLoading(false);

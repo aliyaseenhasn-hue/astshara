@@ -21,8 +21,8 @@ mixin _$LawyerProfile {
   String? get fullName => throw _privateConstructorUsedError;
   String? get licenseNumber => throw _privateConstructorUsedError;
   String? get bio => throw _privateConstructorUsedError;
-  String? get specialization =>
-      throw _privateConstructorUsedError; // إضافة التخصص
+  List<String> get specializations =>
+      throw _privateConstructorUsedError; // تم التغيير إلى قائمة
   int? get yearsExperience => throw _privateConstructorUsedError;
   double? get consultationPrice => throw _privateConstructorUsedError;
   String? get whatsapp => throw _privateConstructorUsedError;
@@ -51,7 +51,7 @@ abstract class $LawyerProfileCopyWith<$Res> {
       String? fullName,
       String? licenseNumber,
       String? bio,
-      String? specialization,
+      List<String> specializations,
       int? yearsExperience,
       double? consultationPrice,
       String? whatsapp,
@@ -82,7 +82,7 @@ class _$LawyerProfileCopyWithImpl<$Res, $Val extends LawyerProfile>
     Object? fullName = freezed,
     Object? licenseNumber = freezed,
     Object? bio = freezed,
-    Object? specialization = freezed,
+    Object? specializations = null,
     Object? yearsExperience = freezed,
     Object? consultationPrice = freezed,
     Object? whatsapp = freezed,
@@ -113,10 +113,10 @@ class _$LawyerProfileCopyWithImpl<$Res, $Val extends LawyerProfile>
           ? _value.bio
           : bio // ignore: cast_nullable_to_non_nullable
               as String?,
-      specialization: freezed == specialization
-          ? _value.specialization
-          : specialization // ignore: cast_nullable_to_non_nullable
-              as String?,
+      specializations: null == specializations
+          ? _value.specializations
+          : specializations // ignore: cast_nullable_to_non_nullable
+              as List<String>,
       yearsExperience: freezed == yearsExperience
           ? _value.yearsExperience
           : yearsExperience // ignore: cast_nullable_to_non_nullable
@@ -167,7 +167,7 @@ abstract class _$$LawyerProfileImplCopyWith<$Res>
       String? fullName,
       String? licenseNumber,
       String? bio,
-      String? specialization,
+      List<String> specializations,
       int? yearsExperience,
       double? consultationPrice,
       String? whatsapp,
@@ -196,7 +196,7 @@ class __$$LawyerProfileImplCopyWithImpl<$Res>
     Object? fullName = freezed,
     Object? licenseNumber = freezed,
     Object? bio = freezed,
-    Object? specialization = freezed,
+    Object? specializations = null,
     Object? yearsExperience = freezed,
     Object? consultationPrice = freezed,
     Object? whatsapp = freezed,
@@ -227,10 +227,10 @@ class __$$LawyerProfileImplCopyWithImpl<$Res>
           ? _value.bio
           : bio // ignore: cast_nullable_to_non_nullable
               as String?,
-      specialization: freezed == specialization
-          ? _value.specialization
-          : specialization // ignore: cast_nullable_to_non_nullable
-              as String?,
+      specializations: null == specializations
+          ? _value._specializations
+          : specializations // ignore: cast_nullable_to_non_nullable
+              as List<String>,
       yearsExperience: freezed == yearsExperience
           ? _value.yearsExperience
           : yearsExperience // ignore: cast_nullable_to_non_nullable
@@ -276,7 +276,7 @@ class _$LawyerProfileImpl implements _LawyerProfile {
       this.fullName,
       this.licenseNumber,
       this.bio,
-      this.specialization,
+      final List<String> specializations = const [],
       this.yearsExperience,
       this.consultationPrice,
       this.whatsapp,
@@ -284,7 +284,8 @@ class _$LawyerProfileImpl implements _LawyerProfile {
       this.rating = 0.0,
       this.reviewCount = 0,
       this.verified = false,
-      this.availability = true});
+      this.availability = true})
+      : _specializations = specializations;
 
   @override
   final String id;
@@ -296,9 +297,16 @@ class _$LawyerProfileImpl implements _LawyerProfile {
   final String? licenseNumber;
   @override
   final String? bio;
+  final List<String> _specializations;
   @override
-  final String? specialization;
-// إضافة التخصص
+  @JsonKey()
+  List<String> get specializations {
+    if (_specializations is EqualUnmodifiableListView) return _specializations;
+    // ignore: implicit_dynamic_type
+    return EqualUnmodifiableListView(_specializations);
+  }
+
+// تم التغيير إلى قائمة
   @override
   final int? yearsExperience;
   @override
@@ -322,7 +330,7 @@ class _$LawyerProfileImpl implements _LawyerProfile {
 
   @override
   String toString() {
-    return 'LawyerProfile(id: $id, profileId: $profileId, fullName: $fullName, licenseNumber: $licenseNumber, bio: $bio, specialization: $specialization, yearsExperience: $yearsExperience, consultationPrice: $consultationPrice, whatsapp: $whatsapp, idCardUrl: $idCardUrl, rating: $rating, reviewCount: $reviewCount, verified: $verified, availability: $availability)';
+    return 'LawyerProfile(id: $id, profileId: $profileId, fullName: $fullName, licenseNumber: $licenseNumber, bio: $bio, specializations: $specializations, yearsExperience: $yearsExperience, consultationPrice: $consultationPrice, whatsapp: $whatsapp, idCardUrl: $idCardUrl, rating: $rating, reviewCount: $reviewCount, verified: $verified, availability: $availability)';
   }
 
   @override
@@ -338,8 +346,8 @@ class _$LawyerProfileImpl implements _LawyerProfile {
             (identical(other.licenseNumber, licenseNumber) ||
                 other.licenseNumber == licenseNumber) &&
             (identical(other.bio, bio) || other.bio == bio) &&
-            (identical(other.specialization, specialization) ||
-                other.specialization == specialization) &&
+            const DeepCollectionEquality()
+                .equals(other._specializations, _specializations) &&
             (identical(other.yearsExperience, yearsExperience) ||
                 other.yearsExperience == yearsExperience) &&
             (identical(other.consultationPrice, consultationPrice) ||
@@ -365,7 +373,7 @@ class _$LawyerProfileImpl implements _LawyerProfile {
       fullName,
       licenseNumber,
       bio,
-      specialization,
+      const DeepCollectionEquality().hash(_specializations),
       yearsExperience,
       consultationPrice,
       whatsapp,
@@ -391,7 +399,7 @@ abstract class _LawyerProfile implements LawyerProfile {
       final String? fullName,
       final String? licenseNumber,
       final String? bio,
-      final String? specialization,
+      final List<String> specializations,
       final int? yearsExperience,
       final double? consultationPrice,
       final String? whatsapp,
@@ -412,7 +420,7 @@ abstract class _LawyerProfile implements LawyerProfile {
   @override
   String? get bio;
   @override
-  String? get specialization; // إضافة التخصص
+  List<String> get specializations; // تم التغيير إلى قائمة
   @override
   int? get yearsExperience;
   @override

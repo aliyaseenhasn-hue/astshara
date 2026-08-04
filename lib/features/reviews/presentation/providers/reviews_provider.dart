@@ -33,10 +33,12 @@ class ReviewController extends _$ReviewController {
       final user = ref.read(authStateChangesProvider).value;
       if (user == null) return;
 
+      final profileId = user.id;
+
       final review = Review(
         id: '',
         bookingId: bookingId,
-        userId: user.id,
+        userId: profileId,
         lawyerId: lawyerId,
         rating: rating,
         comment: comment,

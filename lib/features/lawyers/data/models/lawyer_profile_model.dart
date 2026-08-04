@@ -15,7 +15,7 @@ class LawyerProfileModel with _$LawyerProfileModel {
     String? fullName, // إضافة الحقل لدعم القراءة من الجداول الموحدة
     @JsonKey(name: 'license_number') String? licenseNumber,
     String? bio,
-    String? specialization,
+    @JsonKey(name: 'specialization') @Default([]) List<String> specializations,
     @JsonKey(name: 'years_experience') int? yearsExperience,
     @JsonKey(name: 'consultation_price', fromJson: _doubleFromPossibleString)
     double? consultationPrice,
@@ -36,7 +36,7 @@ class LawyerProfileModel with _$LawyerProfileModel {
         fullName: fullName,
         licenseNumber: licenseNumber,
         bio: bio,
-        specialization: specialization,
+        specializations: specializations,
         yearsExperience: yearsExperience,
         consultationPrice: consultationPrice,
         whatsapp: whatsapp,

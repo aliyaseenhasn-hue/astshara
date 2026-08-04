@@ -14,6 +14,7 @@ import '../features/lawyers/presentation/pages/lawyers_list_page.dart';
 import '../features/lawyers/presentation/pages/lawyer_details_page.dart';
 import '../features/lawyers/presentation/pages/lawyer_setup_page.dart';
 import '../features/lawyers/presentation/pages/lawyer_pending_page.dart';
+import '../features/lawyers/presentation/pages/lawyer_dashboard_page.dart';
 import '../features/bookings/presentation/pages/create_booking_page.dart';
 import '../features/bookings/presentation/pages/bookings_list_page.dart';
 import '../features/chat/presentation/pages/chat_page.dart';
@@ -110,9 +111,17 @@ GoRouter router(RouterRef ref) {
       if (isLoggingIn ||
           isSigningUp ||
           isOtp ||
-          (isCompletingProfile && user.isOnboardingComplete) ||
-          (isPendingPage && user.isVerified)) {
+          (isCompletingProfile && user.isOnboardingComplete)) {
+        // توجيه المحامي الموثق لصفحته الخاصة، والعميل للصفحة الرئيسية
+        if (user.role == 'lawyer' && user.isVerified) {
+          return '/lawyer-home'; // مسار لوحة تحكم المحامي
+        }
         return '/';
+      }
+
+      // توجيه المحامي الموثق إذا حاول الدخول لصفحة قائمة المحامين (اختياري)
+      if (matchedLocation == '/' && user.role == 'lawyer' && user.isVerified) {
+        return '/lawyer-home';
       }
 
       return null;
@@ -150,6 +159,10 @@ GoRouter router(RouterRef ref) {
           final phone = state.extra as String? ?? '';
           return OtpPage(phone: phone);
         },
+      ),
+      GoRoute(
+        path: '/lawyer-home',
+        builder: (context, state) => const LawyerDashboardPage(),
       ),
       GoRoute(
         path: '/lawyer-setup',

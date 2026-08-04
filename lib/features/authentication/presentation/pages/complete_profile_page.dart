@@ -28,7 +28,19 @@ class _CompleteProfilePageState extends ConsumerState<CompleteProfilePage> {
   String _selectedRole = 'user';
   Uint8List? _profilePhotoBytes;
   Uint8List? _idCardBytes;
+  final List<String> _selectedSpecializations = [];
   bool _isInitialized = false;
+
+  final List<String> _allSpecializations = [
+    'جنائي',
+    'أحوال شخصية',
+    'مدني',
+    'تجاري',
+    'عمل',
+    'عقارات',
+    'إداري',
+    'عسكري',
+  ];
 
   @override
   void didChangeDependencies() {
@@ -96,6 +108,16 @@ class _CompleteProfilePageState extends ConsumerState<CompleteProfilePage> {
           return;
         }
 
+        if (_selectedSpecializations.isEmpty) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('⚠️ يرجى اختيار تخصص واحد على الأقل'),
+              backgroundColor: AppColors.error,
+            ),
+          );
+          return;
+        }
+
         try {
           debugPrint('📤 بدء عملية إرسال بيانات المحامي...');
 
@@ -103,10 +125,11 @@ class _CompleteProfilePageState extends ConsumerState<CompleteProfilePage> {
           await ref
               .read(lawyerSetupControllerProvider.notifier)
               .completeProfile(
-                profileId: authId,
+                authUid: authId,
                 fullName: _nameController.text.trim(),
                 email: _emailController.text.trim(),
                 whatsapp: _whatsappController.text.trim(),
+                specializations: _selectedSpecializations,
                 profilePhotoBytes: _profilePhotoBytes,
                 idCardBytes: _idCardBytes,
               );
@@ -415,6 +438,37 @@ class _CompleteProfilePageState extends ConsumerState<CompleteProfilePage> {
           keyboardType: TextInputType.phone,
           validator: (val) =>
               val?.trim().isEmpty ?? true ? 'مطلوب للتواصل' : null,
+        ),
+
+        const SizedBox(height: 24),
+        const Text('التخصصات القانونية (اختر واحدة أو أكثر):',
+            style: TextStyle(fontWeight: FontWeight.bold)),
+        const SizedBox(height: 12),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: _allSpecializations.map((spec) {
+            final isSelected = _selectedSpecializations.contains(spec);
+            return FilterChip(
+              label: Text(spec),
+              selected: isSelected,
+              onSelected: (selected) {
+                setState(() {
+                  if (selected) {
+                    _selectedSpecializations.add(spec);
+                  } else {
+                    _selectedSpecializations.remove(spec);
+                  }
+                });
+              },
+              selectedColor: AppColors.primary.withValues(alpha: 0.2),
+              checkmarkColor: AppColors.primary,
+              labelStyle: TextStyle(
+                color: isSelected ? AppColors.primary : Colors.black87,
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+              ),
+            );
+          }).toList(),
         ),
 
         const SizedBox(height: 24),

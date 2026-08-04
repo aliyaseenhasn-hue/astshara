@@ -68,7 +68,8 @@ class LawyersRepositoryImpl implements LawyersRepository {
         // 'full_name': profile.fullName, // Removed redundant field causing 400 error
         'license_number': profile.licenseNumber,
         'bio': profile.bio,
-        'specialization': profile.specialization,
+        'specialization':
+            profile.specializations, // Will be stored as TEXT[] in DB
         'years_experience': profile.yearsExperience,
         'consultation_price': profile.consultationPrice,
         'whatsapp': profile.whatsapp,

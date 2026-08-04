@@ -89,21 +89,13 @@ class LawyerVerification extends _$LawyerVerification {
     required String body,
   }) async {
     try {
-      // نستخدم id مباشرة للبحث عن المستخدم
-      final userResponse = await SupabaseConfig.client
-          .from('profiles')
-          .select('id')
-          .eq('id', profileId)
-          .maybeSingle();
-
-      if (userResponse != null) {
-        await SupabaseConfig.client.from('notifications').insert({
-          'user_id': userResponse['id'],
-          'title': title,
-          'body': body,
-          'type': 'system',
-        });
-      }
+      // نرسل الإشعار مباشرة باستخدام profileId الذي هو أصلاً profiles.id
+      await SupabaseConfig.client.from('notifications').insert({
+        'user_id': profileId,
+        'title': title,
+        'body': body,
+        'type': 'system',
+      });
     } catch (e) {
       debugPrint('Error sending verification notification: $e');
     }

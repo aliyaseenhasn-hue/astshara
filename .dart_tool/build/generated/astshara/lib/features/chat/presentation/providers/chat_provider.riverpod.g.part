@@ -172,7 +172,7 @@ class _ChatMessagesProviderElement
   String get conversationId => (origin as ChatMessagesProvider).conversationId;
 }
 
-String _$chatControllerHash() => r'07a48715f71b0f1f681bddb64425b1fcb4afdf8c';
+String _$chatControllerHash() => r'6303f7ccb1fc167faf0ff098f76292e73a7a6bb1';
 
 /// See also [ChatController].
 @ProviderFor(ChatController)

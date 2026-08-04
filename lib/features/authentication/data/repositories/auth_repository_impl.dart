@@ -202,7 +202,7 @@ class AuthRepositoryImpl implements AuthRepository {
     debugPrint('🔑 معرف المصادقة: ${user.id}');
 
     try {
-      // استخدام update مع الفلترة بـ auth_id
+      // استخدام update مع الفلترة بـ auth_id بدلاً من التلاعب بـ id الأساسي
       await _supabase.from('profiles').update({
         ...data,
         'updated_at': DateTime.now().toIso8601String(),

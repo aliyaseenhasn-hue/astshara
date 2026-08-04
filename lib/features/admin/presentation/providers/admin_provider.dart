@@ -1,5 +1,6 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:astshara/core/config/supabase_config.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 part 'admin_provider.g.dart';
 
@@ -10,55 +11,57 @@ class AdminStats extends _$AdminStats {
     final client = SupabaseConfig.client;
 
     try {
-      // جلب إجمالي المستخدمين (جلب المعرفات فقط لتقليل البيانات)
-      final usersRes = await client.from('profiles').select('id');
-      final totalUsers = (usersRes as List).length;
+      // جلب إجمالي المستخدمين
+      final usersRes =
+          await client.from('profiles').select('id').count(CountOption.exact);
 
       // جلب إجمالي المحامين الموثقين
       final lawyersRes = await client
           .from('lawyer_profiles')
           .select('id')
-          .eq('verified', true);
-      final totalLawyers = (lawyersRes as List).length;
+          .eq('verified', true)
+          .count(CountOption.exact);
 
       // جلب طلبات التوثيق المعلقة
       final pendingVerificationsRes = await client
           .from('lawyer_profiles')
           .select('id')
-          .eq('verified', false);
-      final pendingVerifications = (pendingVerificationsRes as List).length;
+          .eq('verified', false)
+          .count(CountOption.exact);
 
       // جلب الحجوزات النشطة
-      final activeBookingsRes =
-          await client.from('bookings').select('id').eq('status', 'confirmed');
-      final activeBookings = (activeBookingsRes as List).length;
+      final activeBookingsRes = await client
+          .from('bookings')
+          .select('id')
+          .eq('status', 'confirmed')
+          .count(CountOption.exact);
 
-      // جلب مجموع الإيرادات والدفعات المعلقة
-      final paymentsRes =
-          await client.from('payments').select('amount, status');
+      // جلب الدفعات المعلقة
+      final pendingPaymentsRes = await client
+          .from('payments')
+          .select('id')
+          .eq('status', 'pending')
+          .count(CountOption.exact);
+
+      // جلب مجموع الإيرادات
+      final revenueRes =
+          await client.from('payments').select('amount').eq('status', 'paid');
 
       double totalRevenue = 0;
-      int pendingPaymentsCount = 0;
-
-      final paymentsList = paymentsRes as List;
-      for (final row in paymentsList) {
-        if (row['status'] == 'paid' || row['status'] == 'verified') {
-          totalRevenue += (row['amount'] as num?)?.toDouble() ?? 0;
-        } else if (row['status'] == 'pending') {
-          pendingPaymentsCount++;
-        }
+      final revenueList = revenueRes as List;
+      for (final row in revenueList) {
+        totalRevenue += (row['amount'] as num?)?.toDouble() ?? 0;
       }
 
       return {
-        'total_users': totalUsers,
-        'total_lawyers': totalLawyers,
-        'pending_verifications': pendingVerifications,
-        'active_bookings': activeBookings,
+        'total_users': usersRes.count ?? 0,
+        'total_lawyers': lawyersRes.count ?? 0,
+        'pending_verifications': pendingVerificationsRes.count ?? 0,
+        'active_bookings': activeBookingsRes.count ?? 0,
         'total_revenue': totalRevenue,
-        'pending_payments': pendingPaymentsCount,
+        'pending_payments': pendingPaymentsRes.count ?? 0,
       };
     } catch (e) {
-      print('Error fetching admin stats: $e');
       rethrow;
     }
   }

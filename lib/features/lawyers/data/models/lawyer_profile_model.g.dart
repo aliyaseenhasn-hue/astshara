@@ -14,7 +14,10 @@ _$LawyerProfileModelImpl _$$LawyerProfileModelImplFromJson(
       fullName: json['full_name'] as String?,
       licenseNumber: json['license_number'] as String?,
       bio: json['bio'] as String?,
-      specialization: json['specialization'] as String?,
+      specializations: (json['specialization'] as List<dynamic>?)
+              ?.map((e) => e as String)
+              .toList() ??
+          const [],
       yearsExperience: (json['years_experience'] as num?)?.toInt(),
       consultationPrice: _doubleFromPossibleString(json['consultation_price']),
       whatsapp: json['whatsapp'] as String?,
@@ -33,7 +36,7 @@ Map<String, dynamic> _$$LawyerProfileModelImplToJson(
       'full_name': instance.fullName,
       'license_number': instance.licenseNumber,
       'bio': instance.bio,
-      'specialization': instance.specialization,
+      'specialization': instance.specializations,
       'years_experience': instance.yearsExperience,
       'consultation_price': instance.consultationPrice,
       'whatsapp': instance.whatsapp,

@@ -18,7 +18,7 @@ Future<List<LawyerProfile>> lawyersList(LawyersListRef ref) {
 
   return repository.getLawyers().then((lawyers) {
     if (category == null) return lawyers;
-    return lawyers.where((l) => l.specialization == category).toList();
+    return lawyers.where((l) => l.specializations.contains(category)).toList();
   });
 }
 

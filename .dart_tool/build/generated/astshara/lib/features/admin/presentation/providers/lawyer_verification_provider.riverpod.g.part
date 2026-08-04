@@ -3,7 +3,7 @@
 // **************************************************************************
 
 String _$lawyerVerificationHash() =>
-    r'82306d600cd8e0bcc585ae89ca9534725d7c04f6';
+    r'de56614d3711a09f1b94fe401b0d8931b3d026fd';
 
 /// See also [LawyerVerification].
 @ProviderFor(LawyerVerification)
