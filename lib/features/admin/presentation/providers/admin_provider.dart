@@ -10,31 +10,30 @@ class AdminStats extends _$AdminStats {
     final client = SupabaseConfig.client;
 
     try {
-      // جلب إحصائيات دقيقة باستخدام استعلامات منفصلة
-      // ملاحظة: نستخدم .select().count() أو طول القائمة حسب المتوفر في الإصدار
+      // جلب إحصائيات دقيقة باستخدام طول المصفوفة لضمان التوافق مع كافة الإصدارات
 
       final usersRes = await client.from('profiles').select('id');
-      final totalUsers = usersRes.length;
+      final totalUsers = (usersRes as List).length;
 
       final lawyersRes = await client
           .from('lawyer_profiles')
           .select('id')
           .eq('verified', true);
-      final totalLawyers = lawyersRes.length;
+      final totalLawyers = (lawyersRes as List).length;
 
       final pendingVerificationsRes = await client
           .from('lawyer_profiles')
           .select('id')
           .eq('verified', false);
-      final pendingVerifications = pendingVerificationsRes.length;
+      final pendingVerifications = (pendingVerificationsRes as List).length;
 
       final activeBookingsRes =
           await client.from('bookings').select('id').eq('status', 'confirmed');
-      final activeBookings = activeBookingsRes.length;
+      final activeBookings = (activeBookingsRes as List).length;
 
       final pendingPaymentsRes =
           await client.from('payments').select('id').eq('status', 'pending');
-      final pendingPaymentsCount = pendingPaymentsRes.length;
+      final pendingPaymentsCount = (pendingPaymentsRes as List).length;
 
       // جلب مجموع الإيرادات
       final revenueRes =

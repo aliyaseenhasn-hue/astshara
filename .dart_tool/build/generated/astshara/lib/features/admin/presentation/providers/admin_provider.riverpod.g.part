@@ -2,7 +2,7 @@
 // RiverpodGenerator
 // **************************************************************************
 
-String _$adminStatsHash() => r'b9e09a0f81299ec312cedea34e1f4be62880fe92';
+String _$adminStatsHash() => r'20e60040bea0f45c4582d3e24a622a88addf43dc';
 
 /// See also [AdminStats].
 @ProviderFor(AdminStats)
