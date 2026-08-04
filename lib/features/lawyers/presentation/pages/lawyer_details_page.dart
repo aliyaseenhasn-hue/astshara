@@ -80,7 +80,7 @@ class LawyerDetailsPage extends ConsumerWidget {
                     right: 0,
                     child: Container(
                       padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
+                      decoration: const BoxDecoration(
                         color: Colors.white,
                         border: Border(
                             top: BorderSide(

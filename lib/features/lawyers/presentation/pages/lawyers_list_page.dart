@@ -198,7 +198,7 @@ class LawyersListPage extends ConsumerWidget {
         ],
       ),
       bottomNavigationBar: Container(
-        decoration: BoxDecoration(
+        decoration: const BoxDecoration(
           border: Border(
               top: BorderSide(color: AppColors.surfaceVariant, width: 1)),
         ),

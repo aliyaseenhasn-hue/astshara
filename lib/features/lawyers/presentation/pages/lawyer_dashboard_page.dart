@@ -285,9 +285,9 @@ class _BookingTile extends StatelessWidget {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: ListTile(
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        leading: CircleAvatar(
+        leading: const CircleAvatar(
           backgroundColor: AppColors.background,
-          child: const Icon(Icons.person, color: AppColors.primary),
+          child: Icon(Icons.person, color: AppColors.primary),
         ),
         title: const Text('استشارة قانونية',
             style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),

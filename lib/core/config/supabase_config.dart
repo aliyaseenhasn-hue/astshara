@@ -14,7 +14,7 @@ class SupabaseConfig {
     return url;
   }
 
-  static String get anonKey {
+  static String get publishableKey {
     final key = dotenv.env['SUPABASE_ANON_KEY'] ??
         dotenv.env['NEXT_PUBLIC_SUPABASE_ANON_KEY'] ??
         dotenv.env['NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY'] ??
@@ -35,14 +35,14 @@ class SupabaseConfig {
   }
 
   static Future<void> initialize() async {
-    if (url.isEmpty || anonKey.isEmpty) {
+    if (url.isEmpty || publishableKey.isEmpty) {
       throw Exception('Supabase configuration is incomplete');
     }
 
     try {
       await Supabase.initialize(
         url: url,
-        publishableKey: anonKey,
+        publishableKey: publishableKey,
       );
       debugPrint('✅ Supabase initialized successfully');
     } catch (e) {

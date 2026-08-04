@@ -291,7 +291,9 @@ class _CreateBookingPageState extends ConsumerState<CreateBookingPage> {
     return RadioListTile<String>(
       title: Text(title),
       value: method,
+      // ignore: deprecated_member_use
       groupValue: _paymentMethod,
+      // ignore: deprecated_member_use
       onChanged: (val) =>
           val != null ? setState(() => _paymentMethod = val) : null,
       contentPadding: EdgeInsets.zero,
