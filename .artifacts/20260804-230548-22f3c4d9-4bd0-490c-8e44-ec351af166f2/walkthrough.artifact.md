@@ -11,8 +11,12 @@
     *   تمت إضافة `CFBundleURLTypes` لتعريف الـ URL Scheme الخاص بالتطبيق (`io.supabase.astshara`).
 
 3.  **في كود الفلاتر:**
-    *   **[auth_repository_impl.dart](file:///C:/Allmyprojects/astshara/lib/features/authentication/data/repositories/auth_repository_impl.dart):** تم تغيير `_googleOAuthRedirectUrl` ليطابق الرابط الجديد.
-    *   **[supabase_config.dart](file:///C:/Allmyprojects/astshara/lib/core/config/supabase_config.dart):** تم التأكد من استخدام المعاملات الصحيحة في عملية التهيئة.
+    *   **[auth_repository_impl.dart](file:///C:/Allmyprojects/astshara/lib/features/authentication/data/repositories/auth_repository_impl.dart):** تم تغيير `_googleOAuthRedirectUrl` ليدعم الويب والموبايل تلقائياً.
+    *   **[supabase_config.dart](file:///C:/Allmyprojects/astshara/lib/core/config/supabase_config.dart):** تم تنظيف الإعدادات وإزالة HuggingFace.
+
+4.  **في قواعد بيانات Supabase ([supabase_setup.sql](file:///C:/Allmyprojects/astshara/docs/supabase_setup.sql)):**
+    *   **إصلاح Recursion Error:** تم تحديث دالة `is_admin()` لتعتمد على JWT Claims بدلاً من الاستعلام المتكرر، مما منع حدوث "التكرار اللانهائي" في سياسات RLS.
+    *   **تبسيط السياسات:** تم تحسين قواعد الوصول لجدول `profiles` و `bookings` لضمان سرعة الاستجابة وأمان البيانات.
 
 ## الخطوات النهائية المطلوبة منك:
 
