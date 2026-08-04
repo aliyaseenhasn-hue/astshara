@@ -35,7 +35,6 @@ jobs:
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
-          HUGGING_FACE_TOKEN: ${{ secrets.HUGGING_FACE_TOKEN }}
         run: |
           set -euo pipefail
 
@@ -52,7 +51,6 @@ jobs:
           cat > .env <<EOF_ENV
           SUPABASE_URL=${SUPABASE_URL}
           SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY}
-          HUGGING_FACE_TOKEN=${HUGGING_FACE_TOKEN:-}
           EOF_ENV
 
           echo "✅ .env file created from GitHub Secrets."
@@ -61,13 +59,11 @@ jobs:
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
-          HUGGING_FACE_TOKEN: ${{ secrets.HUGGING_FACE_TOKEN }}
         run: |
           set -euo pipefail
           flutter build web --release --base-href "/astshara/" \
             --dart-define=SUPABASE_URL="$SUPABASE_URL" \
-            --dart-define=SUPABASE_ANON_KEY="$SUPABASE_ANON_KEY" \
-            --dart-define=HUGGING_FACE_TOKEN="$HUGGING_FACE_TOKEN"
+            --dart-define=SUPABASE_ANON_KEY="$SUPABASE_ANON_KEY"
 
       - name: Upload GitHub Pages artifact
         uses: actions/upload-pages-artifact@v3

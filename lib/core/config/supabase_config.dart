@@ -13,7 +13,6 @@ class SupabaseConfig {
       String.fromEnvironment('NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY');
   static const _nextPublicSupabaseAnonKey =
       String.fromEnvironment('NEXT_PUBLIC_SUPABASE_ANON_KEY');
-  static const _huggingFaceToken = String.fromEnvironment('HUGGING_FACE_TOKEN');
 
   static String get url {
     final url = _supabaseUrl.isNotEmpty
@@ -55,16 +54,6 @@ class SupabaseConfig {
 
   static bool get hasRequiredConfig =>
       url.isNotEmpty && publishableKey.isNotEmpty;
-
-  static String get hfToken {
-    final token = _huggingFaceToken.isNotEmpty
-        ? _huggingFaceToken
-        : dotenv.env['HUGGING_FACE_TOKEN'] ?? '';
-    if (token.isEmpty) {
-      debugPrint('⚠️ Warning: HUGGING_FACE_TOKEN is not set');
-    }
-    return token;
-  }
 
   static Future<void> initialize() async {
     if (!hasRequiredConfig) {
