@@ -16,10 +16,7 @@ Future<ProviderContainer> bootstrap() async {
     }
 
     // تهيئة Supabase فقط إذا كانت القيم موجودة
-    final supabaseUrl = dotenv.env['SUPABASE_URL'];
-    final supabaseAnonKey = dotenv.env['SUPABASE_ANON_KEY'];
-
-    if (supabaseUrl != null && supabaseAnonKey != null) {
+    if (SupabaseConfig.hasRequiredConfig) {
       try {
         await SupabaseConfig.initialize();
         debugPrint('✅ Supabase initialized successfully');

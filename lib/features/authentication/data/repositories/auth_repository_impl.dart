@@ -138,21 +138,38 @@ class AuthRepositoryImpl implements AuthRepository {
     await _supabase.auth.signInWithOtp(phone: formattedPhone);
   }
 
+  static const String _googleOAuthRedirectUrl =
+      'io.supabase.astshara://login-callback';
+
   @override
   Future<void> signInWithGoogle() async {
     try {
+      if (kDebugMode) {
+        debugPrint(
+          'Starting Google OAuth with redirect URL: $_googleOAuthRedirectUrl',
+        );
+      }
+
       await _supabase.auth.signInWithOAuth(
         OAuthProvider.google,
-        redirectTo: 'https://aliyaseenhasn-hue.github.io/astshara/',
+        redirectTo: _googleOAuthRedirectUrl,
         queryParams: {
           'prompt': 'select_account',
         },
       );
 
-      debugPrint('✅ تم بدء تسجيل الدخول بواسطة Google');
-    } catch (e, st) {
-      debugPrint('❌ Google OAuth Error: $e');
-      debugPrintStack(stackTrace: st);
+      if (kDebugMode) {
+        debugPrint('Google OAuth request started successfully.');
+      }
+    } on AuthException catch (e) {
+      if (kDebugMode) {
+        debugPrint('Google OAuth AuthException: ${e.message}');
+      }
+      rethrow;
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('Unexpected Google OAuth error: $e');
+      }
       rethrow;
     }
   }
