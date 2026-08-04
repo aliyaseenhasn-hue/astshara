@@ -76,7 +76,7 @@ class _LawyerOnboardingPageState extends ConsumerState<LawyerOnboardingPage> {
       if (authId == null) return;
 
       await ref.read(lawyerSetupControllerProvider.notifier).completeProfile(
-            profileId: authId,
+            authUid: authId,
             fullName: widget.fullName,
             email: widget.email,
             whatsapp: _whatsappController.text.trim(),

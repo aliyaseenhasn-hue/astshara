@@ -153,8 +153,6 @@ class LawyerDashboardPage extends ConsumerWidget {
     final totalEarnings = bookings
         .where((b) => b.status == 'completed')
         .fold(0.0, (sum, b) => sum + b.price);
-    final completedCount =
-        bookings.where((b) => b.status == 'completed').length;
     final pendingCount = bookings
         .where((b) => b.status == 'pending' || b.status == 'accepted')
         .length;

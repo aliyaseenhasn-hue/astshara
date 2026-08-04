@@ -54,7 +54,7 @@ class _LawyerSetupPageState extends ConsumerState<LawyerSetupPage> {
       if (user == null) return;
 
       await ref.read(lawyerSetupControllerProvider.notifier).completeProfile(
-            profileId: user.id,
+            authUid: user.id,
             fullName: user.fullName ?? '',
             email: user.email,
             whatsapp: _whatsappController.text.trim(),

@@ -54,12 +54,12 @@ class AdminStats extends _$AdminStats {
       }
 
       return {
-        'total_users': usersRes.count ?? 0,
-        'total_lawyers': lawyersRes.count ?? 0,
-        'pending_verifications': pendingVerificationsRes.count ?? 0,
-        'active_bookings': activeBookingsRes.count ?? 0,
+        'total_users': usersRes.count,
+        'total_lawyers': lawyersRes.count,
+        'pending_verifications': pendingVerificationsRes.count,
+        'active_bookings': activeBookingsRes.count,
         'total_revenue': totalRevenue,
-        'pending_payments': pendingPaymentsRes.count ?? 0,
+        'pending_payments': pendingPaymentsRes.count,
       };
     } catch (e) {
       rethrow;

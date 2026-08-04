@@ -37,8 +37,6 @@ class LawyerSetupController extends _$LawyerSetupController {
       state = await AsyncValue.guard(() async {
         final lawyersRepo = ref.read(lawyersRepositoryProvider);
         final authRepo = ref.read(authRepositoryProvider);
-        final supabase = ref.read(
-            authRepositoryProvider); // Assuming it has access to client or use SupabaseConfig
 
         debugPrint('--- 🔄 بدء عملية إكمال الملف للمحامي ---');
 
