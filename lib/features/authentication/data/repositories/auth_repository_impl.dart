@@ -140,13 +140,21 @@ class AuthRepositoryImpl implements AuthRepository {
 
   @override
   Future<void> signInWithGoogle() async {
-    await _supabase.auth.signInWithOAuth(
-      OAuthProvider.google,
-      redirectTo: 'https://aliyaseenhasn-hue.github.io/astshara/',
-      queryParams: {
-        'prompt': 'select_account',
-      },
-    );
+    try {
+      await _supabase.auth.signInWithOAuth(
+        OAuthProvider.google,
+        redirectTo: 'https://aliyaseenhasn-hue.github.io/astshara/',
+        queryParams: {
+          'prompt': 'select_account',
+        },
+      );
+
+      debugPrint('✅ تم بدء تسجيل الدخول بواسطة Google');
+    } catch (e, st) {
+      debugPrint('❌ Google OAuth Error: $e');
+      debugPrintStack(stackTrace: st);
+      rethrow;
+    }
   }
 
   @override
