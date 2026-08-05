@@ -7,7 +7,7 @@ part of 'lawyer_setup_provider.dart';
 // **************************************************************************
 
 String _$lawyerSetupControllerHash() =>
-    r'a2b9a1f48251c30b688d664eac8149a79542dd3d';
+    r'14e99a03dce4439ebf0bfa13492fe50833bc81c3';
 
 /// See also [LawyerSetupController].
 @ProviderFor(LawyerSetupController)

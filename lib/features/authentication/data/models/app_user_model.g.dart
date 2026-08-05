@@ -17,6 +17,7 @@ _$AppUserModelImpl _$$AppUserModelImplFromJson(Map<String, dynamic> json) =>
       isVerified: json['is_verified'] as bool? ?? false,
       hasProfessionalProfile: json['hasProfessionalProfile'] as bool? ?? false,
       isOnboardingComplete: json['onboarding_completed'] as bool?,
+      walletNumber: json['wallet_number'] as String?,
     );
 
 Map<String, dynamic> _$$AppUserModelImplToJson(_$AppUserModelImpl instance) =>
@@ -30,4 +31,5 @@ Map<String, dynamic> _$$AppUserModelImplToJson(_$AppUserModelImpl instance) =>
       'is_verified': instance.isVerified,
       'hasProfessionalProfile': instance.hasProfessionalProfile,
       'onboarding_completed': instance.isOnboardingComplete,
+      'wallet_number': instance.walletNumber,
     };

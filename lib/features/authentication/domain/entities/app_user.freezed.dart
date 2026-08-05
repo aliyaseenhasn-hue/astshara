@@ -25,6 +25,7 @@ mixin _$AppUser {
   bool get isVerified => throw _privateConstructorUsedError;
   bool get hasProfessionalProfile => throw _privateConstructorUsedError;
   bool get isOnboardingComplete => throw _privateConstructorUsedError;
+  String? get walletNumber => throw _privateConstructorUsedError;
 
   /// Create a copy of AppUser
   /// with the given fields replaced by the non-null parameter values.
@@ -46,7 +47,8 @@ abstract class $AppUserCopyWith<$Res> {
       String role,
       bool isVerified,
       bool hasProfessionalProfile,
-      bool isOnboardingComplete});
+      bool isOnboardingComplete,
+      String? walletNumber});
 }
 
 /// @nodoc
@@ -73,6 +75,7 @@ class _$AppUserCopyWithImpl<$Res, $Val extends AppUser>
     Object? isVerified = null,
     Object? hasProfessionalProfile = null,
     Object? isOnboardingComplete = null,
+    Object? walletNumber = freezed,
   }) {
     return _then(_value.copyWith(
       id: null == id
@@ -111,6 +114,10 @@ class _$AppUserCopyWithImpl<$Res, $Val extends AppUser>
           ? _value.isOnboardingComplete
           : isOnboardingComplete // ignore: cast_nullable_to_non_nullable
               as bool,
+      walletNumber: freezed == walletNumber
+          ? _value.walletNumber
+          : walletNumber // ignore: cast_nullable_to_non_nullable
+              as String?,
     ) as $Val);
   }
 }
@@ -131,7 +138,8 @@ abstract class _$$AppUserImplCopyWith<$Res> implements $AppUserCopyWith<$Res> {
       String role,
       bool isVerified,
       bool hasProfessionalProfile,
-      bool isOnboardingComplete});
+      bool isOnboardingComplete,
+      String? walletNumber});
 }
 
 /// @nodoc
@@ -156,6 +164,7 @@ class __$$AppUserImplCopyWithImpl<$Res>
     Object? isVerified = null,
     Object? hasProfessionalProfile = null,
     Object? isOnboardingComplete = null,
+    Object? walletNumber = freezed,
   }) {
     return _then(_$AppUserImpl(
       id: null == id
@@ -194,6 +203,10 @@ class __$$AppUserImplCopyWithImpl<$Res>
           ? _value.isOnboardingComplete
           : isOnboardingComplete // ignore: cast_nullable_to_non_nullable
               as bool,
+      walletNumber: freezed == walletNumber
+          ? _value.walletNumber
+          : walletNumber // ignore: cast_nullable_to_non_nullable
+              as String?,
     ));
   }
 }
@@ -210,7 +223,8 @@ class _$AppUserImpl implements _AppUser {
       this.role = 'user',
       this.isVerified = false,
       this.hasProfessionalProfile = false,
-      this.isOnboardingComplete = false});
+      this.isOnboardingComplete = false,
+      this.walletNumber});
 
   @override
   final String id;
@@ -234,10 +248,12 @@ class _$AppUserImpl implements _AppUser {
   @override
   @JsonKey()
   final bool isOnboardingComplete;
+  @override
+  final String? walletNumber;
 
   @override
   String toString() {
-    return 'AppUser(id: $id, email: $email, fullName: $fullName, phone: $phone, avatarUrl: $avatarUrl, role: $role, isVerified: $isVerified, hasProfessionalProfile: $hasProfessionalProfile, isOnboardingComplete: $isOnboardingComplete)';
+    return 'AppUser(id: $id, email: $email, fullName: $fullName, phone: $phone, avatarUrl: $avatarUrl, role: $role, isVerified: $isVerified, hasProfessionalProfile: $hasProfessionalProfile, isOnboardingComplete: $isOnboardingComplete, walletNumber: $walletNumber)';
   }
 
   @override
@@ -258,7 +274,9 @@ class _$AppUserImpl implements _AppUser {
             (identical(other.hasProfessionalProfile, hasProfessionalProfile) ||
                 other.hasProfessionalProfile == hasProfessionalProfile) &&
             (identical(other.isOnboardingComplete, isOnboardingComplete) ||
-                other.isOnboardingComplete == isOnboardingComplete));
+                other.isOnboardingComplete == isOnboardingComplete) &&
+            (identical(other.walletNumber, walletNumber) ||
+                other.walletNumber == walletNumber));
   }
 
   @override
@@ -272,7 +290,8 @@ class _$AppUserImpl implements _AppUser {
       role,
       isVerified,
       hasProfessionalProfile,
-      isOnboardingComplete);
+      isOnboardingComplete,
+      walletNumber);
 
   /// Create a copy of AppUser
   /// with the given fields replaced by the non-null parameter values.
@@ -293,7 +312,8 @@ abstract class _AppUser implements AppUser {
       final String role,
       final bool isVerified,
       final bool hasProfessionalProfile,
-      final bool isOnboardingComplete}) = _$AppUserImpl;
+      final bool isOnboardingComplete,
+      final String? walletNumber}) = _$AppUserImpl;
 
   @override
   String get id;
@@ -313,6 +333,8 @@ abstract class _AppUser implements AppUser {
   bool get hasProfessionalProfile;
   @override
   bool get isOnboardingComplete;
+  @override
+  String? get walletNumber;
 
   /// Create a copy of AppUser
   /// with the given fields replaced by the non-null parameter values.

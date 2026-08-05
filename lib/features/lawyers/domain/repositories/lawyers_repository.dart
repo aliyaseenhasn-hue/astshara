@@ -6,4 +6,5 @@ abstract class LawyersRepository {
   Future<LawyerProfile?> getLawyerProfile(String profileId);
   Future<void> updateLawyerProfile(LawyerProfile profile);
   Future<String> uploadFile(Uint8List bytes, String fileName, String bucket);
+  Future<void> requestSpecializationChange(List<String> newSpecs);
 }

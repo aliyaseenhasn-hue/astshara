@@ -24,7 +24,7 @@ final lawyersRepositoryProvider =
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
 typedef LawyersRepositoryRef = AutoDisposeProviderRef<LawyersRepository>;
-String _$lawyersListHash() => r'20ccbf89d3307b630e37150e9a79a7f699b1025e';
+String _$lawyersListHash() => r'5af080b25428349010e7d5fc2be159ca5fc856ca';
 
 /// See also [lawyersList].
 @ProviderFor(lawyersList)

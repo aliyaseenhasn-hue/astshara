@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../shared/widgets/loading_widget.dart';
 import '../providers/lawyers_provider.dart';
@@ -8,6 +9,24 @@ import '../providers/lawyers_provider.dart';
 class LawyerDetailsPage extends ConsumerWidget {
   final String profileId;
   const LawyerDetailsPage({super.key, required this.profileId});
+
+  void _makeCall(String? phone) async {
+    if (phone == null || phone.isEmpty) return;
+    final Uri url = Uri.parse('tel:$phone');
+    if (await canLaunchUrl(url)) {
+      await launchUrl(url);
+    }
+  }
+
+  void _openWhatsApp(String? phone) async {
+    if (phone == null || phone.isEmpty) return;
+    // تنظيف الرقم من أي رموز زائدة
+    final cleanPhone = phone.replaceAll(RegExp(r'[^0-9]'), '');
+    final Uri url = Uri.parse("https://wa.me/$cleanPhone");
+    if (await canLaunchUrl(url)) {
+      await launchUrl(url, mode: LaunchMode.externalApplication);
+    }
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -53,6 +72,49 @@ class LawyerDetailsPage extends ConsumerWidget {
                               _buildAboutCard(lawyer),
                               const SizedBox(height: 20),
 
+                              // Services Cards Section
+                              const Text(
+                                'باقات الاستشارة المتاحة',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  color: AppColors.primary,
+                                ),
+                              ),
+                              const SizedBox(height: 12),
+                              if (lawyer.services.isEmpty)
+                                const Text(
+                                    'لم يقم المحامي بإضافة باقات استشارة محددة بعد.',
+                                    style: TextStyle(
+                                        fontSize: 12, color: Colors.grey))
+                              else
+                                ...lawyer.services.map((service) =>
+                                    _buildServicePackageCard(
+                                        context, service, lawyer)),
+
+                              const SizedBox(height: 24),
+
+                              OutlinedButton.icon(
+                                onPressed: () =>
+                                    context.push('/create-booking', extra: {
+                                  'lawyer': lawyer,
+                                  'isCustom': true,
+                                }),
+                                icon: const Icon(Icons.edit_note_rounded),
+                                label: const Text('طلب استشارة بنوع مختلف'),
+                                style: OutlinedButton.styleFrom(
+                                  minimumSize: const Size.fromHeight(50),
+                                  shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12)),
+                                ),
+                              ),
+
+                              const SizedBox(height: 20),
+
+                              // Contact Card
+                              _buildContactCard(lawyer),
+                              const SizedBox(height: 20),
+
                               // Services Row
                               const Text(
                                 'أنواع الاستشارة',
@@ -65,7 +127,7 @@ class LawyerDetailsPage extends ConsumerWidget {
                               const SizedBox(height: 12),
                               _buildServicesRow(lawyer),
                               const SizedBox(
-                                  height: 100), // Space for bottom bar
+                                  height: 120), // Space for bottom bar
                             ],
                           ),
                         ),
@@ -79,29 +141,79 @@ class LawyerDetailsPage extends ConsumerWidget {
                     left: 0,
                     right: 0,
                     child: Container(
-                      padding: const EdgeInsets.all(16),
+                      padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
                       decoration: BoxDecoration(
                         color: Colors.white,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.05),
+                            blurRadius: 10,
+                            offset: const Offset(0, -5),
+                          ),
+                        ],
                         border: Border(
                             top: BorderSide(
                                 color: AppColors.surfaceVariant, width: 1)),
                       ),
-                      child: ElevatedButton(
-                        onPressed: () =>
-                            context.push('/create-booking', extra: lawyer),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.primary,
-                          foregroundColor: AppColors.gold,
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(10)),
-                        ),
-                        child: const Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
+                      child: SafeArea(
+                        child: Row(
                           children: [
-                            Icon(Icons.calendar_today, size: 18),
-                            SizedBox(width: 8),
-                            Text('طلب استشارة الآن'),
+                            Expanded(
+                              flex: 2,
+                              child: ElevatedButton(
+                                onPressed: () => context.push('/create-booking',
+                                    extra: {'lawyer': lawyer}),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: AppColors.primary,
+                                  foregroundColor: Colors.white,
+                                  elevation: 4,
+                                  padding:
+                                      const EdgeInsets.symmetric(vertical: 16),
+                                  shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12)),
+                                ),
+                                child: const Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(Icons.calendar_today,
+                                        size: 18, color: Colors.white),
+                                    SizedBox(width: 8),
+                                    Text(
+                                      'حجز موعد',
+                                      style: TextStyle(
+                                          fontSize: 15,
+                                          fontWeight: FontWeight.bold),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Container(
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF25D366),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: IconButton(
+                                onPressed: () => _openWhatsApp(lawyer.whatsapp),
+                                icon: const Icon(Icons.wechat,
+                                    color: Colors.white),
+                                tooltip: 'واتساب',
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Container(
+                              decoration: BoxDecoration(
+                                color: AppColors.secondary,
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: IconButton(
+                                onPressed: () => _makeCall(lawyer.whatsapp),
+                                icon: const Icon(Icons.phone_in_talk,
+                                    color: Colors.white),
+                                tooltip: 'اتصال مباشر',
+                              ),
+                            ),
                           ],
                         ),
                       ),
@@ -115,6 +227,120 @@ class LawyerDetailsPage extends ConsumerWidget {
     );
   }
 
+  Widget _buildServicePackageCard(
+      BuildContext context, dynamic service, dynamic lawyer) {
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12),
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(15),
+        side: BorderSide(color: AppColors.primary.withValues(alpha: 0.2)),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    service.title,
+                    style: const TextStyle(
+                        fontWeight: FontWeight.bold, fontSize: 16),
+                  ),
+                  if (service.description != null) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      service.description!,
+                      style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                  const SizedBox(height: 8),
+                  Text(
+                    '${service.price} د.ع',
+                    style: const TextStyle(
+                      color: AppColors.primary,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 15,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            ElevatedButton(
+              onPressed: () => context.push('/create-booking', extra: {
+                'lawyer': lawyer,
+                'service': service,
+              }),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                minimumSize: Size.zero,
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10)),
+              ),
+              child: const Text('اختيار', style: TextStyle(fontSize: 12)),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildContactCard(dynamic lawyer) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.surfaceVariant),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Row(
+            children: [
+              Icon(Icons.contact_phone_outlined,
+                  color: AppColors.primary, size: 18),
+              SizedBox(width: 8),
+              Text(
+                'معلومات التواصل المباشر',
+                style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.textPrimary),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          InkWell(
+            onTap: () => _makeCall(lawyer.whatsapp),
+            child: Row(
+              children: [
+                const Icon(Icons.phone_android, color: Colors.grey, size: 16),
+                const SizedBox(width: 8),
+                Text(
+                  lawyer.whatsapp ?? 'غير متوفر',
+                  style: const TextStyle(
+                      fontSize: 15,
+                      color: AppColors.primary,
+                      fontWeight: FontWeight.bold),
+                ),
+                const Spacer(),
+                const Text('اتصل الآن',
+                    style: TextStyle(fontSize: 12, color: Colors.blue)),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildHeroSection(BuildContext context, dynamic lawyer) {
     return Container(
       width: double.infinity,
@@ -123,7 +349,10 @@ class LawyerDetailsPage extends ConsumerWidget {
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: AppColors.detailsGradient,
+          colors: [
+            AppColors.secondary,
+            AppColors.secondaryLight
+          ], // Navy Gradient
         ),
       ),
       child: Column(
@@ -135,14 +364,16 @@ class LawyerDetailsPage extends ConsumerWidget {
             child: InkWell(
               onTap: () => Navigator.pop(context),
               child: Container(
-                width: 32,
-                height: 32,
+                width: 40,
+                height: 40,
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(8),
+                  color: Colors.white.withValues(alpha: 0.2),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.1), width: 1),
                 ),
                 child: const Icon(Icons.arrow_forward,
-                    color: Colors.white70, size: 18),
+                    color: Colors.white, size: 22),
               ),
             ),
           ),

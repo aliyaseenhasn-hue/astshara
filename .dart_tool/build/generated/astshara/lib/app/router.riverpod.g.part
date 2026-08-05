@@ -2,7 +2,7 @@
 // RiverpodGenerator
 // **************************************************************************
 
-String _$routerHash() => r'9c002087ad7cf097307c0c28c1368e39ea22617e';
+String _$routerHash() => r'68219d3e17c828a568ec0eef70fb1a9e6cd63c2a';
 
 /// See also [router].
 @ProviderFor(router)

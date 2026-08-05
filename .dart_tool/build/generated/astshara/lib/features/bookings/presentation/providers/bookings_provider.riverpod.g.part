@@ -56,7 +56,7 @@ final lawyerBookingsProvider =
 // ignore: unused_element
 typedef LawyerBookingsRef = AutoDisposeFutureProviderRef<List<Booking>>;
 String _$bookingsControllerHash() =>
-    r'ae789d0ffda5e333dedea1e5ac6f6f5f404184ec';
+    r'3f7735accd14f12023e0bfb03d0051dbd49acea8';
 
 /// See also [BookingsController].
 @ProviderFor(BookingsController)

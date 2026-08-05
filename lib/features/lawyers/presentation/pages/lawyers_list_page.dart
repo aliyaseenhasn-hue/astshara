@@ -1,3 +1,4 @@
+import 'package:astshara/shared/widgets/main_bottom_nav.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -26,6 +27,13 @@ class LawyersListPage extends ConsumerWidget {
             foregroundColor: Colors.white,
             flexibleSpace: FlexibleSpaceBar(
               background: Container(
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [AppColors.secondary, AppColors.secondaryDark],
+                  ),
+                ),
                 padding: const EdgeInsets.fromLTRB(20, 50, 20, 15),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -61,22 +69,33 @@ class LawyersListPage extends ConsumerWidget {
                     const SizedBox(height: 15),
                     // Search Bar
                     Container(
-                      height: 40,
+                      height: 42,
                       padding: const EdgeInsets.symmetric(horizontal: 12),
                       decoration: BoxDecoration(
                         color: Colors.white.withValues(alpha: 0.12),
-                        borderRadius: BorderRadius.circular(10),
+                        borderRadius: BorderRadius.circular(12),
                         border: Border.all(
                             color: Colors.white.withValues(alpha: 0.1)),
                       ),
-                      child: const Row(
-                        children: [
-                          Icon(Icons.search, color: Colors.white38, size: 20),
-                          SizedBox(width: 8),
-                          Text('ابحث عن تخصص أو محامي...',
-                              style: TextStyle(
-                                  color: Colors.white38, fontSize: 13)),
-                        ],
+                      child: TextField(
+                        onChanged: (val) =>
+                            ref.read(searchQueryProvider.notifier).state = val,
+                        style:
+                            const TextStyle(color: Colors.white, fontSize: 14),
+                        cursorColor: AppColors.gold,
+                        decoration: const InputDecoration(
+                          hintText: 'ابحث عن تخصص أو محامي...',
+                          hintStyle:
+                              TextStyle(color: Colors.white38, fontSize: 13),
+                          prefixIcon: Icon(Icons.search,
+                              color: Colors.white38, size: 20),
+                          prefixIconConstraints: BoxConstraints(minWidth: 32),
+                          border: InputBorder.none,
+                          enabledBorder: InputBorder.none,
+                          focusedBorder: InputBorder.none,
+                          filled: false,
+                          contentPadding: EdgeInsets.symmetric(vertical: 10),
+                        ),
                       ),
                     ),
                   ],
@@ -171,7 +190,7 @@ class LawyersListPage extends ConsumerWidget {
                             .read(selectedCategoryProvider.notifier)
                             .setCategory(null),
                         child: const Text('الكل',
-                            style: TextStyle(color: AppColors.accent)),
+                            style: TextStyle(color: AppColors.secondary)),
                       ),
                   ],
                 ),
@@ -217,38 +236,7 @@ class LawyersListPage extends ConsumerWidget {
           ),
         ],
       ),
-      bottomNavigationBar: Container(
-        decoration: BoxDecoration(
-          border: Border(
-              top: BorderSide(color: AppColors.surfaceVariant, width: 1)),
-        ),
-        child: BottomNavigationBar(
-          type: BottomNavigationBarType.fixed,
-          backgroundColor: Colors.white,
-          selectedItemColor: AppColors.primary,
-          unselectedItemColor: AppColors.outline.withValues(alpha: 0.5),
-          currentIndex: 0,
-          selectedLabelStyle:
-              const TextStyle(fontSize: 10, fontWeight: FontWeight.w600),
-          unselectedLabelStyle: const TextStyle(fontSize: 10),
-          items: const [
-            BottomNavigationBarItem(
-                icon: Icon(Icons.home_outlined),
-                activeIcon: Icon(Icons.home),
-                label: 'الرئيسية'),
-            BottomNavigationBarItem(
-                icon: Icon(Icons.calendar_month_outlined), label: 'حجوزاتي'),
-            BottomNavigationBarItem(
-                icon: Icon(Icons.chat_bubble_outline), label: 'المحادثات'),
-            BottomNavigationBarItem(
-                icon: Icon(Icons.person_outline), label: 'حسابي'),
-          ],
-          onTap: (index) {
-            if (index == 1) context.push('/bookings');
-            if (index == 3) context.push('/profile');
-          },
-        ),
-      ),
+      bottomNavigationBar: const MainBottomNav(currentIndex: 0),
     );
   }
 }
@@ -395,7 +383,7 @@ class _LawyerCard extends StatelessWidget {
                       const SizedBox(width: 4),
                       if (lawyer.verified)
                         const Icon(Icons.verified,
-                            color: AppColors.accent, size: 14),
+                            color: AppColors.secondary, size: 14),
                       const Spacer(),
                       if (!lawyer.availability)
                         Container(
@@ -417,7 +405,7 @@ class _LawyerCard extends StatelessWidget {
                     '${lawyer.specializations.isNotEmpty ? lawyer.specializations.join("، ") : "قانون عام"} · بغداد',
                     style: const TextStyle(
                         fontSize: 11,
-                        color: AppColors.accent,
+                        color: AppColors.secondary,
                         fontWeight: FontWeight.w500),
                   ),
                   const SizedBox(height: 4),
@@ -460,16 +448,24 @@ class _LawyerCard extends StatelessWidget {
                           const SizedBox(width: 8),
                           Container(
                             padding: const EdgeInsets.symmetric(
-                                horizontal: 10, vertical: 6),
+                                horizontal: 12, vertical: 6),
                             decoration: BoxDecoration(
                               color: AppColors.primary,
-                              borderRadius: BorderRadius.circular(6),
+                              borderRadius: BorderRadius.circular(8),
+                              boxShadow: [
+                                BoxShadow(
+                                  color:
+                                      AppColors.primary.withValues(alpha: 0.2),
+                                  blurRadius: 4,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ],
                             ),
                             child: const Text(
-                              'احجز',
+                              'احجز الآن',
                               style: TextStyle(
-                                color: AppColors.gold,
-                                fontSize: 10,
+                                color: Colors.white,
+                                fontSize: 11,
                                 fontWeight: FontWeight.bold,
                               ),
                             ),

@@ -21,8 +21,7 @@ AppUserModel _$AppUserModelFromJson(Map<String, dynamic> json) {
 /// @nodoc
 mixin _$AppUserModel {
   String get id => throw _privateConstructorUsedError;
-  String? get email =>
-      throw _privateConstructorUsedError; // جعل البريد اختيارياً لأننا نستخدم رقم الهاتف
+  String? get email => throw _privateConstructorUsedError;
   @JsonKey(name: 'full_name')
   String? get fullName => throw _privateConstructorUsedError;
   String? get phone => throw _privateConstructorUsedError;
@@ -34,6 +33,8 @@ mixin _$AppUserModel {
   bool get hasProfessionalProfile => throw _privateConstructorUsedError;
   @JsonKey(name: 'onboarding_completed')
   bool? get isOnboardingComplete => throw _privateConstructorUsedError;
+  @JsonKey(name: 'wallet_number')
+  String? get walletNumber => throw _privateConstructorUsedError;
 
   /// Serializes this AppUserModel to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
@@ -60,7 +61,8 @@ abstract class $AppUserModelCopyWith<$Res> {
       String role,
       @JsonKey(name: 'is_verified') bool isVerified,
       bool hasProfessionalProfile,
-      @JsonKey(name: 'onboarding_completed') bool? isOnboardingComplete});
+      @JsonKey(name: 'onboarding_completed') bool? isOnboardingComplete,
+      @JsonKey(name: 'wallet_number') String? walletNumber});
 }
 
 /// @nodoc
@@ -87,6 +89,7 @@ class _$AppUserModelCopyWithImpl<$Res, $Val extends AppUserModel>
     Object? isVerified = null,
     Object? hasProfessionalProfile = null,
     Object? isOnboardingComplete = freezed,
+    Object? walletNumber = freezed,
   }) {
     return _then(_value.copyWith(
       id: null == id
@@ -125,6 +128,10 @@ class _$AppUserModelCopyWithImpl<$Res, $Val extends AppUserModel>
           ? _value.isOnboardingComplete
           : isOnboardingComplete // ignore: cast_nullable_to_non_nullable
               as bool?,
+      walletNumber: freezed == walletNumber
+          ? _value.walletNumber
+          : walletNumber // ignore: cast_nullable_to_non_nullable
+              as String?,
     ) as $Val);
   }
 }
@@ -146,7 +153,8 @@ abstract class _$$AppUserModelImplCopyWith<$Res>
       String role,
       @JsonKey(name: 'is_verified') bool isVerified,
       bool hasProfessionalProfile,
-      @JsonKey(name: 'onboarding_completed') bool? isOnboardingComplete});
+      @JsonKey(name: 'onboarding_completed') bool? isOnboardingComplete,
+      @JsonKey(name: 'wallet_number') String? walletNumber});
 }
 
 /// @nodoc
@@ -171,6 +179,7 @@ class __$$AppUserModelImplCopyWithImpl<$Res>
     Object? isVerified = null,
     Object? hasProfessionalProfile = null,
     Object? isOnboardingComplete = freezed,
+    Object? walletNumber = freezed,
   }) {
     return _then(_$AppUserModelImpl(
       id: null == id
@@ -209,6 +218,10 @@ class __$$AppUserModelImplCopyWithImpl<$Res>
           ? _value.isOnboardingComplete
           : isOnboardingComplete // ignore: cast_nullable_to_non_nullable
               as bool?,
+      walletNumber: freezed == walletNumber
+          ? _value.walletNumber
+          : walletNumber // ignore: cast_nullable_to_non_nullable
+              as String?,
     ));
   }
 }
@@ -225,7 +238,8 @@ class _$AppUserModelImpl extends _AppUserModel {
       this.role = 'user',
       @JsonKey(name: 'is_verified') this.isVerified = false,
       this.hasProfessionalProfile = false,
-      @JsonKey(name: 'onboarding_completed') this.isOnboardingComplete})
+      @JsonKey(name: 'onboarding_completed') this.isOnboardingComplete,
+      @JsonKey(name: 'wallet_number') this.walletNumber})
       : super._();
 
   factory _$AppUserModelImpl.fromJson(Map<String, dynamic> json) =>
@@ -235,7 +249,6 @@ class _$AppUserModelImpl extends _AppUserModel {
   final String id;
   @override
   final String? email;
-// جعل البريد اختيارياً لأننا نستخدم رقم الهاتف
   @override
   @JsonKey(name: 'full_name')
   final String? fullName;
@@ -256,10 +269,13 @@ class _$AppUserModelImpl extends _AppUserModel {
   @override
   @JsonKey(name: 'onboarding_completed')
   final bool? isOnboardingComplete;
+  @override
+  @JsonKey(name: 'wallet_number')
+  final String? walletNumber;
 
   @override
   String toString() {
-    return 'AppUserModel(id: $id, email: $email, fullName: $fullName, phone: $phone, avatarUrl: $avatarUrl, role: $role, isVerified: $isVerified, hasProfessionalProfile: $hasProfessionalProfile, isOnboardingComplete: $isOnboardingComplete)';
+    return 'AppUserModel(id: $id, email: $email, fullName: $fullName, phone: $phone, avatarUrl: $avatarUrl, role: $role, isVerified: $isVerified, hasProfessionalProfile: $hasProfessionalProfile, isOnboardingComplete: $isOnboardingComplete, walletNumber: $walletNumber)';
   }
 
   @override
@@ -280,7 +296,9 @@ class _$AppUserModelImpl extends _AppUserModel {
             (identical(other.hasProfessionalProfile, hasProfessionalProfile) ||
                 other.hasProfessionalProfile == hasProfessionalProfile) &&
             (identical(other.isOnboardingComplete, isOnboardingComplete) ||
-                other.isOnboardingComplete == isOnboardingComplete));
+                other.isOnboardingComplete == isOnboardingComplete) &&
+            (identical(other.walletNumber, walletNumber) ||
+                other.walletNumber == walletNumber));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
@@ -295,7 +313,8 @@ class _$AppUserModelImpl extends _AppUserModel {
       role,
       isVerified,
       hasProfessionalProfile,
-      isOnboardingComplete);
+      isOnboardingComplete,
+      walletNumber);
 
   /// Create a copy of AppUserModel
   /// with the given fields replaced by the non-null parameter values.
@@ -323,8 +342,9 @@ abstract class _AppUserModel extends AppUserModel {
       final String role,
       @JsonKey(name: 'is_verified') final bool isVerified,
       final bool hasProfessionalProfile,
-      @JsonKey(name: 'onboarding_completed')
-      final bool? isOnboardingComplete}) = _$AppUserModelImpl;
+      @JsonKey(name: 'onboarding_completed') final bool? isOnboardingComplete,
+      @JsonKey(name: 'wallet_number')
+      final String? walletNumber}) = _$AppUserModelImpl;
   const _AppUserModel._() : super._();
 
   factory _AppUserModel.fromJson(Map<String, dynamic> json) =
@@ -333,7 +353,7 @@ abstract class _AppUserModel extends AppUserModel {
   @override
   String get id;
   @override
-  String? get email; // جعل البريد اختيارياً لأننا نستخدم رقم الهاتف
+  String? get email;
   @override
   @JsonKey(name: 'full_name')
   String? get fullName;
@@ -352,6 +372,9 @@ abstract class _AppUserModel extends AppUserModel {
   @override
   @JsonKey(name: 'onboarding_completed')
   bool? get isOnboardingComplete;
+  @override
+  @JsonKey(name: 'wallet_number')
+  String? get walletNumber;
 
   /// Create a copy of AppUserModel
   /// with the given fields replaced by the non-null parameter values.

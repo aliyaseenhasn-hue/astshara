@@ -41,35 +41,62 @@ Future<List<Booking>> lawyerBookings(LawyerBookingsRef ref) async {
   return ref.watch(bookingsRepositoryProvider).getLawyerBookings(profileId);
 }
 
+final bookingDetailsProvider =
+    FutureProvider.family<Map<String, dynamic>?, String>(
+        (ref, bookingId) async {
+  final response = await SupabaseConfig.client
+      .from('bookings')
+      .select('consultation_type, description, document_url, whatsapp_number')
+      .eq('id', bookingId)
+      .maybeSingle();
+  return response;
+});
+
 @riverpod
 class BookingsController extends _$BookingsController {
   @override
   FutureOr<void> build() {}
 
   Future<void> requestBooking({
-    required String
-        lawyerId, // هذا بالفعل profiles.id لأنه يأتي من LawyerProfile.profileId
+    required String lawyerId,
     required DateTime scheduledAt,
     required double price,
+    String? consultationType,
+    String? description,
+    dynamic documentBytes,
+    String? documentName,
+    String? whatsappNumber,
   }) async {
     state = const AsyncLoading();
     state = await AsyncValue.guard(() async {
       final user = ref.read(authStateChangesProvider).value;
       if (user == null) throw Exception('User not logged in');
 
-      // user.id = auth.uid() — نجلب profiles.id للمستخدم
       final userProfileId = await _getProfileId(user.id);
       if (userProfileId == null) throw Exception('Profile not found');
 
+      final repo = ref.read(bookingsRepositoryProvider);
+      String? documentUrl;
+
+      if (documentBytes != null && documentName != null) {
+        documentUrl = await repo.uploadDocument(documentBytes, documentName);
+      }
+
       final booking = Booking(
         id: '',
-        userId: userProfileId, // ← profiles.id وليس auth.uid()
-        lawyerId: lawyerId, // ← يأتي من LawyerProfile.profileId (صحيح)
+        userId: userProfileId,
+        lawyerId: lawyerId,
         scheduledAt: scheduledAt,
         price: price,
       );
 
-      await ref.read(bookingsRepositoryProvider).createBooking(booking);
+      await repo.createBooking(
+        booking,
+        consultationType: consultationType,
+        description: description,
+        documentUrl: documentUrl,
+        whatsappNumber: whatsappNumber,
+      );
       ref.invalidate(userBookingsProvider);
     });
   }

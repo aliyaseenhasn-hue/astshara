@@ -14,12 +14,18 @@ import '../features/lawyers/presentation/pages/lawyers_list_page.dart';
 import '../features/lawyers/presentation/pages/lawyer_details_page.dart';
 import '../features/lawyers/presentation/pages/lawyer_setup_page.dart';
 import '../features/lawyers/presentation/pages/lawyer_pending_page.dart';
+import '../features/lawyers/presentation/pages/lawyer_dashboard_page.dart';
+import '../features/lawyers/presentation/pages/lawyer_profile_edit_page.dart';
 import '../features/bookings/presentation/pages/create_booking_page.dart';
 import '../features/bookings/presentation/pages/bookings_list_page.dart';
+import '../features/bookings/presentation/pages/booking_details_page.dart';
 import '../features/chat/presentation/pages/chat_page.dart';
 import '../features/payments/presentation/pages/payment_upload_page.dart';
 import '../features/profile/presentation/pages/profile_page.dart';
 import '../features/profile/presentation/pages/notification_settings_page.dart';
+import '../features/profile/presentation/pages/payment_methods_page.dart';
+import '../features/profile/presentation/pages/app_settings_page.dart';
+import '../features/profile/presentation/pages/help_center_page.dart';
 import '../features/bookings/domain/entities/booking.dart';
 import '../features/lawyers/domain/entities/lawyer_profile.dart';
 import '../features/authentication/presentation/providers/auth_provider.dart';
@@ -110,9 +116,17 @@ GoRouter router(RouterRef ref) {
       if (isLoggingIn ||
           isSigningUp ||
           isOtp ||
-          (isCompletingProfile && user.isOnboardingComplete) ||
-          (isPendingPage && user.isVerified)) {
+          (isCompletingProfile && user.isOnboardingComplete)) {
+        // توجيه المحامي الموثق لصفحته الخاصة، والعميل للصفحة الرئيسية
+        if (user.role == 'lawyer' && user.isVerified) {
+          return '/lawyer-home'; // مسار لوحة تحكم المحامي
+        }
         return '/';
+      }
+
+      // توجيه المحامي الموثق إذا حاول الدخول لصفحة قائمة المحامين (اختياري)
+      if (matchedLocation == '/' && user.role == 'lawyer' && user.isVerified) {
+        return '/lawyer-home';
       }
 
       return null;
@@ -152,6 +166,14 @@ GoRouter router(RouterRef ref) {
         },
       ),
       GoRoute(
+        path: '/lawyer-home',
+        builder: (context, state) => const LawyerDashboardPage(),
+      ),
+      GoRoute(
+        path: '/lawyer-profile-edit',
+        builder: (context, state) => const LawyerProfileEditPage(),
+      ),
+      GoRoute(
         path: '/lawyer-setup',
         builder: (context, state) => const LawyerSetupPage(),
       ),
@@ -167,14 +189,28 @@ GoRouter router(RouterRef ref) {
       GoRoute(
         path: '/create-booking',
         builder: (context, state) {
-          final lawyer = state.extra as LawyerProfile?;
+          final extras = state.extra as Map<String, dynamic>? ?? {};
+          final lawyer = extras['lawyer'] as LawyerProfile?;
           if (lawyer == null) return const LawyersListPage();
-          return CreateBookingPage(lawyer: lawyer);
+
+          return CreateBookingPage(
+            lawyer: lawyer,
+            service: extras['service'],
+            isCustom: extras['isCustom'] ?? false,
+          );
         },
       ),
       GoRoute(
         path: '/bookings',
         builder: (context, state) => const BookingsListPage(),
+      ),
+      GoRoute(
+        path: '/booking-details',
+        builder: (context, state) {
+          final booking = state.extra as Booking?;
+          if (booking == null) return const BookingsListPage();
+          return BookingDetailsPage(booking: booking);
+        },
       ),
       GoRoute(
         path: '/chat/:id',
@@ -196,6 +232,18 @@ GoRouter router(RouterRef ref) {
       GoRoute(
         path: '/notification-settings',
         builder: (context, state) => const NotificationSettingsPage(),
+      ),
+      GoRoute(
+        path: '/payment-methods',
+        builder: (context, state) => const PaymentMethodsPage(),
+      ),
+      GoRoute(
+        path: '/app-settings',
+        builder: (context, state) => const AppSettingsPage(),
+      ),
+      GoRoute(
+        path: '/help-center',
+        builder: (context, state) => const HelpCenterPage(),
       ),
       GoRoute(
         path: '/admin',

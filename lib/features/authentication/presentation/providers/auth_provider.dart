@@ -95,11 +95,10 @@ class AuthController extends _$AuthController {
     ref.read(globalLoadingProvider.notifier).setLoading(true);
     state = const AsyncLoading();
     try {
-      state = await AsyncValue.guard(
-        () => ref.read(authRepositoryProvider).deleteAccount(),
-      );
-      // مسح الحالة بعد الحذف
+      await ref.read(authRepositoryProvider).deleteAccount();
       state = const AsyncData(null);
+    } catch (e, st) {
+      state = AsyncValue.error(e, st);
     } finally {
       ref.read(globalLoadingProvider.notifier).setLoading(false);
     }
@@ -176,16 +175,15 @@ class AuthController extends _$AuthController {
     ref.read(globalLoadingProvider.notifier).setLoading(true);
     state = const AsyncLoading();
     try {
-      state = await AsyncValue.guard(() async {
-        await ref.read(authRepositoryProvider).updateProfile(
-              fullName: fullName,
-              email: email,
-              role: role,
-              onboardingCompleted: onboardingCompleted,
-            );
-        // إعادة تحميل حالة المستخدم بعد التحديث
-        ref.invalidate(authStateChangesProvider);
-      });
+      await ref.read(authRepositoryProvider).updateProfile(
+            fullName: fullName,
+            email: email,
+            role: role,
+            onboardingCompleted: onboardingCompleted,
+          );
+      state = const AsyncData(null);
+    } catch (e, st) {
+      state = AsyncValue.error(e, st);
     } finally {
       ref.read(globalLoadingProvider.notifier).setLoading(false);
     }

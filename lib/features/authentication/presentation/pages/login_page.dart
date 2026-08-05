@@ -76,7 +76,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: AppColors.loginGradient,
+            colors: AppColors.brandGradient,
             stops: [0.6, 1.0],
           ),
         ),
@@ -189,41 +189,50 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                       // Phone Input Styled as per Design System
                       TextFormField(
                         controller: _phoneController,
-                        style: const TextStyle(color: Colors.white),
+                        style:
+                            const TextStyle(color: Colors.white, fontSize: 16),
                         decoration: InputDecoration(
                           hintText: 'رقم الهاتف — 07xxxxxxxx',
-                          prefixIcon: const Icon(Icons.phone_android,
-                              color: Colors.white54),
+                          hintStyle: TextStyle(
+                              color: Colors.white.withValues(alpha: 0.5)),
+                          prefixIcon: const Icon(Icons.phone_android_rounded,
+                              color: AppColors.primary),
                           fillColor: Colors.white.withValues(alpha: 0.1),
                           enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(10),
+                            borderRadius: BorderRadius.circular(12),
                             borderSide: BorderSide(
-                                color: Colors.white.withValues(alpha: 0.15)),
+                                color: Colors.white.withValues(alpha: 0.3)),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: const BorderSide(
+                                color: AppColors.primary, width: 2),
                           ),
                         ),
                         keyboardType: TextInputType.phone,
                         validator: (val) =>
-                            val?.isEmpty ?? true ? 'مطلوب' : null,
+                            val?.isEmpty ?? true ? 'رقم الهاتف مطلوب' : null,
                       ),
 
-                      const SizedBox(height: 20),
+                      const SizedBox(height: 24),
                       state.isLoading
                           ? const LoadingWidget()
                           : ElevatedButton(
                               onPressed: _submit,
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: AppColors.gold,
-                                foregroundColor: AppColors.primary,
+                                backgroundColor: AppColors.primary,
+                                foregroundColor: Colors.white,
                                 padding:
-                                    const EdgeInsets.symmetric(vertical: 16),
+                                    const EdgeInsets.symmetric(vertical: 18),
                                 shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(10),
+                                  borderRadius: BorderRadius.circular(12),
                                 ),
+                                elevation: 4,
                               ),
                               child: const Text(
                                 'إرسال رمز التحقق',
                                 style: TextStyle(
-                                    fontSize: 15, fontWeight: FontWeight.bold),
+                                    fontSize: 16, fontWeight: FontWeight.bold),
                               ),
                             ),
 

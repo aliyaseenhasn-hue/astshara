@@ -20,6 +20,7 @@ abstract class AuthRepository {
     String? role,
     String? avatarUrl,
     bool? onboardingCompleted,
+    String? walletNumber,
   });
   Future<void> deleteAccount();
   Stream<AppUser?> authStateChanges();

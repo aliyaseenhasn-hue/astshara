@@ -9,6 +9,7 @@ class AuthRepositoryImpl implements AuthRepository {
   final SupabaseClient _supabase;
   final _userStateController = StreamController<AppUser?>.broadcast();
   bool _isListening = false;
+  Future<AppUser?>? _currentUserFuture;
 
   AuthRepositoryImpl(this._supabase) {
     _setupAuthListener();
@@ -23,13 +24,25 @@ class AuthRepositoryImpl implements AuthRepository {
       if (user == null) {
         _userStateController.add(null);
       } else {
-        _userStateController.add(await getCurrentUser());
+        final currentUser = await getCurrentUser();
+        _userStateController.add(currentUser);
       }
     });
   }
 
   @override
   Future<AppUser?> getCurrentUser() async {
+    if (_currentUserFuture != null) return _currentUserFuture;
+
+    _currentUserFuture = _getCurrentUserInternal();
+    try {
+      return await _currentUserFuture;
+    } finally {
+      _currentUserFuture = null;
+    }
+  }
+
+  Future<AppUser?> _getCurrentUserInternal() async {
     final user = _supabase.auth.currentUser;
     if (user == null) return null;
 
@@ -174,6 +187,7 @@ class AuthRepositoryImpl implements AuthRepository {
     String? role,
     String? avatarUrl,
     bool? onboardingCompleted,
+    String? walletNumber,
   }) async {
     final user = _supabase.auth.currentUser;
     if (user == null) {
@@ -195,6 +209,9 @@ class AuthRepositoryImpl implements AuthRepository {
     }
     if (onboardingCompleted != null) {
       data['onboarding_completed'] = onboardingCompleted;
+    }
+    if (walletNumber != null) {
+      data['wallet_number'] = walletNumber.trim();
     }
 
     if (data.isEmpty) return;

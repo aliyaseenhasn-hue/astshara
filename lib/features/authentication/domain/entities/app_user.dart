@@ -13,7 +13,7 @@ class AppUser with _$AppUser {
     @Default('user') String role,
     @Default(false) bool isVerified,
     @Default(false) bool hasProfessionalProfile,
-    @Default(false)
-    bool isOnboardingComplete, // حقل جديد للتأكد من اختيار الدور
+    @Default(false) bool isOnboardingComplete,
+    String? walletNumber,
   }) = _AppUser;
 }

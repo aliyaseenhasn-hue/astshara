@@ -1,25 +1,42 @@
-import 'package:freezed_annotation/freezed_annotation.dart';
 import '../../domain/entities/booking.dart';
 
-part 'booking_model.freezed.dart';
-part 'booking_model.g.dart';
+class BookingModel {
+  final String id;
+  final String userId;
+  final String lawyerId;
+  final String status;
+  final DateTime scheduledAt;
+  final double price;
+  final DateTime? createdAt;
+  final String? whatsappNumber;
 
-@freezed
-class BookingModel with _$BookingModel {
-  const BookingModel._();
+  const BookingModel({
+    required this.id,
+    required this.userId,
+    required this.lawyerId,
+    required this.status,
+    required this.scheduledAt,
+    required this.price,
+    this.createdAt,
+    this.whatsappNumber,
+  });
 
-  const factory BookingModel({
-    required String id,
-    @JsonKey(name: 'user_id') required String userId,
-    @JsonKey(name: 'lawyer_id') required String lawyerId,
-    @Default('pending') String status,
-    @JsonKey(name: 'scheduled_at') required DateTime scheduledAt,
-    required double price,
-    @JsonKey(name: 'created_at') DateTime? createdAt,
-  }) = _BookingModel;
-
-  factory BookingModel.fromJson(Map<String, dynamic> json) =>
-      _$BookingModelFromJson(json);
+  factory BookingModel.fromJson(Map<String, dynamic> json) {
+    return BookingModel(
+      id: json['id'] as String? ?? '',
+      userId: json['user_id'] as String? ?? '',
+      lawyerId: json['lawyer_id'] as String? ?? '',
+      status: json['status'] as String? ?? 'pending',
+      scheduledAt: json['scheduled_at'] != null
+          ? DateTime.parse(json['scheduled_at'] as String)
+          : DateTime.now(),
+      price: (json['price'] as num?)?.toDouble() ?? 0.0,
+      createdAt: json['created_at'] != null
+          ? DateTime.parse(json['created_at'] as String)
+          : null,
+      whatsappNumber: json['whatsapp_number'] as String?,
+    );
+  }
 
   Booking toEntity() => Booking(
         id: id,
@@ -29,5 +46,6 @@ class BookingModel with _$BookingModel {
         scheduledAt: scheduledAt,
         price: price,
         createdAt: createdAt,
+        whatsappNumber: whatsappNumber,
       );
 }

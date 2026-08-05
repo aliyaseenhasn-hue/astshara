@@ -144,12 +144,13 @@ class _ChatPageState extends ConsumerState<ChatPage> {
             const Spacer(),
             CircleAvatar(
               backgroundColor: AppColors.primary,
+              radius: 22,
               child: IconButton(
                 onPressed: _send,
                 icon: Icon(
                   _messageController.text.isEmpty ? Icons.mic : Icons.send,
                   color: Colors.white,
-                  size: 20,
+                  size: 22,
                 ),
               ),
             ),

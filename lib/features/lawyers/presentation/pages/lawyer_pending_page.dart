@@ -56,11 +56,17 @@ class LawyerPendingPage extends ConsumerWidget {
               ElevatedButton.icon(
                 onPressed: () =>
                     ref.read(authControllerProvider.notifier).logout(),
-                icon: const Icon(Icons.arrow_back),
+                icon: const Icon(Icons.arrow_back, color: Colors.white),
                 label: const Text('العودة لتسجيل الدخول'),
                 style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: Colors.white,
                   padding:
-                      const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                      const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  elevation: 2,
                 ),
               ),
             ],

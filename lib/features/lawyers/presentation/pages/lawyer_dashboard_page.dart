@@ -1,3 +1,4 @@
+import 'package:astshara/features/lawyers/presentation/providers/lawyers_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -21,7 +22,7 @@ class LawyerDashboardPage extends ConsumerWidget {
       backgroundColor: AppColors.background,
       body: CustomScrollView(
         slivers: [
-          _buildSliverAppBar(user),
+          _buildSliverAppBar(context, user),
           SliverToBoxAdapter(
             child: bookingsAsync.when(
               data: (bookings) => Padding(
@@ -31,15 +32,23 @@ class LawyerDashboardPage extends ConsumerWidget {
                   children: [
                     _buildStatsGrid(bookings),
                     const SizedBox(height: AppSizes.p32),
-                    const Text(
-                      'الاستشارات الأخيرة',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.primary,
-                      ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          'طلبات الاستشارة الواردة',
+                          style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.textPrimary),
+                        ),
+                        TextButton(
+                          onPressed: () => context.push('/bookings'),
+                          child: const Text('عرض الكل'),
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: AppSizes.p16),
+                    const SizedBox(height: AppSizes.p8),
                     if (bookings.isEmpty)
                       _buildEmptyState()
                     else
@@ -51,8 +60,17 @@ class LawyerDashboardPage extends ConsumerWidget {
                           return _BookingTile(booking: bookings[index]);
                         },
                       ),
-                    const SizedBox(height: AppSizes.p24),
+                    const SizedBox(height: AppSizes.p32),
+                    const Text(
+                      'الإجراءات الإدارية',
+                      style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.textPrimary),
+                    ),
+                    const SizedBox(height: 16),
                     _buildQuickActions(context, ref),
+                    const SizedBox(height: AppSizes.p48),
                   ],
                 ),
               ),
@@ -65,82 +83,67 @@ class LawyerDashboardPage extends ConsumerWidget {
     );
   }
 
-  Widget _buildSliverAppBar(user) {
+  Widget _buildSliverAppBar(BuildContext context, user) {
     return SliverAppBar(
-      expandedHeight: 180,
+      expandedHeight: 240,
       pinned: true,
+      stretch: true,
       backgroundColor: AppColors.primary,
       flexibleSpace: FlexibleSpaceBar(
         background: Container(
           decoration: const BoxDecoration(
             gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: AppColors.loginGradient,
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                AppColors.secondary,
+                AppColors.secondaryDark,
+              ], // Navy Gradient for clarity
             ),
           ),
-          child: Stack(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Positioned(
-                top: -20,
-                left: -20,
-                child: Container(
-                  width: 140,
-                  height: 140,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: AppColors.gold.withValues(alpha: 0.1),
-                      width: 25,
-                    ),
-                  ),
+              const SizedBox(height: 40),
+              Container(
+                padding: const EdgeInsets.all(3),
+                decoration: const BoxDecoration(
+                    color: Colors.white, shape: BoxShape.circle),
+                child: CircleAvatar(
+                  radius: 45,
+                  backgroundColor: AppColors.surfaceVariant,
+                  backgroundImage:
+                      user?.avatarUrl != null && user!.avatarUrl!.isNotEmpty
+                          ? NetworkImage(user.avatarUrl!)
+                          : null,
+                  child: user?.avatarUrl == null || user!.avatarUrl!.isEmpty
+                      ? const Icon(Icons.person,
+                          size: 50, color: AppColors.primary)
+                      : null,
                 ),
               ),
-              SafeArea(
-                child: Padding(
-                  padding: const EdgeInsets.all(AppSizes.p20),
-                  child: Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        CircleAvatar(
-                          radius: 35,
-                          backgroundColor: Colors.white.withValues(alpha: 0.2),
-                          backgroundImage: user?.avatarUrl != null &&
-                                  user!.avatarUrl!.isNotEmpty
-                              ? NetworkImage(user.avatarUrl!)
-                              : null,
-                          child: user?.avatarUrl == null ||
-                                  user!.avatarUrl!.isEmpty
-                              ? const Icon(Icons.person,
-                                  size: 40, color: Colors.white)
-                              : null,
-                        ),
-                        const SizedBox(height: 12),
-                        const Text(
-                          'مرحباً بك دكتور،',
-                          style: TextStyle(
-                            color: Colors.white54,
-                            fontSize: 14,
-                          ),
-                        ),
-                        Text(
-                          user?.fullName ?? 'أستاذ قانون',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 22,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
+              const SizedBox(height: 12),
+              Text(
+                user?.fullName ?? 'أستاذ قانون',
+                style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold),
+              ),
+              const Text(
+                'لوحة التحكم المهنية',
+                style: TextStyle(color: Colors.white70, fontSize: 13),
               ),
             ],
           ),
         ),
       ),
+      actions: [
+        IconButton(
+          icon: const Icon(Icons.settings_outlined, color: Colors.white),
+          onPressed: () => context.push('/profile'),
+        ),
+      ],
     );
   }
 
@@ -156,103 +159,146 @@ class LawyerDashboardPage extends ConsumerWidget {
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       crossAxisCount: 3,
-      crossAxisSpacing: 10,
-      mainAxisSpacing: 10,
+      crossAxisSpacing: 12,
+      mainAxisSpacing: 12,
+      childAspectRatio: 0.9,
       children: [
         _StatCard(
             title: 'الاستشارات',
             value: bookings.length.toString(),
-            icon: Icons.gavel),
+            icon: Icons.gavel_rounded),
         _StatCard(
             title: 'نشطة',
             value: pendingCount.toString(),
-            icon: Icons.timer,
-            color: AppColors.secondary),
+            icon: Icons.timer_rounded,
+            color: Colors.orange),
         _StatCard(
-            title: 'الأرباح',
-            value: '${(totalEarnings / 1000).toStringAsFixed(0)}k',
-            icon: Icons.payments,
-            color: Colors.green),
+            title: 'الأرباح (د.ع)',
+            value: '${(totalEarnings / 1000).toStringAsFixed(1)}k',
+            icon: Icons.payments_rounded,
+            color: AppColors.success),
       ],
     );
   }
 
   Widget _buildEmptyState() {
-    return Center(
-      child: Column(
-        children: [
-          const SizedBox(height: 40),
-          Icon(Icons.assignment_late_outlined,
-              size: 64, color: AppColors.outline.withValues(alpha: 0.3)),
-          const SizedBox(height: 16),
-          const Text('لا توجد استشارات حالية',
-              style: TextStyle(color: AppColors.outline)),
-        ],
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(32.0),
+        child: Column(
+          children: [
+            Icon(Icons.assignment_late_outlined,
+                size: 48, color: AppColors.outline.withValues(alpha: 0.3)),
+            const SizedBox(height: 16),
+            const Text('لا توجد طلبات استشارة حالية',
+                style: TextStyle(color: AppColors.textSecondary)),
+          ],
+        ),
       ),
     );
   }
 
   Widget _buildQuickActions(BuildContext context, WidgetRef ref) {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'إجراءات سريعة',
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-        ),
-        const SizedBox(height: 16),
         _ActionTile(
           title: 'جدول المواعيد',
-          subtitle: 'عرض كافة الحجوزات المؤكدة',
-          icon: Icons.calendar_month,
+          subtitle: 'عرض وتأكيد الحجوزات',
+          icon: Icons.calendar_today_rounded,
           onTap: () => context.push('/bookings'),
         ),
         _ActionTile(
           title: 'المحفظة المالية',
-          subtitle: 'تتبع مستحقاتك وسحب الأرباح',
-          icon: Icons.account_balance_wallet,
-          onTap: () {},
+          subtitle: 'تتبع المستحقات وطلبات السحب',
+          icon: Icons.account_balance_wallet_rounded,
+          onTap: () => context.push('/payment-methods'),
         ),
-        const SizedBox(height: 24),
-        const Divider(),
-        const SizedBox(height: 16),
-        ListTile(
-          leading: const Icon(Icons.logout, color: AppColors.error),
-          title: const Text('تسجيل الخروج',
-              style: TextStyle(
-                  color: AppColors.error, fontWeight: FontWeight.bold)),
-          onTap: () => ref.read(authControllerProvider.notifier).logout(),
+        _ActionTile(
+          title: 'تغيير التخصص',
+          subtitle: 'إرسال طلب تعديل الاختصاصات',
+          icon: Icons.edit_note_rounded,
+          onTap: () => _showSpecializationRequest(context),
         ),
-        ListTile(
-          leading: const Icon(Icons.delete_forever, color: Colors.grey),
-          title: const Text('حذف الحساب نهائياً',
-              style: TextStyle(color: Colors.grey, fontSize: 13)),
-          onTap: () => _showDeleteConfirmation(context, ref),
+        _ActionTile(
+          title: 'تعديل باقات الاستشارة',
+          subtitle: 'إضافة أو تعديل خدماتك وأسعارك',
+          icon: Icons.design_services_rounded,
+          onTap: () => context.push('/lawyer-profile-edit'),
         ),
       ],
     );
   }
 
-  void _showDeleteConfirmation(BuildContext context, WidgetRef ref) {
+  void _showSpecializationRequest(BuildContext context) {
+    final List<String> allSpecs = [
+      'جنائي',
+      'أحوال شخصية',
+      'مدني',
+      'تجاري',
+      'عمل',
+      'عقارات',
+      'إداري',
+      'عسكري',
+    ];
+    List<String> selected = [];
+
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('حذف الحساب؟'),
-        content: const Text(
-            'هل أنت متأكد من حذف حسابك نهائياً؟ لا يمكن التراجع عن هذا الإجراء وسيتم حذف كافة بياناتك وحجوزاتك.'),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('إلغاء')),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-              ref.read(authControllerProvider.notifier).deleteAccount();
-            },
-            child: const Text('نعم، احذف نهائياً',
-                style: TextStyle(color: AppColors.error)),
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: const Text('طلب تغيير التخصص'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text('اختر التخصصات الجديدة المطلوبة:'),
+                const SizedBox(height: 16),
+                Wrap(
+                  spacing: 8,
+                  children: allSpecs.map((spec) {
+                    final isSelected = selected.contains(spec);
+                    return FilterChip(
+                      label: Text(spec),
+                      selected: isSelected,
+                      onSelected: (val) {
+                        setDialogState(() {
+                          if (val) {
+                            selected.add(spec);
+                          } else {
+                            selected.remove(spec);
+                          }
+                        });
+                      },
+                    );
+                  }).toList(),
+                ),
+              ],
+            ),
           ),
-        ],
+          actions: [
+            TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('إلغاء')),
+            ElevatedButton(
+              onPressed: selected.isEmpty
+                  ? null
+                  : () {
+                      // سيتم ربطها بالـ Repository لاحقاً لإرسال الطلب الفعلي
+                      Navigator.pop(context);
+                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                          content: Text('تم إرسال طلب التغيير للإدارة')));
+                    },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              child: const Text('إرسال الطلب'),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -272,31 +318,21 @@ class _StatCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
+    return Card(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(icon, color: color ?? AppColors.primary, size: 24),
-          const SizedBox(height: 8),
+          Icon(icon, color: color ?? AppColors.primary, size: 28),
+          const SizedBox(height: 12),
           Text(value,
               style: const TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
-                  color: AppColors.primary)),
+                  color: AppColors.textPrimary)),
+          const SizedBox(height: 4),
           Text(title,
-              style: const TextStyle(fontSize: 10, color: AppColors.outline)),
+              style: const TextStyle(
+                  fontSize: 11, color: AppColors.textSecondary)),
         ],
       ),
     );
@@ -311,33 +347,29 @@ class _BookingTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: ListTile(
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        leading: const CircleAvatar(
-          backgroundColor: AppColors.background,
-          child: Icon(Icons.person, color: AppColors.primary),
-        ),
-        title: const Text('استشارة قانونية',
-            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-        subtitle: Text(
-          intl.DateFormat('yyyy/MM/dd - HH:mm').format(booking.scheduledAt),
-          style: const TextStyle(fontSize: 11),
-        ),
-        trailing: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: [
-            Text('${booking.price.toInt()} د.ع',
-                style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.primary,
-                    fontSize: 12)),
-            const SizedBox(height: 4),
-            _StatusChip(status: booking.status),
-          ],
-        ),
-        onTap: () => context.push('/bookings'),
+      child: Consumer(
+        builder: (context, ref, child) {
+          final nameAsync = ref.watch(userNameProvider(booking.userId));
+          final clientName = nameAsync.maybeWhen(
+            data: (name) => name ?? 'عميل جديد',
+            orElse: () => 'تحميل...',
+          );
+
+          return ListTile(
+            leading: CircleAvatar(
+              backgroundColor: AppColors.surfaceVariant,
+              child: const Icon(Icons.person_outline, color: AppColors.primary),
+            ),
+            title: Text(clientName,
+                style:
+                    const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+            subtitle: Text(
+                intl.DateFormat('yyyy/MM/dd').format(booking.scheduledAt),
+                style: const TextStyle(fontSize: 12)),
+            trailing: _StatusChip(status: booking.status),
+            onTap: () => context.push('/booking-details', extra: booking),
+          );
+        },
       ),
     );
   }
@@ -350,29 +382,18 @@ class _StatusChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     Color color = Colors.grey;
-    String text = status;
-    if (status == 'pending') {
-      color = Colors.orange;
-      text = 'معلق';
-    }
-    if (status == 'accepted') {
-      color = Colors.blue;
-      text = 'مؤكد';
-    }
-    if (status == 'completed') {
-      color = Colors.green;
-      text = 'مكتمل';
-    }
+    if (status == 'pending') color = Colors.orange;
+    if (status == 'accepted') color = Colors.blue;
+    if (status == 'completed') color = Colors.green;
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(4),
-      ),
-      child: Text(text,
+          color: color.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(6)),
+      child: Text(status,
           style: TextStyle(
-              color: color, fontSize: 9, fontWeight: FontWeight.bold)),
+              color: color, fontSize: 10, fontWeight: FontWeight.bold)),
     );
   }
 }
@@ -394,11 +415,11 @@ class _ActionTile extends StatelessWidget {
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       child: ListTile(
-        leading: Icon(icon, color: AppColors.secondary),
+        leading: Icon(icon, color: AppColors.primary),
         title: Text(title,
-            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-        subtitle: Text(subtitle, style: const TextStyle(fontSize: 11)),
-        trailing: const Icon(Icons.arrow_forward_ios, size: 14),
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+        subtitle: Text(subtitle, style: const TextStyle(fontSize: 12)),
+        trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 14),
         onTap: onTap,
       ),
     );

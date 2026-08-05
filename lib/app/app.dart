@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -17,6 +18,15 @@ class LawConnectApp extends ConsumerWidget {
     return MaterialApp.router(
       title: 'LawConnect',
       debugShowCheckedModeBanner: false,
+
+      // إعدادات التمرير لضمان تجربة موحدة في الويب والجوال
+      scrollBehavior: const MaterialScrollBehavior().copyWith(
+        dragDevices: {
+          PointerDeviceKind.touch,
+          PointerDeviceKind.mouse,
+          PointerDeviceKind.trackpad,
+        },
+      ),
 
       // إعدادات اللغة والاتجاه (RTL)
       locale: const Locale('ar', 'IQ'),

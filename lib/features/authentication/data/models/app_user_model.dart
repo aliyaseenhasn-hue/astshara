@@ -10,7 +10,7 @@ class AppUserModel with _$AppUserModel {
 
   const factory AppUserModel({
     required String id,
-    String? email, // جعل البريد اختيارياً لأننا نستخدم رقم الهاتف
+    String? email,
     @JsonKey(name: 'full_name') String? fullName,
     String? phone,
     @JsonKey(name: 'avatar_url') String? avatarUrl,
@@ -18,12 +18,12 @@ class AppUserModel with _$AppUserModel {
     @JsonKey(name: 'is_verified') @Default(false) bool isVerified,
     @Default(false) bool hasProfessionalProfile,
     @JsonKey(name: 'onboarding_completed') bool? isOnboardingComplete,
+    @JsonKey(name: 'wallet_number') String? walletNumber,
   }) = _AppUserModel;
 
   factory AppUserModel.fromJson(Map<String, dynamic> json) =>
       _$AppUserModelFromJson(json);
 
-  // تحويل الموديل إلى Entity المستخدم في الـ UI
   AppUser toEntity() => AppUser(
         id: id,
         email: email ?? '',
@@ -34,5 +34,6 @@ class AppUserModel with _$AppUserModel {
         isVerified: isVerified,
         hasProfessionalProfile: hasProfessionalProfile,
         isOnboardingComplete: isOnboardingComplete ?? false,
+        walletNumber: walletNumber,
       );
 }

@@ -3,86 +3,118 @@ import 'package:google_fonts/google_fonts.dart';
 import '../core/constants/app_colors.dart';
 
 class AppTheme {
+  static const double _borderRadius = 16.0;
+
   static ThemeData get light {
     final baseTheme = ThemeData(
       useMaterial3: true,
       brightness: Brightness.light,
+      // توحيد المنصة لضمان تطابق الخطوط والسلوكيات (اختياري، لكن يضمن التوحيد)
+      platform: TargetPlatform.android,
       colorScheme: ColorScheme.fromSeed(
         seedColor: AppColors.primary,
         primary: AppColors.primary,
-        onPrimary: AppColors.onPrimary,
-        secondary: AppColors.gold,
-        onSecondary: AppColors.primary,
+        secondary: AppColors.secondary,
         surface: AppColors.surface,
         error: AppColors.error,
         outline: AppColors.outline,
+        onSurface: AppColors.textPrimary,
       ),
       scaffoldBackgroundColor: AppColors.background,
-      appBarTheme: const AppBarTheme(
-        backgroundColor: AppColors.primary,
-        foregroundColor: Colors.white,
+      dividerColor: AppColors.divider,
+      appBarTheme: AppBarTheme(
+        backgroundColor: AppColors.background,
+        foregroundColor: AppColors.textPrimary,
         elevation: 0,
         centerTitle: true,
-        titleTextStyle: TextStyle(
+        scrolledUnderElevation: 0,
+        titleTextStyle: GoogleFonts.ibmPlexSansArabic(
           fontSize: 18,
           fontWeight: FontWeight.bold,
-          color: Colors.white,
-          letterSpacing: 0.5,
+          color: AppColors.textPrimary,
         ),
       ),
       cardTheme: CardThemeData(
         color: AppColors.surface,
-        elevation: 0,
+        elevation: 0, // تقليل الظلال لأسلوب مسطح وعصري موحد
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-          side: BorderSide(
-              color: AppColors.surfaceVariant.withValues(alpha: 0.5), width: 1),
+          borderRadius: BorderRadius.circular(_borderRadius),
+          side: const BorderSide(color: AppColors.surfaceVariant, width: 1.5),
         ),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.gold,
-          foregroundColor: AppColors.primary,
-          minimumSize: const Size.fromHeight(52),
-          textStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
+          backgroundColor: AppColors.primary,
+          foregroundColor: Colors.white,
+          minimumSize: const Size.fromHeight(54),
+          textStyle: GoogleFonts.ibmPlexSansArabic(
+            fontWeight: FontWeight.bold,
+            fontSize: 16,
           ),
-          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          elevation: 0, // زر مسطح وأكثر وضوحاً في الويب
+        ),
+      ),
+      outlinedButtonTheme: OutlinedButtonThemeData(
+        style: OutlinedButton.styleFrom(
+          foregroundColor: AppColors.primary,
+          side: const BorderSide(color: AppColors.primary, width: 1.5),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          textStyle: GoogleFonts.ibmPlexSansArabic(
+            fontWeight: FontWeight.bold,
+            fontSize: 14,
+          ),
         ),
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: Colors.black.withValues(alpha: 0.05),
+        fillColor: AppColors.surface,
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide:
-              BorderSide(color: AppColors.outline.withValues(alpha: 0.2)),
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: AppColors.outline, width: 1),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide:
-              BorderSide(color: AppColors.outline.withValues(alpha: 0.2)),
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: AppColors.outline, width: 1),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: AppColors.gold, width: 2),
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: AppColors.primary, width: 2),
         ),
-        hintStyle: TextStyle(
-            color: AppColors.outline.withValues(alpha: 0.6), fontSize: 12),
+        labelStyle: const TextStyle(
+            color: AppColors.textPrimary, fontWeight: FontWeight.w600),
+        hintStyle: GoogleFonts.ibmPlexSansArabic(
+          color: AppColors.textSecondary,
+          fontSize: 14,
+        ),
+      ),
+      listTileTheme: ListTileThemeData(
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        titleTextStyle: GoogleFonts.ibmPlexSansArabic(
+          fontWeight: FontWeight.bold,
+          fontSize: 15,
+          color: AppColors.textPrimary,
+        ),
+        subtitleTextStyle: GoogleFonts.ibmPlexSansArabic(
+          fontSize: 12,
+          color: AppColors.textSecondary,
+        ),
+        iconColor: AppColors.primary,
       ),
     );
 
     return baseTheme.copyWith(
       textTheme:
-          GoogleFonts.ibmPlexSansArabicTextTheme(baseTheme.textTheme).copyWith(
-        titleLarge: GoogleFonts.ibmPlexSansArabic(
-          fontWeight: FontWeight.bold,
-          color: AppColors.primary,
-        ),
-        bodyMedium: GoogleFonts.ibmPlexSansArabic(
-          color: AppColors.primary.withValues(alpha: 0.8),
-        ),
+          GoogleFonts.ibmPlexSansArabicTextTheme(baseTheme.textTheme).apply(
+        bodyColor: AppColors.textPrimary,
+        displayColor: AppColors.textPrimary,
       ),
     );
   }
@@ -91,46 +123,14 @@ class AppTheme {
     final baseTheme = ThemeData(
       useMaterial3: true,
       brightness: Brightness.dark,
-      colorScheme: const ColorScheme.dark(
-        primary: AppColors.gold,
-        onPrimary: AppColors.primary,
-        secondary: AppColors.accent,
-        onSecondary: Colors.white,
-        surface: Color(0xFF1a1a2e),
-        error: AppColors.error,
-        outline: Color(0xFF9e9e9e),
-      ),
-      scaffoldBackgroundColor: const Color(0xFF0F1D3A),
-      appBarTheme: const AppBarTheme(
-        backgroundColor: Color(0xFF0F1D3A),
-        foregroundColor: AppColors.gold,
-        elevation: 0,
-        centerTitle: true,
-        titleTextStyle: TextStyle(
-          fontSize: 18,
-          fontWeight: FontWeight.bold,
-          color: AppColors.gold,
-        ),
-      ),
-      cardTheme: CardThemeData(
-        color: const Color(0xFF1a1a2e),
-        elevation: 2,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
-      ),
-      elevatedButtonTheme: ElevatedButtonThemeData(
-        style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.gold,
-          foregroundColor: AppColors.primary,
-          minimumSize: const Size.fromHeight(52),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
-          ),
-        ),
+      scaffoldBackgroundColor: const Color(0xFF0F1419),
+      colorScheme: ColorScheme.fromSeed(
+        seedColor: AppColors.primary,
+        brightness: Brightness.dark,
+        primary: AppColors.primary,
+        surface: const Color(0xFF15202B),
       ),
     );
-
     return baseTheme.copyWith(
       textTheme: GoogleFonts.ibmPlexSansArabicTextTheme(baseTheme.textTheme),
     );

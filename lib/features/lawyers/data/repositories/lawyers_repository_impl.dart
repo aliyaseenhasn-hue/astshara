@@ -96,6 +96,7 @@ class LawyersRepositoryImpl implements LawyersRepository {
         'whatsapp': profile.whatsapp,
         'id_card_url': profile.idCardUrl,
         'availability': profile.availability,
+        'services': profile.services.map((s) => s.toJson()).toList(),
       };
 
       // معالجة التخصص: إرساله كنص (String) ليتوافق مع النوع TEXT في DB
@@ -140,6 +141,23 @@ class LawyersRepositoryImpl implements LawyersRepository {
           .createSignedUrl(filePath, 31536000);
     } catch (e) {
       debugPrint('❌ Storage Error: $e');
+      rethrow;
+    }
+  }
+
+  /// يرسل طلب تغيير التخصص ليتم مراجعته من قبل الإدارة
+  Future<void> requestSpecializationChange(List<String> newSpecs) async {
+    final user = _supabase.auth.currentUser;
+    if (user == null) throw Exception('User not logged in');
+
+    try {
+      await _supabase.from('specialization_change_requests').insert({
+        'lawyer_id': user.id,
+        'requested_specializations': newSpecs,
+        'status': 'pending',
+      });
+    } catch (e) {
+      debugPrint('❌ LawyersRepo: Error requesting specialization change: $e');
       rethrow;
     }
   }

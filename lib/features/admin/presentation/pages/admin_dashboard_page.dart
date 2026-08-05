@@ -173,14 +173,14 @@ class AdminDashboardPage extends ConsumerWidget {
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
-          colors: [AppColors.primary, AppColors.primaryContainer],
+          colors: [AppColors.secondary, AppColors.textSecondary],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-              color: AppColors.primary.withValues(alpha: 0.2),
+              color: AppColors.secondary.withValues(alpha: 0.2),
               blurRadius: 15,
               offset: const Offset(0, 8)),
         ],
