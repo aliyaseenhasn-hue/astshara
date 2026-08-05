@@ -31,6 +31,7 @@ mixin _$LawyerProfile {
   int get reviewCount => throw _privateConstructorUsedError;
   bool get verified => throw _privateConstructorUsedError;
   bool get availability => throw _privateConstructorUsedError;
+  String? get avatarUrl => throw _privateConstructorUsedError;
 
   /// Create a copy of LawyerProfile
   /// with the given fields replaced by the non-null parameter values.
@@ -59,7 +60,8 @@ abstract class $LawyerProfileCopyWith<$Res> {
       double rating,
       int reviewCount,
       bool verified,
-      bool availability});
+      bool availability,
+      String? avatarUrl});
 }
 
 /// @nodoc
@@ -91,6 +93,7 @@ class _$LawyerProfileCopyWithImpl<$Res, $Val extends LawyerProfile>
     Object? reviewCount = null,
     Object? verified = null,
     Object? availability = null,
+    Object? avatarUrl = freezed,
   }) {
     return _then(_value.copyWith(
       id: null == id
@@ -149,6 +152,10 @@ class _$LawyerProfileCopyWithImpl<$Res, $Val extends LawyerProfile>
           ? _value.availability
           : availability // ignore: cast_nullable_to_non_nullable
               as bool,
+      avatarUrl: freezed == avatarUrl
+          ? _value.avatarUrl
+          : avatarUrl // ignore: cast_nullable_to_non_nullable
+              as String?,
     ) as $Val);
   }
 }
@@ -175,7 +182,8 @@ abstract class _$$LawyerProfileImplCopyWith<$Res>
       double rating,
       int reviewCount,
       bool verified,
-      bool availability});
+      bool availability,
+      String? avatarUrl});
 }
 
 /// @nodoc
@@ -205,6 +213,7 @@ class __$$LawyerProfileImplCopyWithImpl<$Res>
     Object? reviewCount = null,
     Object? verified = null,
     Object? availability = null,
+    Object? avatarUrl = freezed,
   }) {
     return _then(_$LawyerProfileImpl(
       id: null == id
@@ -263,6 +272,10 @@ class __$$LawyerProfileImplCopyWithImpl<$Res>
           ? _value.availability
           : availability // ignore: cast_nullable_to_non_nullable
               as bool,
+      avatarUrl: freezed == avatarUrl
+          ? _value.avatarUrl
+          : avatarUrl // ignore: cast_nullable_to_non_nullable
+              as String?,
     ));
   }
 }
@@ -284,7 +297,8 @@ class _$LawyerProfileImpl implements _LawyerProfile {
       this.rating = 0.0,
       this.reviewCount = 0,
       this.verified = false,
-      this.availability = true})
+      this.availability = true,
+      this.avatarUrl})
       : _specializations = specializations;
 
   @override
@@ -327,10 +341,12 @@ class _$LawyerProfileImpl implements _LawyerProfile {
   @override
   @JsonKey()
   final bool availability;
+  @override
+  final String? avatarUrl;
 
   @override
   String toString() {
-    return 'LawyerProfile(id: $id, profileId: $profileId, fullName: $fullName, licenseNumber: $licenseNumber, bio: $bio, specializations: $specializations, yearsExperience: $yearsExperience, consultationPrice: $consultationPrice, whatsapp: $whatsapp, idCardUrl: $idCardUrl, rating: $rating, reviewCount: $reviewCount, verified: $verified, availability: $availability)';
+    return 'LawyerProfile(id: $id, profileId: $profileId, fullName: $fullName, licenseNumber: $licenseNumber, bio: $bio, specializations: $specializations, yearsExperience: $yearsExperience, consultationPrice: $consultationPrice, whatsapp: $whatsapp, idCardUrl: $idCardUrl, rating: $rating, reviewCount: $reviewCount, verified: $verified, availability: $availability, avatarUrl: $avatarUrl)';
   }
 
   @override
@@ -362,7 +378,9 @@ class _$LawyerProfileImpl implements _LawyerProfile {
             (identical(other.verified, verified) ||
                 other.verified == verified) &&
             (identical(other.availability, availability) ||
-                other.availability == availability));
+                other.availability == availability) &&
+            (identical(other.avatarUrl, avatarUrl) ||
+                other.avatarUrl == avatarUrl));
   }
 
   @override
@@ -381,7 +399,8 @@ class _$LawyerProfileImpl implements _LawyerProfile {
       rating,
       reviewCount,
       verified,
-      availability);
+      availability,
+      avatarUrl);
 
   /// Create a copy of LawyerProfile
   /// with the given fields replaced by the non-null parameter values.
@@ -407,7 +426,8 @@ abstract class _LawyerProfile implements LawyerProfile {
       final double rating,
       final int reviewCount,
       final bool verified,
-      final bool availability}) = _$LawyerProfileImpl;
+      final bool availability,
+      final String? avatarUrl}) = _$LawyerProfileImpl;
 
   @override
   String get id;
@@ -437,6 +457,8 @@ abstract class _LawyerProfile implements LawyerProfile {
   bool get verified;
   @override
   bool get availability;
+  @override
+  String? get avatarUrl;
 
   /// Create a copy of LawyerProfile
   /// with the given fields replaced by the non-null parameter values.

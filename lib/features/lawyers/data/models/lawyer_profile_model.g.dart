@@ -14,10 +14,9 @@ _$LawyerProfileModelImpl _$$LawyerProfileModelImplFromJson(
       fullName: json['full_name'] as String?,
       licenseNumber: json['license_number'] as String?,
       bio: json['bio'] as String?,
-      specializations: (json['specialization'] as List<dynamic>?)
-              ?.map((e) => e as String)
-              .toList() ??
-          const [],
+      specializations: json['specialization'] == null
+          ? const []
+          : _specializationsFromJson(json['specialization']),
       yearsExperience: (json['years_experience'] as num?)?.toInt(),
       consultationPrice: _doubleFromPossibleString(json['consultation_price']),
       whatsapp: json['whatsapp'] as String?,
