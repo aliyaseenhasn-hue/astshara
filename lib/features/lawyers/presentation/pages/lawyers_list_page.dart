@@ -372,7 +372,8 @@ class _LawyerCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    '${lawyer.specialization ?? "قانون عام"} · بغداد',
+                    '${(lawyer.specialization as List<String>?)?.join(", ") ?? "قانون عام"} · بغداد',
+
 
                     style: const TextStyle(
                         fontSize: 11,
