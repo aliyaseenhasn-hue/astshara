@@ -15,6 +15,9 @@ class LawyersRepositoryImpl implements LawyersRepository {
         .from('lawyer_profiles')
         .select('*, profiles(full_name, avatar_url)')
         .eq('verified', true);
+        .order('rating', ascending: false)
+        .order('review_count', ascending: false)
+
 
     return (response as List).map((json) {
       final model = LawyerProfileModel.fromJson(json);
