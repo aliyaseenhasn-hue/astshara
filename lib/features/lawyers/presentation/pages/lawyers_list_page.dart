@@ -19,14 +19,14 @@ class LawyersListPage extends ConsumerWidget {
         slivers: [
           // Navy Header
           SliverAppBar(
-            expandedHeight: 160.0,
+            expandedHeight: 200.0,
             floating: false,
             pinned: true,
             backgroundColor: AppColors.primary,
             foregroundColor: Colors.white,
             flexibleSpace: FlexibleSpaceBar(
               background: Container(
-                padding: const EdgeInsets.fromLTRB(20, 60, 20, 20),
+                padding: const EdgeInsets.fromLTRB(20, 50, 20, 15),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -58,10 +58,10 @@ class LawyersListPage extends ConsumerWidget {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 15),
                     // Search Bar
                     Container(
-                      height: 45,
+                      height: 40,
                       padding: const EdgeInsets.symmetric(horizontal: 12),
                       decoration: BoxDecoration(
                         color: Colors.white.withValues(alpha: 0.12),
@@ -177,20 +177,40 @@ class LawyersListPage extends ConsumerWidget {
                 ),
                 const SizedBox(height: 12),
                 lawyersAsync.when(
-                  data: (lawyers) => lawyers.isEmpty
-                      ? const Center(
-                          child: Padding(
-                            padding: EdgeInsets.symmetric(vertical: 40),
-                            child: Text('لا يوجد محامون في هذا التخصص حالياً'),
+                  data: (lawyers) {
+                    if (lawyers.isEmpty) {
+                      return const Center(
+                        child: Padding(
+                          padding: EdgeInsets.symmetric(vertical: 40),
+                          child: Column(
+                            children: [
+                              Icon(Icons.person_search_outlined,
+                                  size: 60, color: Colors.grey),
+                              SizedBox(height: 16),
+                              Text('لا يوجد محامون موثقون حالياً'),
+                            ],
                           ),
-                        )
-                      : Column(
-                          children: lawyers
-                              .map((lawyer) => _LawyerCard(lawyer: lawyer))
-                              .toList(),
                         ),
-                  loading: () => const LoadingWidget(),
-                  error: (err, stack) => Center(child: Text('خطأ: $err')),
+                      );
+                    }
+                    return Column(
+                      children: lawyers
+                          .map((lawyer) => _LawyerCard(lawyer: lawyer))
+                          .toList(),
+                    );
+                  },
+                  loading: () => const Center(
+                    child: Padding(
+                      padding: EdgeInsets.all(40),
+                      child: LoadingWidget(),
+                    ),
+                  ),
+                  error: (err, stack) => Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(40),
+                      child: Text('خطأ في جلب البيانات: $err'),
+                    ),
+                  ),
                 ),
               ]),
             ),
@@ -376,11 +396,25 @@ class _LawyerCard extends StatelessWidget {
                       if (lawyer.verified)
                         const Icon(Icons.verified,
                             color: AppColors.accent, size: 14),
+                      const Spacer(),
+                      if (!lawyer.availability)
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: Colors.grey.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: const Text(
+                            'غير متاح',
+                            style: TextStyle(color: Colors.grey, fontSize: 9),
+                          ),
+                        ),
                     ],
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    '${(lawyer.specialization as List<String>?)?.join('، ') ?? "قانون عام"} · بغداد',
+                    '${lawyer.specializations.isNotEmpty ? lawyer.specializations.join("، ") : "قانون عام"} · بغداد',
                     style: const TextStyle(
                         fontSize: 11,
                         color: AppColors.accent,

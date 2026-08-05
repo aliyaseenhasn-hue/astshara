@@ -22,7 +22,6 @@ Future<ProviderContainer> bootstrap() async {
     if (supabaseUrl != null && supabaseAnonKey != null) {
       try {
         await SupabaseConfig.initialize();
-        debugPrint('✅ Supabase initialized successfully');
       } catch (e) {
         debugPrint('❌ Error initializing Supabase: $e');
         rethrow;

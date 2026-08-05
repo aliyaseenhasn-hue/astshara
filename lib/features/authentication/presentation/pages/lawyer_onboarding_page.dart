@@ -100,7 +100,10 @@ class _LawyerOnboardingPageState extends ConsumerState<LawyerOnboardingPage> {
             'شكراً لانضمامك! ملفك الآن قيد المراجعة والتدقيق. سنتواصل معك عبر الواتساب فور التفعيل.'),
         actions: [
           ElevatedButton(
-            onPressed: () => ref.read(authControllerProvider.notifier).logout(),
+            onPressed: () {
+              Navigator.pop(context);
+              // التوجيه التلقائي لصفحة الانتظار
+            },
             style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
             child: const Text('حسناً', style: TextStyle(color: Colors.white)),
           ),

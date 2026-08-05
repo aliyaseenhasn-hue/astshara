@@ -17,8 +17,33 @@ Future<List<LawyerProfile>> lawyersList(LawyersListRef ref) {
   final repository = ref.watch(lawyersRepositoryProvider);
 
   return repository.getLawyers().then((lawyers) {
-    if (category == null) return lawyers;
-    return lawyers.where((l) => l.specializations.contains(category)).toList();
+    // 1. الفلترة حسب التخصص (مع تنظيف النصوص لضمان المطابقة)
+    Iterable<LawyerProfile> filtered = lawyers;
+    if (category != null && category.isNotEmpty) {
+      final cleanCategory = category.trim();
+      filtered = lawyers.where((l) => l.specializations
+          .any((s) => s.trim().toLowerCase() == cleanCategory.toLowerCase()));
+    }
+
+    // 2. الفرز (Sorting):
+    // - المحامي المتصل أولاً (اختياري)
+    // - ثم حسب التقييم (Rating) من الأعلى للأقل
+    // - ثم حسب عدد المراجعات (Review Count)
+    final sortedList = filtered.toList();
+    sortedList.sort((a, b) {
+      // 1. التوفر (اختياري، يمكن إزالته إذا لم يكن مطلوباً)
+      if (a.availability && !b.availability) return -1;
+      if (!a.availability && b.availability) return 1;
+
+      // 2. التقييم (من الأعلى للأقل)
+      int ratingCompare = b.rating.compareTo(a.rating);
+      if (ratingCompare != 0) return ratingCompare;
+
+      // 3. عدد المراجعات
+      return b.reviewCount.compareTo(a.reviewCount);
+    });
+
+    return sortedList;
   });
 }
 

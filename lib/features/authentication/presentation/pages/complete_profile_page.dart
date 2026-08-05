@@ -202,7 +202,10 @@ class _CompleteProfilePageState extends ConsumerState<CompleteProfilePage> {
             'شكراً لانضمامك! ملفك قيد المراجعة الآن. سنتواصل معك فور التفعيل.'),
         actions: [
           ElevatedButton(
-            onPressed: () => ref.read(authControllerProvider.notifier).logout(),
+            onPressed: () {
+              Navigator.pop(context); // إغلاق الحوار
+              // الـ Router سيتكفل بالباقي ويوجه المحامي لصفحة الانتظار
+            },
             child: const Text('حسناً'),
           ),
         ],

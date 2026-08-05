@@ -11,17 +11,58 @@ class LawyersRepositoryImpl implements LawyersRepository {
 
   @override
   Future<List<LawyerProfile>> getLawyers() async {
-    final response = await _supabase
-        .from('lawyer_profiles')
-        .select('*, profiles(full_name, avatar_url, city)')
-        .eq('verified', true)
-        .eq('availability', true)
-        .order('rating', ascending: false)
-        .order('review_count', ascending: false);
+    try {
+      debugPrint('🔍 LawyersRepo: Fetching verified lawyers...');
 
-    return (response as List).map((json) {
-      final model = LawyerProfileModel.fromJson(json);
-      final profileData = json['profiles'];
+      final response = await _supabase
+          .from('lawyer_profiles')
+          .select('*, profiles(full_name, avatar_url)')
+          .eq('verified', true);
+
+      if (response == null) return [];
+
+      final List<LawyerProfile> lawyers = [];
+      for (var json in (response as List)) {
+        try {
+          final model = LawyerProfileModel.fromJson(json);
+          final profileData = json['profiles'];
+
+          Map<String, dynamic>? profile;
+          if (profileData is List && profileData.isNotEmpty) {
+            profile = profileData.first as Map<String, dynamic>;
+          } else if (profileData is Map) {
+            profile = profileData as Map<String, dynamic>;
+          }
+
+          lawyers.add(model.toEntity().copyWith(
+                fullName:
+                    profile?['full_name'] ?? model.fullName ?? 'محامي استشارة',
+                avatarUrl: profile?['avatar_url'],
+              ));
+        } catch (e) {
+          debugPrint('❌ LawyersRepo: Error parsing record: $e');
+        }
+      }
+      return lawyers;
+    } catch (e) {
+      debugPrint('❌ LawyersRepo: Fetch error: $e');
+      return [];
+    }
+  }
+
+  @override
+  Future<LawyerProfile?> getLawyerProfile(String profileId) async {
+    try {
+      final response = await _supabase
+          .from('lawyer_profiles')
+          .select('*, profiles(full_name, avatar_url)')
+          .eq('profile_id', profileId)
+          .maybeSingle();
+
+      if (response == null) return null;
+
+      final model = LawyerProfileModel.fromJson(response);
+      final profileData = response['profiles'];
 
       Map<String, dynamic>? profile;
       if (profileData is List && profileData.isNotEmpty) {
@@ -31,62 +72,49 @@ class LawyersRepositoryImpl implements LawyersRepository {
       }
 
       return model.toEntity().copyWith(
-            fullName: profile?['full_name'],
+            fullName: profile?['full_name'] ?? model.fullName ?? 'محامي',
             avatarUrl: profile?['avatar_url'],
           );
-    }).toList();
-  }
-
-  @override
-  Future<LawyerProfile?> getLawyerProfile(String profileId) async {
-    final response = await _supabase
-        .from('lawyer_profiles')
-        .select('*, profiles(full_name, avatar_url)')
-        .eq('profile_id', profileId)
-        .maybeSingle();
-
-    if (response == null) return null;
-
-    final model = LawyerProfileModel.fromJson(response);
-    final profileData = response['profiles'];
-
-    Map<String, dynamic>? profile;
-    if (profileData is List && profileData.isNotEmpty) {
-      profile = profileData.first as Map<String, dynamic>;
-    } else if (profileData is Map) {
-      profile = profileData as Map<String, dynamic>;
+    } catch (e) {
+      debugPrint('❌ LawyersRepo: Profile fetch error: $e');
+      return null;
     }
-
-    return model.toEntity().copyWith(
-          fullName: profile?['full_name'],
-          avatarUrl: profile?['avatar_url'],
-        );
   }
 
   @override
   Future<void> updateLawyerProfile(LawyerProfile profile) async {
     try {
-      debugPrint('⚖️ Updating lawyer profile for: ${profile.profileId}');
-      await _supabase.from('lawyer_profiles').upsert({
+      debugPrint('⚖️ LawyersRepo: Attempting upsert for: ${profile.profileId}');
+
+      // نقوم بتجهيز البيانات بعناية لتجنب خطأ 400
+      final Map<String, dynamic> data = {
         'profile_id': profile.profileId,
         'license_number': profile.licenseNumber,
         'bio': profile.bio,
-        'specialization': profile.specializations.join(','),
         'years_experience': profile.yearsExperience,
         'consultation_price': profile.consultationPrice,
         'whatsapp': profile.whatsapp,
         'id_card_url': profile.idCardUrl,
         'availability': profile.availability,
-      }, onConflict: 'profile_id');
-      debugPrint('✅ Lawyer profile updated successfully');
+      };
+
+      // معالجة التخصص: إرساله كنص (String) ليتوافق مع النوع TEXT في DB
+      if (profile.specializations.isNotEmpty) {
+        data['specialization'] = profile.specializations.join(',');
+      }
+
+      await _supabase
+          .from('lawyer_profiles')
+          .upsert(data, onConflict: 'profile_id');
+      debugPrint('✅ LawyersRepo: Upsert successful');
     } on PostgrestException catch (e) {
-      debugPrint('❌ Supabase error (400) updating lawyer profile:');
+      debugPrint('❌ Supabase 400 Fix: Error Details:');
       debugPrint('Message: ${e.message}');
-      debugPrint('Details: ${e.details}');
       debugPrint('Hint: ${e.hint}');
+      debugPrint('Details: ${e.details}');
       rethrow;
     } catch (e) {
-      debugPrint('❌ Unexpected error updating lawyer profile: $e');
+      debugPrint('❌ LawyersRepo: Unexpected error: $e');
       rethrow;
     }
   }
@@ -95,12 +123,10 @@ class LawyersRepositoryImpl implements LawyersRepository {
   Future<String> uploadFile(
       Uint8List bytes, String fileName, String bucket) async {
     final user = _supabase.auth.currentUser;
-    if (user == null) throw Exception('المستخدم غير مسجل دخول');
+    if (user == null) throw Exception('User not logged in');
 
     final filePath = '${user.id}/$fileName';
-
     try {
-      debugPrint('جاري رفع الملف: $filePath في الوعاء: $bucket');
       await _supabase.storage.from(bucket).uploadBinary(
             filePath,
             bytes,
@@ -109,12 +135,11 @@ class LawyersRepositoryImpl implements LawyersRepository {
               upsert: true,
             ),
           );
-      debugPrint('تم رفع الملف بنجاح');
       return await _supabase.storage
           .from(bucket)
           .createSignedUrl(filePath, 31536000);
     } catch (e) {
-      debugPrint('خطأ في رفع الملف إلى Supabase: $e');
+      debugPrint('❌ Storage Error: $e');
       rethrow;
     }
   }

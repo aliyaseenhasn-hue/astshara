@@ -133,9 +133,14 @@ class AuthRepositoryImpl implements AuthRepository {
   @override
   Future<void> signInWithGoogle() async {
     try {
-      const String redirectUrl = kIsWeb
-          ? 'https://aliyaseenhasn-hue.github.io/astshara/'
-          : 'io.supabase.astshara://login-callback';
+      // تحديد رابط الرد تلقائياً بناءً على البيئة (محلي أو إنتاج)
+      String redirectUrl = 'io.supabase.astshara://login-callback';
+
+      if (kIsWeb) {
+        final String currentUri = Uri.base.origin + Uri.base.path;
+        redirectUrl = currentUri;
+        debugPrint('🌐 Web Auth Redirect URL: $redirectUrl');
+      }
 
       await _supabase.auth.signInWithOAuth(
         OAuthProvider.google,

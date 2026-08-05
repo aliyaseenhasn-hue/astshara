@@ -14,39 +14,46 @@ class LawConnectApp extends ConsumerWidget {
     final router = ref.watch(routerProvider);
     final isLoading = ref.watch(globalLoadingProvider);
 
-    return Stack(
-      children: [
-        MaterialApp.router(
-          title: 'LawConnect',
-          debugShowCheckedModeBanner: false,
+    return MaterialApp.router(
+      title: 'LawConnect',
+      debugShowCheckedModeBanner: false,
 
-          // إعدادات اللغة والاتجاه (RTL)
-          locale: const Locale('ar', 'IQ'),
-          supportedLocales: const [
-            Locale('ar', 'IQ'),
-          ],
-          localizationsDelegates: const [
-            GlobalMaterialLocalizations.delegate,
-            GlobalWidgetsLocalizations.delegate,
-            GlobalCupertinoLocalizations.delegate,
-          ],
-
-          // إعدادات الثيم (Material 3)
-          theme: AppTheme.light,
-          darkTheme: AppTheme.dark,
-          themeMode: ThemeMode.system,
-
-          // إعدادات التنقل
-          routerConfig: router,
-        ),
-        if (isLoading)
-          Positioned.fill(
-            child: Container(
-              color: Colors.black.withValues(alpha: 0.3),
-              child: const LoadingWidget(size: 60),
-            ),
-          ),
+      // إعدادات اللغة والاتجاه (RTL)
+      locale: const Locale('ar', 'IQ'),
+      supportedLocales: const [
+        Locale('ar', 'IQ'),
       ],
+      localizationsDelegates: const [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+
+      // إعدادات الثيم (Material 3)
+      theme: AppTheme.light,
+      darkTheme: AppTheme.dark,
+      themeMode: ThemeMode.system,
+
+      // إعدادات التنقل
+      routerConfig: router,
+
+      // إضافة طبقة التحميل العالمية فوق جميع الصفحات
+      builder: (context, child) {
+        return Stack(
+          children: [
+            if (child != null) child,
+            if (isLoading)
+              Positioned.fill(
+                child: Container(
+                  color: Colors.black.withValues(alpha: 0.3),
+                  child: const Center(
+                    child: LoadingWidget(size: 60),
+                  ),
+                ),
+              ),
+          ],
+        );
+      },
     );
   }
 }
