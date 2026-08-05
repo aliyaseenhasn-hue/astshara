@@ -14,9 +14,9 @@ class LawyersRepositoryImpl implements LawyersRepository {
     final response = await _supabase
         .from('lawyer_profiles')
         .select('*, profiles(full_name, avatar_url)')
-        .eq('verified', true);
+        .eq('verified', true)
         .order('rating', ascending: false)
-        .order('review_count', ascending: false)
+        .order('review_count', ascending: false);
 
 
     return (response as List).map((json) {
