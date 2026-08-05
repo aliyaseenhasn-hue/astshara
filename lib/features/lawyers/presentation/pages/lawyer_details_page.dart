@@ -193,7 +193,8 @@ class LawyerDetailsPage extends ConsumerWidget {
             alignment: WrapAlignment.center,
             children: [
               _buildBadge('✓ موثق'),
-              _buildBadge('⚖️ ${lawyer.specialization ?? "جنائي"}'),
+              _buildBadge(
+                  '⚖️ ${lawyer.specializations.isNotEmpty ? lawyer.specializations.first : "جنائي"}'),
               _buildBadge('📍 بغداد'),
             ],
           ),

@@ -339,16 +339,24 @@ class _LawyerCard extends StatelessWidget {
               decoration: BoxDecoration(
                 color: AppColors.surfaceVariant,
                 borderRadius: BorderRadius.circular(10),
+                image: lawyer.avatarUrl != null && lawyer.avatarUrl!.isNotEmpty
+                    ? DecorationImage(
+                        image: NetworkImage(lawyer.avatarUrl!),
+                        fit: BoxFit.cover,
+                      )
+                    : null,
               ),
-              child: Center(
-                child: Text(
-                  (lawyer.fullName ?? 'م')[0],
-                  style: const TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.primary),
-                ),
-              ),
+              child: lawyer.avatarUrl == null || lawyer.avatarUrl!.isEmpty
+                  ? Center(
+                      child: Text(
+                        (lawyer.fullName ?? 'م')[0],
+                        style: const TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.primary),
+                      ),
+                    )
+                  : null,
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -372,9 +380,7 @@ class _LawyerCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    '${(lawyer.specialization as List<String>?)?.join(", ") ?? "قانون عام"} · بغداد',
-
-
+                    '${lawyer.specializations.isNotEmpty ? lawyer.specializations.join("، ") : "قانون عام"} · بغداد',
                     style: const TextStyle(
                         fontSize: 11,
                         color: AppColors.accent,
