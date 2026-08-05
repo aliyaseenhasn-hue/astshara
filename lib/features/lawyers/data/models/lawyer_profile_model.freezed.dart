@@ -20,13 +20,11 @@ LawyerProfileModel _$LawyerProfileModelFromJson(Map<String, dynamic> json) {
 
 /// @nodoc
 mixin _$LawyerProfileModel {
-  String? get id =>
-      throw _privateConstructorUsedError; // جعلها اختيارية لتجنب الانهيار عند القراءة
+  String? get id => throw _privateConstructorUsedError;
   @JsonKey(name: 'profile_id')
   String? get profileId => throw _privateConstructorUsedError;
   @JsonKey(name: 'full_name')
-  String? get fullName =>
-      throw _privateConstructorUsedError; // إضافة الحقل لدعم القراءة من الجداول الموحدة
+  String? get fullName => throw _privateConstructorUsedError;
   @JsonKey(name: 'license_number')
   String? get licenseNumber => throw _privateConstructorUsedError;
   String? get bio => throw _privateConstructorUsedError;
@@ -315,14 +313,12 @@ class _$LawyerProfileModelImpl extends _LawyerProfileModel {
 
   @override
   final String? id;
-// جعلها اختيارية لتجنب الانهيار عند القراءة
   @override
   @JsonKey(name: 'profile_id')
   final String? profileId;
   @override
   @JsonKey(name: 'full_name')
   final String? fullName;
-// إضافة الحقل لدعم القراءة من الجداول الموحدة
   @override
   @JsonKey(name: 'license_number')
   final String? licenseNumber;
@@ -458,13 +454,13 @@ abstract class _LawyerProfileModel extends LawyerProfileModel {
       _$LawyerProfileModelImpl.fromJson;
 
   @override
-  String? get id; // جعلها اختيارية لتجنب الانهيار عند القراءة
+  String? get id;
   @override
   @JsonKey(name: 'profile_id')
   String? get profileId;
   @override
   @JsonKey(name: 'full_name')
-  String? get fullName; // إضافة الحقل لدعم القراءة من الجداول الموحدة
+  String? get fullName;
   @override
   @JsonKey(name: 'license_number')
   String? get licenseNumber;

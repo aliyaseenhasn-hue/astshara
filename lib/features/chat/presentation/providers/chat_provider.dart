@@ -23,25 +23,23 @@ class ChatController extends _$ChatController {
   FutureOr<void> build() {}
 
   Future<void> send(String conversationId, String content) async {
-    final trimmedContent = content.trim();
-    if (trimmedContent.isEmpty) return;
-
     final user = ref.read(authStateChangesProvider).value;
-    if (user == null) {
-      throw StateError('يجب تسجيل الدخول لإرسال رسالة');
-    }
+    if (user == null) return;
 
-    if (conversationId.trim().isEmpty) {
-      throw ArgumentError('معرّف المحادثة غير صالح');
-    }
+    // user.id = auth.uid() — messages.sender_id يشير إلى profiles.id
+    final profileRow = await SupabaseConfig.client
+        .from('profiles')
+        .select('id')
+        .eq('auth_id', user.id)
+        .maybeSingle();
 
-    // AppUser.id is the profiles.id from DB.
-    final profileId = user.id;
+    if (profileRow == null) return;
+    final senderProfileId = profileRow['id'] as String;
 
     await ref.read(chatRepositoryProvider).sendMessage(
           conversationId,
-          profileId,
-          trimmedContent,
+          senderProfileId, // ← profiles.id وليس auth.uid()
+          content,
         );
   }
 }

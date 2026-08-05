@@ -9,10 +9,9 @@ class LawyerProfileModel with _$LawyerProfileModel {
   const LawyerProfileModel._();
 
   const factory LawyerProfileModel({
-    String? id, // جعلها اختيارية لتجنب الانهيار عند القراءة
+    String? id,
     @JsonKey(name: 'profile_id') String? profileId,
-    @JsonKey(name: 'full_name')
-    String? fullName, // إضافة الحقل لدعم القراءة من الجداول الموحدة
+    @JsonKey(name: 'full_name') String? fullName,
     @JsonKey(name: 'license_number') String? licenseNumber,
     String? bio,
     @JsonKey(name: 'specialization', fromJson: _specializationsFromJson)
@@ -55,7 +54,6 @@ List<String> _specializationsFromJson(dynamic value) {
   if (value is List) return value.map((e) => e.toString()).toList();
   if (value is String) {
     if (value.startsWith('{') && value.endsWith('}')) {
-      // Handle PostgreSQL array format if it comes as a string
       return value
           .substring(1, value.length - 1)
           .split(',')

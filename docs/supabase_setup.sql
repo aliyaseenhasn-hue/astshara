@@ -139,14 +139,16 @@ CREATE TRIGGER on_auth_user_created AFTER INSERT ON auth.users FOR EACH ROW EXEC
 
 CREATE OR REPLACE FUNCTION public.is_admin()
 RETURNS boolean AS $$
+DECLARE
+  admin_role boolean;
 BEGIN
-  -- استخدام بيانات JWT لتجنب الاستعلام المتكرر من نفس الجدول (Recursion)
-  RETURN COALESCE(
-    (current_setting('request.jwt.claims', true)::jsonb -> 'user_metadata' ->> 'role') = 'admin',
-    false
-  );
+  SELECT (role = 'admin') INTO admin_role 
+  FROM public.profiles 
+  WHERE id = auth.uid();
+  
+  RETURN COALESCE(admin_role, false);
 END;
-$$ LANGUAGE plpgsql STABLE SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- دالة حذف حساب المستخدم نهائياً
 CREATE OR REPLACE FUNCTION public.delete_user_account()
@@ -200,22 +202,9 @@ ALTER TABLE public.reviews ENABLE ROW LEVEL SECURITY;
 
 -- Policies for Profiles
 DROP POLICY IF EXISTS "Public Lawyers" ON public.profiles;
+CREATE POLICY "Public Lawyers" ON public.profiles FOR SELECT USING (role = 'lawyer' OR auth.uid() = id OR auth.uid() = auth_id OR is_admin());
 DROP POLICY IF EXISTS "Self Manage" ON public.profiles;
-DROP POLICY IF EXISTS "Profiles_Select_Lawyers" ON public.profiles;
-DROP POLICY IF EXISTS "Profiles_Individual_Manage" ON public.profiles;
-DROP POLICY IF EXISTS "Profiles_Admin_All" ON public.profiles;
-
--- السماح برؤية المحامين للجميع
-CREATE POLICY "Profiles_Select_Lawyers" ON public.profiles
-FOR SELECT USING (role = 'lawyer');
-
--- السماح للمستخدم بإدارة ملفه الشخصي
-CREATE POLICY "Profiles_Individual_Manage" ON public.profiles
-FOR ALL USING (auth.uid() = id);
-
--- السماح للأدمن بالوصول الكامل
-CREATE POLICY "Profiles_Admin_All" ON public.profiles
-FOR ALL USING (is_admin());
+CREATE POLICY "Self Manage" ON public.profiles FOR ALL USING (auth.uid() = id OR auth.uid() = auth_id);
 
 -- Policies for Lawyer Profiles
 -- العملاء يرون المحامين الموثقين فقط، والمحامي يرى ملفه، والأدمن يرى الكل
@@ -232,9 +221,9 @@ CREATE POLICY "Admin Manage All" ON public.lawyer_profiles FOR ALL USING (is_adm
 DROP POLICY IF EXISTS "Access Own Bookings" ON public.bookings;
 CREATE POLICY "Access Own Bookings" ON public.bookings 
 FOR ALL USING (
-  auth.uid() = user_id OR
-  auth.uid() = lawyer_id OR
-  is_admin()
+  (user_id = (SELECT id FROM public.profiles WHERE id = auth.uid() LIMIT 1)) OR
+  (lawyer_id = (SELECT id FROM public.profiles WHERE id = auth.uid() LIMIT 1)) OR
+  EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin')
 );
 
 -- Policies for Reviews

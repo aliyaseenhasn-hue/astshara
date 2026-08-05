@@ -13,17 +13,16 @@ class LawyersRepositoryImpl implements LawyersRepository {
   Future<List<LawyerProfile>> getLawyers() async {
     final response = await _supabase
         .from('lawyer_profiles')
-        .select('*, profiles(full_name, avatar_url)')
+        .select('*, profiles(full_name, avatar_url, city)')
         .eq('verified', true)
+        .eq('availability', true)
         .order('rating', ascending: false)
         .order('review_count', ascending: false);
-
 
     return (response as List).map((json) {
       final model = LawyerProfileModel.fromJson(json);
       final profileData = json['profiles'];
 
-      // معالجة مرنة للـ Join (سواء كان كائن أو قائمة)
       Map<String, dynamic>? profile;
       if (profileData is List && profileData.isNotEmpty) {
         profile = profileData.first as Map<String, dynamic>;
@@ -70,11 +69,9 @@ class LawyersRepositoryImpl implements LawyersRepository {
       debugPrint('⚖️ Updating lawyer profile for: ${profile.profileId}');
       await _supabase.from('lawyer_profiles').upsert({
         'profile_id': profile.profileId,
-        // 'full_name': profile.fullName, // Removed redundant field causing 400 error
         'license_number': profile.licenseNumber,
         'bio': profile.bio,
-        'specialization': profile.specializations
-            .join(','), // Joined as string to match TEXT column
+        'specialization': profile.specializations.join(','),
         'years_experience': profile.yearsExperience,
         'consultation_price': profile.consultationPrice,
         'whatsapp': profile.whatsapp,

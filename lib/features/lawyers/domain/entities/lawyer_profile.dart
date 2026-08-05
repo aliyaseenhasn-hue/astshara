@@ -10,7 +10,7 @@ class LawyerProfile with _$LawyerProfile {
     String? fullName,
     String? licenseNumber,
     String? bio,
-    @Default([]) List<String> specializations, // تم التغيير إلى قائمة
+    @Default([]) List<String> specializations,
     int? yearsExperience,
     double? consultationPrice,
     String? whatsapp,

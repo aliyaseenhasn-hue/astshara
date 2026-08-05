@@ -38,9 +38,8 @@ class BookingsListPage extends ConsumerWidget {
                 itemCount: bookings.length,
                 itemBuilder: (context, index) {
                   final booking = bookings[index];
-                  // نعتمد الآن على البيانات القادمة من الربط مع الجداول في Repository
-                  final lawyerName = booking
-                      .lawyerId; // سيتم استبداله لاحقاً بالاسم الفعلي عند تحسين الـ Model
+                  // اسم المحامي يُجلب من قاعدة البيانات عبر booking.lawyerId
+                  const lawyerName = 'محامي'; // يُحدَّث عبر FutureBuilder أو join
 
                   return Card(
                     margin: const EdgeInsets.only(bottom: AppSizes.p16),

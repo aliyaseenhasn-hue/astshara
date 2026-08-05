@@ -58,8 +58,6 @@ class PaymentManagementPage extends ConsumerWidget {
                           Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 16),
                             child: InkWell(
-                              onTap: () =>
-                                  _showFullImage(context, payment.receiptUrl!),
                               child: Container(
                                 height: 100,
                                 width: double.infinity,

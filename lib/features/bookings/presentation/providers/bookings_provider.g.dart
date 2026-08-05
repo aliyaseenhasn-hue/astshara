@@ -25,7 +25,7 @@ final bookingsRepositoryProvider =
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
 typedef BookingsRepositoryRef = AutoDisposeProviderRef<BookingsRepository>;
-String _$userBookingsHash() => r'ff621c7af531946ffbc5bd336897316aa33a54a3';
+String _$userBookingsHash() => r'1f732a5d5875cf60857994ea8a922cd288420310';
 
 /// See also [userBookings].
 @ProviderFor(userBookings)
@@ -41,7 +41,7 @@ final userBookingsProvider = AutoDisposeFutureProvider<List<Booking>>.internal(
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
 typedef UserBookingsRef = AutoDisposeFutureProviderRef<List<Booking>>;
-String _$lawyerBookingsHash() => r'61508b35404007cb58da551638b5c62188a0dbac';
+String _$lawyerBookingsHash() => r'6a31a2664c17adc0c4f2103df5b6f8426610c4f6';
 
 /// See also [lawyerBookings].
 @ProviderFor(lawyerBookings)
@@ -60,7 +60,7 @@ final lawyerBookingsProvider =
 // ignore: unused_element
 typedef LawyerBookingsRef = AutoDisposeFutureProviderRef<List<Booking>>;
 String _$bookingsControllerHash() =>
-    r'2f13e731a2693e43758802ddb6548be0cd288ffb';
+    r'ae789d0ffda5e333dedea1e5ac6f6f5f404184ec';
 
 /// See also [BookingsController].
 @ProviderFor(BookingsController)

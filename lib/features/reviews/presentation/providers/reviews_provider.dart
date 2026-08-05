@@ -24,7 +24,7 @@ class ReviewController extends _$ReviewController {
 
   Future<void> submitReview({
     required String bookingId,
-    required String lawyerId,
+    required String lawyerId, // profiles.id للمحامي
     required double rating,
     required String comment,
   }) async {
@@ -33,13 +33,21 @@ class ReviewController extends _$ReviewController {
       final user = ref.read(authStateChangesProvider).value;
       if (user == null) return;
 
-      final profileId = user.id;
+      // user.id = auth.uid() — نجلب profiles.id
+      final profileRow = await SupabaseConfig.client
+          .from('profiles')
+          .select('id')
+          .eq('auth_id', user.id)
+          .maybeSingle();
+
+      if (profileRow == null) throw Exception('Profile not found');
+      final userProfileId = profileRow['id'] as String;
 
       final review = Review(
         id: '',
         bookingId: bookingId,
-        userId: profileId,
-        lawyerId: lawyerId,
+        userId: userProfileId, // ← profiles.id وليس auth.uid()
+        lawyerId: lawyerId,    // ← profiles.id للمحامي (يأتي صحيحاً من LawyerProfile)
         rating: rating,
         comment: comment,
       );

@@ -112,9 +112,7 @@ class _SignupPageState extends ConsumerState<SignupPage> {
                     child: RadioListTile<String>(
                       title: const Text('عميل'),
                       value: 'user',
-                      // ignore: deprecated_member_use
                       groupValue: _selectedRole,
-                      // ignore: deprecated_member_use
                       onChanged: (val) =>
                           setState(() => _selectedRole = val ?? 'user'),
                     ),
@@ -123,9 +121,7 @@ class _SignupPageState extends ConsumerState<SignupPage> {
                     child: RadioListTile<String>(
                       title: const Text('محامي'),
                       value: 'lawyer',
-                      // ignore: deprecated_member_use
                       groupValue: _selectedRole,
-                      // ignore: deprecated_member_use
                       onChanged: (val) =>
                           setState(() => _selectedRole = val ?? 'lawyer'),
                     ),

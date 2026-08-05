@@ -21,8 +21,7 @@ mixin _$LawyerProfile {
   String? get fullName => throw _privateConstructorUsedError;
   String? get licenseNumber => throw _privateConstructorUsedError;
   String? get bio => throw _privateConstructorUsedError;
-  List<String> get specializations =>
-      throw _privateConstructorUsedError; // تم التغيير إلى قائمة
+  List<String> get specializations => throw _privateConstructorUsedError;
   int? get yearsExperience => throw _privateConstructorUsedError;
   double? get consultationPrice => throw _privateConstructorUsedError;
   String? get whatsapp => throw _privateConstructorUsedError;
@@ -320,7 +319,6 @@ class _$LawyerProfileImpl implements _LawyerProfile {
     return EqualUnmodifiableListView(_specializations);
   }
 
-// تم التغيير إلى قائمة
   @override
   final int? yearsExperience;
   @override
@@ -440,7 +438,7 @@ abstract class _LawyerProfile implements LawyerProfile {
   @override
   String? get bio;
   @override
-  List<String> get specializations; // تم التغيير إلى قائمة
+  List<String> get specializations;
   @override
   int? get yearsExperience;
   @override

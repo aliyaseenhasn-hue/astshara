@@ -10,38 +10,43 @@ class AdminStats extends _$AdminStats {
     final client = SupabaseConfig.client;
 
     try {
-      // جلب إحصائيات دقيقة باستخدام طول المصفوفة لضمان التوافق مع كافة الإصدارات
-
+      // جلب إجمالي المستخدمين (جلب المعرفات فقط لتقليل البيانات)
       final usersRes = await client.from('profiles').select('id');
       final totalUsers = (usersRes as List).length;
 
+      // جلب إجمالي المحامين الموثقين
       final lawyersRes = await client
           .from('lawyer_profiles')
           .select('id')
           .eq('verified', true);
       final totalLawyers = (lawyersRes as List).length;
 
+      // جلب طلبات التوثيق المعلقة
       final pendingVerificationsRes = await client
           .from('lawyer_profiles')
           .select('id')
           .eq('verified', false);
       final pendingVerifications = (pendingVerificationsRes as List).length;
 
+      // جلب الحجوزات النشطة
       final activeBookingsRes =
           await client.from('bookings').select('id').eq('status', 'confirmed');
       final activeBookings = (activeBookingsRes as List).length;
 
-      final pendingPaymentsRes =
-          await client.from('payments').select('id').eq('status', 'pending');
-      final pendingPaymentsCount = (pendingPaymentsRes as List).length;
-
-      // جلب مجموع الإيرادات
-      final revenueRes =
-          await client.from('payments').select('amount').eq('status', 'paid');
+      // جلب مجموع الإيرادات والدفعات المعلقة
+      final paymentsRes =
+          await client.from('payments').select('amount, status');
 
       double totalRevenue = 0;
-      for (final row in (revenueRes as List)) {
-        totalRevenue += (row['amount'] as num?)?.toDouble() ?? 0;
+      int pendingPaymentsCount = 0;
+
+      final paymentsList = paymentsRes as List;
+      for (final row in paymentsList) {
+        if (row['status'] == 'paid' || row['status'] == 'verified') {
+          totalRevenue += (row['amount'] as num?)?.toDouble() ?? 0;
+        } else if (row['status'] == 'pending') {
+          pendingPaymentsCount++;
+        }
       }
 
       return {
@@ -53,6 +58,7 @@ class AdminStats extends _$AdminStats {
         'pending_payments': pendingPaymentsCount,
       };
     } catch (e) {
+      print('Error fetching admin stats: $e');
       rethrow;
     }
   }

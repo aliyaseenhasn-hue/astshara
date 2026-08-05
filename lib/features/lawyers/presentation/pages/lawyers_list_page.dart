@@ -198,7 +198,7 @@ class LawyersListPage extends ConsumerWidget {
         ],
       ),
       bottomNavigationBar: Container(
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           border: Border(
               top: BorderSide(color: AppColors.surfaceVariant, width: 1)),
         ),
@@ -380,7 +380,7 @@ class _LawyerCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    '${lawyer.specializations.isNotEmpty ? lawyer.specializations.join("، ") : "قانون عام"} · بغداد',
+                    '${(lawyer.specialization as List<String>?)?.join('، ') ?? "قانون عام"} · بغداد',
                     style: const TextStyle(
                         fontSize: 11,
                         color: AppColors.accent,

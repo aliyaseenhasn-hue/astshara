@@ -34,7 +34,6 @@ class AuthRepositoryImpl implements AuthRepository {
     if (user == null) return null;
 
     try {
-      // 1. جلب بيانات البروفايل الأساسية باستخدام auth_id
       final profileResponse = await _supabase
           .from('profiles')
           .select()
@@ -53,7 +52,6 @@ class AuthRepositoryImpl implements AuthRepository {
         );
       }
 
-      // 2. التحقق من حالة التوثيق في جدول lawyer_profiles إذا كان المستخدم محامياً
       bool isVerified = false;
       bool hasProfessionalProfile = false;
 
@@ -62,7 +60,6 @@ class AuthRepositoryImpl implements AuthRepository {
           (roleValue is String) ? roleValue : (roleValue?.toString() ?? 'user');
 
       if (roleStr == 'lawyer') {
-        // نستخدم profiles.id للبحث في lawyer_profiles
         final profileId = profileResponse['id'] as String;
         final lawyerResponse = await _supabase
             .from('lawyer_profiles')
@@ -77,12 +74,7 @@ class AuthRepositoryImpl implements AuthRepository {
       }
 
       final appUser = AppUserModel.fromJson(profileResponse).toEntity();
-
-      // قراءة القيمة الفعلية من DB
       final bool isOnboarded = profileResponse['onboarding_completed'] == true;
-
-      debugPrint(
-          'DB Profile: ${profileResponse['full_name']}, Onboarding Status: $isOnboarded');
 
       return appUser.copyWith(
         isVerified: isVerified,
@@ -131,7 +123,6 @@ class AuthRepositoryImpl implements AuthRepository {
 
   @override
   Future<void> signInWithPhone(String phone) async {
-    // التأكد من تنسيق الرقم العراقي
     String formattedPhone = phone.trim().replaceAll(' ', '');
     if (!formattedPhone.startsWith('+')) {
       formattedPhone = '+$formattedPhone';
@@ -146,12 +137,6 @@ class AuthRepositoryImpl implements AuthRepository {
           ? 'https://aliyaseenhasn-hue.github.io/astshara/'
           : 'io.supabase.astshara://login-callback';
 
-      if (kDebugMode) {
-        debugPrint(
-          'Starting Google OAuth with redirect URL: $redirectUrl',
-        );
-      }
-
       await _supabase.auth.signInWithOAuth(
         OAuthProvider.google,
         redirectTo: redirectUrl,
@@ -159,19 +144,11 @@ class AuthRepositoryImpl implements AuthRepository {
           'prompt': 'select_account',
         },
       );
-
-      if (kDebugMode) {
-        debugPrint('Google OAuth request started successfully.');
-      }
     } on AuthException catch (e) {
-      if (kDebugMode) {
-        debugPrint('Google OAuth AuthException: ${e.message}');
-      }
+      debugPrint('Google OAuth AuthException: ${e.message}');
       rethrow;
     } catch (e) {
-      if (kDebugMode) {
-        debugPrint('Unexpected Google OAuth error: $e');
-      }
+      debugPrint('Unexpected Google OAuth error: $e');
       rethrow;
     }
   }
@@ -199,8 +176,6 @@ class AuthRepositoryImpl implements AuthRepository {
     }
 
     final data = <String, dynamic>{};
-
-    // إضافة البيانات فقط إذا كانت غير فارغة
     if (fullName != null && fullName.trim().isNotEmpty) {
       data['full_name'] = fullName.trim();
     }
@@ -213,24 +188,13 @@ class AuthRepositoryImpl implements AuthRepository {
     if (avatarUrl != null && avatarUrl.trim().isNotEmpty) {
       data['avatar_url'] = avatarUrl.trim();
     }
-
-    // تفعيل إرسال onboarding_completed
     if (onboardingCompleted != null) {
       data['onboarding_completed'] = onboardingCompleted;
     }
 
-    // تأكد أن هناك بيانات للتحديث
-    if (data.isEmpty) {
-      debugPrint('⚠️ لا توجد بيانات للتحديث');
-      return;
-    }
-
-    debugPrint('📝 بيانات التحديث المرسلة: $data');
-    debugPrint('🔑 معرف المصادقة: ${user.id}');
+    if (data.isEmpty) return;
 
     try {
-      // استخدام upsert بدلاً من update لضمان وجود السجل حتى لو فشل الـ Trigger
-      // مع التأكد من أن id = auth_id حسب سياسة توحيد المعرفات
       await _supabase.from('profiles').upsert({
         ...data,
         'auth_id': user.id,
@@ -238,9 +202,6 @@ class AuthRepositoryImpl implements AuthRepository {
         'updated_at': DateTime.now().toIso8601String(),
       }, onConflict: 'auth_id');
 
-      debugPrint('✅ تم تحديث/إنشاء الملف الشخصي بنجاح');
-
-      // بثّ الحالة المحدثة للمستخدم
       await refreshUser();
     } on PostgrestException catch (e) {
       debugPrint('❌ خطأ Supabase: ${e.message}');
@@ -251,7 +212,6 @@ class AuthRepositoryImpl implements AuthRepository {
     }
   }
 
-  // بثّ حالة المستخدم المحدثة بعد تعديل البروفايل
   Future<void> refreshUser() async {
     final user = _supabase.auth.currentUser;
     if (user == null) return;
@@ -263,16 +223,12 @@ class AuthRepositoryImpl implements AuthRepository {
     final user = _supabase.auth.currentUser;
     if (user == null) return;
 
-    // حذف سجل البروفايل باستخدام auth_id
     await _supabase.from('profiles').delete().eq('auth_id', user.id);
-
-    // استدعاء دالة RPC لحذف المستخدم من سجلات المصادقة نهائياً
     try {
       await _supabase.rpc('delete_user_account');
     } catch (e) {
       debugPrint('RPC delete failed: $e');
     }
-
     await signOut();
   }
 

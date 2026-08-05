@@ -80,7 +80,7 @@ class LawyerDetailsPage extends ConsumerWidget {
                     right: 0,
                     child: Container(
                       padding: const EdgeInsets.all(16),
-                      decoration: const BoxDecoration(
+                      decoration: BoxDecoration(
                         color: Colors.white,
                         border: Border(
                             top: BorderSide(
@@ -194,7 +194,7 @@ class LawyerDetailsPage extends ConsumerWidget {
             children: [
               _buildBadge('✓ موثق'),
               _buildBadge(
-                  '⚖️ ${lawyer.specializations.isNotEmpty ? lawyer.specializations.first : "جنائي"}'),
+                  '⚖️ ${lawyer.specializations.isNotEmpty ? lawyer.specializations.join("، ") : "جنائي"}'),
               _buildBadge('📍 بغداد'),
             ],
           ),

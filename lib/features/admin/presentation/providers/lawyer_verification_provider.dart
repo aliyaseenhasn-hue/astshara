@@ -84,14 +84,14 @@ class LawyerVerification extends _$LawyerVerification {
   }
 
   Future<void> _sendNotification({
-    required String profileId,
+    required String profileId, // هذا profiles.id (صحيح)
     required String title,
     required String body,
   }) async {
     try {
-      // نرسل الإشعار مباشرة باستخدام profileId الذي هو أصلاً profiles.id
+      // profileId هنا = lawyer_profiles.profile_id = profiles.id — مباشر
       await SupabaseConfig.client.from('notifications').insert({
-        'user_id': profileId,
+        'user_id': profileId, // profiles.id مباشرة
         'title': title,
         'body': body,
         'type': 'system',

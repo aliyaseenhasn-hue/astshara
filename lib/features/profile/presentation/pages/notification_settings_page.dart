@@ -67,9 +67,7 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
     return RadioListTile<String>(
       title: Text(title),
       value: value,
-      // ignore: deprecated_member_use
       groupValue: _selectedSound,
-      // ignore: deprecated_member_use
       onChanged: (val) => val != null ? _saveSound(val) : null,
       activeColor: AppColors.primary,
     );
