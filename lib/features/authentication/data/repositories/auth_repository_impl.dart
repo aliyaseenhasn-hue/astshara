@@ -139,13 +139,10 @@ class AuthRepositoryImpl implements AuthRepository {
     await _supabase.auth.signInWithOtp(phone: formattedPhone);
   }
 
-  static const String _googleOAuthRedirectUrl =
-      'io.supabase.astshara://login-callback';
-
   @override
   Future<void> signInWithGoogle() async {
     try {
-      final String redirectUrl = kIsWeb
+      const String redirectUrl = kIsWeb
           ? 'https://aliyaseenhasn-hue.github.io/astshara/'
           : 'io.supabase.astshara://login-callback';
 

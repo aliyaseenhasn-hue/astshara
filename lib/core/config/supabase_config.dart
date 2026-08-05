@@ -64,9 +64,8 @@ class SupabaseConfig {
       await Supabase.initialize(
         url: url,
         anonKey: publishableKey,
-        authFlowType: AuthFlowType.pkce,
       );
-      debugPrint('✅ Supabase initialized successfully (using anonKey)');
+      debugPrint('✅ Supabase initialized successfully');
     } catch (e) {
       debugPrint('❌ Error initializing Supabase: $e');
       rethrow;
