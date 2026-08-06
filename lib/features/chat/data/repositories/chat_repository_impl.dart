@@ -15,12 +15,15 @@ class ChatRepositoryImpl implements ChatRepository {
         .select()
         .eq('conversation_id', conversationId)
         .order('created_at', ascending: true);
-    
-    return (response as List).map((json) => MessageModel.fromJson(json).toEntity()).toList();
+
+    return (response as List)
+        .map((json) => MessageModel.fromJson(json).toEntity())
+        .toList();
   }
 
   @override
-  Future<void> sendMessage(String conversationId, String senderId, String content) async {
+  Future<void> sendMessage(
+      String conversationId, String senderId, String content) async {
     await _supabase.from('messages').insert({
       'conversation_id': conversationId,
       'sender_id': senderId,
@@ -35,6 +38,42 @@ class ChatRepositoryImpl implements ChatRepository {
         .stream(primaryKey: ['id'])
         .eq('conversation_id', conversationId)
         .order('created_at', ascending: true)
-        .map((data) => data.map((json) => MessageModel.fromJson(json).toEntity()).toList());
+        .map((data) => data
+            .map((json) => MessageModel.fromJson(json).toEntity())
+            .toList());
+  }
+
+  @override
+  Future<String?> getOtherPartyName(
+      String conversationId, String currentAuthId) async {
+    try {
+      final conversation = await _supabase
+          .from('conversations')
+          .select('user_id, lawyer_id')
+          .eq('id', conversationId)
+          .single();
+
+      final currentProfileRow = await _supabase
+          .from('profiles')
+          .select('id')
+          .eq('auth_id', currentAuthId)
+          .single();
+
+      final String currentProfileId = currentProfileRow['id'];
+
+      final String otherPartyId = (conversation['user_id'] == currentProfileId)
+          ? conversation['lawyer_id']
+          : conversation['user_id'];
+
+      final otherProfile = await _supabase
+          .from('profiles')
+          .select('full_name')
+          .eq('id', otherPartyId)
+          .single();
+
+      return otherProfile['full_name'] as String?;
+    } catch (e) {
+      return null;
+    }
   }
 }

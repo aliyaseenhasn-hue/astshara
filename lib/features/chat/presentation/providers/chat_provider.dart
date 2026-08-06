@@ -1,4 +1,5 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:astshara/core/config/supabase_config.dart';
 import '../../../authentication/presentation/providers/auth_provider.dart';
 import '../../data/repositories/chat_repository_impl.dart';
@@ -17,6 +18,16 @@ Stream<List<Message>> chatMessages(ChatMessagesRef ref, String conversationId) {
   return ref.watch(chatRepositoryProvider).subscribeToMessages(conversationId);
 }
 
+final chatOtherPartyNameProvider =
+    FutureProvider.family<String?, String>((ref, conversationId) async {
+  final authState = ref.watch(authStateChangesProvider).value;
+  if (authState == null) return null;
+
+  return ref
+      .read(chatRepositoryProvider)
+      .getOtherPartyName(conversationId, authState.id);
+});
+
 @riverpod
 class ChatController extends _$ChatController {
   @override
@@ -26,7 +37,6 @@ class ChatController extends _$ChatController {
     final user = ref.read(authStateChangesProvider).value;
     if (user == null) return;
 
-    // user.id = auth.uid() — messages.sender_id يشير إلى profiles.id
     final profileRow = await SupabaseConfig.client
         .from('profiles')
         .select('id')
@@ -38,7 +48,7 @@ class ChatController extends _$ChatController {
 
     await ref.read(chatRepositoryProvider).sendMessage(
           conversationId,
-          senderProfileId, // ← profiles.id وليس auth.uid()
+          senderProfileId,
           content,
         );
   }

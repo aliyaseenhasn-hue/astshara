@@ -1,24 +1,34 @@
-import 'package:freezed_annotation/freezed_annotation.dart';
 import '../../domain/entities/message.dart';
 
-part 'message_model.freezed.dart';
-part 'message_model.g.dart';
+class MessageModel {
+  final String id;
+  final String conversationId;
+  final String senderId;
+  final String content;
+  final bool isRead;
+  final DateTime? createdAt;
 
-@freezed
-class MessageModel with _$MessageModel {
-  const MessageModel._();
+  const MessageModel({
+    required this.id,
+    required this.conversationId,
+    required this.senderId,
+    required this.content,
+    required this.isRead,
+    this.createdAt,
+  });
 
-  const factory MessageModel({
-    required String id,
-    @JsonKey(name: 'conversation_id') required String conversationId,
-    @JsonKey(name: 'sender_id') required String senderId,
-    required String content,
-    @JsonKey(name: 'is_read') @Default(false) bool isRead,
-    @JsonKey(name: 'created_at') DateTime? createdAt,
-  }) = _MessageModel;
-
-  factory MessageModel.fromJson(Map<String, dynamic> json) =>
-      _$MessageModelFromJson(json);
+  factory MessageModel.fromJson(Map<String, dynamic> json) {
+    return MessageModel(
+      id: json['id'] as String? ?? '',
+      conversationId: json['conversation_id'] as String? ?? '',
+      senderId: json['sender_id'] as String? ?? '',
+      content: json['content'] as String? ?? '',
+      isRead: json['is_read'] as bool? ?? false,
+      createdAt: json['created_at'] != null
+          ? DateTime.parse(json['created_at'] as String)
+          : null,
+    );
+  }
 
   Message toEntity() => Message(
         id: id,

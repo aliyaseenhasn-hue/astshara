@@ -18,6 +18,17 @@ Stream<AppUser?> authStateChanges(AuthStateChangesRef ref) {
   return ref.watch(authRepositoryProvider).authStateChanges();
 }
 
+final currentProfileIdProvider = FutureProvider<String?>((ref) async {
+  final user = ref.watch(authStateChangesProvider).value;
+  if (user == null) return null;
+  final response = await SupabaseConfig.client
+      .from('profiles')
+      .select('id')
+      .eq('auth_id', user.id)
+      .maybeSingle();
+  return response?['id'] as String?;
+});
+
 @riverpod
 class AuthController extends _$AuthController {
   @override

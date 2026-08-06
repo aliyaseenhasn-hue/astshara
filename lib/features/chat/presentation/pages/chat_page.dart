@@ -1,3 +1,4 @@
+import 'package:intl/intl.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/constants/app_colors.dart';
@@ -30,7 +31,7 @@ class _ChatPageState extends ConsumerState<ChatPage> {
             _messageController.text.trim(),
           );
       _messageController.clear();
-      setState(() {}); // لتحديث أيقونة الإرسال
+      setState(() {});
     }
   }
 
@@ -38,26 +39,33 @@ class _ChatPageState extends ConsumerState<ChatPage> {
   Widget build(BuildContext context) {
     final messagesAsync =
         ref.watch(chatMessagesProvider(widget.conversationId));
-    final currentUser = ref.watch(authStateChangesProvider).value;
+    final otherPartyNameAsync =
+        ref.watch(chatOtherPartyNameProvider(widget.conversationId));
+    final currentProfileIdAsync = ref.watch(currentProfileIdProvider);
 
     return Scaffold(
       appBar: AppBar(
         titleSpacing: 0,
-        title: const Row(
+        title: Row(
           children: [
-            CircleAvatar(
+            const CircleAvatar(
               radius: 18,
               backgroundColor: AppColors.surfaceVariant,
               child: Icon(Icons.person, size: 20, color: AppColors.primary),
             ),
-            SizedBox(width: 10),
+            const SizedBox(width: 10),
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('أحمد العبيدي',
-                    style:
-                        TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                Row(
+                Text(
+                  otherPartyNameAsync.maybeWhen(
+                    data: (name) => name ?? 'محادثة',
+                    orElse: () => '...',
+                  ),
+                  style: const TextStyle(
+                      fontSize: 16, fontWeight: FontWeight.bold),
+                ),
+                const Row(
                   children: [
                     CircleAvatar(radius: 3, backgroundColor: Colors.green),
                     SizedBox(width: 4),
@@ -88,9 +96,14 @@ class _ChatPageState extends ConsumerState<ChatPage> {
                   itemCount: messages.length,
                   itemBuilder: (context, index) {
                     final msg = messages[index];
-                    final isMe = msg.senderId == currentUser?.id;
+                    final isMe = msg.senderId == currentProfileIdAsync.value;
+
                     return _MessageBubble(
-                        message: msg.content, isMe: isMe, time: '10:00 ص');
+                        message: msg.content,
+                        isMe: isMe,
+                        time: msg.createdAt != null
+                            ? DateFormat('HH:mm').format(msg.createdAt!)
+                            : '...');
                   },
                 ),
                 loading: () => const LoadingWidget(),
@@ -114,34 +127,35 @@ class _ChatPageState extends ConsumerState<ChatPage> {
       child: SafeArea(
         child: Row(
           children: [
-            Container(
-              decoration: BoxDecoration(
-                color: AppColors.background,
-                borderRadius: BorderRadius.circular(24),
-              ),
-              child: Row(
-                children: [
-                  IconButton(
-                      onPressed: () {},
-                      icon: const Icon(Icons.attach_file,
-                          color: AppColors.outline)),
-                  SizedBox(
-                    width: MediaQuery.of(context).size.width * 0.6,
-                    child: TextField(
-                      controller: _messageController,
-                      onChanged: (v) => setState(() {}),
-                      maxLines: null,
-                      decoration: const InputDecoration(
-                        hintText: 'اكتب رسالتك هنا...',
-                        border: InputBorder.none,
-                        contentPadding: EdgeInsets.symmetric(horizontal: 8),
+            Expanded(
+              child: Container(
+                decoration: BoxDecoration(
+                  color: AppColors.background,
+                  borderRadius: BorderRadius.circular(24),
+                ),
+                child: Row(
+                  children: [
+                    IconButton(
+                        onPressed: () {},
+                        icon: const Icon(Icons.attach_file,
+                            color: AppColors.outline)),
+                    Expanded(
+                      child: TextField(
+                        controller: _messageController,
+                        onChanged: (v) => setState(() {}),
+                        maxLines: null,
+                        decoration: const InputDecoration(
+                          hintText: 'اكتب رسالتك هنا...',
+                          border: InputBorder.none,
+                          contentPadding: EdgeInsets.symmetric(horizontal: 8),
+                        ),
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
-            const Spacer(),
+            const SizedBox(width: 12),
             CircleAvatar(
               backgroundColor: AppColors.primary,
               radius: 22,
@@ -174,7 +188,7 @@ class _MessageBubble extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Column(
         crossAxisAlignment:
-            isMe ? CrossAxisAlignment.start : CrossAxisAlignment.end,
+            isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
         children: [
           Container(
             padding: const EdgeInsets.all(12),
@@ -185,8 +199,8 @@ class _MessageBubble extends StatelessWidget {
               borderRadius: BorderRadius.only(
                 topLeft: const Radius.circular(16),
                 topRight: const Radius.circular(16),
-                bottomLeft: isMe ? Radius.zero : const Radius.circular(16),
-                bottomRight: isMe ? const Radius.circular(16) : Radius.zero,
+                bottomLeft: isMe ? const Radius.circular(16) : Radius.zero,
+                bottomRight: isMe ? Radius.zero : const Radius.circular(16),
               ),
               boxShadow: [
                 if (!isMe)
