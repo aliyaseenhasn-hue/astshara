@@ -84,11 +84,14 @@ class ChatRepositoryImpl implements ChatRepository {
   Future<String?> getOtherPartyName(
       String conversationId, String currentAuthId) async {
     try {
+      // إصلاح: استخدام maybeSingle بدل single لتجنب exception
       final conversation = await _supabase
           .from('conversations')
           .select('user_id, lawyer_id')
           .eq('id', conversationId)
-          .single();
+          .maybeSingle();
+
+      if (conversation == null) return null;
 
       final currentProfileRow = await _supabase
           .from('profiles')
@@ -102,16 +105,13 @@ class ChatRepositoryImpl implements ChatRepository {
       final String? userId = conversation['user_id'] as String?;
       final String? lawyerId = conversation['lawyer_id'] as String?;
 
-      // تحديد هوية الطرف الآخر ودوره
       String? otherPartyId;
       bool otherPartyIsLawyer = false;
 
       if (currentProfileId == userId) {
-        // المستخدم الحالي هو الموكّل → الطرف الآخر محامٍ
         otherPartyId = lawyerId;
         otherPartyIsLawyer = true;
       } else if (currentProfileId == lawyerId) {
-        // المستخدم الحالي هو المحامي → الطرف الآخر موكّل
         otherPartyId = userId;
         otherPartyIsLawyer = false;
       } else {
@@ -123,16 +123,16 @@ class ChatRepositoryImpl implements ChatRepository {
       String? name;
 
       if (otherPartyIsLawyer) {
-        // البحث في جدول lawyers أولاً
+        // إصلاح: الجدول الصحيح هو lawyer_profiles وليس lawyers
         final lawyerRow = await _supabase
-            .from('lawyers')
+            .from('lawyer_profiles')
             .select('full_name')
             .eq('profile_id', otherPartyId)
             .maybeSingle();
 
         name = lawyerRow?['full_name'] as String?;
 
-        // إذا لم يوجد → البحث في profiles
+        // fallback: البحث في profiles
         if (name == null) {
           final profileRow = await _supabase
               .from('profiles')
@@ -145,7 +145,6 @@ class ChatRepositoryImpl implements ChatRepository {
         if (name == null) return null;
         return 'المحامي / $name';
       } else {
-        // البحث في profiles
         final profileRow = await _supabase
             .from('profiles')
             .select('full_name')
