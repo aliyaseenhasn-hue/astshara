@@ -9,8 +9,6 @@ class AppTheme {
     final baseTheme = ThemeData(
       useMaterial3: true,
       brightness: Brightness.light,
-      // توحيد المنصة لضمان تطابق الخطوط والسلوكيات (اختياري، لكن يضمن التوحيد)
-      platform: TargetPlatform.android,
       colorScheme: ColorScheme.fromSeed(
         seedColor: AppColors.primary,
         primary: AppColors.primary,
@@ -19,6 +17,8 @@ class AppTheme {
         error: AppColors.error,
         outline: AppColors.outline,
         onSurface: AppColors.textPrimary,
+        onPrimary: Colors.white,
+        brightness: Brightness.light,
       ),
       scaffoldBackgroundColor: AppColors.background,
       dividerColor: AppColors.divider,
@@ -35,11 +35,12 @@ class AppTheme {
         ),
       ),
       cardTheme: CardThemeData(
-        color: AppColors.surface,
-        elevation: 0, // تقليل الظلال لأسلوب مسطح وعصري موحد
+        color: AppColors.surface, // أبيض دائماً
+        elevation: 0,
+        shadowColor: Colors.transparent,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(_borderRadius),
-          side: const BorderSide(color: AppColors.surfaceVariant, width: 1.5),
+          side: const BorderSide(color: AppColors.outline, width: 1),
         ),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
@@ -54,7 +55,7 @@ class AppTheme {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
-          elevation: 0, // زر مسطح وأكثر وضوحاً في الويب
+          elevation: 0,
         ),
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
@@ -107,6 +108,7 @@ class AppTheme {
           color: AppColors.textSecondary,
         ),
         iconColor: AppColors.primary,
+        tileColor: AppColors.surface,
       ),
     );
 
