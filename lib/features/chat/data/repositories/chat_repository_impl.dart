@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../domain/entities/message.dart';
 import '../../domain/repositories/chat_repository.dart';
@@ -33,14 +34,50 @@ class ChatRepositoryImpl implements ChatRepository {
 
   @override
   Stream<List<Message>> subscribeToMessages(String conversationId) {
-    return _supabase
-        .from('messages')
-        .stream(primaryKey: ['id'])
-        .eq('conversation_id', conversationId)
-        .order('created_at', ascending: true)
-        .map((data) => data
+    late final StreamController<List<Message>> controller;
+    RealtimeChannel? channel;
+
+    Future<void> fetchAndEmit() async {
+      try {
+        final data = await _supabase
+            .from('messages')
+            .select()
+            .eq('conversation_id', conversationId)
+            .order('created_at', ascending: true);
+        final messages = (data as List)
             .map((json) => MessageModel.fromJson(json).toEntity())
-            .toList());
+            .toList();
+        if (!controller.isClosed) controller.add(messages);
+      } catch (e) {
+        if (!controller.isClosed) controller.addError(e);
+      }
+    }
+
+    controller = StreamController<List<Message>>(
+      onListen: () async {
+        await fetchAndEmit();
+        channel = _supabase
+            .channel('messages:$conversationId')
+            .onPostgresChanges(
+              event: PostgresChangeEvent.all,
+              schema: 'public',
+              table: 'messages',
+              filter: PostgresChangeFilter(
+                type: PostgresChangeFilterType.eq,
+                column: 'conversation_id',
+                value: conversationId,
+              ),
+              callback: (_) => fetchAndEmit(),
+            )
+            .subscribe();
+      },
+      onCancel: () async {
+        await channel?.unsubscribe();
+        await controller.close();
+      },
+    );
+
+    return controller.stream;
   }
 
   @override
@@ -57,21 +94,42 @@ class ChatRepositoryImpl implements ChatRepository {
           .from('profiles')
           .select('id')
           .eq('auth_id', currentAuthId)
-          .single();
+          .maybeSingle();
 
-      final String currentProfileId = currentProfileRow['id'];
+      if (currentProfileRow == null) return null;
 
-      final String otherPartyId = (conversation['user_id'] == currentProfileId)
-          ? conversation['lawyer_id']
-          : conversation['user_id'];
+      final String currentProfileId = currentProfileRow['id'] as String;
+      final String? userId = conversation['user_id'] as String?;
+      final String? lawyerId = conversation['lawyer_id'] as String?;
+
+      String? otherPartyId;
+      if (currentProfileId == userId) {
+        otherPartyId = lawyerId;
+      } else if (currentProfileId == lawyerId) {
+        otherPartyId = userId;
+      } else {
+        return null;
+      }
+
+      if (otherPartyId == null) return null;
 
       final otherProfile = await _supabase
           .from('profiles')
           .select('full_name')
           .eq('id', otherPartyId)
-          .single();
+          .maybeSingle();
 
-      return otherProfile['full_name'] as String?;
+      if (otherProfile != null && otherProfile['full_name'] != null) {
+        return otherProfile['full_name'] as String;
+      }
+
+      final lawyerProfile = await _supabase
+          .from('lawyers')
+          .select('full_name')
+          .eq('profile_id', otherPartyId)
+          .maybeSingle();
+
+      return lawyerProfile?['full_name'] as String?;
     } catch (e) {
       return null;
     }
