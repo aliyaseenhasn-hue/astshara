@@ -61,7 +61,8 @@ jobs:
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
         run: |
           set -euo pipefail
-          flutter build web --release --base-href "/astshara/" \
+          flutter build web --release --web-renderer canvaskit --base-href "/astshara/" \
+
             --dart-define=SUPABASE_URL="$SUPABASE_URL" \
             --dart-define=SUPABASE_ANON_KEY="$SUPABASE_ANON_KEY"
 
