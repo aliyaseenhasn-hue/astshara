@@ -102,34 +102,60 @@ class ChatRepositoryImpl implements ChatRepository {
       final String? userId = conversation['user_id'] as String?;
       final String? lawyerId = conversation['lawyer_id'] as String?;
 
+      // تحديد هوية الطرف الآخر ودوره
       String? otherPartyId;
+      bool otherPartyIsLawyer = false;
+
       if (currentProfileId == userId) {
+        // المستخدم الحالي هو الموكّل → الطرف الآخر محامٍ
         otherPartyId = lawyerId;
+        otherPartyIsLawyer = true;
       } else if (currentProfileId == lawyerId) {
+        // المستخدم الحالي هو المحامي → الطرف الآخر موكّل
         otherPartyId = userId;
+        otherPartyIsLawyer = false;
       } else {
         return null;
       }
 
       if (otherPartyId == null) return null;
 
-      final otherProfile = await _supabase
-          .from('profiles')
-          .select('full_name')
-          .eq('id', otherPartyId)
-          .maybeSingle();
+      String? name;
 
-      if (otherProfile != null && otherProfile['full_name'] != null) {
-        return otherProfile['full_name'] as String;
+      if (otherPartyIsLawyer) {
+        // البحث في جدول lawyers أولاً
+        final lawyerRow = await _supabase
+            .from('lawyers')
+            .select('full_name')
+            .eq('profile_id', otherPartyId)
+            .maybeSingle();
+
+        name = lawyerRow?['full_name'] as String?;
+
+        // إذا لم يوجد → البحث في profiles
+        if (name == null) {
+          final profileRow = await _supabase
+              .from('profiles')
+              .select('full_name')
+              .eq('id', otherPartyId)
+              .maybeSingle();
+          name = profileRow?['full_name'] as String?;
+        }
+
+        if (name == null) return null;
+        return 'المحامي / $name';
+      } else {
+        // البحث في profiles
+        final profileRow = await _supabase
+            .from('profiles')
+            .select('full_name')
+            .eq('id', otherPartyId)
+            .maybeSingle();
+
+        name = profileRow?['full_name'] as String?;
+        if (name == null) return null;
+        return 'موكّل / $name';
       }
-
-      final lawyerProfile = await _supabase
-          .from('lawyers')
-          .select('full_name')
-          .eq('profile_id', otherPartyId)
-          .maybeSingle();
-
-      return lawyerProfile?['full_name'] as String?;
     } catch (e) {
       return null;
     }
