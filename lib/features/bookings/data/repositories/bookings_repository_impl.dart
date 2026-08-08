@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../domain/entities/booking.dart';
 import '../../domain/repositories/bookings_repository.dart';
@@ -28,55 +27,32 @@ class BookingsRepositoryImpl implements BookingsRepository {
       'p_client_whatsapp': null,
     });
 
-    return BookingModel.fromJson(
-      Map<String, dynamic>.from(response as Map),
-    ).toEntity();
+    return BookingModel.fromJson(Map<String, dynamic>.from(response as Map)).toEntity();
   }
 
   @override
   Future<String> uploadDocument(dynamic fileBytes, String fileName) async {
     final user = _supabase.auth.currentUser;
     if (user == null) throw Exception('المستخدم غير مسجل دخول');
-
     final filePath = '${user.id}/docs/$fileName';
     await _supabase.storage.from('lawyer_documents').uploadBinary(
-          filePath,
-          fileBytes,
-          fileOptions: const FileOptions(upsert: true),
-        );
-    return await _supabase.storage
-        .from('lawyer_documents')
-        .createSignedUrl(filePath, 31536000);
+      filePath,
+      fileBytes,
+      fileOptions: const FileOptions(upsert: true),
+    );
+    return _supabase.storage.from('lawyer_documents').createSignedUrl(filePath, 31536000);
   }
 
   @override
   Future<List<Booking>> getUserBookings(String userId) async {
-    final response = await _supabase
-        .from('bookings')
-        .select()
-        .eq('user_id', userId)
-        .order('created_at', ascending: false);
-
-    return (response as List)
-        .map((json) => BookingModel.fromJson(
-              Map<String, dynamic>.from(json as Map),
-            ).toEntity())
-        .toList();
+    final response = await _supabase.from('bookings').select().eq('user_id', userId).order('created_at', ascending: false);
+    return (response as List).map((json) => BookingModel.fromJson(Map<String, dynamic>.from(json as Map)).toEntity()).toList();
   }
 
   @override
   Future<List<Booking>> getLawyerBookings(String lawyerId) async {
-    final response = await _supabase
-        .from('bookings')
-        .select()
-        .eq('lawyer_id', lawyerId)
-        .order('created_at', ascending: false);
-
-    return (response as List)
-        .map((json) => BookingModel.fromJson(
-              Map<String, dynamic>.from(json as Map),
-            ).toEntity())
-        .toList();
+    final response = await _supabase.from('bookings').select().eq('lawyer_id', lawyerId).order('created_at', ascending: false);
+    return (response as List).map((json) => BookingModel.fromJson(Map<String, dynamic>.from(json as Map)).toEntity()).toList();
   }
 
   @override
@@ -85,5 +61,14 @@ class BookingsRepositoryImpl implements BookingsRepository {
       'p_booking_id': bookingId,
       'p_new_status': status,
     });
+  }
+
+  @override
+  Future<Booking> reviewBooking(String bookingId, bool approved) async {
+    final response = await _supabase.rpc('review_booking', params: {
+      'p_booking_id': bookingId,
+      'p_approved': approved,
+    });
+    return BookingModel.fromJson(Map<String, dynamic>.from(response as Map)).toEntity();
   }
 }
