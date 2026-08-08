@@ -12,7 +12,6 @@ BookingsRepository bookingsRepository(BookingsRepositoryRef ref) {
   return BookingsRepositoryImpl(SupabaseConfig.client);
 }
 
-/// جلب profiles.id من auth.uid() — لأن bookings تستخدم profiles.id وليس auth.uid()
 Future<String?> _getProfileId(String authUid) async {
   final row = await SupabaseConfig.client
       .from('profiles')
@@ -26,7 +25,6 @@ Future<String?> _getProfileId(String authUid) async {
 Future<List<Booking>> userBookings(UserBookingsRef ref) async {
   final user = ref.watch(authStateChangesProvider).value;
   if (user == null) return [];
-  // user.id = auth.uid() — نحتاج profiles.id
   final profileId = await _getProfileId(user.id);
   if (profileId == null) return [];
   return ref.watch(bookingsRepositoryProvider).getUserBookings(profileId);
@@ -42,11 +40,10 @@ Future<List<Booking>> lawyerBookings(LawyerBookingsRef ref) async {
 }
 
 final bookingDetailsProvider =
-    FutureProvider.family<Map<String, dynamic>?, String>(
-        (ref, bookingId) async {
+    FutureProvider.family<Map<String, dynamic>?, String>((ref, bookingId) async {
   final response = await SupabaseConfig.client
       .from('bookings')
-      .select('consultation_type, description, document_url, whatsapp_number')
+      .select('consultation_type, description, document_url, package_name, package_description, package_duration_minutes')
       .eq('id', bookingId)
       .maybeSingle();
   return response;
@@ -57,23 +54,21 @@ class BookingsController extends _$BookingsController {
   @override
   FutureOr<void> build() {}
 
-  Future<void> requestBooking({
+  Future<Booking?> requestBooking({
     required String lawyerId,
     required DateTime scheduledAt,
-    required double price,
-    String? consultationType,
+    required String packageName,
+    required String consultationType,
     String? description,
     dynamic documentBytes,
     String? documentName,
-    String? whatsappNumber,
   }) async {
     state = const AsyncLoading();
+    Booking? createdBooking;
+
     state = await AsyncValue.guard(() async {
       final user = ref.read(authStateChangesProvider).value;
-      if (user == null) throw Exception('User not logged in');
-
-      final userProfileId = await _getProfileId(user.id);
-      if (userProfileId == null) throw Exception('Profile not found');
+      if (user == null) throw Exception('يجب تسجيل الدخول أولاً');
 
       final repo = ref.read(bookingsRepositoryProvider);
       String? documentUrl;
@@ -82,22 +77,19 @@ class BookingsController extends _$BookingsController {
         documentUrl = await repo.uploadDocument(documentBytes, documentName);
       }
 
-      final booking = Booking(
-        id: '',
-        userId: userProfileId,
+      createdBooking = await repo.createBooking(
         lawyerId: lawyerId,
         scheduledAt: scheduledAt,
-        price: price,
-      );
-
-      await repo.createBooking(
-        booking,
+        packageName: packageName,
         consultationType: consultationType,
         description: description,
         documentUrl: documentUrl,
-        whatsappNumber: whatsappNumber,
       );
+
       ref.invalidate(userBookingsProvider);
     });
+
+    if (state.hasError) return null;
+    return createdBooking;
   }
 }
