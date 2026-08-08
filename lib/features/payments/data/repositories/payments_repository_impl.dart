@@ -1,3 +1,4 @@
+import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../domain/entities/payment.dart';
@@ -11,13 +12,11 @@ class PaymentsRepositoryImpl implements PaymentsRepository {
 
   @override
   Future<void> createPayment(Payment payment) async {
-    await _supabase.from('payments').insert({
-      'booking_id': payment.bookingId,
-      'amount': payment.amount,
-      'payment_method': payment.paymentMethod,
-      'transaction_number': payment.transactionNumber,
-      'receipt_url': payment.receiptUrl,
-      'status': payment.status,
+    await _supabase.rpc('submit_payment', params: {
+      'p_booking_id': payment.bookingId,
+      'p_payment_method': payment.paymentMethod,
+      'p_transaction_number': payment.transactionNumber,
+      'p_receipt_url': payment.receiptUrl,
     });
   }
 
@@ -27,16 +26,12 @@ class PaymentsRepositoryImpl implements PaymentsRepository {
     if (user == null) throw Exception('المستخدم غير مسجل دخول');
 
     final filePath = '${user.id}/$fileName';
-
     try {
       debugPrint('جاري رفع إيصال الدفع: $filePath');
       await _supabase.storage.from('receipts').uploadBinary(
             filePath,
             bytes,
-            fileOptions: const FileOptions(
-              contentType: 'image/jpeg',
-              upsert: true,
-            ),
+            fileOptions: const FileOptions(contentType: 'image/jpeg', upsert: true),
           );
       return await _supabase.storage
           .from('receipts')
