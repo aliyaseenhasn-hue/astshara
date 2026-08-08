@@ -54,10 +54,9 @@ final availableSlotsProvider = FutureProvider.family<List<AvailableBookingSlot>,
 final bookingDetailsProvider = FutureProvider.family<Map<String, dynamic>?, String>((ref, bookingId) async {
   final booking = await SupabaseConfig.client.from('bookings').select('user_id, consultation_type, description, document_url, package_name, package_description, package_duration_minutes').eq('id', bookingId).maybeSingle();
   if (booking == null) return null;
-
   final result = Map<String, dynamic>.from(booking);
-  final profile = await SupabaseConfig.client.from('profiles').select('full_name, name').eq('id', booking['user_id']).maybeSingle();
-  result['client_name'] = profile?['full_name'] ?? profile?['name'] ?? 'غير متوفر';
+  final profile = await SupabaseConfig.client.from('profiles').select('full_name').eq('id', booking['user_id']).maybeSingle();
+  result['client_name'] = profile?['full_name'] ?? 'غير متوفر';
   return result;
 });
 
