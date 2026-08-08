@@ -1,4 +1,5 @@
 import 'package:astshara/features/authentication/presentation/providers/auth_provider.dart';
+import 'package:astshara/features/lawyers/presentation/providers/lawyers_provider.dart';
 import 'package:astshara/shared/widgets/main_bottom_nav.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
