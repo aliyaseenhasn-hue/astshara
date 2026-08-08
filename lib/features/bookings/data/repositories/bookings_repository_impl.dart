@@ -12,6 +12,7 @@ class BookingsRepositoryImpl implements BookingsRepository {
   Future<Booking> createBooking({
     required String lawyerId,
     required DateTime scheduledAt,
+    String? slotId,
     required String packageName,
     required String consultationType,
     String? description,
@@ -20,6 +21,7 @@ class BookingsRepositoryImpl implements BookingsRepository {
     final response = await _supabase.rpc('create_booking', params: {
       'p_lawyer_id': lawyerId,
       'p_scheduled_at': scheduledAt.toIso8601String(),
+      'p_slot_id': slotId,
       'p_package_name': packageName,
       'p_consultation_type': consultationType,
       'p_description': description,
@@ -35,8 +37,6 @@ class BookingsRepositoryImpl implements BookingsRepository {
     final user = _supabase.auth.currentUser;
     if (user == null) throw Exception('المستخدم غير مسجل دخول');
 
-    // استخدم اسماً فريداً حتى لا يعتمد رفع المستندات على UPDATE/overwrite
-    // عند اختيار ملف يحمل الاسم نفسه مرة أخرى.
     final safeFileName = fileName.replaceAll(RegExp(r'[^A-Za-z0-9._-]'), '_');
     final filePath = '${user.id}/docs/${DateTime.now().microsecondsSinceEpoch}_$safeFileName';
 
