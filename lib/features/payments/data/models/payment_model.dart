@@ -15,12 +15,11 @@ class PaymentModel with _$PaymentModel {
     @JsonKey(name: 'payment_method') required String paymentMethod,
     @JsonKey(name: 'transaction_number') String? transactionNumber,
     @JsonKey(name: 'receipt_url') String? receiptUrl,
-    @Default('pending') String status,
+    @Default('بانتظار الدفع') String status,
     @JsonKey(name: 'created_at') DateTime? createdAt,
   }) = _PaymentModel;
 
-  factory PaymentModel.fromJson(Map<String, dynamic> json) =>
-      _$PaymentModelFromJson(json);
+  factory PaymentModel.fromJson(Map<String, dynamic> json) => _$PaymentModelFromJson(json);
 
   Payment toEntity() => Payment(
         id: id,

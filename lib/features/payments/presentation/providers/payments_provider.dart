@@ -13,7 +13,6 @@ PaymentsRepository paymentsRepository(PaymentsRepositoryRef ref) {
   return PaymentsRepositoryImpl(SupabaseConfig.client);
 }
 
-// استخدام FutureProvider.family لتجنب مشاكل توليد الكود في البيئة الحالية
 final bookingPaymentProvider =
     FutureProvider.family<Payment?, String>((ref, bookingId) {
   return ref.watch(paymentsRepositoryProvider).getPaymentByBookingId(bookingId);
@@ -26,9 +25,8 @@ class PaymentsController extends _$PaymentsController {
 
   Future<void> submitPayment({
     required String bookingId,
-    required double amount,
     required String method,
-    String? transactionNumber,
+    required String transactionNumber,
     XFile? receiptFile,
   }) async {
     state = const AsyncLoading();
@@ -43,16 +41,18 @@ class PaymentsController extends _$PaymentsController {
         receiptUrl = await repository.uploadReceipt(bytes, fileName);
       }
 
-      final payment = Payment(
-        id: '',
-        bookingId: bookingId,
-        amount: amount,
-        paymentMethod: method,
-        transactionNumber: transactionNumber,
-        receiptUrl: receiptUrl,
+      await repository.createPayment(
+        Payment(
+          id: '',
+          bookingId: bookingId,
+          amount: 0,
+          paymentMethod: method,
+          transactionNumber: transactionNumber,
+          receiptUrl: receiptUrl,
+          status: 'قيد معالجة الدفع',
+        ),
       );
-
-      await repository.createPayment(payment);
+      ref.invalidate(bookingPaymentProvider(bookingId));
     });
   }
 }

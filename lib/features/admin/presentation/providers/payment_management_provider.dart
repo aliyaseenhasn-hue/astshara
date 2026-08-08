@@ -14,7 +14,7 @@ class PaymentManagement extends _$PaymentManagement {
     final response = await SupabaseConfig.client
         .from('payments')
         .select()
-        .eq('status', 'pending')
+        .eq('status', 'قيد معالجة الدفع')
         .order('created_at');
 
     return (response as List)
@@ -26,18 +26,16 @@ class PaymentManagement extends _$PaymentManagement {
     ref.read(globalLoadingProvider.notifier).setLoading(true);
     state = const AsyncLoading();
     state = await AsyncValue.guard(() async {
-      // 1. تحديث حالة الدفعة
+      // The database trigger validates the transition and confirms the booking.
       await SupabaseConfig.client
           .from('payments')
-          .update({'status': 'paid'}).eq('id', payment.id);
+          .update({'status': 'تم الدفع'})
+          .eq('id', payment.id);
 
-      // 2. تحديث حالة الحجز المرتبط ليكون مقبولاً
-      await SupabaseConfig.client
-          .from('bookings')
-          .update({'status': 'accepted'}).eq('id', payment.bookingId);
-
-      // 3. تحديث القوائم
       ref.invalidate(userBookingsProvider);
+      ref.invalidate(lawyerBookingsProvider);
+      ref.invalidate(bookingPaymentProvider(payment.bookingId));
+      ref.invalidate(bookingDetailsProvider(payment.bookingId));
       return build();
     });
     ref.read(globalLoadingProvider.notifier).setLoading(false);
@@ -47,10 +45,16 @@ class PaymentManagement extends _$PaymentManagement {
     ref.read(globalLoadingProvider.notifier).setLoading(true);
     state = const AsyncLoading();
     state = await AsyncValue.guard(() async {
+      // The database trigger moves the booking back to waiting for payment.
       await SupabaseConfig.client
           .from('payments')
-          .update({'status': 'rejected'}).eq('id', payment.id);
+          .update({'status': 'فشل الدفع'})
+          .eq('id', payment.id);
 
+      ref.invalidate(userBookingsProvider);
+      ref.invalidate(lawyerBookingsProvider);
+      ref.invalidate(bookingPaymentProvider(payment.bookingId));
+      ref.invalidate(bookingDetailsProvider(payment.bookingId));
       return build();
     });
     ref.read(globalLoadingProvider.notifier).setLoading(false);
