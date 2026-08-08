@@ -34,13 +34,21 @@ class BookingsRepositoryImpl implements BookingsRepository {
   Future<String> uploadDocument(dynamic fileBytes, String fileName) async {
     final user = _supabase.auth.currentUser;
     if (user == null) throw Exception('المستخدم غير مسجل دخول');
-    final filePath = '${user.id}/docs/$fileName';
+
+    // استخدم اسماً فريداً حتى لا يعتمد رفع المستندات على UPDATE/overwrite
+    // عند اختيار ملف يحمل الاسم نفسه مرة أخرى.
+    final safeFileName = fileName.replaceAll(RegExp(r'[^A-Za-z0-9._-]'), '_');
+    final filePath = '${user.id}/docs/${DateTime.now().microsecondsSinceEpoch}_$safeFileName';
+
     await _supabase.storage.from('lawyer_documents').uploadBinary(
       filePath,
       fileBytes,
-      fileOptions: const FileOptions(upsert: true),
+      fileOptions: const FileOptions(upsert: false),
     );
-    return _supabase.storage.from('lawyer_documents').createSignedUrl(filePath, 31536000);
+
+    return _supabase.storage
+        .from('lawyer_documents')
+        .createSignedUrl(filePath, 31536000);
   }
 
   @override
