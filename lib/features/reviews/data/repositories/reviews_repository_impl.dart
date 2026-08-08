@@ -9,8 +9,6 @@ class ReviewsRepositoryImpl implements ReviewsRepository {
 
   @override
   Future<void> addReview(Review review) async {
-    // review.userId و review.lawyerId يجب أن يكونا profiles.id (وليس auth.uid)
-    // التحقق يتم في reviews_provider قبل الاستدعاء
     await _supabase.from('reviews').insert({
       'booking_id': review.bookingId,
       'user_id': review.userId,
@@ -23,19 +21,19 @@ class ReviewsRepositoryImpl implements ReviewsRepository {
   @override
   Future<List<Review>> getLawyerReviews(String lawyerId) async {
     final response = await _supabase
-        .from('reviews')
-        .select()
+        .from('public_reviews')
+        .select('review_id,lawyer_id,rating,comment,created_at')
         .eq('lawyer_id', lawyerId)
         .order('created_at', ascending: false);
-    
+
     return (response as List).map((json) => Review(
-      id: json['id'],
-      bookingId: json['booking_id'],
-      userId: json['user_id'],
-      lawyerId: json['lawyer_id'],
+      id: json['review_id'] as String,
+      bookingId: '',
+      userId: '',
+      lawyerId: json['lawyer_id'] as String,
       rating: (json['rating'] as num).toDouble(),
-      comment: json['comment'],
-      createdAt: DateTime.parse(json['created_at']),
+      comment: json['comment'] as String? ?? '',
+      createdAt: DateTime.tryParse(json['created_at'].toString()),
     )).toList();
   }
 }
