@@ -12,12 +12,13 @@ class AppTheme {
       colorScheme: ColorScheme.fromSeed(
         seedColor: AppColors.primary,
         primary: AppColors.primary,
-        secondary: AppColors.secondary,
+        secondary: AppColors.gold,
         surface: AppColors.surface,
         error: AppColors.error,
         outline: AppColors.outline,
         onSurface: AppColors.textPrimary,
         onPrimary: AppColors.textOnPrimary,
+        onSecondary: AppColors.textOnPrimary,
         brightness: Brightness.light,
       ),
       scaffoldBackgroundColor: AppColors.background,
@@ -43,7 +44,7 @@ class AppTheme {
           borderRadius: BorderRadius.circular(_borderRadius),
           side: const BorderSide(color: AppColors.outline, width: 1),
         ),
-        margin: const EdgeInsets.symmetric(vertical: 6, horizontal: 0),
+        margin: const EdgeInsets.symmetric(vertical: 6),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ButtonStyle(
@@ -55,8 +56,17 @@ class AppTheme {
           foregroundColor: const WidgetStatePropertyAll(AppColors.textOnPrimary),
           overlayColor: const WidgetStatePropertyAll(Color(0x2296D9F5)),
           minimumSize: const WidgetStatePropertyAll(Size.fromHeight(54)),
-          textStyle: WidgetStatePropertyAll(GoogleFonts.ibmPlexSansArabic(fontWeight: FontWeight.bold, fontSize: 16)),
-          shape: WidgetStatePropertyAll(RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+          textStyle: WidgetStatePropertyAll(
+            GoogleFonts.ibmPlexSansArabic(
+              fontWeight: FontWeight.bold,
+              fontSize: 16,
+            ),
+          ),
+          shape: WidgetStatePropertyAll(
+            RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
           elevation: const WidgetStatePropertyAll(0),
           animationDuration: const Duration(milliseconds: 180),
         ),
@@ -64,10 +74,21 @@ class AppTheme {
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: ButtonStyle(
           foregroundColor: const WidgetStatePropertyAll(AppColors.primaryDark),
-          side: const WidgetStatePropertyAll(BorderSide(color: AppColors.primary, width: 1.5)),
+          side: const WidgetStatePropertyAll(
+            BorderSide(color: AppColors.primary, width: 1.5),
+          ),
           overlayColor: const WidgetStatePropertyAll(Color(0x2296D9F5)),
-          shape: WidgetStatePropertyAll(RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
-          textStyle: WidgetStatePropertyAll(GoogleFonts.ibmPlexSansArabic(fontWeight: FontWeight.bold, fontSize: 14)),
+          shape: WidgetStatePropertyAll(
+            RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+          textStyle: WidgetStatePropertyAll(
+            GoogleFonts.ibmPlexSansArabic(
+              fontWeight: FontWeight.bold,
+              fontSize: 14,
+            ),
+          ),
           animationDuration: const Duration(milliseconds: 180),
         ),
       ),
@@ -81,33 +102,297 @@ class AppTheme {
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: AppColors.surface,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.outline, width: 1)),
-        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.outline, width: 1)),
-        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.primary, width: 2)),
-        labelStyle: const TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w600),
-        hintStyle: GoogleFonts.ibmPlexSansArabic(color: AppColors.textSecondary, fontSize: 14),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 16,
+        ),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: AppColors.outline, width: 1),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: AppColors.outline, width: 1),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: AppColors.primary, width: 2),
+        ),
+        labelStyle: const TextStyle(
+          color: AppColors.textPrimary,
+          fontWeight: FontWeight.w600,
+        ),
+        hintStyle: GoogleFonts.ibmPlexSansArabic(
+          color: AppColors.textSecondary,
+          fontSize: 14,
+        ),
       ),
       listTileTheme: ListTileThemeData(
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        titleTextStyle: GoogleFonts.ibmPlexSansArabic(fontWeight: FontWeight.bold, fontSize: 15, color: AppColors.textPrimary),
-        subtitleTextStyle: GoogleFonts.ibmPlexSansArabic(fontSize: 12, color: AppColors.textSecondary),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 4,
+        ),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+        titleTextStyle: GoogleFonts.ibmPlexSansArabic(
+          fontWeight: FontWeight.bold,
+          fontSize: 15,
+          color: AppColors.textPrimary,
+        ),
+        subtitleTextStyle: GoogleFonts.ibmPlexSansArabic(
+          fontSize: 12,
+          color: AppColors.textSecondary,
+        ),
         iconColor: AppColors.primaryDark,
         tileColor: AppColors.surface,
       ),
+      progressIndicatorTheme: const ProgressIndicatorThemeData(
+        color: AppColors.primary,
+        linearTrackColor: AppColors.primaryLight,
+      ),
+      checkboxTheme: CheckboxThemeData(
+        fillColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) return AppColors.primary;
+          return Colors.transparent;
+        }),
+        checkColor: const WidgetStatePropertyAll(AppColors.textOnPrimary),
+      ),
+      radioTheme: RadioThemeData(
+        fillColor: const WidgetStatePropertyAll(AppColors.primary),
+      ),
+      switchTheme: SwitchThemeData(
+        thumbColor: WidgetStateProperty.resolveWith((states) {
+          return states.contains(WidgetState.selected)
+              ? AppColors.primary
+              : AppColors.textSecondary;
+        }),
+        trackColor: WidgetStateProperty.resolveWith((states) {
+          return states.contains(WidgetState.selected)
+              ? AppColors.primaryLight
+              : AppColors.outline;
+        }),
+      ),
     );
 
-    return baseTheme.copyWith(textTheme: GoogleFonts.ibmPlexSansArabicTextTheme(baseTheme.textTheme).apply(bodyColor: AppColors.textPrimary, displayColor: AppColors.textPrimary));
+    return baseTheme.copyWith(
+      textTheme: GoogleFonts.ibmPlexSansArabicTextTheme(
+        baseTheme.textTheme,
+      ).apply(
+        bodyColor: AppColors.textPrimary,
+        displayColor: AppColors.textPrimary,
+      ),
+    );
   }
 
   static ThemeData get dark {
+    const darkBackground = Color(0xFF0B121A);
+    const darkSurface = Color(0xFF121D28);
+    const darkSurfaceVariant = Color(0xFF1A2A38);
+    const darkOutline = Color(0xFF355064);
+    const darkTextPrimary = Color(0xFFF4F8FB);
+    const darkTextSecondary = Color(0xFFB7C7D3);
+
     final baseTheme = ThemeData(
       useMaterial3: true,
       brightness: Brightness.dark,
-      scaffoldBackgroundColor: const Color(0xFF0F1419),
-      colorScheme: ColorScheme.fromSeed(seedColor: AppColors.primary, brightness: Brightness.dark, primary: AppColors.primary, surface: const Color(0xFF15202B)),
+      scaffoldBackgroundColor: darkBackground,
+      dividerColor: const Color(0xFF233543),
+      splashFactory: InkRipple.splashFactory,
+      colorScheme: const ColorScheme.dark(
+        primary: AppColors.primary,
+        onPrimary: AppColors.textOnPrimary,
+        primaryContainer: Color(0xFF164A61),
+        onPrimaryContainer: AppColors.primaryLight,
+        secondary: AppColors.gold,
+        onSecondary: Color(0xFF2B250E),
+        secondaryContainer: Color(0xFF514719),
+        onSecondaryContainer: AppColors.goldLight,
+        surface: darkSurface,
+        onSurface: darkTextPrimary,
+        surfaceContainerHighest: darkSurfaceVariant,
+        onSurfaceVariant: darkTextSecondary,
+        outline: darkOutline,
+        error: AppColors.error,
+        onError: Colors.white,
+      ),
+      appBarTheme: AppBarTheme(
+        backgroundColor: darkBackground,
+        foregroundColor: darkTextPrimary,
+        elevation: 0,
+        centerTitle: true,
+        scrolledUnderElevation: 0,
+        iconTheme: const IconThemeData(color: AppColors.primaryLight),
+        titleTextStyle: GoogleFonts.ibmPlexSansArabic(
+          fontSize: 18,
+          fontWeight: FontWeight.bold,
+          color: darkTextPrimary,
+        ),
+      ),
+      cardTheme: CardThemeData(
+        color: darkSurface,
+        elevation: 0,
+        shadowColor: Colors.transparent,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(_borderRadius),
+          side: const BorderSide(color: darkOutline, width: 1),
+        ),
+        margin: const EdgeInsets.symmetric(vertical: 6),
+      ),
+      elevatedButtonTheme: ElevatedButtonThemeData(
+        style: ButtonStyle(
+          backgroundColor: WidgetStateProperty.resolveWith((states) {
+            if (states.contains(WidgetState.disabled)) {
+              return const Color(0xFF2A3945);
+            }
+            if (states.contains(WidgetState.pressed)) {
+              return AppColors.primaryDark;
+            }
+            return AppColors.primary;
+          }),
+          foregroundColor: const WidgetStatePropertyAll(AppColors.textOnPrimary),
+          overlayColor: const WidgetStatePropertyAll(Color(0x33FFFFFF)),
+          minimumSize: const WidgetStatePropertyAll(Size.fromHeight(54)),
+          textStyle: WidgetStatePropertyAll(
+            GoogleFonts.ibmPlexSansArabic(
+              fontWeight: FontWeight.bold,
+              fontSize: 16,
+            ),
+          ),
+          shape: WidgetStatePropertyAll(
+            RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+          elevation: const WidgetStatePropertyAll(0),
+        ),
+      ),
+      outlinedButtonTheme: OutlinedButtonThemeData(
+        style: ButtonStyle(
+          foregroundColor: const WidgetStatePropertyAll(AppColors.goldLight),
+          side: const WidgetStatePropertyAll(
+            BorderSide(color: AppColors.primary, width: 1.5),
+          ),
+          overlayColor: const WidgetStatePropertyAll(Color(0x335EC8F2)),
+          shape: WidgetStatePropertyAll(
+            RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+          textStyle: WidgetStatePropertyAll(
+            GoogleFonts.ibmPlexSansArabic(
+              fontWeight: FontWeight.bold,
+              fontSize: 14,
+            ),
+          ),
+        ),
+      ),
+      textButtonTheme: TextButtonThemeData(
+        style: ButtonStyle(
+          foregroundColor: const WidgetStatePropertyAll(AppColors.primaryLight),
+          overlayColor: const WidgetStatePropertyAll(Color(0x335EC8F2)),
+          textStyle: WidgetStatePropertyAll(
+            GoogleFonts.ibmPlexSansArabic(fontWeight: FontWeight.bold),
+          ),
+        ),
+      ),
+      inputDecorationTheme: InputDecorationTheme(
+        filled: true,
+        fillColor: darkSurface,
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 16,
+        ),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: darkOutline),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: darkOutline),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: AppColors.primary, width: 2),
+        ),
+        labelStyle: const TextStyle(
+          color: AppColors.goldLight,
+          fontWeight: FontWeight.w600,
+        ),
+        hintStyle: const TextStyle(
+          color: darkTextSecondary,
+          fontSize: 14,
+        ),
+        prefixIconColor: AppColors.primaryLight,
+        suffixIconColor: AppColors.primaryLight,
+      ),
+      listTileTheme: ListTileThemeData(
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 4,
+        ),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+        tileColor: darkSurface,
+        iconColor: AppColors.primaryLight,
+        titleTextStyle: GoogleFonts.ibmPlexSansArabic(
+          fontWeight: FontWeight.bold,
+          fontSize: 15,
+          color: darkTextPrimary,
+        ),
+        subtitleTextStyle: GoogleFonts.ibmPlexSansArabic(
+          fontSize: 12,
+          color: darkTextSecondary,
+        ),
+      ),
+      progressIndicatorTheme: const ProgressIndicatorThemeData(
+        color: AppColors.gold,
+        linearTrackColor: darkSurfaceVariant,
+      ),
+      checkboxTheme: CheckboxThemeData(
+        fillColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) return AppColors.primary;
+          return Colors.transparent;
+        }),
+        checkColor: const WidgetStatePropertyAll(AppColors.textOnPrimary),
+        side: const BorderSide(color: AppColors.primaryLight, width: 1.5),
+      ),
+      radioTheme: const RadioThemeData(
+        fillColor: WidgetStatePropertyAll(AppColors.primary),
+      ),
+      switchTheme: SwitchThemeData(
+        thumbColor: WidgetStateProperty.resolveWith((states) {
+          return states.contains(WidgetState.selected)
+              ? AppColors.gold
+              : darkTextSecondary;
+        }),
+        trackColor: WidgetStateProperty.resolveWith((states) {
+          return states.contains(WidgetState.selected)
+              ? const Color(0x66F4D06F)
+              : darkSurfaceVariant;
+        }),
+      ),
+      dividerTheme: const DividerThemeData(
+        color: Color(0xFF233543),
+        thickness: 1,
+      ),
+      iconTheme: const IconThemeData(
+        color: AppColors.primaryLight,
+      ),
+      floatingActionButtonTheme: const FloatingActionButtonThemeData(
+        backgroundColor: AppColors.gold,
+        foregroundColor: Color(0xFF2B250E),
+      ),
     );
-    return baseTheme.copyWith(textTheme: GoogleFonts.ibmPlexSansArabicTextTheme(baseTheme.textTheme));
+
+    return baseTheme.copyWith(
+      textTheme: GoogleFonts.ibmPlexSansArabicTextTheme(
+        baseTheme.textTheme,
+      ).apply(
+        bodyColor: darkTextPrimary,
+        displayColor: darkTextPrimary,
+      ),
+    );
   }
 }
