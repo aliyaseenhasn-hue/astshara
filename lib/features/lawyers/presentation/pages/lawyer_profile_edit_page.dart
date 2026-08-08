@@ -16,6 +16,7 @@ class LawyerProfileEditPage extends ConsumerStatefulWidget {
 class _LawyerProfileEditPageState extends ConsumerState<LawyerProfileEditPage> {
   final _formKey = GlobalKey<FormState>();
   final _bioController = TextEditingController();
+  final _differentConsultationPriceController = TextEditingController();
   late List<LawyerService> _services;
   bool _isLoading = false;
   String? _profileId;
@@ -23,13 +24,18 @@ class _LawyerProfileEditPageState extends ConsumerState<LawyerProfileEditPage> {
   @override
   void initState() { super.initState(); _services = []; _loadProfile(); }
   @override
-  void dispose() { _bioController.dispose(); super.dispose(); }
+  void dispose() { _bioController.dispose(); _differentConsultationPriceController.dispose(); super.dispose(); }
 
   Future<void> _loadProfile() async {
     final user = ref.read(authStateChangesProvider).value;
     if (user == null) return;
     final profile = await ref.read(lawyersRepositoryProvider).getLawyerProfile(user.id);
-    if (profile != null && mounted) setState(() { _services = List.from(profile.services); _bioController.text = profile.bio ?? ''; _profileId = profile.profileId; });
+    if (profile != null && mounted) setState(() {
+      _services = List.from(profile.services);
+      _bioController.text = profile.bio ?? '';
+      _differentConsultationPriceController.text = profile.consultationPrice.toStringAsFixed(0);
+      _profileId = profile.profileId;
+    });
   }
 
   void _addService() => setState(() => _services.add(const LawyerService(title: '', price: 0)));
@@ -38,6 +44,11 @@ class _LawyerProfileEditPageState extends ConsumerState<LawyerProfileEditPage> {
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
     _formKey.currentState!.save();
+    final differentPrice = double.tryParse(_differentConsultationPriceController.text.trim()) ?? 0;
+    if (differentPrice <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('يرجى تحديد سعر الاستشارة المختلفة بشكل صحيح'), backgroundColor: AppColors.error));
+      return;
+    }
     setState(() => _isLoading = true);
     try {
       final user = ref.read(authStateChangesProvider).value;
@@ -45,7 +56,11 @@ class _LawyerProfileEditPageState extends ConsumerState<LawyerProfileEditPage> {
       final repo = ref.read(lawyersRepositoryProvider);
       final profile = await repo.getLawyerProfile(user.id);
       if (profile == null) return;
-      await repo.updateLawyerProfile(profile.copyWith(bio: _bioController.text.trim(), services: _services));
+      await repo.updateLawyerProfile(profile.copyWith(
+        bio: _bioController.text.trim(),
+        services: _services,
+        consultationPrice: differentPrice,
+      ));
       ref.invalidate(lawyerProfileProvider(profile.profileId));
       if (mounted) { ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تم حفظ الملف الشخصي بنجاح'))); Navigator.pop(context); }
     } catch (e) {
@@ -55,7 +70,6 @@ class _LawyerProfileEditPageState extends ConsumerState<LawyerProfileEditPage> {
 
   @override
   Widget build(BuildContext context) {
-    final user = ref.watch(authStateChangesProvider).value;
     return Scaffold(
       appBar: AppBar(title: const Text('تعديل الملف الشخصي'), actions: [if (!_isLoading) IconButton(icon: const Icon(Icons.check), onPressed: _save)]),
       body: _isLoading ? const Center(child: CircularProgressIndicator()) : SingleChildScrollView(
@@ -66,6 +80,12 @@ class _LawyerProfileEditPageState extends ConsumerState<LawyerProfileEditPage> {
           TextFormField(controller: _bioController, maxLines: 6, maxLength: 1000, decoration: const InputDecoration(hintText: 'اكتب نبذة مهنية عن خبرتك وتخصصك والإنجازات التي تود تعريف العملاء بها...', border: OutlineInputBorder()), validator: (value) => value == null || value.trim().isEmpty ? 'السيرة الذاتية مطلوبة' : null),
           const SizedBox(height: 28),
           if (_profileId != null) ...[LawyerAchievementsGallery(lawyerId: _profileId!, editable: true), const SizedBox(height: 28)],
+          const Text('سعر الاستشارة المختلفة', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          const SizedBox(height: 8),
+          const Text('هذا هو السعر الذي سيدفعه العميل عند اختيار «استشارة مختلفة».', style: TextStyle(fontSize: 14, color: AppColors.textSecondary)),
+          const SizedBox(height: 12),
+          TextFormField(controller: _differentConsultationPriceController, decoration: const InputDecoration(labelText: 'السعر (د.ع)', hintText: 'مثلاً: 50000', border: OutlineInputBorder()), keyboardType: TextInputType.number, validator: (val) { final price = double.tryParse(val?.trim() ?? ''); return price == null || price <= 0 ? 'حدد سعرًا أكبر من صفر' : null; }),
+          const SizedBox(height: 28),
           const Text('باقات الاستشارة', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
           const SizedBox(height: 8),
           const Text('أضف باقات استشارية مخصصة لعملائك.', style: TextStyle(fontSize: 14, color: AppColors.textSecondary)),
