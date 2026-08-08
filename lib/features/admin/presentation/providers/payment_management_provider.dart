@@ -3,7 +3,6 @@ import '../../../../core/config/supabase_config.dart';
 import '../../../../shared/providers/global_loading_provider.dart';
 import '../../../payments/data/models/payment_model.dart';
 import '../../../payments/domain/entities/payment.dart';
-import '../../../bookings/presentation/providers/bookings_provider.dart';
 
 part 'payment_management_provider.g.dart';
 
@@ -14,7 +13,7 @@ class PaymentManagement extends _$PaymentManagement {
     final response = await SupabaseConfig.client
         .from('payments')
         .select()
-        .eq('status', 'pending')
+        .eq('status', 'قيد معالجة الدفع')
         .order('created_at');
 
     return (response as List)
@@ -26,18 +25,10 @@ class PaymentManagement extends _$PaymentManagement {
     ref.read(globalLoadingProvider.notifier).setLoading(true);
     state = const AsyncLoading();
     state = await AsyncValue.guard(() async {
-      // 1. تحديث حالة الدفعة
+      // قاعدة البيانات تتحقق من الدفع وتبقي الحجز بانتظار موافقة المحامي.
       await SupabaseConfig.client
           .from('payments')
-          .update({'status': 'paid'}).eq('id', payment.id);
-
-      // 2. تحديث حالة الحجز المرتبط ليكون مقبولاً
-      await SupabaseConfig.client
-          .from('bookings')
-          .update({'status': 'accepted'}).eq('id', payment.bookingId);
-
-      // 3. تحديث القوائم
-      ref.invalidate(userBookingsProvider);
+          .update({'status': 'تم الدفع'}).eq('id', payment.id);
       return build();
     });
     ref.read(globalLoadingProvider.notifier).setLoading(false);
@@ -49,8 +40,7 @@ class PaymentManagement extends _$PaymentManagement {
     state = await AsyncValue.guard(() async {
       await SupabaseConfig.client
           .from('payments')
-          .update({'status': 'rejected'}).eq('id', payment.id);
-
+          .update({'status': 'فشل الدفع'}).eq('id', payment.id);
       return build();
     });
     ref.read(globalLoadingProvider.notifier).setLoading(false);
