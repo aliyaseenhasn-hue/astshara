@@ -27,7 +27,7 @@ class BookingDetailsPage extends ConsumerWidget {
         : const AsyncValue.data(null);
     final canReview = isLawyer &&
         !booking.lawyerApproved &&
-        ['بانتظار التأكيد', 'قيد انتظار الدفع', 'قيد معالجة الدفع'].contains(booking.status);
+        ['قيد انتظار الدفع', 'قيد معالجة الدفع'].contains(booking.status);
 
     return Scaffold(
       appBar: AppBar(title: const Text('تفاصيل الاستشارة'), backgroundColor: AppColors.secondary, foregroundColor: Colors.white),
@@ -50,7 +50,7 @@ class BookingDetailsPage extends ConsumerWidget {
           _section('بيانات الحجز', Icons.calendar_month_outlined, detailsAsync.when(
             data: (d) => Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               _row('الباقة', d?['package_name'] ?? 'استشارة مختلفة'),
-              _row('طريقة الاستشارة', d?['consultation_type'] ?? 'غير محددة'),
+              _row('نوع الاستشارة', d?['consultation_type'] ?? 'غير محددة'),
               _row('التاريخ', DateFormat('yyyy-MM-dd').format(booking.scheduledAt)),
               _row('الوقت', DateFormat('HH:mm').format(booking.scheduledAt)),
               _row('المدة', '${d?['package_duration_minutes'] ?? 30} دقيقة'),
@@ -85,7 +85,7 @@ class BookingDetailsPage extends ConsumerWidget {
               padding: const EdgeInsets.all(14),
               margin: const EdgeInsets.only(bottom: 12),
               decoration: BoxDecoration(color: const Color(0xFF81C7F5).withValues(alpha: .10), borderRadius: BorderRadius.circular(12)),
-              child: const Text('هذا الطلب بانتظار مراجعتك. يرجى الموافقة أو رفض الطلب قبل بدء الاستشارة.', textAlign: TextAlign.center),
+              child: const Text('هذا الطلب بانتظار مراجعتك. يمكنك الموافقة أو رفض الطلب قبل بدء الاستشارة.', textAlign: TextAlign.center),
             ),
             Row(children: [
               Expanded(child: ElevatedButton.icon(onPressed: () => _reviewBooking(context, ref, true), icon: const Icon(Icons.check_circle_outline), label: const Text('الموافقة على الطلب'), style: _button(color: const Color(0xFF81C7F5)))),
@@ -103,7 +103,7 @@ class BookingDetailsPage extends ConsumerWidget {
   }
 
   Widget _statusHeader() {
-    final color = switch (booking.status) { 'بانتظار التأكيد' => Colors.orange, 'قيد انتظار الدفع' => Colors.orange, 'قيد معالجة الدفع' => Colors.blue, 'مؤكد' => AppColors.success, 'قيد التنفيذ' => AppColors.primary, 'مكتمل' => AppColors.success, 'ملغي' => AppColors.error, _ => Colors.grey };
+    final color = switch (booking.status) { 'قيد انتظار الدفع' => Colors.orange, 'قيد معالجة الدفع' => Colors.blue, 'مؤكد' => AppColors.success, 'قيد التنفيذ' => AppColors.primary, 'مكتمل' => AppColors.success, 'ملغي' => AppColors.error, _ => Colors.grey };
     return Container(padding: const EdgeInsets.all(14), decoration: BoxDecoration(color: color.withValues(alpha: .1), borderRadius: BorderRadius.circular(12)), child: Center(child: Text(booking.status, style: TextStyle(color: color, fontWeight: FontWeight.bold))));
   }
 
