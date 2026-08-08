@@ -17,6 +17,7 @@ import '../features/lawyers/presentation/pages/lawyer_pending_page.dart';
 import '../features/lawyers/presentation/pages/lawyer_dashboard_page.dart';
 import '../features/lawyers/presentation/pages/lawyer_profile_edit_page.dart';
 import '../features/lawyers/presentation/pages/lawyer_availability_page.dart';
+import '../features/lawyers/presentation/pages/custom_consultation_requests_page.dart';
 import '../features/bookings/presentation/pages/create_booking_page.dart';
 import '../features/bookings/presentation/pages/bookings_list_page.dart';
 import '../features/bookings/presentation/pages/booking_details_page.dart';
@@ -78,6 +79,7 @@ GoRouter router(RouterRef ref) {
       GoRoute(path: '/lawyer-home', builder: (context, state) => const LawyerDashboardPage()),
       GoRoute(path: '/lawyer-profile-edit', builder: (context, state) => const LawyerProfileEditPage()),
       GoRoute(path: '/lawyer-availability', builder: (context, state) => const LawyerAvailabilityPage()),
+      GoRoute(path: '/lawyer-custom-requests', builder: (context, state) => const CustomConsultationRequestsPage()),
       GoRoute(path: '/lawyer-setup', builder: (context, state) => const LawyerSetupPage()),
       GoRoute(path: '/lawyer-pending', builder: (context, state) => const LawyerPendingPage()),
       GoRoute(path: '/lawyer-details/:id', builder: (context, state) => LawyerDetailsPage(profileId: state.pathParameters['id']!)),
