@@ -11,7 +11,7 @@ class Payment with _$Payment {
     required String paymentMethod,
     String? transactionNumber,
     String? receiptUrl,
-    @Default('pending') String status,
+    @Default('قيد معالجة الدفع') String status,
     DateTime? createdAt,
   }) = _Payment;
 }
