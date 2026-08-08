@@ -3,7 +3,6 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/constants/app_colors.dart';
-import '../../../../core/constants/app_sizes.dart';
 import '../../../authentication/presentation/providers/auth_provider.dart';
 import '../../../lawyers/domain/entities/lawyer_profile.dart';
 import '../providers/bookings_provider.dart';
@@ -12,7 +11,6 @@ class CreateBookingPage extends ConsumerStatefulWidget {
   final LawyerProfile lawyer;
   final dynamic service;
   final bool isCustom;
-
   const CreateBookingPage({super.key, required this.lawyer, this.service, this.isCustom = false});
 
   @override
@@ -21,9 +19,10 @@ class CreateBookingPage extends ConsumerStatefulWidget {
 
 class _CreateBookingPageState extends ConsumerState<CreateBookingPage> {
   final _formKey = GlobalKey<FormState>();
-  DateTime _selectedDate = DateTime.now().add(const Duration(days: 1));
-  TimeOfDay _selectedTime = const TimeOfDay(hour: 10, minute: 0);
-  late String _consultationType;
+  int _step = 0;
+  LawyerService? _package;
+  String _consultationType = 'نصية';
+  DateTime? _slot;
   final _descriptionController = TextEditingController();
   Uint8List? _selectedFileBytes;
   String? _selectedFileName;
@@ -31,37 +30,25 @@ class _CreateBookingPageState extends ConsumerState<CreateBookingPage> {
   @override
   void initState() {
     super.initState();
-    _consultationType = widget.service != null ? widget.service.title : 'نصية';
+    _package = widget.service is LawyerService ? widget.service as LawyerService : null;
   }
 
   @override
   void dispose() { _descriptionController.dispose(); super.dispose(); }
 
-  Future<void> _selectDate(BuildContext context) async {
-    final picked = await showDatePicker(context: context, initialDate: _selectedDate, firstDate: DateTime.now(), lastDate: DateTime.now().add(const Duration(days: 30)));
-    if (picked != null) setState(() => _selectedDate = picked);
-  }
-
-  Future<void> _selectTime(BuildContext context) async {
-    final picked = await showTimePicker(context: context, initialTime: _selectedTime);
-    if (picked != null) setState(() => _selectedTime = picked);
-  }
-
   Future<void> _pickFile() async {
     final result = await FilePicker.platform.pickFiles(type: FileType.custom, allowedExtensions: ['pdf', 'jpg', 'png', 'docx'], withData: true);
-    if (result != null && result.files.first.bytes != null) {
-      setState(() { _selectedFileBytes = result.files.first.bytes; _selectedFileName = result.files.first.name; });
+    if (result?.files.first.bytes != null) {
+      setState(() { _selectedFileBytes = result!.files.first.bytes; _selectedFileName = result.files.first.name; });
     }
   }
 
   Future<void> _submit() async {
-    if (!(_formKey.currentState?.validate() ?? false)) return;
-    final scheduledAt = DateTime(_selectedDate.year, _selectedDate.month, _selectedDate.day, _selectedTime.hour, _selectedTime.minute);
-    final packageName = widget.service?.title ?? (widget.lawyer.services.isNotEmpty ? widget.lawyer.services.first.title : 'استشارة مخصصة');
+    if (_package == null || _slot == null || !(_formKey.currentState?.validate() ?? false)) return;
     final booking = await ref.read(bookingsControllerProvider.notifier).requestBooking(
       lawyerId: widget.lawyer.profileId,
-      scheduledAt: scheduledAt,
-      packageName: packageName,
+      scheduledAt: _slot!,
+      packageName: _package!.title,
       consultationType: _consultationType,
       description: _descriptionController.text.trim(),
       documentBytes: _selectedFileBytes,
@@ -70,66 +57,105 @@ class _CreateBookingPageState extends ConsumerState<CreateBookingPage> {
     if (!mounted) return;
     if (booking == null) {
       final error = ref.read(bookingsControllerProvider).error;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(error?.toString() ?? 'تعذر إرسال طلب الاستشارة'), backgroundColor: AppColors.error));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(error?.toString() ?? 'تعذر إنشاء الحجز'), backgroundColor: AppColors.error));
       return;
     }
     await showDialog<void>(
       context: context,
       barrierDismissible: false,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('تم إرسال طلب الاستشارة'),
-        content: const Text('تم إرسال طلبك إلى المحامي. سيظهر خيار الدفع بعد موافقته على الطلب.'),
+        title: const Text('تم إنشاء الحجز'),
+        content: const Text('الحجز الآن في حالة «قيد انتظار الدفع». أرسل الدفع من تفاصيل الحجز، ثم يبقى «قيد معالجة الدفع» حتى تعتمد الإدارة العملية.'),
         actions: [TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('حسنًا'))],
       ),
     );
     if (mounted) Navigator.pop(context);
   }
 
+  void _next() {
+    if (_step == 0 && _package == null) return;
+    if (_step == 1 && _consultationType.isEmpty) return;
+    if (_step == 2 && _slot == null) return;
+    if (_step < 3) setState(() => _step++); else _submit();
+  }
+
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(bookingsControllerProvider);
+    final slotsAsync = ref.watch(availableSlotsProvider(widget.lawyer.profileId));
     final user = ref.watch(authStateChangesProvider).value;
-    final price = widget.service?.price ?? (widget.lawyer.services.isNotEmpty ? widget.lawyer.services.first.price : widget.lawyer.consultationPrice ?? 0);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('طلب استشارة')),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(AppSizes.p20),
-        child: Form(
-          key: _formKey,
-          child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-            Text(widget.isCustom ? 'طلب استشارة مخصصة' : 'حجز باقة استشارية', style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppColors.primary)),
-            const SizedBox(height: 8),
-            Text('المحامي ${widget.lawyer.fullName}', style: const TextStyle(fontSize: 16, color: AppColors.secondary)),
-            const SizedBox(height: 24),
-            _buildSectionTitle('اسم العميل'),
-            TextFormField(initialValue: user?.fullName ?? '...', readOnly: true, decoration: InputDecoration(filled: true, fillColor: Colors.grey[100], border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)))),
-            const SizedBox(height: 20),
-            _buildSectionTitle('نوع الاستشارة'),
-            DropdownButtonFormField<String>(value: _consultationType, items: const ['نصية', 'صوتية', 'فيديو'].map((t) => DropdownMenuItem(value: t, child: Text(t))).toList(), onChanged: (val) => setState(() => _consultationType = val ?? 'نصية'), decoration: InputDecoration(border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)))),
-            const SizedBox(height: 20),
-            _buildSectionTitle('وصف الموضوع'),
-            TextFormField(controller: _descriptionController, maxLines: 4, decoration: InputDecoration(hintText: 'اشرح باختصار المشكلة القانونية...', border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))), validator: (val) => val == null || val.trim().isEmpty ? 'وصف الموضوع مطلوب' : null),
-            const SizedBox(height: 20),
-            _buildSectionTitle('مستندات إضافية (اختياري)'),
-            InkWell(onTap: _pickFile, child: Container(padding: const EdgeInsets.all(AppSizes.p16), decoration: BoxDecoration(color: AppColors.surfaceVariant.withValues(alpha: 0.3), borderRadius: BorderRadius.circular(12), border: Border.all(color: AppColors.outline)), child: Row(children: [const Icon(Icons.upload_file, color: AppColors.primary), const SizedBox(width: 12), Expanded(child: Text(_selectedFileName ?? 'اضغط لرفع مستندات أو صور تخص الموضوع'))]))),
-            const SizedBox(height: 24),
-            _buildSectionTitle('اختيار الموعد'),
-            Row(children: [Expanded(child: _buildPickerTile(label: 'التاريخ', value: '${_selectedDate.toLocal()}'.split(' ')[0], icon: Icons.calendar_today, onTap: () => _selectDate(context))), const SizedBox(width: 12), Expanded(child: _buildPickerTile(label: 'الوقت', value: _selectedTime.format(context), icon: Icons.access_time, onTap: () => _selectTime(context)))]),
-            const SizedBox(height: 32),
-            Container(padding: const EdgeInsets.all(20), decoration: BoxDecoration(color: AppColors.secondary, borderRadius: BorderRadius.circular(16)), child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text('رسوم الاستشارة:', style: TextStyle(color: Colors.white70)), Text('$price د.ع', style: const TextStyle(color: AppColors.gold, fontWeight: FontWeight.bold, fontSize: 18))])),
-            const SizedBox(height: 12),
-            const Text('سيتم إرسال الطلب إلى المحامي للموافقة. لن يتم طلب الدفع إلا بعد الموافقة، ولا يصبح الحجز مؤكدًا إلا بعد التحقق من الدفع.', textAlign: TextAlign.center, style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
-            const SizedBox(height: 24),
-            state.isLoading ? const Center(child: CircularProgressIndicator()) : ElevatedButton(onPressed: _submit, style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 18), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))), child: const Text('إرسال طلب الاستشارة', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold))),
-            const SizedBox(height: 40),
-          ]),
+      appBar: AppBar(title: const Text('حجز استشارة'), centerTitle: true),
+      body: Form(
+        key: _formKey,
+        child: Stepper(
+          currentStep: _step,
+          onStepContinue: state.isLoading ? null : _next,
+          onStepCancel: _step == 0 ? null : () => setState(() => _step--),
+          controlsBuilder: (context, details) => Padding(
+            padding: const EdgeInsets.only(top: 20),
+            child: Row(children: [
+              Expanded(child: ElevatedButton(onPressed: details.onStepContinue, child: Text(_step == 3 ? 'تأكيد الحجز' : 'متابعة'))),
+              if (_step > 0) ...[const SizedBox(width: 10), TextButton(onPressed: details.onStepCancel, child: const Text('رجوع'))],
+            ]),
+          ),
+          steps: [
+            Step(
+              title: const Text('اختيار الباقة'), isActive: _step >= 0,
+              content: widget.lawyer.services.isEmpty
+                  ? const Text('لا توجد باقات متاحة لهذا المحامي.')
+                  : DropdownButtonFormField<LawyerService>(
+                      value: _package,
+                      decoration: const InputDecoration(labelText: 'الباقة'),
+                      items: widget.lawyer.services.map((s) => DropdownMenuItem(value: s, child: Text('${s.title} — ${s.price} د.ع'))).toList(),
+                      onChanged: (value) => setState(() => _package = value),
+                    ),
+            ),
+            Step(
+              title: const Text('اختيار طريقة الاستشارة'), isActive: _step >= 1,
+              content: DropdownButtonFormField<String>(
+                value: _consultationType,
+                decoration: const InputDecoration(labelText: 'طريقة الاستشارة'),
+                items: const ['نصية', 'صوتية', 'فيديو'].map((t) => DropdownMenuItem(value: t, child: Text(t))).toList(),
+                onChanged: (value) => setState(() => _consultationType = value ?? 'نصية'),
+              ),
+            ),
+            Step(
+              title: const Text('اختيار الموعد المتاح فعليًا'), isActive: _step >= 2,
+              content: slotsAsync.when(
+                loading: () => const Center(child: CircularProgressIndicator()),
+                error: (e, _) => Text('تعذر تحميل المواعيد المتاحة: $e'),
+                data: (items) => items.isEmpty
+                    ? const Text('لا توجد مواعيد متاحة حاليًا لهذا المحامي.')
+                    : Wrap(spacing: 8, runSpacing: 8, children: items.map((slot) => ChoiceChip(
+                        label: Text('${slot.day}/${slot.month}  ${TimeOfDay.fromDateTime(slot).format(context)}'),
+                        selected: _slot == slot,
+                        onSelected: (_) => setState(() => _slot = slot),
+                      )).toList()),
+              ),
+            ),
+            Step(
+              title: const Text('مراجعة الحجز'), isActive: _step >= 3,
+              content: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+                Text('المحامي: ${widget.lawyer.fullName ?? 'محامي'}'),
+                Text('الباقة: ${_package?.title ?? '-'}'),
+                Text('طريقة الاستشارة: $_consultationType'),
+                Text('الموعد: ${_slot == null ? '-' : '${_slot!.day}/${_slot!.month}/${_slot!.year} ${TimeOfDay.fromDateTime(_slot!).format(context)}'}'),
+                Text('الرسوم: ${_package?.price ?? 0} د.ع'),
+                const SizedBox(height: 16),
+                TextFormField(controller: _descriptionController, maxLines: 4, decoration: const InputDecoration(labelText: 'وصف الموضوع'), validator: (v) => v == null || v.trim().isEmpty ? 'وصف الموضوع مطلوب' : null),
+                const SizedBox(height: 12),
+                OutlinedButton.icon(onPressed: _pickFile, icon: const Icon(Icons.upload_file), label: Text(_selectedFileName ?? 'إرفاق مستند (اختياري)')),
+                const SizedBox(height: 12),
+                Text('العميل: ${user?.fullName ?? 'المستخدم'}'),
+                const SizedBox(height: 12),
+                const Text('بعد التأكيد سيصبح الحجز «قيد انتظار الدفع». لا توجد موافقة من المحامي في هذه المرحلة؛ اعتماد الإدارة للدفع هو الذي ينقل الحجز إلى «مؤكد».', style: TextStyle(color: AppColors.textSecondary)),
+              ]),
+            ),
+          ],
         ),
       ),
     );
   }
-
-  Widget _buildSectionTitle(String title) => Padding(padding: const EdgeInsets.only(bottom: 12), child: Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.primary)));
-
-  Widget _buildPickerTile({required String label, required String value, required IconData icon, required VoidCallback onTap}) => Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(label, style: const TextStyle(fontSize: 12, color: AppColors.outline)), const SizedBox(height: 4), InkWell(onTap: onTap, child: Container(padding: const EdgeInsets.all(12), decoration: BoxDecoration(border: Border.all(color: AppColors.surfaceVariant), borderRadius: BorderRadius.circular(8)), child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [Text(value), Icon(icon, size: 18, color: AppColors.primary)])))]);
 }
