@@ -2,30 +2,50 @@ class LawyerService {
   final String title;
   final double price;
   final String? description;
+  final int durationMinutes;
+  final List<String> consultationTypes;
 
   const LawyerService({
     required this.title,
     required this.price,
     this.description,
+    this.durationMinutes = 30,
+    this.consultationTypes = const ['نصية', 'صوتية', 'فيديو'],
   });
 
   Map<String, dynamic> toJson() => {
         'title': title,
         'price': price,
         'description': description,
+        'duration_minutes': durationMinutes,
+        'consultation_types': consultationTypes,
       };
 
   factory LawyerService.fromJson(Map<String, dynamic> json) => LawyerService(
         title: json['title'] as String? ?? '',
         price: (json['price'] as num?)?.toDouble() ?? 0.0,
         description: json['description'] as String?,
+        durationMinutes: (json['duration_minutes'] as num?)?.toInt() ?? 30,
+        consultationTypes: (json['consultation_types'] as List?)
+                ?.map((e) => e.toString())
+                .where((e) => e.isNotEmpty)
+                .toList() ??
+            const ['نصية', 'صوتية', 'فيديو'],
       );
 
-  LawyerService copyWith({String? title, double? price, String? description}) =>
+  LawyerService copyWith({
+    String? title,
+    double? price,
+    String? description,
+    int? durationMinutes,
+    List<String>? consultationTypes,
+  }) =>
       LawyerService(
         title: title ?? this.title,
         price: price ?? this.price,
         description: description ?? this.description,
+        durationMinutes: durationMinutes ?? this.durationMinutes,
+        consultationTypes: consultationTypes ?? this.consultationTypes,
       );
 }
 
