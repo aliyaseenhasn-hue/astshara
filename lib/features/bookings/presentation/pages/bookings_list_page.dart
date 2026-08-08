@@ -9,7 +9,6 @@ import '../../../../shared/widgets/loading_widget.dart';
 import '../../../lawyers/presentation/providers/lawyers_provider.dart';
 import '../providers/bookings_provider.dart';
 import 'package:intl/intl.dart';
-import 'package:url_launcher/url_launcher.dart';
 import 'package:astshara/features/reviews/presentation/widgets/review_dialog.dart';
 
 class BookingsListPage extends ConsumerWidget {
@@ -19,150 +18,30 @@ class BookingsListPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final user = ref.watch(authStateChangesProvider).value;
     final isLawyer = user?.role == 'lawyer';
-
-    final bookingsAsync =
-        ref.watch(isLawyer ? lawyerBookingsProvider : userBookingsProvider);
+    final bookingsAsync = ref.watch(isLawyer ? lawyerBookingsProvider : userBookingsProvider);
 
     return Scaffold(
       backgroundColor: AppColors.background,
       body: bookingsAsync.when(
-        data: (bookings) => CustomScrollView(
-          slivers: [
-            SliverAppBar(
-              expandedHeight: 120,
-              pinned: true,
-              backgroundColor: AppColors.primary,
-              foregroundColor: Colors.white,
-              flexibleSpace: FlexibleSpaceBar(
-                title: Text(isLawyer ? 'طلبات الاستشارة' : 'استشاراتي',
-                    style: const TextStyle(
-                        color: Colors.white, fontWeight: FontWeight.bold)),
-                centerTitle: true,
-                background: Container(
-                  decoration: const BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: [AppColors.secondary, AppColors.secondaryDark],
-                    ),
-                  ),
-                ),
-              ),
-            ),
-            bookings.isEmpty
-                ? SliverFillRemaining(
-                    child: Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.calendar_today_outlined,
-                              size: 60,
-                              color: AppColors.outline.withValues(alpha: 0.5)),
-                          const SizedBox(height: 16),
-                          Text(
-                              isLawyer
-                                  ? 'لا توجد طلبات واردة حالياً'
-                                  : 'ليس لديك أي حجوزات حالياً',
-                              style: const TextStyle(color: AppColors.outline)),
-                        ],
-                      ),
-                    ),
-                  )
-                : SliverPadding(
-                    padding: const EdgeInsets.all(AppSizes.p20),
-                    sliver: SliverList(
-                      delegate: SliverChildBuilderDelegate(
-                        (context, index) {
-                          final booking = bookings[index];
-
-                          return Consumer(
-                            builder: (context, ref, child) {
-                              final nameAsync = ref.watch(userNameProvider(
-                                  isLawyer
-                                      ? booking.userId
-                                      : booking.lawyerId));
-
-                              final displayName = nameAsync.maybeWhen(
-                                data: (name) => isLawyer
-                                    ? (name ?? 'عميل')
-                                    : 'المحامي ${name ?? '...'}',
-                                orElse: () => 'جاري التحميل...',
-                              );
-
-                              return Card(
-                                margin:
-                                    const EdgeInsets.only(bottom: AppSizes.p16),
-                                child: InkWell(
-                                  onTap: () => context.push('/booking-details',
-                                      extra: booking),
-                                  borderRadius: BorderRadius.circular(12),
-                                  child: Padding(
-                                    padding: const EdgeInsets.all(AppSizes.p16),
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Row(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.spaceBetween,
-                                          children: [
-                                            Column(
-                                              crossAxisAlignment:
-                                                  CrossAxisAlignment.start,
-                                              children: [
-                                                Text(displayName,
-                                                    style: const TextStyle(
-                                                        fontWeight:
-                                                            FontWeight.bold,
-                                                        fontSize: 16)),
-                                                Text(
-                                                    'رقم الحجز: #${booking.id.length >= 8 ? booking.id.substring(0, 8) : booking.id}',
-                                                    style: const TextStyle(
-                                                        fontSize: 12,
-                                                        color:
-                                                            AppColors.outline)),
-                                              ],
-                                            ),
-                                            _StatusBadge(
-                                                status: booking.status),
-                                          ],
-                                        ),
-                                        const Divider(height: 24),
-                                        Row(
-                                          children: [
-                                            const Icon(Icons.access_time,
-                                                size: 16,
-                                                color: AppColors.outline),
-                                            const SizedBox(width: 8),
-                                            Text(
-                                                DateFormat('yyyy-MM-dd HH:mm')
-                                                    .format(
-                                                        booking.scheduledAt),
-                                                style: const TextStyle(
-                                                    fontSize: 14)),
-                                            const Spacer(),
-                                            Text('${booking.price} د.ع',
-                                                style: const TextStyle(
-                                                    fontWeight: FontWeight.bold,
-                                                    color: AppColors.primary)),
-                                          ],
-                                        ),
-                                        const SizedBox(height: 16),
-                                        _buildActions(context, booking),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              );
-                            },
-                          );
-                        },
-                        childCount: bookings.length,
-                      ),
-                    ),
-                  ),
-          ],
-        ),
+        data: (bookings) => CustomScrollView(slivers: [
+          SliverAppBar(expandedHeight: 120, pinned: true, backgroundColor: AppColors.primary, foregroundColor: Colors.white, flexibleSpace: FlexibleSpaceBar(title: Text(isLawyer ? 'طلبات الاستشارة' : 'استشاراتي', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)), centerTitle: true, background: Container(decoration: const BoxDecoration(gradient: LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [AppColors.secondary, AppColors.secondaryDark]))))),
+          bookings.isEmpty
+              ? SliverFillRemaining(child: Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [Icon(Icons.calendar_today_outlined, size: 60, color: AppColors.outline.withValues(alpha: 0.5)), const SizedBox(height: 16), Text(isLawyer ? 'لا توجد طلبات واردة حالياً' : 'ليس لديك أي حجوزات حالياً', style: const TextStyle(color: AppColors.outline))])))
+              : SliverPadding(padding: const EdgeInsets.all(AppSizes.p20), sliver: SliverList(delegate: SliverChildBuilderDelegate((context, index) {
+                  final booking = bookings[index];
+                  return Consumer(builder: (context, ref, child) {
+                    final nameAsync = ref.watch(userNameProvider(isLawyer ? booking.userId : booking.lawyerId));
+                    final displayName = nameAsync.maybeWhen(data: (name) => isLawyer ? (name ?? 'عميل') : 'المحامي ${name ?? '...'}', orElse: () => 'جاري التحميل...');
+                    return Card(margin: const EdgeInsets.only(bottom: AppSizes.p16), child: InkWell(onTap: () => context.push('/booking-details', extra: booking), borderRadius: BorderRadius.circular(12), child: Padding(padding: const EdgeInsets.all(AppSizes.p16), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                      Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(displayName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)), Text('رقم الحجز: #${booking.id.length >= 8 ? booking.id.substring(0, 8) : booking.id}', style: const TextStyle(fontSize: 12, color: AppColors.outline))]), _StatusBadge(status: booking.status)]),
+                      const Divider(height: 24),
+                      Row(children: [const Icon(Icons.access_time, size: 16, color: AppColors.outline), const SizedBox(width: 8), Text(DateFormat('yyyy-MM-dd HH:mm').format(booking.scheduledAt), style: const TextStyle(fontSize: 14)), const Spacer(), Text('${booking.price} د.ع', style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.primary))]),
+                      const SizedBox(height: 16),
+                      _buildActions(context, booking),
+                    ]))));
+                  });
+                }, childCount: bookings.length))),
+        ]),
         loading: () => const LoadingWidget(),
         error: (err, stack) => Center(child: Text('خطأ: $err')),
       ),
@@ -171,80 +50,17 @@ class BookingsListPage extends ConsumerWidget {
   }
 
   Widget _buildActions(BuildContext context, dynamic booking) {
-    if (booking.status == 'pending') {
-      return ElevatedButton.icon(
-        onPressed: () => context.push('/upload-payment', extra: booking),
-        icon: const Icon(Icons.payment, size: 18, color: Colors.white),
-        label: const Text('رفع إيصال الدفع'),
-        style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.primary,
-          foregroundColor: Colors.white,
-          minimumSize: const Size.fromHeight(48),
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-          elevation: 2,
-        ),
-      );
+    if (booking.status == 'قيد انتظار الدفع') {
+      return ElevatedButton.icon(onPressed: () => context.push('/upload-payment', extra: booking), icon: const Icon(Icons.payment, size: 18, color: Colors.white), label: const Text('إكمال الدفع'), style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, foregroundColor: Colors.white, minimumSize: const Size.fromHeight(48), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))));
     }
-    if (booking.status == 'accepted') {
-      return Row(
-        children: [
-          Expanded(
-            child: ElevatedButton.icon(
-              onPressed: () => context.push('/chat/${booking.id}'),
-              icon: const Icon(Icons.chat_outlined,
-                  size: 18, color: Colors.white),
-              label: const Text('المحادثة'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10)),
-              ),
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: OutlinedButton.icon(
-              onPressed: () async {
-                final url = Uri.parse("https://wa.me/9647700000000");
-                if (await canLaunchUrl(url)) {
-                  await launchUrl(url, mode: LaunchMode.externalApplication);
-                }
-              },
-              icon: const Icon(Icons.wechat, size: 18),
-              label: const Text('واتساب'),
-              style: OutlinedButton.styleFrom(
-                  foregroundColor: Colors.green,
-                  side: const BorderSide(color: Colors.green, width: 1.5),
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10))),
-            ),
-          ),
-        ],
-      );
+    if (booking.status == 'بانتظار التأكيد') {
+      return const Text('تم إرسال الدفع، بانتظار التحقق وموافقة المحامي.', style: TextStyle(color: AppColors.textSecondary, fontSize: 13));
     }
-    if (booking.status == 'completed') {
-      return ElevatedButton.icon(
-        onPressed: () {
-          showDialog(
-            context: context,
-            builder: (context) =>
-                ReviewDialog(bookingId: booking.id, lawyerId: booking.lawyerId),
-          );
-        },
-        icon: const Icon(Icons.star_outline, size: 18, color: Colors.white),
-        label: const Text('تقييم الخدمة الآن'),
-        style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.secondary,
-          foregroundColor: Colors.white,
-          minimumSize: const Size.fromHeight(48),
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-        ),
-      );
+    if (booking.status == 'مؤكد') {
+      return ElevatedButton.icon(onPressed: () => context.push('/chat/${booking.id}'), icon: const Icon(Icons.chat_outlined, size: 18, color: Colors.white), label: const Text('المحادثة'), style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, foregroundColor: Colors.white, minimumSize: const Size.fromHeight(48), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))));
+    }
+    if (booking.status == 'مكتمل') {
+      return ElevatedButton.icon(onPressed: () => showDialog(context: context, builder: (_) => ReviewDialog(bookingId: booking.id, lawyerId: booking.lawyerId)), icon: const Icon(Icons.star_outline, size: 18, color: Colors.white), label: const Text('تقييم الخدمة الآن'), style: ElevatedButton.styleFrom(backgroundColor: AppColors.secondary, foregroundColor: Colors.white, minimumSize: const Size.fromHeight(48), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))));
     }
     return const SizedBox.shrink();
   }
@@ -256,35 +72,17 @@ class _StatusBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    Color color;
-    String text;
-
+    Color color = Colors.grey;
+    String text = status;
     switch (status) {
-      case 'pending':
-        color = Colors.orange;
-        text = 'بانتظار الدفع';
-        break;
-      case 'accepted':
-        color = Colors.green;
-        text = 'مقبول';
-        break;
-      case 'completed':
-        color = AppColors.primary;
-        text = 'مكتمل';
-        break;
-      default:
-        color = Colors.grey;
-        text = status;
+      case 'قيد انتظار الدفع': color = Colors.orange; text = 'بانتظار الدفع'; break;
+      case 'بانتظار التأكيد': color = Colors.blue; text = 'بانتظار التأكيد'; break;
+      case 'مؤكد': color = Colors.green; text = 'مؤكد'; break;
+      case 'قيد التنفيذ': color = AppColors.primary; text = 'قيد التنفيذ'; break;
+      case 'مكتمل': color = AppColors.primary; text = 'مكتمل'; break;
+      case 'ملغي': color = AppColors.error; text = 'ملغي'; break;
+      case 'مسترد': color = Colors.grey; text = 'مسترد'; break;
     }
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(4)),
-      child: Text(text,
-          style: TextStyle(
-              color: color, fontSize: 11, fontWeight: FontWeight.bold)),
-    );
+    return Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4), decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(4)), child: Text(text, style: TextStyle(color: color, fontSize: 11, fontWeight: FontWeight.bold)));
   }
 }
