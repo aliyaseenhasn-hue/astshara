@@ -27,17 +27,11 @@ class LawyerOnboardingPage extends ConsumerStatefulWidget {
 
 class _LawyerOnboardingPageState extends ConsumerState<LawyerOnboardingPage> {
   final _formKey = GlobalKey<FormState>();
-  final _whatsappController = TextEditingController();
 
   Uint8List? _profilePhotoBytes;
   Uint8List? _idCardBytes;
 
   @override
-  void dispose() {
-    _whatsappController.dispose();
-    super.dispose();
-  }
-
   Future<void> _pickImage(String type) async {
     try {
       final picker = ImagePicker();
@@ -54,8 +48,9 @@ class _LawyerOnboardingPageState extends ConsumerState<LawyerOnboardingPage> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-              content: Text('خطأ في اختيار الصورة: $e'),
-              backgroundColor: AppColors.error),
+            content: Text('خطأ في اختيار الصورة: $e'),
+            backgroundColor: AppColors.error,
+          ),
         );
       }
     }
@@ -65,8 +60,9 @@ class _LawyerOnboardingPageState extends ConsumerState<LawyerOnboardingPage> {
     if (_profilePhotoBytes == null || _idCardBytes == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-            content: Text('يرجى رفع الصورة الشخصية وصورة هوية النقابة'),
-            backgroundColor: AppColors.error),
+          content: Text('يرجى رفع الصورة الشخصية وصورة هوية النقابة'),
+          backgroundColor: AppColors.error,
+        ),
       );
       return;
     }
@@ -79,7 +75,6 @@ class _LawyerOnboardingPageState extends ConsumerState<LawyerOnboardingPage> {
             authUid: authId,
             fullName: widget.fullName,
             email: widget.email,
-            whatsapp: _whatsappController.text.trim(),
             profilePhotoBytes: _profilePhotoBytes,
             idCardBytes: _idCardBytes,
           );
@@ -97,15 +92,20 @@ class _LawyerOnboardingPageState extends ConsumerState<LawyerOnboardingPage> {
       builder: (context) => AlertDialog(
         title: const Text('تم إرسال الطلب بنجاح'),
         content: const Text(
-            'شكراً لانضمامك! ملفك الآن قيد المراجعة والتدقيق. سنتواصل معك عبر الواتساب فور التفعيل.'),
+          'شكراً لانضمامك! ملفك الآن قيد المراجعة والتدقيق. ستظهر حالة الحساب في التطبيق بعد إرسال الطلب.',
+        ),
         actions: [
           ElevatedButton(
             onPressed: () {
               Navigator.pop(context);
-              // التوجيه التلقائي لصفحة الانتظار
             },
-            style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
-            child: const Text('حسناً', style: TextStyle(color: Colors.white)),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primary,
+            ),
+            child: const Text(
+              'حسناً',
+              style: TextStyle(color: Colors.white),
+            ),
           ),
         ],
       ),
@@ -139,27 +139,15 @@ class _LawyerOnboardingPageState extends ConsumerState<LawyerOnboardingPage> {
                   children: [
                     _buildAvatarSection(),
                     const SizedBox(height: 40),
-                    _buildSectionTitle('معلومات التواصل'),
-                    const SizedBox(height: 16),
-                    TextFormField(
-                      controller: _whatsappController,
-                      decoration: const InputDecoration(
-                        labelText: 'رقم الواتساب',
-                        hintText: '9647XXXXXXXX',
-                        prefixIcon: Icon(Icons.phone),
-                        border: OutlineInputBorder(),
-                      ),
-                      keyboardType: TextInputType.phone,
-                      validator: (val) => val?.trim().isEmpty ?? true
-                          ? 'رقم الواتساب مطلوب'
-                          : null,
-                    ),
-                    const SizedBox(height: 32),
                     _buildSectionTitle('وثائق التحقق'),
                     const SizedBox(height: 16),
-                    const Text('صورة هوية النقابة:',
-                        style: TextStyle(
-                            fontWeight: FontWeight.bold, fontSize: 14)),
+                    const Text(
+                      'صورة هوية النقابة:',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                      ),
+                    ),
                     const SizedBox(height: 12),
                     _buildIdCardPicker(),
                   ],
@@ -186,8 +174,11 @@ class _LawyerOnboardingPageState extends ConsumerState<LawyerOnboardingPage> {
                     ? MemoryImage(_profilePhotoBytes!)
                     : null,
                 child: _profilePhotoBytes == null
-                    ? const Icon(Icons.person,
-                        size: 60, color: AppColors.outline)
+                    ? const Icon(
+                        Icons.person,
+                        size: 60,
+                        color: AppColors.outline,
+                      )
                     : null,
               ),
               Positioned(
@@ -197,8 +188,11 @@ class _LawyerOnboardingPageState extends ConsumerState<LawyerOnboardingPage> {
                   backgroundColor: AppColors.primary,
                   radius: 20,
                   child: IconButton(
-                    icon: const Icon(Icons.camera_alt,
-                        size: 20, color: Colors.white),
+                    icon: const Icon(
+                      Icons.camera_alt,
+                      size: 20,
+                      color: Colors.white,
+                    ),
                     onPressed: () => _pickImage('profile'),
                   ),
                 ),
@@ -206,10 +200,14 @@ class _LawyerOnboardingPageState extends ConsumerState<LawyerOnboardingPage> {
             ],
           ),
           const SizedBox(height: 12),
-          const Text('الصورة الشخصية',
-              style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
-          const Text('سوف تظهر للعملاء في نتائج البحث',
-              style: TextStyle(fontSize: 11, color: AppColors.outline)),
+          const Text(
+            'الصورة الشخصية',
+            style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+          ),
+          const Text(
+            'سوف تظهر للعملاء في نتائج البحث',
+            style: TextStyle(fontSize: 11, color: AppColors.outline),
+          ),
         ],
       ),
     );
@@ -219,14 +217,18 @@ class _LawyerOnboardingPageState extends ConsumerState<LawyerOnboardingPage> {
     return Row(
       children: [
         Container(
-            width: 4,
-            height: 18,
-            decoration: BoxDecoration(
-                color: AppColors.primary,
-                borderRadius: BorderRadius.circular(2))),
+          width: 4,
+          height: 18,
+          decoration: BoxDecoration(
+            color: AppColors.primary,
+            borderRadius: BorderRadius.circular(2),
+          ),
+        ),
         const SizedBox(width: 8),
-        Text(title,
-            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+        Text(
+          title,
+          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+        ),
       ],
     );
   }
@@ -238,10 +240,11 @@ class _LawyerOnboardingPageState extends ConsumerState<LawyerOnboardingPage> {
         height: 180,
         decoration: BoxDecoration(
           border: Border.all(
-              color: _idCardBytes == null
-                  ? AppColors.error.withValues(alpha: 0.3)
-                  : AppColors.outline,
-              width: 2),
+            color: _idCardBytes == null
+                ? AppColors.error.withValues(alpha: 0.3)
+                : AppColors.outline,
+            width: 2,
+          ),
           borderRadius: BorderRadius.circular(12),
           color: Colors.white,
         ),
@@ -249,16 +252,18 @@ class _LawyerOnboardingPageState extends ConsumerState<LawyerOnboardingPage> {
             ? const Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.badge_outlined,
-                      size: 48, color: AppColors.outline),
+                  Icon(Icons.badge_outlined, size: 48, color: AppColors.outline),
                   SizedBox(height: 8),
-                  Text('اضغط لرفع صورة هوية النقابة',
-                      style: TextStyle(color: AppColors.outline)),
+                  Text(
+                    'اضغط لرفع صورة هوية النقابة',
+                    style: TextStyle(color: AppColors.outline),
+                  ),
                 ],
               )
             : ClipRRect(
                 borderRadius: BorderRadius.circular(12),
-                child: Image.memory(_idCardBytes!, fit: BoxFit.cover)),
+                child: Image.memory(_idCardBytes!, fit: BoxFit.cover),
+              ),
       ),
     );
   }
@@ -270,9 +275,10 @@ class _LawyerOnboardingPageState extends ConsumerState<LawyerOnboardingPage> {
         color: Colors.white,
         boxShadow: [
           BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
-              blurRadius: 10,
-              offset: const Offset(0, -5))
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, -5),
+          ),
         ],
       ),
       child: isLoading
@@ -283,13 +289,17 @@ class _LawyerOnboardingPageState extends ConsumerState<LawyerOnboardingPage> {
                 backgroundColor: AppColors.primary,
                 minimumSize: const Size(double.infinity, 56),
                 shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12)),
+                  borderRadius: BorderRadius.circular(12),
+                ),
               ),
-              child: const Text('إرسال طلب الانضمام',
-                  style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white)),
+              child: const Text(
+                'إرسال طلب الانضمام',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+              ),
             ),
     );
   }
