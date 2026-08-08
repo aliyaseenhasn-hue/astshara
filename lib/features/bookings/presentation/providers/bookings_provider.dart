@@ -12,7 +12,6 @@ BookingsRepository bookingsRepository(BookingsRepositoryRef ref) {
   return BookingsRepositoryImpl(SupabaseConfig.client);
 }
 
-/// جلب profiles.id من auth.uid() — لأن bookings تستخدم profiles.id وليس auth.uid()
 Future<String?> _getProfileId(String authUid) async {
   final row = await SupabaseConfig.client
       .from('profiles')
@@ -26,7 +25,6 @@ Future<String?> _getProfileId(String authUid) async {
 Future<List<Booking>> userBookings(UserBookingsRef ref) async {
   final user = ref.watch(authStateChangesProvider).value;
   if (user == null) return [];
-  // user.id = auth.uid() — نحتاج profiles.id
   final profileId = await _getProfileId(user.id);
   if (profileId == null) return [];
   return ref.watch(bookingsRepositoryProvider).getUserBookings(profileId);
@@ -70,14 +68,13 @@ class BookingsController extends _$BookingsController {
     state = const AsyncLoading();
     state = await AsyncValue.guard(() async {
       final user = ref.read(authStateChangesProvider).value;
-      if (user == null) throw Exception('User not logged in');
+      if (user == null) throw Exception('المستخدم غير مسجل دخول');
 
       final userProfileId = await _getProfileId(user.id);
-      if (userProfileId == null) throw Exception('Profile not found');
+      if (userProfileId == null) throw Exception('ملف المستخدم غير موجود');
 
       final repo = ref.read(bookingsRepositoryProvider);
       String? documentUrl;
-
       if (documentBytes != null && documentName != null) {
         documentUrl = await repo.uploadDocument(documentBytes, documentName);
       }
@@ -98,6 +95,23 @@ class BookingsController extends _$BookingsController {
         whatsappNumber: whatsappNumber,
       );
       ref.invalidate(userBookingsProvider);
+    });
+  }
+
+  Future<void> requestCustomConsultation({
+    required String lawyerId,
+    required String subject,
+    required String description,
+    required String consultationType,
+  }) async {
+    state = const AsyncLoading();
+    state = await AsyncValue.guard(() async {
+      await ref.read(bookingsRepositoryProvider).createCustomConsultationRequest(
+            lawyerId: lawyerId,
+            subject: subject,
+            description: description,
+            consultationType: consultationType,
+          );
     });
   }
 }
