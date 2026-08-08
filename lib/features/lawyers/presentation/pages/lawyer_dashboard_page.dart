@@ -20,7 +20,9 @@ class LawyerDashboardPage extends ConsumerWidget {
       backgroundColor: AppColors.background,
       body: CustomScrollView(slivers: [
         SliverAppBar(
-          expandedHeight: 220, pinned: true, backgroundColor: AppColors.primary,
+          expandedHeight: 220,
+          pinned: true,
+          backgroundColor: AppColors.primary,
           flexibleSpace: FlexibleSpaceBar(background: Container(
             decoration: const BoxDecoration(gradient: LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [AppColors.secondary, AppColors.secondaryDark])),
             child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
@@ -39,11 +41,15 @@ class LawyerDashboardPage extends ConsumerWidget {
           data: (bookings) => Padding(
             padding: const EdgeInsets.all(AppSizes.p20),
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              _stats(bookings), const SizedBox(height: 28),
+              _stats(bookings),
+              const SizedBox(height: 28),
               Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text('الحجوزات', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)), TextButton(onPressed: () => context.push('/bookings'), child: const Text('عرض الكل'))]),
               const SizedBox(height: 8),
               if (bookings.isEmpty) const Card(child: Padding(padding: EdgeInsets.all(28), child: Center(child: Text('لا توجد حجوزات حالياً')))) else ...bookings.take(8).map((booking) => _BookingTile(booking: booking)),
-              const SizedBox(height: 24), const Text('إجراءات سريعة', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)), const SizedBox(height: 12),
+              const SizedBox(height: 24),
+              const Text('إجراءات سريعة', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 12),
+              _ActionTile(title: 'طلبات الاستشارة المخصصة', subtitle: 'مراجعة الطلبات التي لا تناسب الباقات الحالية', icon: Icons.markunread_mail_outline_rounded, onTap: () => context.push('/lawyer-custom-requests')),
               _ActionTile(title: 'إدارة المواعيد المتاحة', subtitle: 'إضافة أو حذف أوقات يمكن حجزها', icon: Icons.event_available_rounded, onTap: () => context.push('/lawyer-availability')),
               _ActionTile(title: 'جدول الحجوزات', subtitle: 'عرض الحجوزات ومتابعة الاستشارات', icon: Icons.calendar_today_rounded, onTap: () => context.push('/bookings')),
               _ActionTile(title: 'تعديل باقات الاستشارة', subtitle: 'إضافة أو تعديل خدماتك وأسعارك', icon: Icons.design_services_rounded, onTap: () => context.push('/lawyer-profile-edit')),
@@ -54,6 +60,7 @@ class LawyerDashboardPage extends ConsumerWidget {
       ]),
     );
   }
+
   Widget _stats(List<Booking> bookings) {
     final completed = bookings.where((b) => b.status == 'مكتمل').length;
     final active = bookings.where((b) => ['بانتظار التأكيد', 'مؤكد', 'قيد التنفيذ'].contains(b.status)).length;
