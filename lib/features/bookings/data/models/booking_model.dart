@@ -8,6 +8,7 @@ class BookingModel {
   final DateTime scheduledAt;
   final double price;
   final DateTime? createdAt;
+  final DateTime? startedAt;
   final String? whatsappNumber;
   final bool lawyerApproved;
 
@@ -19,6 +20,7 @@ class BookingModel {
     required this.scheduledAt,
     required this.price,
     this.createdAt,
+    this.startedAt,
     this.whatsappNumber,
     this.lawyerApproved = false,
   });
@@ -36,6 +38,9 @@ class BookingModel {
       createdAt: json['created_at'] != null
           ? DateTime.parse(json['created_at'] as String)
           : null,
+      startedAt: json['started_at'] != null
+          ? DateTime.parse(json['started_at'] as String)
+          : null,
       whatsappNumber: json['whatsapp_number'] as String?,
       lawyerApproved: json['lawyer_approved'] as bool? ?? false,
     );
@@ -49,6 +54,7 @@ class BookingModel {
         scheduledAt: scheduledAt,
         price: price,
         createdAt: createdAt,
+        startedAt: startedAt,
         whatsappNumber: whatsappNumber,
         lawyerApproved: lawyerApproved,
       );
