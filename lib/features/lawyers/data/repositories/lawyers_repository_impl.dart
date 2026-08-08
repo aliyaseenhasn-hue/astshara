@@ -12,10 +12,10 @@ class LawyersRepositoryImpl implements LawyersRepository {
   @override
   Future<List<LawyerProfile>> getLawyers() async {
     try {
-      final response = await _supabase
-          .from('public_lawyer_profiles')
-          .select()
-          .eq('verified', true);
+      debugPrint('🔍 LawyersRepo: Fetching verified lawyers...');
+
+      // القراءة العامة تتم عبر RPC آمنة لا تكشف بيانات الاتصال أو الهوية الحساسة.
+      final response = await _supabase.rpc('get_public_lawyers');
 
       return (response as List)
           .map((json) => LawyerProfileModel.fromJson(
@@ -31,15 +31,18 @@ class LawyersRepositoryImpl implements LawyersRepository {
   @override
   Future<LawyerProfile?> getLawyerProfile(String profileId) async {
     try {
-      final response = await _supabase
-          .from('public_lawyer_profiles')
-          .select()
-          .eq('profile_id', profileId)
-          .maybeSingle();
+      // ملف المهني العام يستخدم نفس المسار الآمن، بينما بيانات التواصل
+      // تبقى محمية ولا تُعاد ضمن هذا الطلب.
+      final response = await _supabase.rpc(
+        'get_public_lawyer',
+        params: {'p_profile_id': profileId},
+      );
 
-      if (response == null) return null;
+      final rows = response as List;
+      if (rows.isEmpty) return null;
+
       return LawyerProfileModel.fromJson(
-        Map<String, dynamic>.from(response),
+        Map<String, dynamic>.from(rows.first as Map),
       ).toEntity();
     } catch (e) {
       debugPrint('❌ LawyersRepo: Profile fetch error: $e');
