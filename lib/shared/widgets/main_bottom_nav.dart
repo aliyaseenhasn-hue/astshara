@@ -4,7 +4,11 @@ import '../../../core/constants/app_colors.dart';
 
 class MainBottomNav extends StatelessWidget {
   final int currentIndex;
-  const MainBottomNav({super.key, required this.currentIndex});
+
+  const MainBottomNav({
+    super.key,
+    required this.currentIndex,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -23,12 +27,14 @@ class MainBottomNav extends StatelessWidget {
         child: BottomNavigationBar(
           type: BottomNavigationBarType.fixed,
           backgroundColor: AppColors.secondary,
-          selectedItemColor: AppColors.gold,
-          unselectedItemColor: Colors.white.withValues(alpha: 0.5),
+          selectedItemColor: AppColors.goldLight,
+          unselectedItemColor: AppColors.primaryLight.withValues(alpha: 0.72),
           currentIndex: currentIndex,
           elevation: 0,
-          selectedLabelStyle:
-              const TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
+          selectedLabelStyle: const TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.bold,
+          ),
           unselectedLabelStyle: const TextStyle(fontSize: 11),
           items: const [
             BottomNavigationBarItem(
