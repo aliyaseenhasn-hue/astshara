@@ -1,7 +1,6 @@
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/config/supabase_config.dart';
 import '../../../../core/constants/app_colors.dart';
 
@@ -20,7 +19,9 @@ class _LawyerAchievementsGalleryState extends ConsumerState<LawyerAchievementsGa
 
   @override
   void initState() { super.initState(); _reload(); }
-  void _reload() { _items = SupabaseConfig.client.from('lawyer_achievements').select('id, image_url, image_path, title, description, created_at').eq('lawyer_id', widget.lawyerId).order('created_at', ascending: false).then((rows) => (rows as List).map((e) => Map<String, dynamic>.from(e as Map)).toList()); }
+  void _reload() {
+    _items = SupabaseConfig.client.from('lawyer_achievements').select('id, image_url, image_path, title, description, created_at').eq('lawyer_id', widget.lawyerId).order('created_at', ascending: false).then((rows) => (rows as List).map((e) => Map<String, dynamic>.from(e as Map)).toList());
+  }
 
   Future<void> _addAchievement() async {
     final result = await FilePicker.platform.pickFiles(type: FileType.image, withData: true);
@@ -35,8 +36,13 @@ class _LawyerAchievementsGalleryState extends ConsumerState<LawyerAchievementsGa
         const SizedBox(height: 12),
         TextField(controller: descriptionController, maxLines: 3, decoration: const InputDecoration(labelText: 'تعليق / وصف')),
       ]),
-      actions: [TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('إلغاء')), ElevatedButton(onPressed: () => Navigator.pop(context, true), child: const Text('حفظ'))],
+      actions: [
+        TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('إلغاء')),
+        ElevatedButton(onPressed: () => Navigator.pop(context, true), child: const Text('حفظ')),
+      ],
     ));
+    titleController.dispose();
+    descriptionController.dispose();
     if (confirmed != true || !mounted) return;
     setState(() => _uploading = true);
     try {
@@ -44,7 +50,7 @@ class _LawyerAchievementsGalleryState extends ConsumerState<LawyerAchievementsGa
       if (user == null) throw Exception('يجب تسجيل الدخول');
       final safeName = file!.name.replaceAll(RegExp(r'[^A-Za-z0-9._-]'), '_');
       final path = '${user.id}/${DateTime.now().microsecondsSinceEpoch}_$safeName';
-      await SupabaseConfig.client.storage.from('lawyer_achievements').uploadBinary(path, file.bytes!, fileOptions: const FileOptions(upsert: false));
+      await SupabaseConfig.client.storage.from('lawyer_achievements').uploadBinary(path, file.bytes!);
       final publicUrl = SupabaseConfig.client.storage.from('lawyer_achievements').getPublicUrl(path);
       await SupabaseConfig.client.from('lawyer_achievements').insert({
         'lawyer_id': widget.lawyerId,
@@ -82,13 +88,26 @@ class _LawyerAchievementsGalleryState extends ConsumerState<LawyerAchievementsGa
         if (_uploading) const LinearProgressIndicator(),
         if (snapshot.connectionState == ConnectionState.waiting) const Padding(padding: EdgeInsets.all(20), child: Center(child: CircularProgressIndicator()))
         else if (items.isEmpty) const Padding(padding: EdgeInsets.symmetric(vertical: 20), child: Text('لم تتم إضافة قرارات أو إنجازات بعد.', textAlign: TextAlign.center, style: TextStyle(color: Colors.grey)))
-        else GridView.builder(shrinkWrap: true, physics: const NeverScrollableScrollPhysics(), gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 2, crossAxisSpacing: 10, mainAxisSpacing: 10, childAspectRatio: .78), itemCount: items.length, itemBuilder: (context, index) {
-          final item = items[index];
-          return Card(clipBehavior: Clip.antiAlias, child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-            Expanded(child: Image.network(item['image_url'] as String, fit: BoxFit.cover, errorBuilder: (_, __, ___) => const Center(child: Icon(Icons.broken_image_outlined)))),
-            Padding(padding: const EdgeInsets.all(10), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [if (item['title'] != null) Text(item['title'] as String, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.bold)), if (item['description'] != null) ...[const SizedBox(height: 4), Text(item['description'] as String, maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 11, color: Colors.grey))], if (widget.editable) Align(alignment: Alignment.centerLeft, child: IconButton(onPressed: () => _delete(item), icon: const Icon(Icons.delete_outline, color: AppColors.error, size: 20))) ])),
-          ]);
-        }),
+        else GridView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 2, crossAxisSpacing: 10, mainAxisSpacing: 10, childAspectRatio: .78),
+          itemCount: items.length,
+          itemBuilder: (context, index) {
+            final item = items[index];
+            return Card(
+              clipBehavior: Clip.antiAlias,
+              child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+                Expanded(child: Image.network(item['image_url'] as String, fit: BoxFit.cover, errorBuilder: (_, __, ___) => const Center(child: Icon(Icons.broken_image_outlined)))),
+                Padding(padding: const EdgeInsets.all(10), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  if (item['title'] != null) Text(item['title'] as String, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.bold)),
+                  if (item['description'] != null) ...[const SizedBox(height: 4), Text(item['description'] as String, maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 11, color: Colors.grey))],
+                  if (widget.editable) Align(alignment: Alignment.centerLeft, child: IconButton(onPressed: () => _delete(item), icon: const Icon(Icons.delete_outline, color: AppColors.error, size: 20))),
+                ])),
+              ]),
+            );
+          },
+        ),
       ]);
     },
   );
