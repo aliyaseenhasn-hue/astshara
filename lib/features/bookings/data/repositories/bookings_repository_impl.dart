@@ -5,7 +5,6 @@ import '../models/booking_model.dart';
 
 class BookingsRepositoryImpl implements BookingsRepository {
   final SupabaseClient _supabase;
-
   BookingsRepositoryImpl(this._supabase);
 
   @override
@@ -44,7 +43,7 @@ class BookingsRepositoryImpl implements BookingsRepository {
   @override
   Future<List<Booking>> getUserBookings(String userId) async {
     final response = await _supabase.from('bookings').select().eq('user_id', userId).order('created_at', ascending: false);
-    return (response as List).map((json) => BookingModel.fromJson(Map<String, dynamic>.from(json as Map)).toList()).toList();
+    return (response as List).map((json) => BookingModel.fromJson(Map<String, dynamic>.from(json as Map)).toEntity()).toList();
   }
 
   @override
