@@ -5,6 +5,7 @@ import '../../../../core/constants/app_sizes.dart';
 import '../../../authentication/presentation/providers/auth_provider.dart';
 import '../../domain/entities/lawyer_profile.dart';
 import '../providers/lawyers_provider.dart';
+import '../widgets/lawyer_achievements_gallery.dart';
 
 class LawyerProfileEditPage extends ConsumerStatefulWidget {
   const LawyerProfileEditPage({super.key});
@@ -17,30 +18,18 @@ class _LawyerProfileEditPageState extends ConsumerState<LawyerProfileEditPage> {
   final _bioController = TextEditingController();
   late List<LawyerService> _services;
   bool _isLoading = false;
+  String? _profileId;
 
   @override
-  void initState() {
-    super.initState();
-    _services = [];
-    _loadProfile();
-  }
-
+  void initState() { super.initState(); _services = []; _loadProfile(); }
   @override
-  void dispose() {
-    _bioController.dispose();
-    super.dispose();
-  }
+  void dispose() { _bioController.dispose(); super.dispose(); }
 
   Future<void> _loadProfile() async {
     final user = ref.read(authStateChangesProvider).value;
     if (user == null) return;
     final profile = await ref.read(lawyersRepositoryProvider).getLawyerProfile(user.id);
-    if (profile != null && mounted) {
-      setState(() {
-        _services = List.from(profile.services);
-        _bioController.text = profile.bio ?? '';
-      });
-    }
+    if (profile != null && mounted) setState(() { _services = List.from(profile.services); _bioController.text = profile.bio ?? ''; _profileId = profile.profileId; });
   }
 
   void _addService() => setState(() => _services.add(const LawyerService(title: '', price: 0)));
@@ -57,20 +46,16 @@ class _LawyerProfileEditPageState extends ConsumerState<LawyerProfileEditPage> {
       final profile = await repo.getLawyerProfile(user.id);
       if (profile == null) return;
       await repo.updateLawyerProfile(profile.copyWith(bio: _bioController.text.trim(), services: _services));
-      ref.invalidate(lawyerProfileProvider(user.id));
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تم حفظ الملف الشخصي بنجاح')));
-        Navigator.pop(context);
-      }
+      ref.invalidate(lawyerProfileProvider(profile.profileId));
+      if (mounted) { ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تم حفظ الملف الشخصي بنجاح'))); Navigator.pop(context); }
     } catch (e) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('خطأ في الحفظ: $e'), backgroundColor: AppColors.error));
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
-    }
+    } finally { if (mounted) setState(() => _isLoading = false); }
   }
 
   @override
   Widget build(BuildContext context) {
+    final user = ref.watch(authStateChangesProvider).value;
     return Scaffold(
       appBar: AppBar(title: const Text('تعديل الملف الشخصي'), actions: [if (!_isLoading) IconButton(icon: const Icon(Icons.check), onPressed: _save)]),
       body: _isLoading ? const Center(child: CircularProgressIndicator()) : SingleChildScrollView(
@@ -80,6 +65,7 @@ class _LawyerProfileEditPageState extends ConsumerState<LawyerProfileEditPage> {
           const SizedBox(height: 8),
           TextFormField(controller: _bioController, maxLines: 6, maxLength: 1000, decoration: const InputDecoration(hintText: 'اكتب نبذة مهنية عن خبرتك وتخصصك والإنجازات التي تود تعريف العملاء بها...', border: OutlineInputBorder()), validator: (value) => value == null || value.trim().isEmpty ? 'السيرة الذاتية مطلوبة' : null),
           const SizedBox(height: 28),
+          if (_profileId != null) ...[LawyerAchievementsGallery(lawyerId: _profileId!, editable: true), const SizedBox(height: 28)],
           const Text('باقات الاستشارة', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
           const SizedBox(height: 8),
           const Text('أضف باقات استشارية مخصصة لعملائك.', style: TextStyle(fontSize: 14, color: AppColors.textSecondary)),
@@ -93,15 +79,11 @@ class _LawyerProfileEditPageState extends ConsumerState<LawyerProfileEditPage> {
     );
   }
 
-  Widget _buildServiceEditor(int index) => Card(
-    margin: const EdgeInsets.only(bottom: 16),
-    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12), side: BorderSide(color: AppColors.outline.withValues(alpha: 0.5))),
-    child: Padding(padding: const EdgeInsets.all(16), child: Column(children: [
-      Row(children: [Expanded(child: TextFormField(initialValue: _services[index].title, decoration: const InputDecoration(labelText: 'عنوان الباقة', hintText: 'مثلاً: استشارة هاتفية 30 دقيقة'), onSaved: (val) => _services[index] = _services[index].copyWith(title: val ?? ''), validator: (val) => val == null || val.isEmpty ? 'مطلوب' : null)), IconButton(icon: const Icon(Icons.delete_outline, color: AppColors.error), onPressed: () => _removeService(index))]),
-      const SizedBox(height: 12),
-      TextFormField(initialValue: _services[index].price.toString(), decoration: const InputDecoration(labelText: 'السعر (د.ع)'), keyboardType: TextInputType.number, onSaved: (val) => _services[index] = _services[index].copyWith(price: double.tryParse(val ?? '0') ?? 0), validator: (val) => val == null || val.isEmpty ? 'مطلوب' : null),
-      const SizedBox(height: 12),
-      TextFormField(initialValue: _services[index].description, decoration: const InputDecoration(labelText: 'وصف مختصر (اختياري)'), maxLines: 2, onSaved: (val) => _services[index] = _services[index].copyWith(description: val)),
-    ])),
-  );
+  Widget _buildServiceEditor(int index) => Card(margin: const EdgeInsets.only(bottom: 16), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12), side: BorderSide(color: AppColors.outline.withValues(alpha: 0.5))), child: Padding(padding: const EdgeInsets.all(16), child: Column(children: [
+    Row(children: [Expanded(child: TextFormField(initialValue: _services[index].title, decoration: const InputDecoration(labelText: 'عنوان الباقة', hintText: 'مثلاً: استشارة هاتفية 30 دقيقة'), onSaved: (val) => _services[index] = _services[index].copyWith(title: val ?? ''), validator: (val) => val == null || val.isEmpty ? 'مطلوب' : null)), IconButton(icon: const Icon(Icons.delete_outline, color: AppColors.error), onPressed: () => _removeService(index))]),
+    const SizedBox(height: 12),
+    TextFormField(initialValue: _services[index].price.toString(), decoration: const InputDecoration(labelText: 'السعر (د.ع)'), keyboardType: TextInputType.number, onSaved: (val) => _services[index] = _services[index].copyWith(price: double.tryParse(val ?? '0') ?? 0), validator: (val) => val == null || val.isEmpty ? 'مطلوب' : null),
+    const SizedBox(height: 12),
+    TextFormField(initialValue: _services[index].description, decoration: const InputDecoration(labelText: 'وصف مختصر (اختياري)'), maxLines: 2, onSaved: (val) => _services[index] = _services[index].copyWith(description: val)),
+  ])));
 }
