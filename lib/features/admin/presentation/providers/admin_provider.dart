@@ -10,41 +10,35 @@ class AdminStats extends _$AdminStats {
     final client = SupabaseConfig.client;
 
     try {
-      // جلب إجمالي المستخدمين (جلب المعرفات فقط لتقليل البيانات)
       final usersRes = await client.from('profiles').select('id');
       final totalUsers = (usersRes as List).length;
 
-      // جلب إجمالي المحامين الموثقين
       final lawyersRes = await client
           .from('lawyer_profiles')
           .select('id')
           .eq('verified', true);
       final totalLawyers = (lawyersRes as List).length;
 
-      // جلب طلبات التوثيق المعلقة
       final pendingVerificationsRes = await client
           .from('lawyer_profiles')
           .select('id')
           .eq('verified', false);
       final pendingVerifications = (pendingVerificationsRes as List).length;
 
-      // جلب الحجوزات النشطة
-      final activeBookingsRes =
-          await client.from('bookings').select('id').eq('status', 'confirmed');
+      final activeBookingsRes = await client
+          .from('bookings')
+          .select('id')
+          .inFilter('status', ['مؤكد', 'قيد التنفيذ']);
       final activeBookings = (activeBookingsRes as List).length;
 
-      // جلب مجموع الإيرادات والدفعات المعلقة
-      final paymentsRes =
-          await client.from('payments').select('amount, status');
-
+      final paymentsRes = await client.from('payments').select('amount, status');
       double totalRevenue = 0;
       int pendingPaymentsCount = 0;
 
-      final paymentsList = paymentsRes as List;
-      for (final row in paymentsList) {
-        if (row['status'] == 'paid' || row['status'] == 'verified') {
+      for (final row in (paymentsRes as List)) {
+        if (row['status'] == 'تم الدفع') {
           totalRevenue += (row['amount'] as num?)?.toDouble() ?? 0;
-        } else if (row['status'] == 'pending') {
+        } else if (row['status'] == 'قيد معالجة الدفع') {
           pendingPaymentsCount++;
         }
       }
@@ -58,8 +52,7 @@ class AdminStats extends _$AdminStats {
         'pending_payments': pendingPaymentsCount,
       };
     } catch (e) {
-      print('Error fetching admin stats: $e');
-      rethrow;
+      throw Exception('تعذر تحميل إحصائيات الإدارة');
     }
   }
 
