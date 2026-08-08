@@ -14,7 +14,7 @@ _$PaymentModelImpl _$$PaymentModelImplFromJson(Map<String, dynamic> json) =>
       paymentMethod: json['payment_method'] as String,
       transactionNumber: json['transaction_number'] as String?,
       receiptUrl: json['receipt_url'] as String?,
-      status: json['status'] as String? ?? 'pending',
+      status: json['status'] as String? ?? 'بانتظار الدفع',
       createdAt: json['created_at'] == null
           ? null
           : DateTime.parse(json['created_at'] as String),
