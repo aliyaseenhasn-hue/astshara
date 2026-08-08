@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_sizes.dart';
@@ -91,6 +92,33 @@ class _PaymentUploadPageState extends ConsumerState<PaymentUploadPage>
     }
   }
 
+  Future<void> _refreshBookingAfterPayment() async {
+    ref.invalidate(userBookingsProvider);
+    ref.invalidate(lawyerBookingsProvider);
+
+    try {
+      final bookings = await ref.read(userBookingsProvider.future);
+      final updated = bookings.cast<Booking?>().firstWhere(
+            (b) => b?.id == widget.booking.id,
+            orElse: () => null,
+          );
+
+      if (!mounted) return;
+
+      if (updated != null) {
+        context.go('/booking-details', extra: updated);
+        return;
+      }
+    } catch (_) {
+      // The payment was confirmed even if the UI refresh fails. The next
+      // bookings reload will fetch the authoritative status from Supabase.
+    }
+
+    if (mounted) {
+      context.go('/bookings');
+    }
+  }
+
   Future<void> _checkPaymentStatus({required bool showErrors}) async {
     if (_checkingPayment || !mounted) return;
     _checkingPayment = true;
@@ -103,17 +131,14 @@ class _PaymentUploadPageState extends ConsumerState<PaymentUploadPage>
 
       if (!mounted) return;
 
-      if (paymentStatus == 'تم الدفع' || bookingStatus == 'مؤكد') {
+      if (paymentStatus == 'تم الدفع' || bookingStatus == 'مؤكد' ||
+          bookingStatus == 'قيد مراجعة المحامي') {
         _pollTimer?.cancel();
-        ref.invalidate(userBookingsProvider);
-        ref.invalidate(lawyerBookingsProvider);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('تم تأكيد الدفع وتأكيد الحجز بنجاح.'),
-          ),
-        );
-        Navigator.of(context).pop(true);
-      } else if (paymentStatus == 'فشل الدفع') {
+        await _refreshBookingAfterPayment();
+        return;
+      }
+
+      if (paymentStatus == 'فشل الدفع') {
         _pollTimer?.cancel();
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
