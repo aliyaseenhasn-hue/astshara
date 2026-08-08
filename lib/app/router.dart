@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../features/authentication/presentation/pages/login_page.dart';
@@ -69,11 +70,9 @@ GoRouter router(RouterRef ref) {
       final pending = location == '/lawyer-pending';
       final admin = location.startsWith('/admin') && location != '/admin-login';
 
-      // في التطبيق الحالي دور العميل محفوظ باسم "user"، بينما بعض الحسابات
-      // القديمة/المستقبلية قد تستخدم "client". كلاهما يمثل طالب الخدمة.
+      // دور العميل في الحسابات الحالية هو "user"، مع دعم "client"
+      // للحسابات التي قد تكون أنشئت سابقًا بهذه القيمة.
       final isClient = user?.role == 'user' || user?.role == 'client';
-
-      // إنشاء طلب الاستشارة مسموح لطالب الخدمة فقط.
       final clientOnlyBooking = location == '/create-booking';
 
       if (user == null) {
@@ -91,8 +90,6 @@ GoRouter router(RouterRef ref) {
 
       if (admin && user.role != 'admin') return '/';
 
-      // لا نعيد العميل إلى الصفحة الرئيسية عند فتح صفحة الحجز.
-      // الحسابات المسجلة من صفحة التسجيل تستخدم role = "user".
       if (clientOnlyBooking && !isClient) {
         return user.role == 'lawyer' ? '/lawyer-home' : '/';
       }
@@ -142,12 +139,12 @@ GoRouter router(RouterRef ref) {
           final e = s.extra as Map<String, dynamic>?;
           final lawyer = e?['lawyer'] as LawyerProfile?;
 
-          // لا نعيد المستخدم بصمت إلى قائمة المحامين إذا فقدت بيانات التنقل.
-          // هذا يمنع ظهور سلوك "الضغط على حجز موعد يعيدني للرئيسية".
           if (lawyer == null) {
             return const Scaffold(
               body: Center(
-                child: Text('تعذر فتح صفحة الحجز. يرجى العودة إلى ملف المحامي والمحاولة مرة أخرى.'),
+                child: Text(
+                  'تعذر فتح صفحة الحجز. يرجى العودة إلى ملف المحامي والمحاولة مرة أخرى.',
+                ),
               ),
             );
           }
