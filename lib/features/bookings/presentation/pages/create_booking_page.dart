@@ -63,7 +63,7 @@ class _CreateBookingPageState extends ConsumerState<CreateBookingPage> {
   }
 
   bool _validateCurrentStep() {
-    if (_step == 0 && _package == null) {
+    if (_step == 0 && !widget.isCustom && _package == null) {
       _showMessage('يرجى اختيار باقة الاستشارة أولاً');
       return false;
     }
@@ -89,18 +89,18 @@ class _CreateBookingPageState extends ConsumerState<CreateBookingPage> {
 
   Future<void> _submit() async {
     final slot = _selectedSlot;
-    final package = _package;
     final consultationType = widget.isCustom
         ? _customConsultationTypeController.text.trim()
         : _consultationType;
+    final packageName = widget.isCustom ? 'استشارة مختلفة' : _package?.title;
 
-    if (slot == null || package == null || consultationType.isEmpty || !(_formKey.currentState?.validate() ?? false)) return;
+    if (slot == null || packageName == null || consultationType.isEmpty || !(_formKey.currentState?.validate() ?? false)) return;
 
     final booking = await ref.read(bookingsControllerProvider.notifier).requestBooking(
       lawyerId: widget.lawyer.profileId,
       scheduledAt: slot.startsAt,
       slotId: slot.id,
-      packageName: package.title,
+      packageName: packageName,
       consultationType: consultationType,
       description: _descriptionController.text.trim(),
       documentBytes: _selectedFileBytes,
@@ -150,20 +150,37 @@ class _CreateBookingPageState extends ConsumerState<CreateBookingPage> {
             Step(
               title: const Text('اختيار الباقة'),
               isActive: _step >= 0,
-              content: widget.lawyer.services.isEmpty
-                  ? const Text('لا توجد باقات متاحة لهذا المحامي.')
-                  : DropdownButtonFormField<LawyerService>(
-                      value: _package,
-                      decoration: const InputDecoration(labelText: 'الباقة'),
-                      items: widget.lawyer.services
-                          .map((service) => DropdownMenuItem<LawyerService>(
-                                value: service,
-                                child: Text('${service.title} — ${service.price} د.ع'),
-                              ))
-                          .toList(),
-                      onChanged: (value) => setState(() => _package = value),
-                      validator: (value) => value == null ? 'يرجى اختيار باقة الاستشارة' : null,
-                    ),
+              content: widget.isCustom
+                  ? Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF81C7F5).withValues(alpha: .10),
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      child: const Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('استشارة مختلفة', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                          SizedBox(height: 8),
+                          Text('لا تحتاج هذه الاستشارة إلى اختيار كارت. اكتب نوع القضية والتفاصيل في الخطوة التالية، وسيتم إرسال الطلب إلى المحامي للمراجعة.'),
+                        ],
+                      ),
+                    )
+                  : widget.lawyer.services.isEmpty
+                      ? const Text('لا توجد باقات متاحة لهذا المحامي.')
+                      : DropdownButtonFormField<LawyerService>(
+                          value: _package,
+                          decoration: const InputDecoration(labelText: 'الباقة'),
+                          items: widget.lawyer.services
+                              .map((service) => DropdownMenuItem<LawyerService>(
+                                    value: service,
+                                    child: Text('${service.title} — ${service.price} د.ع'),
+                                  ))
+                              .toList(),
+                          onChanged: (value) => setState(() => _package = value),
+                          validator: (value) => value == null ? 'يرجى اختيار باقة الاستشارة' : null,
+                        ),
             ),
             Step(
               title: const Text('تفاصيل الاستشارة'),
@@ -174,7 +191,7 @@ class _CreateBookingPageState extends ConsumerState<CreateBookingPage> {
                       textInputAction: TextInputAction.next,
                       decoration: const InputDecoration(
                         labelText: 'نوع الاستشارة',
-                        hintText: 'اكتب نوع الاستشارة التي تحتاجها',
+                        hintText: 'مثال: قضية إدارية أو قضية تجارية',
                       ),
                       validator: (value) => value == null || value.trim().isEmpty
                           ? 'يرجى كتابة نوع الاستشارة'
@@ -217,10 +234,10 @@ class _CreateBookingPageState extends ConsumerState<CreateBookingPage> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   Text('المحامي: ${widget.lawyer.fullName ?? 'محامي'}'),
-                  Text('الباقة: ${_package?.title ?? '-'}'),
+                  Text('الباقة: ${widget.isCustom ? 'استشارة مختلفة' : (_package?.title ?? '-')}'),
                   Text('نوع الاستشارة: ${widget.isCustom ? (_customConsultationTypeController.text.trim().isEmpty ? '-' : _customConsultationTypeController.text.trim()) : _consultationType}'),
                   Text('الموعد: ${_selectedSlot == null ? '-' : '${_selectedSlot!.startsAt.day}/${_selectedSlot!.startsAt.month}/${_selectedSlot!.startsAt.year} ${TimeOfDay.fromDateTime(_selectedSlot!.startsAt).format(context)}'}'),
-                  Text('الرسوم: ${_package?.price ?? 0} د.ع'),
+                  if (!widget.isCustom) Text('الرسوم: ${_package?.price ?? 0} د.ع'),
                   const SizedBox(height: 16),
                   TextFormField(
                     controller: _descriptionController,
