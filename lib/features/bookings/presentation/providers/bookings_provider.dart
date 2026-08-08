@@ -98,6 +98,13 @@ class BookingsController extends _$BookingsController {
     state = await AsyncValue.guard(() async {
       final user = ref.read(authStateChangesProvider).value;
       if (user == null) throw Exception('يجب تسجيل الدخول أولاً');
+
+      // إنشاء طلب الاستشارة عملية خاصة بالعميل فقط. لا نعتمد على إخفاء
+      // الزر في الواجهة؛ نتحقق من الدور قبل الوصول إلى المستودع أيضًا.
+      if (user.role != 'client') {
+        throw Exception('فقط العميل يمكنه طلب حجز استشارة');
+      }
+
       final repo = ref.read(bookingsRepositoryProvider);
       String? documentUrl;
       if (documentBytes != null && documentName != null) {
