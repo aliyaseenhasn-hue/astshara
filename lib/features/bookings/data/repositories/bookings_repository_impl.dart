@@ -28,7 +28,6 @@ class BookingsRepositoryImpl implements BookingsRepository {
       'p_document_url': documentUrl,
       'p_client_whatsapp': null,
     });
-
     return BookingModel.fromJson(Map<String, dynamic>.from(response as Map)).toEntity();
   }
 
@@ -36,47 +35,37 @@ class BookingsRepositoryImpl implements BookingsRepository {
   Future<String> uploadDocument(dynamic fileBytes, String fileName) async {
     final user = _supabase.auth.currentUser;
     if (user == null) throw Exception('المستخدم غير مسجل دخول');
-
     final safeFileName = fileName.replaceAll(RegExp(r'[^A-Za-z0-9._-]'), '_');
     final filePath = '${user.id}/docs/${DateTime.now().microsecondsSinceEpoch}_$safeFileName';
-
-    await _supabase.storage.from('lawyer_documents').uploadBinary(
-      filePath,
-      fileBytes,
-      fileOptions: const FileOptions(upsert: false),
-    );
-
-    return _supabase.storage
-        .from('lawyer_documents')
-        .createSignedUrl(filePath, 31536000);
+    await _supabase.storage.from('lawyer_documents').uploadBinary(filePath, fileBytes, fileOptions: const FileOptions(upsert: false));
+    return _supabase.storage.from('lawyer_documents').createSignedUrl(filePath, 31536000);
   }
 
   @override
   Future<List<Booking>> getUserBookings(String userId) async {
     final response = await _supabase.from('bookings').select().eq('user_id', userId).order('created_at', ascending: false);
-    return (response as List).map((json) => BookingModel.fromJson(Map<String, dynamic>.from(json as Map)).toEntity()).toList();
+    return (response as List).map((json) => BookingModel.fromJson(Map<String, dynamic>.from(json as Map)).toList()).toList();
   }
 
   @override
   Future<List<Booking>> getLawyerBookings(String lawyerId) async {
-    final response = await _supabase.from('bookings').select().eq('lawyer_id', lawyerId).order('created_at', ascending: false);
+    final response = await _supabase.from('bookings').select().eq('lawyer_id', lawyerId).isFilter('deleted_by_lawyer_at', null).order('created_at', ascending: false);
     return (response as List).map((json) => BookingModel.fromJson(Map<String, dynamic>.from(json as Map)).toEntity()).toList();
   }
 
   @override
   Future<void> updateBookingStatus(String bookingId, String status) async {
-    await _supabase.rpc('change_booking_status', params: {
-      'p_booking_id': bookingId,
-      'p_new_status': status,
-    });
+    await _supabase.rpc('change_booking_status', params: {'p_booking_id': bookingId, 'p_new_status': status});
   }
 
   @override
   Future<Booking> reviewBooking(String bookingId, bool approved) async {
-    final response = await _supabase.rpc('review_booking', params: {
-      'p_booking_id': bookingId,
-      'p_approved': approved,
-    });
+    final response = await _supabase.rpc('review_booking', params: {'p_booking_id': bookingId, 'p_approved': approved});
     return BookingModel.fromJson(Map<String, dynamic>.from(response as Map)).toEntity();
+  }
+
+  @override
+  Future<void> archiveBookingForLawyer(String bookingId) async {
+    await _supabase.rpc('archive_booking_for_lawyer', params: {'p_booking_id': bookingId});
   }
 }
