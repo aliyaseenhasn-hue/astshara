@@ -25,6 +25,9 @@ class BookingDetailsPage extends ConsumerWidget {
     final contactAsync = isOwner && ['مؤكد', 'قيد التنفيذ', 'مكتمل'].contains(booking.status)
         ? ref.watch(bookingContactProvider(booking.id))
         : const AsyncValue.data(null);
+    final canReview = isLawyer &&
+        !booking.lawyerApproved &&
+        ['بانتظار التأكيد', 'قيد انتظار الدفع', 'قيد معالجة الدفع'].contains(booking.status);
 
     return Scaffold(
       appBar: AppBar(title: const Text('تفاصيل الاستشارة'), backgroundColor: AppColors.secondary, foregroundColor: Colors.white),
@@ -46,7 +49,7 @@ class BookingDetailsPage extends ConsumerWidget {
           ],
           _section('بيانات الحجز', Icons.calendar_month_outlined, detailsAsync.when(
             data: (d) => Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              _row('الباقة', d?['package_name'] ?? 'غير محددة'),
+              _row('الباقة', d?['package_name'] ?? 'استشارة مختلفة'),
               _row('طريقة الاستشارة', d?['consultation_type'] ?? 'غير محددة'),
               _row('التاريخ', DateFormat('yyyy-MM-dd').format(booking.scheduledAt)),
               _row('الوقت', DateFormat('HH:mm').format(booking.scheduledAt)),
@@ -77,7 +80,13 @@ class BookingDetailsPage extends ConsumerWidget {
             )),
           ],
           const SizedBox(height: 24),
-          if (isLawyer && booking.status == 'بانتظار التأكيد') ...[
+          if (canReview) ...[
+            Container(
+              padding: const EdgeInsets.all(14),
+              margin: const EdgeInsets.only(bottom: 12),
+              decoration: BoxDecoration(color: const Color(0xFF81C7F5).withValues(alpha: .10), borderRadius: BorderRadius.circular(12)),
+              child: const Text('هذا الطلب بانتظار مراجعتك. يرجى الموافقة أو رفض الطلب قبل بدء الاستشارة.', textAlign: TextAlign.center),
+            ),
             Row(children: [
               Expanded(child: ElevatedButton.icon(onPressed: () => _reviewBooking(context, ref, true), icon: const Icon(Icons.check_circle_outline), label: const Text('الموافقة على الطلب'), style: _button(color: const Color(0xFF81C7F5)))),
               const SizedBox(width: 12),
