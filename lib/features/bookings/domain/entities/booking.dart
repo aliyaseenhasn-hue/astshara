@@ -12,12 +12,13 @@ class Booking {
   final String? description;
   final String? documentUrl;
   final String? whatsappNumber;
+  final bool lawyerApproved;
 
   const Booking({
     required this.id,
     required this.userId,
     required this.lawyerId,
-    this.status = 'pending',
+    this.status = 'قيد انتظار الدفع',
     required this.scheduledAt,
     required this.price,
     this.createdAt,
@@ -27,6 +28,7 @@ class Booking {
     this.description,
     this.documentUrl,
     this.whatsappNumber,
+    this.lawyerApproved = false,
   });
 
   Booking copyWith({
@@ -43,6 +45,7 @@ class Booking {
     String? description,
     String? documentUrl,
     String? whatsappNumber,
+    bool? lawyerApproved,
   }) {
     return Booking(
       id: id ?? this.id,
@@ -58,6 +61,7 @@ class Booking {
       description: description ?? this.description,
       documentUrl: documentUrl ?? this.documentUrl,
       whatsappNumber: whatsappNumber ?? this.whatsappNumber,
+      lawyerApproved: lawyerApproved ?? this.lawyerApproved,
     );
   }
 }
