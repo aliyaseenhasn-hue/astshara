@@ -17,34 +17,108 @@ class PaymentUploadPage extends ConsumerStatefulWidget {
 
 class _PaymentUploadPageState extends ConsumerState<PaymentUploadPage> {
   bool _loading = false;
+
   Future<void> _startQiCardPayment() async {
     if (_loading) return;
     setState(() => _loading = true);
     try {
-      final formUrl = await QiCardPaymentService(SupabaseConfig.client).createPayment(bookingId: widget.booking.id);
+      final formUrl = await QiCardPaymentService(SupabaseConfig.client)
+          .createPayment(bookingId: widget.booking.id);
       final uri = Uri.tryParse(formUrl);
-      if (uri == null || !(await canLaunchUrl(uri))) throw Exception('تعذر فتح صفحة الدفع');
+      if (uri == null || !(await canLaunchUrl(uri))) {
+        throw Exception('تعذر فتح صفحة الدفع');
+      }
       await launchUrl(uri, mode: LaunchMode.externalApplication);
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تم إرسال عملية الدفع إلى بوابة كي كارد. ستبقى الحالة «قيد معالجة الدفع» حتى تعتمد الإدارة الدفع.')));
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'تم فتح بوابة كي كارد. بعد إتمام الدفع سيجري تحديث حالة الحجز تلقائياً.',
+            ),
+          ),
+        );
+      }
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString().replaceFirst('Exception: ', '')), backgroundColor: AppColors.error));
-    } finally { if (mounted) setState(() => _loading = false); }
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              e.toString().replaceFirst('Exception: ', ''),
+            ),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
   }
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: const Text('إرسال الدفع'), centerTitle: true),
-    body: SingleChildScrollView(
-      padding: const EdgeInsets.all(AppSizes.p24),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-        Container(padding: const EdgeInsets.all(18), decoration: BoxDecoration(color: AppColors.secondary, borderRadius: BorderRadius.circular(14)), child: Column(children: [const Text('المبلغ المطلوب', style: TextStyle(color: Colors.white70)), const SizedBox(height: 6), Text('${widget.booking.price} د.ع', style: const TextStyle(color: AppColors.gold, fontSize: 24, fontWeight: FontWeight.bold))])),
-        const SizedBox(height: 20),
-        const Text('حالة الحجز الحالية: قيد انتظار الدفع', textAlign: TextAlign.center, style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.primary)),
-        const SizedBox(height: 20),
-        const Text('بعد إرسال الدفع تصبح العملية «قيد معالجة الدفع». اعتماد الإدارة للدفع هو الذي ينقل الحجز إلى «مؤكد».', textAlign: TextAlign.center, style: TextStyle(color: AppColors.textSecondary, height: 1.5)),
-        const SizedBox(height: 28),
-        _loading ? const LoadingWidget() : ElevatedButton.icon(onPressed: _startQiCardPayment, icon: const Icon(Icons.lock_outline), label: const Text('إرسال الدفع'), style: ElevatedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 18), backgroundColor: AppColors.primary, foregroundColor: Colors.white)),
-      ]),
-    ),
-  );
+        appBar: AppBar(
+          title: const Text('إكمال الدفع'),
+          centerTitle: true,
+        ),
+        body: SingleChildScrollView(
+          padding: const EdgeInsets.all(AppSizes.p24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(18),
+                decoration: BoxDecoration(
+                  color: AppColors.secondary,
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: Column(
+                  children: [
+                    const Text(
+                      'المبلغ المطلوب',
+                      style: TextStyle(color: Colors.white70),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      '${widget.booking.price} د.ع',
+                      style: const TextStyle(
+                        color: AppColors.gold,
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 20),
+              const Text(
+                'طريقة الدفع: كي كارد',
+                textAlign: TextAlign.center,
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 12),
+              const Text(
+                'اضغط على الزر للانتقال إلى صفحة الدفع الآمنة الخاصة بكي كارد وإكمال العملية. لا يتم إدخال بيانات البطاقة داخل تطبيق الاستشارة.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: AppColors.textSecondary,
+                  height: 1.5,
+                ),
+              ),
+              const SizedBox(height: 28),
+              _loading
+                  ? const LoadingWidget()
+                  : ElevatedButton.icon(
+                      onPressed: _startQiCardPayment,
+                      icon: const Icon(Icons.lock_outline),
+                      label: const Text('إكمال الدفع بواسطة كي كارد'),
+                      style: ElevatedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 18),
+                        backgroundColor: AppColors.primary,
+                        foregroundColor: Colors.white,
+                      ),
+                    ),
+            ],
+          ),
+        ),
+      );
 }
