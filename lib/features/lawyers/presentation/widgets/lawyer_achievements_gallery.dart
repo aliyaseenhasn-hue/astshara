@@ -8,7 +8,6 @@ class LawyerAchievementsGallery extends ConsumerStatefulWidget {
   final String lawyerId;
   final bool editable;
   const LawyerAchievementsGallery({super.key, required this.lawyerId, this.editable = false});
-
   @override
   ConsumerState<LawyerAchievementsGallery> createState() => _LawyerAchievementsGalleryState();
 }
@@ -16,7 +15,6 @@ class LawyerAchievementsGallery extends ConsumerStatefulWidget {
 class _LawyerAchievementsGalleryState extends ConsumerState<LawyerAchievementsGallery> {
   late Future<List<Map<String, dynamic>>> _items;
   bool _uploading = false;
-
   @override
   void initState() { super.initState(); _reload(); }
   void _reload() {
@@ -26,7 +24,7 @@ class _LawyerAchievementsGalleryState extends ConsumerState<LawyerAchievementsGa
   Future<void> _addAchievement() async {
     final result = await FilePicker.platform.pickFiles(type: FileType.image, withData: true);
     final file = result?.files.isNotEmpty == true ? result!.files.first : null;
-    if (file?.bytes == null) return;
+    if (file?.bytes == null || !mounted) return;
     final titleController = TextEditingController();
     final descriptionController = TextEditingController();
     final confirmed = await showDialog<bool>(context: context, builder: (context) => AlertDialog(
@@ -41,6 +39,8 @@ class _LawyerAchievementsGalleryState extends ConsumerState<LawyerAchievementsGa
         ElevatedButton(onPressed: () => Navigator.pop(context, true), child: const Text('حفظ')),
       ],
     ));
+    final title = titleController.text.trim();
+    final description = descriptionController.text.trim();
     titleController.dispose();
     descriptionController.dispose();
     if (confirmed != true || !mounted) return;
@@ -56,8 +56,8 @@ class _LawyerAchievementsGalleryState extends ConsumerState<LawyerAchievementsGa
         'lawyer_id': widget.lawyerId,
         'image_url': publicUrl,
         'image_path': path,
-        'title': titleController.text.trim().isEmpty ? null : titleController.text.trim(),
-        'description': descriptionController.text.trim().isEmpty ? null : descriptionController.text.trim(),
+        'title': title.isEmpty ? null : title,
+        'description': description.isEmpty ? null : description,
       });
       if (mounted) setState(_reload);
     } catch (e) {
@@ -89,23 +89,19 @@ class _LawyerAchievementsGalleryState extends ConsumerState<LawyerAchievementsGa
         if (snapshot.connectionState == ConnectionState.waiting) const Padding(padding: EdgeInsets.all(20), child: Center(child: CircularProgressIndicator()))
         else if (items.isEmpty) const Padding(padding: EdgeInsets.symmetric(vertical: 20), child: Text('لم تتم إضافة قرارات أو إنجازات بعد.', textAlign: TextAlign.center, style: TextStyle(color: Colors.grey)))
         else GridView.builder(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
+          shrinkWrap: true, physics: const NeverScrollableScrollPhysics(),
           gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 2, crossAxisSpacing: 10, mainAxisSpacing: 10, childAspectRatio: .78),
           itemCount: items.length,
           itemBuilder: (context, index) {
             final item = items[index];
-            return Card(
-              clipBehavior: Clip.antiAlias,
-              child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-                Expanded(child: Image.network(item['image_url'] as String, fit: BoxFit.cover, errorBuilder: (_, __, ___) => const Center(child: Icon(Icons.broken_image_outlined)))),
-                Padding(padding: const EdgeInsets.all(10), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  if (item['title'] != null) Text(item['title'] as String, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.bold)),
-                  if (item['description'] != null) ...[const SizedBox(height: 4), Text(item['description'] as String, maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 11, color: Colors.grey))],
-                  if (widget.editable) Align(alignment: Alignment.centerLeft, child: IconButton(onPressed: () => _delete(item), icon: const Icon(Icons.delete_outline, color: AppColors.error, size: 20))),
-                ])),
-              ]),
-            );
+            return Card(clipBehavior: Clip.antiAlias, child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+              Expanded(child: Image.network(item['image_url'] as String, fit: BoxFit.cover, errorBuilder: (_, __, ___) => const Center(child: Icon(Icons.broken_image_outlined)))),
+              Padding(padding: const EdgeInsets.all(10), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                if (item['title'] != null) Text(item['title'] as String, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.bold)),
+                if (item['description'] != null) ...[const SizedBox(height: 4), Text(item['description'] as String, maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 11, color: Colors.grey))],
+                if (widget.editable) Align(alignment: Alignment.centerLeft, child: IconButton(onPressed: () => _delete(item), icon: const Icon(Icons.delete_outline, color: AppColors.error, size: 20))),
+              ])),
+            ]));
           },
         ),
       ]);
