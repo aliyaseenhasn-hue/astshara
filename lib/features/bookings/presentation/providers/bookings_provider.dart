@@ -33,27 +33,19 @@ Future<List<Booking>> lawyerBookings(LawyerBookingsRef ref) async {
   return ref.watch(bookingsRepositoryProvider).getLawyerBookings(profileId);
 }
 
-/// المواعيد المنشورة والمتاحة فعلياً للمحامي. لا يتم السماح للواجهة بإنشاء موعد يدوي.
 final availableSlotsProvider = FutureProvider.family<List<DateTime>, String>((ref, lawyerId) async {
-  final rows = await SupabaseConfig.client
-      .from('lawyer_availability_slots')
-      .select('starts_at, ends_at')
-      .eq('lawyer_id', lawyerId)
-      .eq('is_available', true)
-      .gt('starts_at', DateTime.now().toUtc().toIso8601String())
-      .order('starts_at');
-  return (rows as List)
-      .map((row) => DateTime.parse(row['starts_at'] as String).toLocal())
-      .toList();
+  final rows = await SupabaseConfig.client.from('lawyer_availability_slots').select('starts_at').eq('lawyer_id', lawyerId).eq('is_available', true).gt('starts_at', DateTime.now().toUtc().toIso8601String()).order('starts_at');
+  return (rows as List).map((row) => DateTime.parse(row['starts_at'] as String).toLocal()).toList();
 });
 
 final bookingDetailsProvider = FutureProvider.family<Map<String, dynamic>?, String>((ref, bookingId) async {
-  final response = await SupabaseConfig.client
-      .from('bookings')
-      .select('consultation_type, description, document_url, package_name, package_description, package_duration_minutes')
-      .eq('id', bookingId)
-      .maybeSingle();
-  return response;
+  return await SupabaseConfig.client.from('bookings').select('consultation_type, description, document_url, package_name, package_description, package_duration_minutes').eq('id', bookingId).maybeSingle();
+});
+
+final bookingContactProvider = FutureProvider.family<Map<String, dynamic>?, String>((ref, bookingId) async {
+  final response = await SupabaseConfig.client.rpc('get_booking_contact_info', params: {'p_booking_id': bookingId});
+  if (response is List && response.isNotEmpty) return Map<String, dynamic>.from(response.first as Map);
+  return null;
 });
 
 @riverpod
@@ -61,15 +53,7 @@ class BookingsController extends _$BookingsController {
   @override
   FutureOr<void> build() {}
 
-  Future<Booking?> requestBooking({
-    required String lawyerId,
-    required DateTime scheduledAt,
-    required String packageName,
-    required String consultationType,
-    String? description,
-    dynamic documentBytes,
-    String? documentName,
-  }) async {
+  Future<Booking?> requestBooking({required String lawyerId, required DateTime scheduledAt, required String packageName, required String consultationType, String? description, dynamic documentBytes, String? documentName}) async {
     state = const AsyncLoading();
     Booking? createdBooking;
     state = await AsyncValue.guard(() async {
@@ -77,20 +61,10 @@ class BookingsController extends _$BookingsController {
       if (user == null) throw Exception('يجب تسجيل الدخول أولاً');
       final repo = ref.read(bookingsRepositoryProvider);
       String? documentUrl;
-      if (documentBytes != null && documentName != null) {
-        documentUrl = await repo.uploadDocument(documentBytes, documentName);
-      }
-      createdBooking = await repo.createBooking(
-        lawyerId: lawyerId,
-        scheduledAt: scheduledAt,
-        packageName: packageName,
-        consultationType: consultationType,
-        description: description,
-        documentUrl: documentUrl,
-      );
+      if (documentBytes != null && documentName != null) documentUrl = await repo.uploadDocument(documentBytes, documentName);
+      createdBooking = await repo.createBooking(lawyerId: lawyerId, scheduledAt: scheduledAt, packageName: packageName, consultationType: consultationType, description: description, documentUrl: documentUrl);
       ref.invalidate(userBookingsProvider);
     });
-    if (state.hasError) return null;
-    return createdBooking;
+    return state.hasError ? null : createdBooking;
   }
 }
