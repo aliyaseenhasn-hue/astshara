@@ -43,16 +43,17 @@ class LawyerProfileModel {
       licenseNumber: json['license_number'] as String?,
       bio: json['bio'] as String?,
       specializations: _specializationsFromJson(json['specialization']),
-      yearsExperience: json['years_experience'] as int?,
+      yearsExperience: (json['years_experience'] as num?)?.toInt(),
       consultationPrice: _doubleFromPossibleString(json['consultation_price']),
       whatsapp: json['whatsapp'] as String?,
       idCardUrl: json['id_card_url'] as String?,
       rating: (json['rating'] as num?)?.toDouble() ?? 0.0,
-      reviewCount: json['review_count'] as int? ?? 0,
+      reviewCount: (json['review_count'] as num?)?.toInt() ?? 0,
       verified: json['verified'] as bool? ?? false,
       availability: json['availability'] as bool? ?? true,
       services: (json['services'] as List? ?? [])
-          .map((e) => LawyerService.fromJson(e as Map<String, dynamic>))
+          .whereType<Map>()
+          .map((e) => LawyerService.fromJson(Map<String, dynamic>.from(e)))
           .toList(),
     );
   }
