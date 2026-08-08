@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_sizes.dart';
+import '../../../authentication/presentation/providers/auth_provider.dart';
 import '../../../payments/presentation/providers/payments_provider.dart';
 import '../../domain/entities/booking.dart';
 import '../providers/bookings_provider.dart';
@@ -88,8 +89,7 @@ class BookingDetailsPage extends ConsumerWidget {
   Future<void> _reviewBooking(BuildContext context, WidgetRef ref, bool approved) async {
     try {
       await ref.read(bookingsRepositoryProvider).reviewBooking(booking.id, approved);
-      ref.invalidate(lawyerBookingsProvider);
-      ref.invalidate(userBookingsProvider);
+      ref.invalidate(lawyerBookingsProvider); ref.invalidate(userBookingsProvider);
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(approved ? 'تمت الموافقة على الطلب، وأصبح بإمكان طالب الخدمة إكمال الدفع' : 'تم رفض طلب الاستشارة')));
         Navigator.pop(context);
