@@ -14,20 +14,14 @@ part 'bookings_provider.g.dart';
 class AvailableBookingSlot {
   final String id;
   final DateTime startsAt;
-
   const AvailableBookingSlot({required this.id, required this.startsAt});
 }
 
 @riverpod
-BookingsRepository bookingsRepository(BookingsRepositoryRef ref) =>
-    BookingsRepositoryImpl(SupabaseConfig.client);
+BookingsRepository bookingsRepository(BookingsRepositoryRef ref) => BookingsRepositoryImpl(SupabaseConfig.client);
 
 Future<String?> _getProfileId(String authUid) async {
-  final row = await SupabaseConfig.client
-      .from('profiles')
-      .select('id')
-      .eq('auth_id', authUid)
-      .maybeSingle();
+  final row = await SupabaseConfig.client.from('profiles').select('id').eq('auth_id', authUid).maybeSingle();
   return row?['id'] as String?;
 }
 
@@ -49,45 +43,27 @@ Future<List<Booking>> lawyerBookings(LawyerBookingsRef ref) async {
   return ref.read(bookingsRepositoryProvider).getLawyerBookings(profileId);
 }
 
-final availableSlotsProvider =
-    FutureProvider.family<List<AvailableBookingSlot>, String>((ref, lawyerId) async {
-  final rows = await SupabaseConfig.client
-      .from('lawyer_availability_slots')
-      .select('id, starts_at')
-      .eq('lawyer_id', lawyerId)
-      .eq('is_available', true)
-      .gt('starts_at', DateTime.now().toUtc().toIso8601String())
-      .order('starts_at');
-
+final availableSlotsProvider = FutureProvider.family<List<AvailableBookingSlot>, String>((ref, lawyerId) async {
+  final rows = await SupabaseConfig.client.from('lawyer_availability_slots').select('id, starts_at').eq('lawyer_id', lawyerId).eq('is_available', true).gt('starts_at', DateTime.now().toUtc().toIso8601String()).order('starts_at');
   return (rows as List).map((row) {
     final map = Map<String, dynamic>.from(row as Map);
-    return AvailableBookingSlot(
-      id: map['id'] as String,
-      startsAt: DateTime.parse(map['starts_at'] as String).toLocal(),
-    );
+    return AvailableBookingSlot(id: map['id'] as String, startsAt: DateTime.parse(map['starts_at'] as String).toLocal());
   }).toList();
 });
 
-final bookingDetailsProvider =
-    FutureProvider.family<Map<String, dynamic>?, String>((ref, bookingId) async {
-  return await SupabaseConfig.client
-      .from('bookings')
-      .select(
-        'consultation_type, description, document_url, package_name, package_description, package_duration_minutes',
-      )
-      .eq('id', bookingId)
-      .maybeSingle();
+final bookingDetailsProvider = FutureProvider.family<Map<String, dynamic>?, String>((ref, bookingId) async {
+  final booking = await SupabaseConfig.client.from('bookings').select('user_id, consultation_type, description, document_url, package_name, package_description, package_duration_minutes').eq('id', bookingId).maybeSingle();
+  if (booking == null) return null;
+
+  final result = Map<String, dynamic>.from(booking);
+  final profile = await SupabaseConfig.client.from('profiles').select('full_name, name').eq('id', booking['user_id']).maybeSingle();
+  result['client_name'] = profile?['full_name'] ?? profile?['name'] ?? 'غير متوفر';
+  return result;
 });
 
-final bookingContactProvider =
-    FutureProvider.family<Map<String, dynamic>?, String>((ref, bookingId) async {
-  final response = await SupabaseConfig.client.rpc(
-    'get_booking_contact_info',
-    params: {'p_booking_id': bookingId},
-  );
-  if (response is List && response.isNotEmpty) {
-    return Map<String, dynamic>.from(response.first as Map);
-  }
+final bookingContactProvider = FutureProvider.family<Map<String, dynamic>?, String>((ref, bookingId) async {
+  final response = await SupabaseConfig.client.rpc('get_booking_contact_info', params: {'p_booking_id': bookingId});
+  if (response is List && response.isNotEmpty) return Map<String, dynamic>.from(response.first as Map);
   return null;
 });
 
@@ -111,26 +87,12 @@ class BookingsController extends _$BookingsController {
     state = await AsyncValue.guard(() async {
       final user = ref.read(authStateChangesProvider).value;
       if (user == null) throw Exception('يجب تسجيل الدخول أولاً');
-
       final isClient = user.role == 'user' || user.role == 'client';
-      if (!isClient) {
-        throw Exception('فقط طالب الخدمة يمكنه طلب حجز استشارة');
-      }
-
+      if (!isClient) throw Exception('فقط طالب الخدمة يمكنه طلب حجز استشارة');
       final repo = ref.read(bookingsRepositoryProvider);
       String? documentUrl;
-      if (documentBytes != null && documentName != null) {
-        documentUrl = await repo.uploadDocument(documentBytes, documentName);
-      }
-      createdBooking = await repo.createBooking(
-        lawyerId: lawyerId,
-        scheduledAt: scheduledAt,
-        slotId: slotId,
-        packageName: packageName,
-        consultationType: consultationType,
-        description: description,
-        documentUrl: documentUrl,
-      );
+      if (documentBytes != null && documentName != null) documentUrl = await repo.uploadDocument(documentBytes, documentName);
+      createdBooking = await repo.createBooking(lawyerId: lawyerId, scheduledAt: scheduledAt, slotId: slotId, packageName: packageName, consultationType: consultationType, description: description, documentUrl: documentUrl);
       ref.invalidate(userBookingsProvider);
     });
     return state.hasError ? null : createdBooking;
