@@ -9,28 +9,54 @@ class BookingsRepositoryImpl implements BookingsRepository {
   BookingsRepositoryImpl(this._supabase);
 
   @override
-  Future<void> createBooking(Booking booking,
-      {String? consultationType,
-      String? description,
-      String? documentUrl,
-      String? whatsappNumber}) async {
-    await _supabase.from('bookings').insert({
-      'user_id': booking.userId,
-      'lawyer_id': booking.lawyerId,
-      'status': booking.status,
-      'scheduled_at': booking.scheduledAt.toIso8601String(),
-      'price': booking.price,
-      'consultation_type': consultationType,
-      'description': description,
-      'document_url': documentUrl,
-      'whatsapp_number': whatsappNumber,
+  Future<Booking> createBooking({
+    required String lawyerId,
+    required DateTime scheduledAt,
+    required String packageName,
+    required String consultationType,
+    String? description,
+    String? documentUrl,
+    String? whatsappNumber,
+  }) async {
+    final response = await _supabase.rpc('create_booking', params: {
+      'p_lawyer_id': lawyerId,
+      'p_scheduled_at': scheduledAt.toUtc().toIso8601String(),
+      'p_package_name': packageName,
+      'p_consultation_type': consultationType,
+      'p_description': description,
+      'p_document_url': documentUrl,
+      'p_client_whatsapp': whatsappNumber,
     });
+
+    return BookingModel.fromJson(
+      Map<String, dynamic>.from(response as Map),
+    ).toEntity();
+  }
+
+  @override
+  Future<List<DateTime>> getAvailableSlots({
+    required String lawyerId,
+    required DateTime from,
+    required DateTime to,
+  }) async {
+    final response = await _supabase
+        .from('lawyer_availability_slots')
+        .select('starts_at')
+        .eq('lawyer_id', lawyerId)
+        .eq('is_available', true)
+        .gte('starts_at', from.toUtc().toIso8601String())
+        .lte('starts_at', to.toUtc().toIso8601String())
+        .order('starts_at');
+
+    return (response as List)
+        .map((row) => DateTime.parse(row['starts_at'] as String).toLocal())
+        .toList();
   }
 
   @override
   Future<String> uploadDocument(dynamic fileBytes, String fileName) async {
     final user = _supabase.auth.currentUser;
-    if (user == null) throw Exception('User not logged in');
+    if (user == null) throw Exception('المستخدم غير مسجل دخول');
 
     final filePath = '${user.id}/docs/$fileName';
     await _supabase.storage.from('lawyer_documents').uploadBinary(
@@ -40,7 +66,7 @@ class BookingsRepositoryImpl implements BookingsRepository {
         );
     return await _supabase.storage
         .from('lawyer_documents')
-        .createSignedUrl(filePath, 31536000);
+        .createSignedUrl(filePath, 604800);
   }
 
   @override
@@ -51,9 +77,11 @@ class BookingsRepositoryImpl implements BookingsRepository {
         .eq('user_id', userId)
         .order('created_at', ascending: false);
 
-    if (response == null) return [];
-    final List<dynamic> data = response as List<dynamic>;
-    return data.map((json) => BookingModel.fromJson(json).toEntity()).toList();
+    return (response as List)
+        .map((json) => BookingModel.fromJson(
+              Map<String, dynamic>.from(json as Map),
+            ).toEntity())
+        .toList();
   }
 
   @override
@@ -64,36 +92,36 @@ class BookingsRepositoryImpl implements BookingsRepository {
         .eq('lawyer_id', lawyerId)
         .order('created_at', ascending: false);
 
-    if (response == null) return [];
-    final List<dynamic> data = response as List<dynamic>;
-    return data.map((json) => BookingModel.fromJson(json).toEntity()).toList();
+    return (response as List)
+        .map((json) => BookingModel.fromJson(
+              Map<String, dynamic>.from(json as Map),
+            ).toEntity())
+        .toList();
   }
 
   @override
-  Future<void> updateBookingStatus(String bookingId, String status) async {
-    await _supabase
-        .from('bookings')
-        .update({'status': status}).eq('id', bookingId);
+  Future<Booking> updateBookingStatus(String bookingId, String status) async {
+    final response = await _supabase.rpc('change_booking_status', params: {
+      'p_booking_id': bookingId,
+      'p_new_status': status,
+    });
 
-    // إذا تم قبول الطلب، نقوم بإنشاء محادثة تلقائياً لتمكين التواصل المباشر
-    if (status == 'accepted') {
-      try {
-        final bookingRow = await _supabase
-            .from('bookings')
-            .select('user_id, lawyer_id')
-            .eq('id', bookingId)
-            .single();
+    return BookingModel.fromJson(
+      Map<String, dynamic>.from(response as Map),
+    ).toEntity();
+  }
 
-        await _supabase.from('conversations').upsert({
-          'booking_id': bookingId,
-          'user_id': bookingRow['user_id'],
-          'lawyer_id': bookingRow['lawyer_id'],
-          'last_message': 'تم بدء الاستشارة المباشرة',
-          'updated_at': DateTime.now().toIso8601String(),
-        }, onConflict: 'booking_id');
-      } catch (e) {
-        print('Error creating conversation: $e');
-      }
-    }
+  @override
+  Future<Map<String, String>?> getBookingContact(String bookingId) async {
+    final response = await _supabase.rpc('get_booking_contact', params: {
+      'p_booking_id': bookingId,
+    });
+    final rows = response as List;
+    if (rows.isEmpty) return null;
+    final row = Map<String, dynamic>.from(rows.first as Map);
+    return {
+      if (row['phone'] != null) 'phone': row['phone'].toString(),
+      if (row['whatsapp'] != null) 'whatsapp': row['whatsapp'].toString(),
+    };
   }
 }
