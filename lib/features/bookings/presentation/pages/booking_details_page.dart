@@ -25,9 +25,7 @@ class BookingDetailsPage extends ConsumerWidget {
     final contactAsync = isOwner && ['مؤكد', 'قيد التنفيذ', 'مكتمل'].contains(booking.status)
         ? ref.watch(bookingContactProvider(booking.id))
         : const AsyncValue.data(null);
-    final canReview = isLawyer &&
-        !booking.lawyerApproved &&
-        ['قيد انتظار الدفع', 'قيد معالجة الدفع'].contains(booking.status);
+    final canReview = isLawyer && !booking.lawyerApproved && ['قيد انتظار الدفع', 'قيد معالجة الدفع'].contains(booking.status);
 
     return Scaffold(
       appBar: AppBar(title: const Text('تفاصيل الاستشارة'), backgroundColor: AppColors.secondary, foregroundColor: Colors.white),
@@ -38,12 +36,8 @@ class BookingDetailsPage extends ConsumerWidget {
           const SizedBox(height: 20),
           if (isLawyer) ...[
             _section('بيانات العميل', Icons.person_outline, detailsAsync.when(
-              data: (d) => Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                _row('اسم العميل', d?['client_name']?.toString() ?? booking.userName ?? 'غير متوفر'),
-                _row('نوع الحساب', 'طالب خدمة'),
-              ]),
-              loading: () => const CircularProgressIndicator(),
-              error: (_, __) => _row('اسم العميل', booking.userName ?? 'غير متوفر'),
+              data: (d) => Column(crossAxisAlignment: CrossAxisAlignment.start, children: [_row('اسم العميل', d?['client_name']?.toString() ?? booking.userName ?? 'غير متوفر'), _row('نوع الحساب', 'طالب خدمة')]),
+              loading: () => const CircularProgressIndicator(), error: (_, __) => _row('اسم العميل', booking.userName ?? 'غير متوفر'),
             )),
             const SizedBox(height: 16),
           ],
@@ -62,8 +56,7 @@ class BookingDetailsPage extends ConsumerWidget {
           _section('وصف الموضوع', Icons.description_outlined, detailsAsync.when(
             data: (d) => Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Text(d?['description'] ?? 'لا يوجد وصف متاح.'),
-              if (d?['document_url'] != null)
-                OutlinedButton.icon(onPressed: () => launchUrl(Uri.parse(d!['document_url'] as String)), icon: const Icon(Icons.file_present), label: const Text('فتح المستند المرفق')),
+              if (d?['document_url'] != null) OutlinedButton.icon(onPressed: () => launchUrl(Uri.parse(d!['document_url'] as String)), icon: const Icon(Icons.file_present), label: const Text('فتح المستند المرفق')),
             ]),
             loading: () => const Text('جاري التحميل...'), error: (_, __) => const Text('تعذر تحميل الوصف'),
           )),
@@ -75,18 +68,21 @@ class BookingDetailsPage extends ConsumerWidget {
           if (isOwner && ['مؤكد', 'قيد التنفيذ', 'مكتمل'].contains(booking.status)) ...[
             const SizedBox(height: 16),
             _section('معلومات التواصل', Icons.contact_phone_outlined, contactAsync.when(
-              data: (c) => c == null ? const Text('لا توجد معلومات تواصل متاحة.') : Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text('المحامي: ${c['lawyer_name'] ?? 'محامي'}'), if (c['lawyer_phone'] != null) _row('رقم الهاتف', c['lawyer_phone']), if (c['lawyer_whatsapp'] != null) _row('واتساب', c['lawyer_whatsapp'])]),
+              data: (c) => c == null ? const Text('لا توجد معلومات تواصل متاحة.') : Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text('المحامي: ${c['lawyer_name'] ?? 'محامي'}'),
+                if (c['lawyer_phone'] != null) _row('رقم الهاتف', c['lawyer_phone']),
+                if (c['lawyer_whatsapp'] != null) ...[
+                  _row('واتساب', c['lawyer_whatsapp']),
+                  if (booking.status == 'قيد التنفيذ')
+                    ElevatedButton.icon(onPressed: () => _openWhatsApp(context, c['lawyer_whatsapp'].toString()), icon: const Icon(Icons.chat), label: const Text('بدء الاستشارة عبر واتساب'), style: _button(color: const Color(0xFF25D366))),
+                ],
+              ]),
               loading: () => const CircularProgressIndicator(), error: (e, _) => Text(e.toString().replaceFirst('Exception: ', '')),
             )),
           ],
           const SizedBox(height: 24),
           if (canReview) ...[
-            Container(
-              padding: const EdgeInsets.all(14),
-              margin: const EdgeInsets.only(bottom: 12),
-              decoration: BoxDecoration(color: const Color(0xFF81C7F5).withValues(alpha: .10), borderRadius: BorderRadius.circular(12)),
-              child: const Text('هذا الطلب بانتظار مراجعتك. يمكنك الموافقة أو رفض الطلب قبل بدء الاستشارة.', textAlign: TextAlign.center),
-            ),
+            Container(padding: const EdgeInsets.all(14), margin: const EdgeInsets.only(bottom: 12), decoration: BoxDecoration(color: const Color(0xFF81C7F5).withValues(alpha: .10), borderRadius: BorderRadius.circular(12)), child: const Text('هذا الطلب بانتظار مراجعتك. يمكنك الموافقة أو رفض الطلب قبل بدء الاستشارة.', textAlign: TextAlign.center)),
             Row(children: [
               Expanded(child: ElevatedButton.icon(onPressed: () => _reviewBooking(context, ref, true), icon: const Icon(Icons.check_circle_outline), label: const Text('الموافقة على الطلب'), style: _button(color: const Color(0xFF81C7F5)))),
               const SizedBox(width: 12),
@@ -94,12 +90,39 @@ class BookingDetailsPage extends ConsumerWidget {
             ]),
           ],
           if (isOwner && booking.status == 'قيد انتظار الدفع') ElevatedButton.icon(onPressed: () => context.push('/upload-payment', extra: booking), icon: const Icon(Icons.payment), label: const Text('إرسال الدفع'), style: _button()),
-          if (isLawyer && booking.status == 'مؤكد') ElevatedButton.icon(onPressed: () => _updateStatus(context, ref, 'قيد التنفيذ'), icon: const Icon(Icons.play_arrow), label: const Text('بدء الاستشارة'), style: _button()),
+          if (isLawyer && booking.status == 'مؤكد') _startButton(context, ref, detailsAsync),
           if (isLawyer && booking.status == 'قيد التنفيذ') ElevatedButton.icon(onPressed: () => _updateStatus(context, ref, 'مكتمل'), icon: const Icon(Icons.check_circle_outline), label: const Text('إنهاء الاستشارة'), style: _button(color: AppColors.success)),
           if (isOwner && booking.status == 'مكتمل') ElevatedButton.icon(onPressed: () => showDialog(context: context, builder: (_) => ReviewDialog(bookingId: booking.id, lawyerId: booking.lawyerId)), icon: const Icon(Icons.star), label: const Text('تقييم الاستشارة'), style: _button()),
         ]),
       ),
     );
+  }
+
+  Widget _startButton(BuildContext context, WidgetRef ref, AsyncValue<Map<String, dynamic>?> detailsAsync) {
+    final details = detailsAsync.valueOrNull;
+    final duration = int.tryParse('${details?['package_duration_minutes'] ?? 30}') ?? 30;
+    final now = DateTime.now();
+    final opensAt = booking.scheduledAt.subtract(const Duration(minutes: 5));
+    final closesAt = booking.scheduledAt.add(Duration(minutes: duration));
+    final canStart = !now.isBefore(opensAt) && !now.isAfter(closesAt);
+    if (now.isAfter(closesAt)) {
+      return Container(padding: const EdgeInsets.all(12), margin: const EdgeInsets.only(bottom: 12), decoration: BoxDecoration(color: AppColors.error.withValues(alpha: .08), borderRadius: BorderRadius.circular(12)), child: const Text('انتهى وقت بدء الاستشارة لهذا الموعد.', textAlign: TextAlign.center));
+    }
+    if (!canStart) {
+      final minutes = opensAt.difference(now).inMinutes + 1;
+      return Container(padding: const EdgeInsets.all(12), margin: const EdgeInsets.only(bottom: 12), decoration: BoxDecoration(color: AppColors.primary.withValues(alpha: .08), borderRadius: BorderRadius.circular(12)), child: Text('يمكن بدء الاستشارة قبل الموعد بـ 5 دقائق. المتاح بعد حوالي $minutes دقيقة.', textAlign: TextAlign.center));
+    }
+    return ElevatedButton.icon(onPressed: () => _updateStatus(context, ref, 'قيد التنفيذ'), icon: const Icon(Icons.play_arrow), label: const Text('بدء الاستشارة الآن'), style: _button(color: const Color(0xFF81C7F5)));
+  }
+
+  Future<void> _openWhatsApp(BuildContext context, String value) async {
+    var phone = value.replaceAll(RegExp(r'[^0-9+]'), '');
+    if (phone.startsWith('00')) phone = '+${phone.substring(2)}';
+    if (phone.startsWith('07')) phone = '+964${phone.substring(1)}';
+    final uri = Uri.parse('https://wa.me/${phone.replaceAll('+', '')}');
+    if (!await launchUrl(uri, mode: LaunchMode.externalApplication) && context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تعذر فتح واتساب')));
+    }
   }
 
   Widget _statusHeader() {
