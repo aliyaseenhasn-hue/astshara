@@ -16,14 +16,12 @@ class BookingsRepositoryImpl implements BookingsRepository {
     String? documentUrl,
     String? whatsappNumber,
   }) async {
-    // The existing provider API is retained. The client price/status are ignored by the RPC.
-    // Format accepted from the updated booking page: package title :: consultation method.
     final raw = consultationType?.trim() ?? '';
     final separator = raw.indexOf('::');
     final packageName = separator > 0 ? raw.substring(0, separator).trim() : raw;
     final method = separator > 0 ? raw.substring(separator + 2).trim() : 'نصية';
 
-    final response = await _supabase.rpc('create_booking', params: {
+    await _supabase.rpc('create_booking', params: {
       'p_lawyer_id': booking.lawyerId,
       'p_scheduled_at': booking.scheduledAt.toUtc().toIso8601String(),
       'p_package_name': packageName,
@@ -32,8 +30,21 @@ class BookingsRepositoryImpl implements BookingsRepository {
       'p_document_url': documentUrl,
       'p_client_whatsapp': whatsappNumber,
     });
+  }
 
-    if (response == null) throw Exception('تعذر إنشاء الحجز');
+  @override
+  Future<void> createCustomConsultationRequest({
+    required String lawyerId,
+    required String subject,
+    required String description,
+    required String consultationType,
+  }) async {
+    await _supabase.rpc('create_custom_consultation_request', params: {
+      'p_lawyer_id': lawyerId,
+      'p_subject': subject,
+      'p_description': description,
+      'p_consultation_type': consultationType,
+    });
   }
 
   @override
