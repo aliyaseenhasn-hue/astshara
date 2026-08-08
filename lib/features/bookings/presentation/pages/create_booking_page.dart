@@ -3,7 +3,7 @@ import 'dart:typed_data';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-\import 'package:go_router/go_router.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../../core/constants/app_colors.dart';
 import '../../../authentication/presentation/providers/auth_provider.dart';
@@ -15,12 +15,7 @@ class CreateBookingPage extends ConsumerStatefulWidget {
   final dynamic service;
   final bool isCustom;
 
-  const CreateBookingPage({
-    super.key,
-    required this.lawyer,
-    this.service,
-    this.isCustom = false,
-  });
+  const CreateBookingPage({super.key, required this.lawyer, this.service, this.isCustom = false});
 
   @override
   ConsumerState<CreateBookingPage> createState() => _CreateBookingPageState();
@@ -29,7 +24,6 @@ class CreateBookingPage extends ConsumerStatefulWidget {
 class _CreateBookingPageState extends ConsumerState<CreateBookingPage> {
   final _formKey = GlobalKey<FormState>();
   final _descriptionController = TextEditingController();
-
   int _step = 0;
   LawyerService? _package;
   String _consultationType = 'نصية';
@@ -50,67 +44,35 @@ class _CreateBookingPageState extends ConsumerState<CreateBookingPage> {
   }
 
   Future<void> _pickFile() async {
-    final result = await FilePicker.platform.pickFiles(
-      type: FileType.custom,
-      allowedExtensions: ['pdf', 'jpg', 'png', 'docx'],
-      withData: true,
-    );
+    final result = await FilePicker.platform.pickFiles(type: FileType.custom, allowedExtensions: ['pdf', 'jpg', 'png', 'docx'], withData: true);
     final file = result?.files.isNotEmpty == true ? result!.files.first : null;
     if (file?.bytes == null || !mounted) return;
-    setState(() {
-      _selectedFileBytes = file!.bytes;
-      _selectedFileName = file.name;
-    });
+    setState(() { _selectedFileBytes = file!.bytes; _selectedFileName = file.name; });
   }
+
+  void _showMessage(String message) => ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
 
   bool _validateCurrentStep() {
-    switch (_step) {
-      case 0:
-        if (_package == null) {
-          _showMessage('يرجى اختيار باقة الاستشارة أولاً');
-          return false;
-        }
-        return true;
-      case 1:
-        if (_consultationType.isEmpty) {
-          _showMessage('يرجى اختيار طريقة الاستشارة');
-          return false;
-        }
-        return true;
-      case 2:
-        if (_selectedSlot == null) {
-          _showMessage('يرجى اختيار موعد متاح فعليًا');
-          return false;
-        }
-        return true;
-      default:
-        return _formKey.currentState?.validate() ?? false;
-    }
-  }
-
-  void _showMessage(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+    if (_step == 0 && _package == null) { _showMessage('يرجى اختيار باقة الاستشارة أولاً'); return false; }
+    if (_step == 2 && _selectedSlot == null) { _showMessage('يرجى اختيار موعد متاح فعليًا'); return false; }
+    return _step < 3 || (_formKey.currentState?.validate() ?? false);
   }
 
   void _next() {
     if (!_validateCurrentStep()) return;
-    if (_step < 3) {
-      setState(() => _step++);
-    } else {
-      _submit();
-    }
+    if (_step < 3) { setState(() => _step++); } else { _submit(); }
   }
 
   Future<void> _submit() async {
     final slot = _selectedSlot;
-    if (_package == null || slot == null) return;
-    if (!(_formKey.currentState?.validate() ?? false)) return;
+    final package = _package;
+    if (slot == null || package == null || !(_formKey.currentState?.validate() ?? false)) return;
 
     final booking = await ref.read(bookingsControllerProvider.notifier).requestBooking(
       lawyerId: widget.lawyer.profileId,
       scheduledAt: slot.startsAt,
       slotId: slot.id,
-      packageName: _package!.title,
+      packageName: package.title,
       consultationType: _consultationType,
       description: _descriptionController.text.trim(),
       documentBytes: _selectedFileBytes,
@@ -119,13 +81,10 @@ class _CreateBookingPageState extends ConsumerState<CreateBookingPage> {
 
     if (!mounted) return;
     if (booking == null) {
-      final error = ref.read(bookingsControllerProvider).error;
-      _showMessage(error?.toString() ?? 'تعذر إنشاء الحجز');
+      _showMessage(ref.read(bookingsControllerProvider).error?.toString() ?? 'تعذر إنشاء الحجز');
       return;
     }
 
-    // بعد إنشاء الحجز مباشرةً ينتقل العميل إلى صفحة إكمال الدفع.
-    // لا نعرض نافذة وسيطة ولا نرجعه إلى قائمة المحامين.
     context.go('/upload-payment', extra: booking);
   }
 
@@ -146,38 +105,23 @@ class _CreateBookingPageState extends ConsumerState<CreateBookingPage> {
           controlsBuilder: (context, details) => Padding(
             padding: const EdgeInsets.only(top: 20),
             child: Row(children: [
-              Expanded(
-                child: ElevatedButton(
-                  onPressed: details.onStepContinue,
-                  child: Text(_step == 3 ? 'تأكيد الحجز' : 'متابعة'),
-                ),
-              ),
-              if (_step > 0) ...[
-                const SizedBox(width: 10),
-                TextButton(onPressed: details.onStepCancel, child: const Text('رجوع')),
-              ],
+              Expanded(child: ElevatedButton(onPressed: details.onStepContinue, child: Text(_step == 3 ? 'تأكيد الحجز' : 'متابعة'))),
+              if (_step > 0) ...[const SizedBox(width: 10), TextButton(onPressed: details.onStepCancel, child: const Text('رجوع'))],
             ]),
           ),
           steps: [
             Step(
-              title: const Text('اختيار الباقة'),
-              isActive: _step >= 0,
-              content: widget.lawyer.services.isEmpty
-                  ? const Text('لا توجد باقات متاحة لهذا المحامي.')
-                  : DropdownButtonFormField<LawyerService>(
-                      value: _package,
-                      decoration: const InputDecoration(labelText: 'الباقة'),
-                      items: widget.lawyer.services.map((service) => DropdownMenuItem<LawyerService>(
-                        value: service,
-                        child: Text('${service.title} — ${service.price} د.ع'),
-                      )).toList(),
-                      onChanged: (value) => setState(() => _package = value),
-                      validator: (value) => value == null ? 'يرجى اختيار باقة الاستشارة' : null,
-                    ),
+              title: const Text('اختيار الباقة'), isActive: _step >= 0,
+              content: widget.lawyer.services.isEmpty ? const Text('لا توجد باقات متاحة لهذا المحامي.') : DropdownButtonFormField<LawyerService>(
+                value: _package,
+                decoration: const InputDecoration(labelText: 'الباقة'),
+                items: widget.lawyer.services.map((service) => DropdownMenuItem<LawyerService>(value: service, child: Text('${service.title} — ${service.price} د.ع'))).toList(),
+                onChanged: (value) => setState(() => _package = value),
+                validator: (value) => value == null ? 'يرجى اختيار باقة الاستشارة' : null,
+              ),
             ),
             Step(
-              title: const Text('اختيار طريقة الاستشارة'),
-              isActive: _step >= 1,
+              title: const Text('اختيار طريقة الاستشارة'), isActive: _step >= 1,
               content: DropdownButtonFormField<String>(
                 value: _consultationType,
                 decoration: const InputDecoration(labelText: 'طريقة الاستشارة'),
@@ -186,55 +130,37 @@ class _CreateBookingPageState extends ConsumerState<CreateBookingPage> {
               ),
             ),
             Step(
-              title: const Text('اختيار الموعد المتاح فعليًا'),
-              isActive: _step >= 2,
+              title: const Text('اختيار الموعد المتاح فعليًا'), isActive: _step >= 2,
               content: slotsAsync.when(
                 loading: () => const Center(child: CircularProgressIndicator()),
                 error: (error, stack) => Text('تعذر تحميل المواعيد المتاحة: $error'),
-                data: (items) {
-                  if (items.isEmpty) return const Text('لا توجد مواعيد متاحة حاليًا لهذا المحامي.');
-                  return Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: items.map((slot) => ChoiceChip(
-                      label: Text('${slot.startsAt.day}/${slot.startsAt.month}  ${TimeOfDay.fromDateTime(slot.startsAt).format(context)}'),
-                      selected: _selectedSlot?.id == slot.id,
-                      onSelected: (_) => setState(() => _selectedSlot = slot),
-                    )).toList(),
-                  );
-                },
+                data: (items) => items.isEmpty ? const Text('لا توجد مواعيد متاحة حاليًا لهذا المحامي.') : Wrap(
+                  spacing: 8, runSpacing: 8,
+                  children: items.map((slot) => ChoiceChip(
+                    label: Text('${slot.startsAt.day}/${slot.startsAt.month}  ${TimeOfDay.fromDateTime(slot.startsAt).format(context)}'),
+                    selected: _selectedSlot?.id == slot.id,
+                    onSelected: (_) => setState(() => _selectedSlot = slot),
+                  )).toList(),
+                ),
               ),
             ),
             Step(
-              title: const Text('مراجعة الحجز'),
-              isActive: _step >= 3,
-              content: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Text('المحامي: ${widget.lawyer.fullName ?? 'محامي'}'),
-                  Text('الباقة: ${_package?.title ?? '-'}'),
-                  Text('طريقة الاستشارة: $_consultationType'),
-                  Text('الموعد: ${_selectedSlot == null ? '-' : '${_selectedSlot!.startsAt.day}/${_selectedSlot!.startsAt.month}/${_selectedSlot!.startsAt.year} ${TimeOfDay.fromDateTime(_selectedSlot!.startsAt).format(context)}'}'),
-                  Text('الرسوم: ${_package?.price ?? 0} د.ع'),
-                  const SizedBox(height: 16),
-                  TextFormField(
-                    controller: _descriptionController,
-                    maxLines: 4,
-                    decoration: const InputDecoration(labelText: 'وصف الموضوع'),
-                    validator: (value) => value == null || value.trim().isEmpty ? 'وصف الموضوع مطلوب' : null,
-                  ),
-                  const SizedBox(height: 12),
-                  OutlinedButton.icon(
-                    onPressed: _pickFile,
-                    icon: const Icon(Icons.upload_file),
-                    label: Text(_selectedFileName ?? 'إرفاق مستند (اختياري)'),
-                  ),
-                  const SizedBox(height: 12),
-                  Text('العميل: ${user?.fullName ?? 'المستخدم'}'),
-                  const SizedBox(height: 12),
-                  const Text('بعد التأكيد ستنتقل مباشرة إلى صفحة إكمال الدفع. يبقى الحجز «قيد انتظار الدفع» حتى إرسال الدفع واعتماده.', style: TextStyle(color: AppColors.textSecondary)),
-                ],
-              ),
+              title: const Text('مراجعة الحجز'), isActive: _step >= 3,
+              content: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+                Text('المحامي: ${widget.lawyer.fullName ?? 'محامي'}'),
+                Text('الباقة: ${_package?.title ?? '-'}'),
+                Text('طريقة الاستشارة: $_consultationType'),
+                Text('الموعد: ${_selectedSlot == null ? '-' : '${_selectedSlot!.startsAt.day}/${_selectedSlot!.startsAt.month}/${_selectedSlot!.startsAt.year} ${TimeOfDay.fromDateTime(_selectedSlot!.startsAt).format(context)}'}'),
+                Text('الرسوم: ${_package?.price ?? 0} د.ع'),
+                const SizedBox(height: 16),
+                TextFormField(controller: _descriptionController, maxLines: 4, decoration: const InputDecoration(labelText: 'وصف الموضوع'), validator: (value) => value == null || value.trim().isEmpty ? 'وصف الموضوع مطلوب' : null),
+                const SizedBox(height: 12),
+                OutlinedButton.icon(onPressed: _pickFile, icon: const Icon(Icons.upload_file), label: Text(_selectedFileName ?? 'إرفاق مستند (اختياري)')),
+                const SizedBox(height: 12),
+                Text('العميل: ${user?.fullName ?? 'المستخدم'}'),
+                const SizedBox(height: 12),
+                const Text('بعد التأكيد ستنتقل مباشرة إلى صفحة إكمال الدفع. يبقى الحجز «قيد انتظار الدفع» حتى إرسال الدفع واعتماده.'),
+              ]),
             ),
           ],
         ),
