@@ -11,4 +11,10 @@ abstract class BookingsRepository {
   Future<void> updateBookingStatus(String bookingId, String status);
   Future<Map<String, String>?> getBookingContact(String bookingId);
   Future<String> uploadDocument(dynamic fileBytes, String fileName);
+  Future<void> createCustomConsultationRequest({
+    required String lawyerId,
+    required String subject,
+    required String description,
+    required String consultationType,
+  });
 }
