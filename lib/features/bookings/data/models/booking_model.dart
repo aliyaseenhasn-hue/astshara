@@ -9,6 +9,7 @@ class BookingModel {
   final double price;
   final DateTime? createdAt;
   final String? whatsappNumber;
+  final bool lawyerApproved;
 
   const BookingModel({
     required this.id,
@@ -19,6 +20,7 @@ class BookingModel {
     required this.price,
     this.createdAt,
     this.whatsappNumber,
+    this.lawyerApproved = false,
   });
 
   factory BookingModel.fromJson(Map<String, dynamic> json) {
@@ -26,7 +28,7 @@ class BookingModel {
       id: json['id'] as String? ?? '',
       userId: json['user_id'] as String? ?? '',
       lawyerId: json['lawyer_id'] as String? ?? '',
-      status: json['status'] as String? ?? 'pending',
+      status: json['status'] as String? ?? 'قيد انتظار الدفع',
       scheduledAt: json['scheduled_at'] != null
           ? DateTime.parse(json['scheduled_at'] as String)
           : DateTime.now(),
@@ -35,6 +37,7 @@ class BookingModel {
           ? DateTime.parse(json['created_at'] as String)
           : null,
       whatsappNumber: json['whatsapp_number'] as String?,
+      lawyerApproved: json['lawyer_approved'] as bool? ?? false,
     );
   }
 
@@ -47,5 +50,6 @@ class BookingModel {
         price: price,
         createdAt: createdAt,
         whatsappNumber: whatsappNumber,
+        lawyerApproved: lawyerApproved,
       );
 }
