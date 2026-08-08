@@ -23,6 +23,7 @@ import '../features/bookings/presentation/pages/bookings_list_page.dart';
 import '../features/bookings/presentation/pages/booking_details_page.dart';
 import '../features/chat/presentation/pages/chat_page.dart';
 import '../features/payments/presentation/pages/payment_upload_page.dart';
+import '../features/payments/presentation/pages/payment_result_page.dart';
 import '../features/profile/presentation/pages/profile_page.dart';
 import '../features/profile/presentation/pages/notification_settings_page.dart';
 import '../features/profile/presentation/pages/payment_methods_page.dart';
@@ -68,12 +69,16 @@ GoRouter router(RouterRef ref) {
       final complete = location == '/complete-profile';
       final onboarding = location == '/lawyer-onboarding';
       final pending = location == '/lawyer-pending';
+      final paymentResult = location == '/payment-result';
       final admin = location.startsWith('/admin') && location != '/admin-login';
 
-      // دور العميل في الحسابات الحالية هو "user"، مع دعم "client"
-      // للحسابات التي قد تكون أنشئت سابقًا بهذه القيمة.
       final isClient = user?.role == 'user' || user?.role == 'client';
       final clientOnlyBooking = location == '/create-booking';
+
+      // Qi Card may redirect back to the public callback route before the
+      // client-side auth state has finished restoring. Do not send the user
+      // back to login from the payment gateway callback.
+      if (paymentResult) return null;
 
       if (user == null) {
         return (login || signup || otp) ? null : '/login';
@@ -171,6 +176,13 @@ GoRouter router(RouterRef ref) {
           final b = s.extra as Booking?;
           return b == null ? const BookingsListPage() : PaymentUploadPage(booking: b);
         },
+      ),
+      GoRoute(
+        path: '/payment-result',
+        builder: (c, s) => PaymentResultPage(
+          status: s.uri.queryParameters['status'],
+          bookingId: s.uri.queryParameters['booking_id'],
+        ),
       ),
       GoRoute(path: '/profile', builder: (c, s) => const ProfilePage()),
       GoRoute(path: '/notification-settings', builder: (c, s) => const NotificationSettingsPage()),
