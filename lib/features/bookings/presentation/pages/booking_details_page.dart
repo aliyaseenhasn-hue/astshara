@@ -25,7 +25,9 @@ class BookingDetailsPage extends ConsumerWidget {
     final contactAsync = isOwner && ['مؤكد', 'قيد التنفيذ', 'مكتمل'].contains(booking.status)
         ? ref.watch(bookingContactProvider(booking.id))
         : const AsyncValue.data(null);
-    final canReview = isLawyer && !booking.lawyerApproved && ['قيد انتظار الدفع', 'قيد معالجة الدفع'].contains(booking.status);
+    final canReview = isLawyer &&
+        !booking.lawyerApproved &&
+        ['قيد انتظار الدفع', 'قيد معالجة الدفع', 'قيد مراجعة المحامي'].contains(booking.status);
 
     return Scaffold(
       appBar: AppBar(title: const Text('تفاصيل الاستشارة'), backgroundColor: AppColors.secondary, foregroundColor: Colors.white),
@@ -62,9 +64,29 @@ class BookingDetailsPage extends ConsumerWidget {
           )),
           const SizedBox(height: 16),
           _section('حالة الدفع', Icons.receipt_long_outlined, paymentAsync.when(
-            data: (p) => p == null ? const Text('لم يتم إرسال الدفع بعد.') : Column(crossAxisAlignment: CrossAxisAlignment.start, children: [_row('الوسيلة', _paymentMethod(p.paymentMethod)), _row('حالة الدفع', p.status), if (p.transactionNumber != null) _row('رقم العملية', p.transactionNumber!)]),
+            data: (p) => p == null
+                ? const Text('لم يتم إرسال الدفع بعد.')
+                : Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    _row('الوسيلة', _paymentMethod(p.paymentMethod)),
+                    _row('حالة الدفع', p.status),
+                    if (p.transactionNumber != null) _row('رقم العملية', p.transactionNumber!),
+                  ]),
             loading: () => const CircularProgressIndicator(), error: (_, __) => const Text('تعذر تحميل بيانات الدفع'),
           )),
+          if (isOwner && booking.status == 'قيد مراجعة المحامي') ...[
+            const SizedBox(height: 16),
+            _section('حالة الطلب', Icons.hourglass_top_outlined, const Text(
+              'تم استلام الدفع بنجاح، والحجز الآن بانتظار موافقة المحامي. لن تظهر معلومات التواصل ولن تبدأ الاستشارة حتى يوافق المحامي.',
+              style: TextStyle(height: 1.6),
+            )),
+          ],
+          if (isOwner && booking.status == 'بانتظار الاسترداد') ...[
+            const SizedBox(height: 16),
+            _section('حالة الاسترداد', Icons.replay_outlined, const Text(
+              'رفض المحامي الطلب بعد إتمام الدفع. تم تسجيل الطلب بانتظار استرداد المبلغ، ولن يتم بدء الاستشارة.',
+              style: TextStyle(height: 1.6),
+            )),
+          ],
           if (isOwner && ['مؤكد', 'قيد التنفيذ', 'مكتمل'].contains(booking.status)) ...[
             const SizedBox(height: 16),
             _section('معلومات التواصل', Icons.contact_phone_outlined, contactAsync.when(
@@ -82,7 +104,17 @@ class BookingDetailsPage extends ConsumerWidget {
           ],
           const SizedBox(height: 24),
           if (canReview) ...[
-            Container(padding: const EdgeInsets.all(14), margin: const EdgeInsets.only(bottom: 12), decoration: BoxDecoration(color: const Color(0xFF81C7F5).withValues(alpha: .10), borderRadius: BorderRadius.circular(12)), child: const Text('هذا الطلب بانتظار مراجعتك. يمكنك الموافقة أو رفض الطلب قبل بدء الاستشارة.', textAlign: TextAlign.center)),
+            Container(
+              padding: const EdgeInsets.all(14),
+              margin: const EdgeInsets.only(bottom: 12),
+              decoration: BoxDecoration(color: const Color(0xFF81C7F5).withValues(alpha: .10), borderRadius: BorderRadius.circular(12)),
+              child: Text(
+                booking.status == 'قيد مراجعة المحامي'
+                    ? 'تم الدفع لهذا الحجز وأصبح الآن بانتظار قرارك. إذا رفضت الطلب فسيُنقل إلى حالة بانتظار الاسترداد ولن تبدأ الاستشارة.'
+                    : 'هذا الطلب بانتظار مراجعتك. يمكنك الموافقة أو رفض الطلب قبل بدء الاستشارة.',
+                textAlign: TextAlign.center,
+              ),
+            ),
             Row(children: [
               Expanded(child: ElevatedButton.icon(onPressed: () => _reviewBooking(context, ref, true), icon: const Icon(Icons.check_circle_outline), label: const Text('الموافقة على الطلب'), style: _button(color: const Color(0xFF81C7F5)))),
               const SizedBox(width: 12),
@@ -126,7 +158,18 @@ class BookingDetailsPage extends ConsumerWidget {
   }
 
   Widget _statusHeader() {
-    final color = switch (booking.status) { 'قيد انتظار الدفع' => Colors.orange, 'قيد معالجة الدفع' => Colors.blue, 'مؤكد' => AppColors.success, 'قيد التنفيذ' => AppColors.primary, 'مكتمل' => AppColors.success, 'ملغي' => AppColors.error, _ => Colors.grey };
+    final color = switch (booking.status) {
+      'قيد انتظار الدفع' => Colors.orange,
+      'قيد معالجة الدفع' => Colors.blue,
+      'قيد مراجعة المحامي' => Colors.deepPurple,
+      'بانتظار الاسترداد' => Colors.orange,
+      'مؤكد' => AppColors.success,
+      'قيد التنفيذ' => AppColors.primary,
+      'مكتمل' => AppColors.success,
+      'ملغي' => AppColors.error,
+      'مسترد' => Colors.grey,
+      _ => Colors.grey,
+    };
     return Container(padding: const EdgeInsets.all(14), decoration: BoxDecoration(color: color.withValues(alpha: .1), borderRadius: BorderRadius.circular(12)), child: Center(child: Text(booking.status, style: TextStyle(color: color, fontWeight: FontWeight.bold))));
   }
 
@@ -140,8 +183,9 @@ class BookingDetailsPage extends ConsumerWidget {
       await ref.read(bookingsRepositoryProvider).reviewBooking(booking.id, approved);
       ref.invalidate(lawyerBookingsProvider);
       ref.invalidate(userBookingsProvider);
+      ref.invalidate(bookingPaymentProvider(booking.id));
       if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(approved ? 'تمت الموافقة على طلب الحجز' : 'تم رفض طلب الحجز')));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(approved ? 'تمت الموافقة على طلب الحجز' : 'تم رفض الطلب وتحويله إلى بانتظار الاسترداد إذا كان مدفوعاً')));
       Navigator.pop(context);
     } catch (e) {
       if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString().replaceFirst('Exception: ', '')), backgroundColor: AppColors.error));
