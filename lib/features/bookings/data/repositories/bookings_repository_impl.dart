@@ -67,4 +67,9 @@ class BookingsRepositoryImpl implements BookingsRepository {
   Future<void> archiveBookingForLawyer(String bookingId) async {
     await _supabase.rpc('archive_booking_for_lawyer', params: {'p_booking_id': bookingId});
   }
+
+  @override
+  Future<void> reportNoShow(String bookingId) async {
+    await _supabase.rpc('report_booking_no_show', params: {'p_booking_id': bookingId});
+  }
 }
