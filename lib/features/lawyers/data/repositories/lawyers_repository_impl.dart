@@ -13,31 +13,16 @@ class LawyersRepositoryImpl implements LawyersRepository {
   Future<List<LawyerProfile>> getLawyers() async {
     try {
       debugPrint('🔍 LawyersRepo: Fetching verified lawyers...');
+      final response = await _supabase.rpc('get_public_lawyers');
 
-      final response = await _supabase
-          .from('lawyer_profiles')
-          .select('*, profiles(full_name, avatar_url)')
-          .eq('verified', true);
-
-      if (response == null) return [];
-
-      final List<LawyerProfile> lawyers = [];
-      for (var json in (response as List)) {
+      final lawyers = <LawyerProfile>[];
+      for (final item in (response as List)) {
         try {
+          final json = Map<String, dynamic>.from(item as Map);
           final model = LawyerProfileModel.fromJson(json);
-          final profileData = json['profiles'];
-
-          Map<String, dynamic>? profile;
-          if (profileData is List && profileData.isNotEmpty) {
-            profile = profileData.first as Map<String, dynamic>;
-          } else if (profileData is Map) {
-            profile = profileData as Map<String, dynamic>;
-          }
-
           lawyers.add(model.toEntity().copyWith(
-                fullName:
-                    profile?['full_name'] ?? model.fullName ?? 'محامي استشارة',
-                avatarUrl: profile?['avatar_url'],
+                fullName: model.fullName ?? 'محامي استشارة',
+                avatarUrl: json['avatar_url'] as String?,
               ));
         } catch (e) {
           debugPrint('❌ LawyersRepo: Error parsing record: $e');
@@ -53,27 +38,18 @@ class LawyersRepositoryImpl implements LawyersRepository {
   @override
   Future<LawyerProfile?> getLawyerProfile(String profileId) async {
     try {
-      final response = await _supabase
-          .from('lawyer_profiles')
-          .select('*, profiles(full_name, avatar_url)')
-          .eq('profile_id', profileId)
-          .maybeSingle();
+      final response = await _supabase.rpc(
+        'get_public_lawyer',
+        params: {'p_profile_id': profileId},
+      );
+      final rows = response as List;
+      if (rows.isEmpty) return null;
 
-      if (response == null) return null;
-
-      final model = LawyerProfileModel.fromJson(response);
-      final profileData = response['profiles'];
-
-      Map<String, dynamic>? profile;
-      if (profileData is List && profileData.isNotEmpty) {
-        profile = profileData.first as Map<String, dynamic>;
-      } else if (profileData is Map) {
-        profile = profileData as Map<String, dynamic>;
-      }
-
+      final json = Map<String, dynamic>.from(rows.first as Map);
+      final model = LawyerProfileModel.fromJson(json);
       return model.toEntity().copyWith(
-            fullName: profile?['full_name'] ?? model.fullName ?? 'محامي',
-            avatarUrl: profile?['avatar_url'],
+            fullName: model.fullName ?? 'محامي',
+            avatarUrl: json['avatar_url'] as String?,
           );
     } catch (e) {
       debugPrint('❌ LawyersRepo: Profile fetch error: $e');
@@ -84,9 +60,6 @@ class LawyersRepositoryImpl implements LawyersRepository {
   @override
   Future<void> updateLawyerProfile(LawyerProfile profile) async {
     try {
-      debugPrint('⚖️ LawyersRepo: Attempting upsert for: ${profile.profileId}');
-
-      // نقوم بتجهيز البيانات بعناية لتجنب خطأ 400
       final Map<String, dynamic> data = {
         'profile_id': profile.profileId,
         'license_number': profile.licenseNumber,
@@ -99,23 +72,15 @@ class LawyersRepositoryImpl implements LawyersRepository {
         'services': profile.services.map((s) => s.toJson()).toList(),
       };
 
-      // معالجة التخصص: إرساله كنص (String) ليتوافق مع النوع TEXT في DB
       if (profile.specializations.isNotEmpty) {
-        data['specialization'] = profile.specializations.join(',');
+        data['specialization'] = profile.specializations;
       }
 
       await _supabase
           .from('lawyer_profiles')
           .upsert(data, onConflict: 'profile_id');
-      debugPrint('✅ LawyersRepo: Upsert successful');
     } on PostgrestException catch (e) {
-      debugPrint('❌ Supabase 400 Fix: Error Details:');
-      debugPrint('Message: ${e.message}');
-      debugPrint('Hint: ${e.hint}');
-      debugPrint('Details: ${e.details}');
-      rethrow;
-    } catch (e) {
-      debugPrint('❌ LawyersRepo: Unexpected error: $e');
+      debugPrint('❌ Supabase: ${e.message}');
       rethrow;
     }
   }
@@ -124,7 +89,7 @@ class LawyersRepositoryImpl implements LawyersRepository {
   Future<String> uploadFile(
       Uint8List bytes, String fileName, String bucket) async {
     final user = _supabase.auth.currentUser;
-    if (user == null) throw Exception('User not logged in');
+    if (user == null) throw Exception('المستخدم غير مسجل دخول');
 
     final filePath = '${user.id}/$fileName';
     try {
@@ -145,20 +110,14 @@ class LawyersRepositoryImpl implements LawyersRepository {
     }
   }
 
-  /// يرسل طلب تغيير التخصص ليتم مراجعته من قبل الإدارة
   Future<void> requestSpecializationChange(List<String> newSpecs) async {
     final user = _supabase.auth.currentUser;
-    if (user == null) throw Exception('User not logged in');
+    if (user == null) throw Exception('المستخدم غير مسجل دخول');
 
-    try {
-      await _supabase.from('specialization_change_requests').insert({
-        'lawyer_id': user.id,
-        'requested_specializations': newSpecs,
-        'status': 'pending',
-      });
-    } catch (e) {
-      debugPrint('❌ LawyersRepo: Error requesting specialization change: $e');
-      rethrow;
-    }
+    await _supabase.from('specialization_change_requests').insert({
+      'lawyer_id': user.id,
+      'requested_specializations': newSpecs,
+      'status': 'pending',
+    });
   }
 }
