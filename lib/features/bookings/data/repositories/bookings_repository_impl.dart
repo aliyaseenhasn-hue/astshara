@@ -9,48 +9,31 @@ class BookingsRepositoryImpl implements BookingsRepository {
   BookingsRepositoryImpl(this._supabase);
 
   @override
-  Future<Booking> createBooking({
-    required String lawyerId,
-    required DateTime scheduledAt,
-    required String packageName,
-    required String consultationType,
+  Future<void> createBooking(
+    Booking booking, {
+    String? consultationType,
     String? description,
     String? documentUrl,
     String? whatsappNumber,
   }) async {
+    // The existing provider API is retained. The client price/status are ignored by the RPC.
+    // Format accepted from the updated booking page: package title :: consultation method.
+    final raw = consultationType?.trim() ?? '';
+    final separator = raw.indexOf('::');
+    final packageName = separator > 0 ? raw.substring(0, separator).trim() : raw;
+    final method = separator > 0 ? raw.substring(separator + 2).trim() : 'نصية';
+
     final response = await _supabase.rpc('create_booking', params: {
-      'p_lawyer_id': lawyerId,
-      'p_scheduled_at': scheduledAt.toUtc().toIso8601String(),
+      'p_lawyer_id': booking.lawyerId,
+      'p_scheduled_at': booking.scheduledAt.toUtc().toIso8601String(),
       'p_package_name': packageName,
-      'p_consultation_type': consultationType,
+      'p_consultation_type': method,
       'p_description': description,
       'p_document_url': documentUrl,
       'p_client_whatsapp': whatsappNumber,
     });
 
-    return BookingModel.fromJson(
-      Map<String, dynamic>.from(response as Map),
-    ).toEntity();
-  }
-
-  @override
-  Future<List<DateTime>> getAvailableSlots({
-    required String lawyerId,
-    required DateTime from,
-    required DateTime to,
-  }) async {
-    final response = await _supabase
-        .from('lawyer_availability_slots')
-        .select('starts_at')
-        .eq('lawyer_id', lawyerId)
-        .eq('is_available', true)
-        .gte('starts_at', from.toUtc().toIso8601String())
-        .lte('starts_at', to.toUtc().toIso8601String())
-        .order('starts_at');
-
-    return (response as List)
-        .map((row) => DateTime.parse(row['starts_at'] as String).toLocal())
-        .toList();
+    if (response == null) throw Exception('تعذر إنشاء الحجز');
   }
 
   @override
@@ -76,7 +59,6 @@ class BookingsRepositoryImpl implements BookingsRepository {
         .select()
         .eq('user_id', userId)
         .order('created_at', ascending: false);
-
     return (response as List)
         .map((json) => BookingModel.fromJson(
               Map<String, dynamic>.from(json as Map),
@@ -91,7 +73,6 @@ class BookingsRepositoryImpl implements BookingsRepository {
         .select()
         .eq('lawyer_id', lawyerId)
         .order('created_at', ascending: false);
-
     return (response as List)
         .map((json) => BookingModel.fromJson(
               Map<String, dynamic>.from(json as Map),
@@ -100,15 +81,11 @@ class BookingsRepositoryImpl implements BookingsRepository {
   }
 
   @override
-  Future<Booking> updateBookingStatus(String bookingId, String status) async {
-    final response = await _supabase.rpc('change_booking_status', params: {
+  Future<void> updateBookingStatus(String bookingId, String status) async {
+    await _supabase.rpc('change_booking_status', params: {
       'p_booking_id': bookingId,
       'p_new_status': status,
     });
-
-    return BookingModel.fromJson(
-      Map<String, dynamic>.from(response as Map),
-    ).toEntity();
   }
 
   @override
