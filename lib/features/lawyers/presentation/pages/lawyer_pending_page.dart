@@ -27,45 +27,29 @@ class LawyerPendingPage extends ConsumerWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(
-                Icons.verified_user_outlined,
-                size: 80,
-                color: Colors.orange,
-              ),
+              const Icon(Icons.verified_user_outlined, size: 80, color: Colors.orange),
               const SizedBox(height: 24),
               const Text(
                 'حسابك قيد المراجعة',
-                style: TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.primary,
-                ),
+                style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppColors.primary),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 16),
               const Text(
-                'يرجى الانتظار لحين الموافقة على الحساب. سوف نتواصل معك عن طريق الواتساب بعد تدقيق المعلومات لضمان جودة المنصة.',
-                style: TextStyle(
-                  fontSize: 16,
-                  color: AppColors.outline,
-                  height: 1.5,
-                ),
+                'يرجى الانتظار لحين الموافقة على الحساب. ستظهر حالة الحساب في التطبيق بعد الانتهاء من تدقيق المعلومات.',
+                style: TextStyle(fontSize: 16, color: AppColors.outline, height: 1.5),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 40),
               ElevatedButton.icon(
-                onPressed: () =>
-                    ref.read(authControllerProvider.notifier).logout(),
+                onPressed: () => ref.read(authControllerProvider.notifier).logout(),
                 icon: const Icon(Icons.arrow_back, color: Colors.white),
                 label: const Text('العودة لتسجيل الدخول'),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primary,
                   foregroundColor: Colors.white,
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   elevation: 2,
                 ),
               ),
