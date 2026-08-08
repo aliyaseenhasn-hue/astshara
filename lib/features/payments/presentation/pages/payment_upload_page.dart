@@ -22,7 +22,7 @@ class PaymentUploadPage extends ConsumerStatefulWidget {
 class _PaymentUploadPageState extends ConsumerState<PaymentUploadPage> {
   final _formKey = GlobalKey<FormState>();
   final _transactionController = TextEditingController();
-  String _selectedMethod = 'ZainCash';
+  String _selectedMethod = 'زين كاش';
   XFile? _receiptImage;
 
   @override
@@ -32,34 +32,31 @@ class _PaymentUploadPageState extends ConsumerState<PaymentUploadPage> {
   }
 
   Future<void> _pickReceipt() async {
-    final picker = ImagePicker();
-    final image = await picker.pickImage(source: ImageSource.gallery);
-    if (image != null) {
-      setState(() {
-        _receiptImage = image;
-      });
-    }
+    final image = await ImagePicker().pickImage(source: ImageSource.gallery);
+    if (image != null) setState(() => _receiptImage = image);
   }
 
   Future<void> _submit() async {
-    if (_formKey.currentState?.validate() ?? false) {
-      await ref.read(paymentsControllerProvider.notifier).submitPayment(
-            bookingId: widget.booking.id,
-            amount: widget.booking.price,
-            method: _selectedMethod,
-            transactionNumber: _transactionController.text,
-            receiptFile: _receiptImage,
-          );
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-              content:
-                  Text('تم رفع إيصال الدفع بنجاح، سيتم التحقق منه قريباً')),
+    if (!(_formKey.currentState?.validate() ?? false)) return;
+    await ref.read(paymentsControllerProvider.notifier).submitPayment(
+          bookingId: widget.booking.id,
+          method: _selectedMethod,
+          transactionNumber: _transactionController.text.trim(),
+          receiptFile: _receiptImage,
         );
-        context.pop();
-      }
+
+    if (!mounted) return;
+    final state = ref.read(paymentsControllerProvider);
+    if (state.hasError) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('تعذر إرسال الدفع: ${state.error}')),
+      );
+      return;
     }
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('تم إرسال بيانات الدفع، والحجز الآن بانتظار التأكيد')),
+    );
+    context.go('/bookings');
   }
 
   @override
@@ -68,10 +65,7 @@ class _PaymentUploadPageState extends ConsumerState<PaymentUploadPage> {
     final nameAsync = ref.watch(userNameProvider(widget.booking.lawyerId));
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('إكمال عملية الدفع'),
-        centerTitle: true,
-      ),
+      appBar: AppBar(title: const Text('إكمال عملية الدفع'), centerTitle: true),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(AppSizes.p24),
         child: Form(
@@ -79,37 +73,18 @@ class _PaymentUploadPageState extends ConsumerState<PaymentUploadPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // Lawyer Name Header
               nameAsync.when(
                 data: (name) => Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
                     color: AppColors.secondary,
                     borderRadius: BorderRadius.circular(12),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.1),
-                        blurRadius: 10,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
                   ),
                   child: Column(
                     children: [
-                      const Text(
-                        'أنت تقوم بالدفع لاستشارة',
-                        style: TextStyle(color: Colors.white70, fontSize: 13),
-                      ),
+                      const Text('أنت تقوم بالدفع لاستشارة', style: TextStyle(color: Colors.white70, fontSize: 13)),
                       const SizedBox(height: 4),
-                      Text(
-                        'المحامي ${name ?? '...'}',
-                        style: const TextStyle(
-                          color: AppColors.gold,
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
+                      Text('المحامي ${name ?? '...'}', style: const TextStyle(color: AppColors.gold, fontSize: 20, fontWeight: FontWeight.bold)),
                     ],
                   ),
                 ),
@@ -117,47 +92,34 @@ class _PaymentUploadPageState extends ConsumerState<PaymentUploadPage> {
                 error: (_, __) => const SizedBox.shrink(),
               ),
               const SizedBox(height: 24),
-
-              Text(
-                'المبلغ المطلوب: ${widget.booking.price} د.ع',
-                style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.primary),
-                textAlign: TextAlign.center,
-              ),
+              _SummaryRow(label: 'الباقة', value: widget.booking.packageName ?? 'استشارة'),
+              _SummaryRow(label: 'نوع الاستشارة', value: widget.booking.consultationType ?? 'غير محدد'),
+              _SummaryRow(label: 'الموعد', value: '${widget.booking.scheduledAt.day}/${widget.booking.scheduledAt.month}/${widget.booking.scheduledAt.year}'),
+              _SummaryRow(label: 'الوقت', value: TimeOfDay.fromDateTime(widget.booking.scheduledAt).format(context)),
+              _SummaryRow(label: 'المبلغ', value: '${widget.booking.price.toStringAsFixed(0)} د.ع'),
               const SizedBox(height: AppSizes.p24),
-              const Text('اختر وسيلة الدفع:',
-                  style: TextStyle(fontWeight: FontWeight.bold)),
+              const Text('اختر وسيلة الدفع', style: TextStyle(fontWeight: FontWeight.bold)),
               const SizedBox(height: 8),
               DropdownButtonFormField<String>(
                 value: _selectedMethod,
-                items: ['ZainCash', 'Asia Hawala', 'Qi Card', 'MasterCard']
+                items: const ['زين كاش', 'آسيا حوالة', 'كي كارد', 'بطاقة مصرفية']
                     .map((m) => DropdownMenuItem(value: m, child: Text(m)))
                     .toList(),
-                onChanged: (val) =>
-                    val != null ? setState(() => _selectedMethod = val) : null,
-                decoration: InputDecoration(
-                  border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12)),
-                  filled: true,
-                  fillColor: Colors.white,
-                ),
+                onChanged: (value) => setState(() => _selectedMethod = value ?? _selectedMethod),
+                decoration: InputDecoration(border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))),
               ),
               const SizedBox(height: AppSizes.p16),
               TextFormField(
                 controller: _transactionController,
                 decoration: InputDecoration(
-                  labelText: 'رقم العملية (Transaction ID)',
-                  border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12)),
-                  hintText: 'أدخل الرقم من رسالة التأكيد',
+                  labelText: 'رقم العملية',
+                  hintText: 'أدخل الرقم الموجود في رسالة التأكيد',
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                 ),
-                validator: (val) => val?.isEmpty ?? true ? 'مطلوب' : null,
+                validator: (value) => value == null || value.trim().isEmpty ? 'رقم العملية مطلوب' : null,
               ),
               const SizedBox(height: AppSizes.p24),
-              const Text('إيصال الدفع (صورة):',
-                  style: TextStyle(fontWeight: FontWeight.bold)),
+              const Text('إيصال الدفع (اختياري)', style: TextStyle(fontWeight: FontWeight.bold)),
               const SizedBox(height: AppSizes.p8),
               InkWell(
                 onTap: _pickReceipt,
@@ -169,24 +131,16 @@ class _PaymentUploadPageState extends ConsumerState<PaymentUploadPage> {
                     color: Colors.white,
                   ),
                   child: _receiptImage == null
-                      ? const Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(Icons.add_photo_alternate_outlined,
-                                size: 48, color: AppColors.outline),
-                            SizedBox(height: 8),
-                            Text('اضغط لرفع صورة الإيصال',
-                                style:
-                                    TextStyle(color: AppColors.textSecondary)),
-                          ],
-                        )
+                      ? const Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+                          Icon(Icons.add_photo_alternate_outlined, size: 48, color: AppColors.outline),
+                          SizedBox(height: 8),
+                          Text('اضغط لرفع صورة الإيصال', style: TextStyle(color: AppColors.textSecondary)),
+                        ])
                       : ClipRRect(
                           borderRadius: BorderRadius.circular(12),
                           child: kIsWeb
-                              ? Image.network(_receiptImage!.path,
-                                  fit: BoxFit.cover, width: double.infinity)
-                              : Image.file(File(_receiptImage!.path),
-                                  fit: BoxFit.cover, width: double.infinity),
+                              ? Image.network(_receiptImage!.path, fit: BoxFit.cover, width: double.infinity)
+                              : Image.file(File(_receiptImage!.path), fit: BoxFit.cover, width: double.infinity),
                         ),
                 ),
               ),
@@ -199,13 +153,9 @@ class _PaymentUploadPageState extends ConsumerState<PaymentUploadPage> {
                         padding: const EdgeInsets.symmetric(vertical: 18),
                         backgroundColor: AppColors.primary,
                         foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12)),
-                        elevation: 4,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                       ),
-                      child: const Text('إرسال الإيصال للتأكيد',
-                          style: TextStyle(
-                              fontSize: 16, fontWeight: FontWeight.bold)),
+                      child: const Text('إرسال بيانات الدفع', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                     ),
             ],
           ),
@@ -213,4 +163,21 @@ class _PaymentUploadPageState extends ConsumerState<PaymentUploadPage> {
       ),
     );
   }
+}
+
+class _SummaryRow extends StatelessWidget {
+  final String label;
+  final String value;
+  const _SummaryRow({required this.label, required this.value});
+
+  @override
+  Widget build(BuildContext context) => Padding(
+        padding: const EdgeInsets.symmetric(vertical: 6),
+        child: Row(
+          children: [
+            Expanded(child: Text(label, style: const TextStyle(color: Colors.grey))),
+            Text(value, style: const TextStyle(fontWeight: FontWeight.bold)),
+          ],
+        ),
+      );
 }
