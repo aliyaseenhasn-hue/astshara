@@ -3,6 +3,7 @@ import 'dart:typed_data';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+\import 'package:go_router/go_router.dart';
 
 import '../../../../core/constants/app_colors.dart';
 import '../../../authentication/presentation/providers/auth_provider.dart';
@@ -39,9 +40,7 @@ class _CreateBookingPageState extends ConsumerState<CreateBookingPage> {
   @override
   void initState() {
     super.initState();
-    if (widget.service is LawyerService) {
-      _package = widget.service as LawyerService;
-    }
+    if (widget.service is LawyerService) _package = widget.service as LawyerService;
   }
 
   @override
@@ -56,10 +55,8 @@ class _CreateBookingPageState extends ConsumerState<CreateBookingPage> {
       allowedExtensions: ['pdf', 'jpg', 'png', 'docx'],
       withData: true,
     );
-
     final file = result?.files.isNotEmpty == true ? result!.files.first : null;
     if (file?.bytes == null || !mounted) return;
-
     setState(() {
       _selectedFileBytes = file!.bytes;
       _selectedFileName = file.name;
@@ -92,14 +89,11 @@ class _CreateBookingPageState extends ConsumerState<CreateBookingPage> {
   }
 
   void _showMessage(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
-    );
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
   }
 
   void _next() {
     if (!_validateCurrentStep()) return;
-
     if (_step < 3) {
       setState(() => _step++);
     } else {
@@ -112,45 +106,27 @@ class _CreateBookingPageState extends ConsumerState<CreateBookingPage> {
     if (_package == null || slot == null) return;
     if (!(_formKey.currentState?.validate() ?? false)) return;
 
-    final booking = await ref
-        .read(bookingsControllerProvider.notifier)
-        .requestBooking(
-          lawyerId: widget.lawyer.profileId,
-          scheduledAt: slot.startsAt,
-          slotId: slot.id,
-          packageName: _package!.title,
-          consultationType: _consultationType,
-          description: _descriptionController.text.trim(),
-          documentBytes: _selectedFileBytes,
-          documentName: _selectedFileName,
-        );
+    final booking = await ref.read(bookingsControllerProvider.notifier).requestBooking(
+      lawyerId: widget.lawyer.profileId,
+      scheduledAt: slot.startsAt,
+      slotId: slot.id,
+      packageName: _package!.title,
+      consultationType: _consultationType,
+      description: _descriptionController.text.trim(),
+      documentBytes: _selectedFileBytes,
+      documentName: _selectedFileName,
+    );
 
     if (!mounted) return;
-
     if (booking == null) {
       final error = ref.read(bookingsControllerProvider).error;
       _showMessage(error?.toString() ?? 'تعذر إنشاء الحجز');
       return;
     }
 
-    await showDialog<void>(
-      context: context,
-      barrierDismissible: false,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('تم إنشاء الحجز'),
-        content: const Text(
-          'الحجز الآن في حالة «قيد انتظار الدفع». أرسل الدفع من تفاصيل الحجز، ثم يبقى «قيد معالجة الدفع» حتى تعتمد الإدارة العملية.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext),
-            child: const Text('حسنًا'),
-          ),
-        ],
-      ),
-    );
-
-    if (mounted) Navigator.pop(context);
+    // بعد إنشاء الحجز مباشرةً ينتقل العميل إلى صفحة إكمال الدفع.
+    // لا نعرض نافذة وسيطة ولا نرجعه إلى قائمة المحامين.
+    context.go('/upload-payment', extra: booking);
   }
 
   @override
@@ -160,38 +136,28 @@ class _CreateBookingPageState extends ConsumerState<CreateBookingPage> {
     final user = ref.watch(authStateChangesProvider).value;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('حجز استشارة'),
-        centerTitle: true,
-      ),
+      appBar: AppBar(title: const Text('حجز استشارة'), centerTitle: true),
       body: Form(
         key: _formKey,
         child: Stepper(
           currentStep: _step,
           onStepContinue: state.isLoading ? null : _next,
           onStepCancel: _step == 0 ? null : () => setState(() => _step--),
-          controlsBuilder: (context, details) {
-            return Padding(
-              padding: const EdgeInsets.only(top: 20),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: details.onStepContinue,
-                      child: Text(_step == 3 ? 'تأكيد الحجز' : 'متابعة'),
-                    ),
-                  ),
-                  if (_step > 0) ...[
-                    const SizedBox(width: 10),
-                    TextButton(
-                      onPressed: details.onStepCancel,
-                      child: const Text('رجوع'),
-                    ),
-                  ],
-                ],
+          controlsBuilder: (context, details) => Padding(
+            padding: const EdgeInsets.only(top: 20),
+            child: Row(children: [
+              Expanded(
+                child: ElevatedButton(
+                  onPressed: details.onStepContinue,
+                  child: Text(_step == 3 ? 'تأكيد الحجز' : 'متابعة'),
+                ),
               ),
-            );
-          },
+              if (_step > 0) ...[
+                const SizedBox(width: 10),
+                TextButton(onPressed: details.onStepCancel, child: const Text('رجوع')),
+              ],
+            ]),
+          ),
           steps: [
             Step(
               title: const Text('اختيار الباقة'),
@@ -201,14 +167,10 @@ class _CreateBookingPageState extends ConsumerState<CreateBookingPage> {
                   : DropdownButtonFormField<LawyerService>(
                       value: _package,
                       decoration: const InputDecoration(labelText: 'الباقة'),
-                      items: widget.lawyer.services
-                          .map(
-                            (service) => DropdownMenuItem<LawyerService>(
-                              value: service,
-                              child: Text('${service.title} — ${service.price} د.ع'),
-                            ),
-                          )
-                          .toList(),
+                      items: widget.lawyer.services.map((service) => DropdownMenuItem<LawyerService>(
+                        value: service,
+                        child: Text('${service.title} — ${service.price} د.ع'),
+                      )).toList(),
                       onChanged: (value) => setState(() => _package = value),
                       validator: (value) => value == null ? 'يرجى اختيار باقة الاستشارة' : null,
                     ),
@@ -219,9 +181,7 @@ class _CreateBookingPageState extends ConsumerState<CreateBookingPage> {
               content: DropdownButtonFormField<String>(
                 value: _consultationType,
                 decoration: const InputDecoration(labelText: 'طريقة الاستشارة'),
-                items: const ['نصية', 'صوتية', 'فيديو']
-                    .map((type) => DropdownMenuItem<String>(value: type, child: Text(type)))
-                    .toList(),
+                items: const ['نصية', 'صوتية', 'فيديو'].map((type) => DropdownMenuItem<String>(value: type, child: Text(type))).toList(),
                 onChanged: (value) => setState(() => _consultationType = value ?? 'نصية'),
               ),
             ),
@@ -232,22 +192,15 @@ class _CreateBookingPageState extends ConsumerState<CreateBookingPage> {
                 loading: () => const Center(child: CircularProgressIndicator()),
                 error: (error, stack) => Text('تعذر تحميل المواعيد المتاحة: $error'),
                 data: (items) {
-                  if (items.isEmpty) {
-                    return const Text('لا توجد مواعيد متاحة حاليًا لهذا المحامي.');
-                  }
-
+                  if (items.isEmpty) return const Text('لا توجد مواعيد متاحة حاليًا لهذا المحامي.');
                   return Wrap(
                     spacing: 8,
                     runSpacing: 8,
-                    children: items.map((slot) {
-                      return ChoiceChip(
-                        label: Text(
-                          '${slot.startsAt.day}/${slot.startsAt.month}  ${TimeOfDay.fromDateTime(slot.startsAt).format(context)}',
-                        ),
-                        selected: _selectedSlot?.id == slot.id,
-                        onSelected: (_) => setState(() => _selectedSlot = slot),
-                      );
-                    }).toList(),
+                    children: items.map((slot) => ChoiceChip(
+                      label: Text('${slot.startsAt.day}/${slot.startsAt.month}  ${TimeOfDay.fromDateTime(slot.startsAt).format(context)}'),
+                      selected: _selectedSlot?.id == slot.id,
+                      onSelected: (_) => setState(() => _selectedSlot = slot),
+                    )).toList(),
                   );
                 },
               ),
@@ -261,9 +214,7 @@ class _CreateBookingPageState extends ConsumerState<CreateBookingPage> {
                   Text('المحامي: ${widget.lawyer.fullName ?? 'محامي'}'),
                   Text('الباقة: ${_package?.title ?? '-'}'),
                   Text('طريقة الاستشارة: $_consultationType'),
-                  Text(
-                    'الموعد: ${_selectedSlot == null ? '-' : '${_selectedSlot!.startsAt.day}/${_selectedSlot!.startsAt.month}/${_selectedSlot!.startsAt.year} ${TimeOfDay.fromDateTime(_selectedSlot!.startsAt).format(context)}'}',
-                  ),
+                  Text('الموعد: ${_selectedSlot == null ? '-' : '${_selectedSlot!.startsAt.day}/${_selectedSlot!.startsAt.month}/${_selectedSlot!.startsAt.year} ${TimeOfDay.fromDateTime(_selectedSlot!.startsAt).format(context)}'}'),
                   Text('الرسوم: ${_package?.price ?? 0} د.ع'),
                   const SizedBox(height: 16),
                   TextFormField(
@@ -281,10 +232,7 @@ class _CreateBookingPageState extends ConsumerState<CreateBookingPage> {
                   const SizedBox(height: 12),
                   Text('العميل: ${user?.fullName ?? 'المستخدم'}'),
                   const SizedBox(height: 12),
-                  const Text(
-                    'بعد التأكيد سيصبح الحجز «قيد انتظار الدفع». لا توجد موافقة من المحامي في هذه المرحلة؛ اعتماد الإدارة للدفع هو الذي ينقل الحجز إلى «مؤكد».',
-                    style: TextStyle(color: AppColors.textSecondary),
-                  ),
+                  const Text('بعد التأكيد ستنتقل مباشرة إلى صفحة إكمال الدفع. يبقى الحجز «قيد انتظار الدفع» حتى إرسال الدفع واعتماده.', style: TextStyle(color: AppColors.textSecondary)),
                 ],
               ),
             ),
