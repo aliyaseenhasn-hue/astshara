@@ -42,10 +42,14 @@ GoRouter router(RouterRef ref) {
     redirect: (context, state) {
       final user = authState.valueOrNull; final location = state.matchedLocation;
       final login = location == '/login' || location == '/admin-login'; final signup = location == '/signup'; final otp = location == '/otp'; final complete = location == '/complete-profile'; final onboarding = location == '/lawyer-onboarding'; final pending = location == '/lawyer-pending'; final admin = location.startsWith('/admin') && location != '/admin-login';
+      // إنشاء طلب الاستشارة مسموح للعميل فقط. هذا الحاجز يمنع المحامي من الوصول
+      // إلى الصفحة حتى عبر رابط مباشر أو deep link.
+      final clientOnlyBooking = location == '/create-booking';
       if (user == null) return (login || signup || otp) ? null : '/login';
       if (user.role == 'admin') { if (complete || onboarding || login || signup) return '/admin'; return admin ? null : '/admin'; }
       if (!user.isOnboardingComplete) return (complete || onboarding) ? null : '/complete-profile';
       if (admin && user.role != 'admin') return '/';
+      if (clientOnlyBooking && user.role != 'client') return user.role == 'lawyer' ? '/lawyer-home' : '/';
       if (user.role == 'lawyer' && !user.isVerified) return location == '/lawyer-setup' || pending ? null : '/lawyer-pending';
       if (login || signup || otp || (complete && user.isOnboardingComplete)) return user.role == 'lawyer' && user.isVerified ? '/lawyer-home' : '/';
       if (location == '/' && user.role == 'lawyer' && user.isVerified) return '/lawyer-home';
