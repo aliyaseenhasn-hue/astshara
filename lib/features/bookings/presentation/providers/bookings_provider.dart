@@ -99,10 +99,11 @@ class BookingsController extends _$BookingsController {
       final user = ref.read(authStateChangesProvider).value;
       if (user == null) throw Exception('يجب تسجيل الدخول أولاً');
 
-      // إنشاء طلب الاستشارة عملية خاصة بالعميل فقط. لا نعتمد على إخفاء
-      // الزر في الواجهة؛ نتحقق من الدور قبل الوصول إلى المستودع أيضًا.
-      if (user.role != 'client') {
-        throw Exception('فقط العميل يمكنه طلب حجز استشارة');
+      // في التطبيق الحالي دور العميل في التسجيل محفوظ باسم "user".
+      // ندعم أيضًا "client" للحسابات التي قد تستخدم التسمية الجديدة.
+      final isClient = user.role == 'user' || user.role == 'client';
+      if (!isClient) {
+        throw Exception('فقط طالب الخدمة يمكنه طلب حجز استشارة');
       }
 
       final repo = ref.read(bookingsRepositoryProvider);
