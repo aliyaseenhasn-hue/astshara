@@ -13,249 +13,125 @@ import '../providers/auth_provider.dart';
 
 class CompleteProfilePage extends ConsumerStatefulWidget {
   const CompleteProfilePage({super.key});
-
   @override
-  ConsumerState<CompleteProfilePage> createState() =>
-      _CompleteProfilePageState();
+  ConsumerState<CompleteProfilePage> createState() => _CompleteProfilePageState();
 }
 
 class _CompleteProfilePageState extends ConsumerState<CompleteProfilePage> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
-  final _whatsappController = TextEditingController();
-
   String _selectedRole = 'user';
   Uint8List? _profilePhotoBytes;
   Uint8List? _idCardBytes;
   final List<String> _selectedSpecializations = [];
-  bool _isInitialized = false;
+  bool _initialized = false;
 
-  final List<String> _allSpecializations = [
-    'جنائي',
-    'أحوال شخصية',
-    'مدني',
-    'تجاري',
-    'عمل',
-    'عقارات',
-    'إداري',
-    'عسكري',
-  ];
+  final _specializations = const ['جنائي','أحوال شخصية','مدني','تجاري','عمل','عقارات','إداري','عسكري'];
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    if (!_isInitialized) {
-      final user = Supabase.instance.client.auth.currentUser;
-      if (user != null && user.userMetadata != null) {
-        final googleName =
-            user.userMetadata?['full_name'] ?? user.userMetadata?['name'];
-        if (googleName != null) _nameController.text = googleName;
-        if (user.email != null) _emailController.text = user.email ?? '';
-      }
-      _isInitialized = true;
+    if (_initialized) return;
+    final user = Supabase.instance.client.auth.currentUser;
+    if (user != null) {
+      _nameController.text = user.userMetadata?['full_name'] ?? user.userMetadata?['name'] ?? '';
+      _emailController.text = user.email ?? '';
     }
+    _initialized = true;
   }
 
   @override
   void dispose() {
     _nameController.dispose();
     _emailController.dispose();
-    _whatsappController.dispose();
     super.dispose();
   }
 
   Future<void> _pickImage(String type) async {
     try {
-      final picker = ImagePicker();
-      final image =
-          await picker.pickImage(source: ImageSource.gallery, imageQuality: 70);
-      if (image != null) {
-        final bytes = await image.readAsBytes();
-        setState(() {
-          if (type == 'profile') _profilePhotoBytes = bytes;
-          if (type == 'id') _idCardBytes = bytes;
-        });
-      }
+      final image = await ImagePicker().pickImage(source: ImageSource.gallery, imageQuality: 70);
+      if (image == null) return;
+      final bytes = await image.readAsBytes();
+      setState(() {
+        if (type == 'profile') _profilePhotoBytes = bytes;
+        if (type == 'id') _idCardBytes = bytes;
+      });
     } catch (e) {
-      debugPrint('Pick image error: $e');
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('تعذر اختيار الصورة: $e'), backgroundColor: AppColors.error));
     }
   }
 
   Future<void> _submit() async {
-    if (_formKey.currentState?.validate() ?? false) {
-      final authId = Supabase.instance.client.auth.currentUser?.id;
-      if (authId == null) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('❌ خطأ: لم نتمكن من الحصول على معرف المستخدم'),
-              backgroundColor: AppColors.error,
-            ),
-          );
-        }
+    if (!(_formKey.currentState?.validate() ?? false)) return;
+    final authId = Supabase.instance.client.auth.currentUser?.id;
+    if (authId == null) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تعذر الحصول على معرف المستخدم'), backgroundColor: AppColors.error));
+      return;
+    }
+
+    if (_selectedRole == 'lawyer') {
+      if (_profilePhotoBytes == null || _idCardBytes == null) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('يرجى رفع الصورة الشخصية وصورة الهوية'), backgroundColor: AppColors.error));
         return;
       }
-
-      if (_selectedRole == 'lawyer') {
-        if (_profilePhotoBytes == null || _idCardBytes == null) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('⚠️ يرجى رفع الصورة الشخصية وصورة الهوية'),
-              backgroundColor: AppColors.error,
-            ),
-          );
-          return;
-        }
-
-        if (_selectedSpecializations.isEmpty) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('⚠️ يرجى اختيار تخصص واحد على الأقل'),
-              backgroundColor: AppColors.error,
-            ),
-          );
-          return;
-        }
-
-        try {
-          debugPrint('📤 بدء عملية إرسال بيانات المحامي...');
-
-          // استدعاء العملية
-          await ref
-              .read(lawyerSetupControllerProvider.notifier)
-              .completeProfile(
-                authUid: authId,
-                fullName: _nameController.text.trim(),
-                email: _emailController.text.trim(),
-                whatsapp: _whatsappController.text.trim(),
-                specializations: _selectedSpecializations,
-                profilePhotoBytes: _profilePhotoBytes,
-                idCardBytes: _idCardBytes,
-              );
-
-          // انتظر قليلاً للتأكد من تحديث الحالة
-          await Future.delayed(const Duration(milliseconds: 500));
-
-          if (mounted) {
-            // اقرأ الحالة بعد التأكد من التحديث
-            final state = ref.read(lawyerSetupControllerProvider);
-            debugPrint('📊 حالة النتيجة: ${state.runtimeType}');
-
-            if (state.hasError) {
-              debugPrint('❌ خطأ: ${state.error}');
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('❌ خطأ أثناء الحفظ: ${state.error}'),
-                  backgroundColor: AppColors.error,
-                  duration: const Duration(seconds: 5),
-                ),
-              );
-            } else {
-              debugPrint('✅ تم الحفظ بنجاح');
-              _showSuccessDialog();
-            }
-          }
-        } catch (e) {
-          debugPrint('🚨 استثناء: $e');
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('❌ خطأ غير متوقع: $e'),
-                backgroundColor: AppColors.error,
-                duration: const Duration(seconds: 5),
-              ),
-            );
-          }
-        }
-      } else {
-        try {
-          debugPrint('📤 بدء تحديث بيانات المستخدم العادي...');
-
-          await ref.read(authControllerProvider.notifier).updateInitialProfile(
-                fullName: _nameController.text.trim(),
-                email: _emailController.text.trim(),
-                role: _selectedRole,
-              );
-
-          // انتظر قليلاً للتأكد من تحديث الحالة
-          await Future.delayed(const Duration(milliseconds: 500));
-
-          if (mounted) {
-            final authState = ref.read(authControllerProvider);
-            debugPrint('📊 حالة المستخدم: ${authState.runtimeType}');
-
-            if (authState.hasError) {
-              debugPrint('❌ خطأ: ${authState.error}');
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('❌ خطأ أثناء الحفظ: ${authState.error}'),
-                  backgroundColor: AppColors.error,
-                  duration: const Duration(seconds: 5),
-                ),
-              );
-            } else {
-              debugPrint('✅ تم الحفظ والدخول بنجاح');
-              context.go('/');
-            }
-          }
-        } catch (e) {
-          debugPrint('🚨 استثناء: $e');
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('❌ خطأ غير متوقع: $e'),
-                backgroundColor: AppColors.error,
-                duration: const Duration(seconds: 5),
-              ),
-            );
-          }
-        }
+      if (_selectedSpecializations.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('يرجى اختيار تخصص واحد على الأقل'), backgroundColor: AppColors.error));
+        return;
       }
+      await ref.read(lawyerSetupControllerProvider.notifier).completeProfile(
+        authUid: authId,
+        fullName: _nameController.text.trim(),
+        email: _emailController.text.trim(),
+        specializations: _selectedSpecializations,
+        profilePhotoBytes: _profilePhotoBytes,
+        idCardBytes: _idCardBytes,
+      );
+      if (!mounted) return;
+      final state = ref.read(lawyerSetupControllerProvider);
+      if (state.hasError) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('خطأ أثناء الحفظ: ${state.error}'), backgroundColor: AppColors.error));
+      } else {
+        _showSuccessDialog();
+      }
+      return;
     }
+
+    await ref.read(authControllerProvider.notifier).updateInitialProfile(
+      fullName: _nameController.text.trim(),
+      email: _emailController.text.trim(),
+      role: _selectedRole,
+    );
+    if (mounted) context.go('/');
   }
 
   void _showSuccessDialog() {
-    showDialog(
+    showDialog<void>(
       context: context,
       barrierDismissible: false,
-      builder: (context) => AlertDialog(
+      builder: (_) => AlertDialog(
         title: const Text('تم إرسال الطلب'),
-        content: const Text(
-            'شكراً لانضمامك! ملفك قيد المراجعة الآن. سنتواصل معك فور التفعيل.'),
-        actions: [
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context); // إغلاق الحوار
-              // الـ Router سيتكفل بالباقي ويوجه المحامي لصفحة الانتظار
-            },
-            child: const Text('حسناً'),
-          ),
-        ],
+        content: const Text('تم إرسال ملفك للمراجعة. ستظهر حالة الحساب في التطبيق فور الانتهاء من التدقيق.'),
+        actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('حسناً'))],
       ),
     );
   }
 
   void _cancelAndLogout() {
-    showDialog(
+    showDialog<void>(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (_) => AlertDialog(
         title: const Text('إلغاء العملية؟'),
-        content: const Text(
-            'سيتم تسجيل خروجك، ولن يتم حفظ البيانات المدخلة. هل تريد الاستمرار؟'),
+        content: const Text('سيتم تسجيل خروجك ولن يتم حفظ البيانات المدخلة. هل تريد الاستمرار؟'),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('رجوع'),
-          ),
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('رجوع')),
           ElevatedButton(
             onPressed: () {
               Navigator.pop(context);
               ref.read(authControllerProvider.notifier).logout();
             },
             style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
-            child: const Text('تأكيد الإلغاء',
-                style: TextStyle(color: Colors.white)),
+            child: const Text('تأكيد الإلغاء', style: TextStyle(color: Colors.white)),
           ),
         ],
       ),
@@ -265,17 +141,12 @@ class _CompleteProfilePageState extends ConsumerState<CompleteProfilePage> {
   @override
   Widget build(BuildContext context) {
     final isLoading = ref.watch(globalLoadingProvider);
-
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
         title: const Text('إكمال الملف الشخصي'),
         centerTitle: true,
-        leading: IconButton(
-          icon: const Icon(Icons.close, color: AppColors.error),
-          onPressed: _cancelAndLogout,
-          tooltip: 'إلغاء وتسجيل الخروج',
-        ),
+        leading: IconButton(icon: const Icon(Icons.close, color: AppColors.error), onPressed: _cancelAndLogout),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(AppSizes.p24),
@@ -284,90 +155,30 @@ class _CompleteProfilePageState extends ConsumerState<CompleteProfilePage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              _buildHeader(),
-              const SizedBox(height: 32),
-
-              // 1. اختيار نوع الحساب في الأعلى
-              const Text('نوع الحساب:',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+              const Icon(Icons.assignment_ind_outlined, size: 70, color: AppColors.primary),
               const SizedBox(height: 12),
-              Row(
-                children: [
-                  Expanded(
-                      child: _RoleCard(
-                          title: 'عميل',
-                          icon: Icons.person_search,
-                          isSelected: _selectedRole == 'user',
-                          onTap: () => setState(() => _selectedRole = 'user'))),
-                  const SizedBox(width: 16),
-                  Expanded(
-                      child: _RoleCard(
-                          title: 'محامي',
-                          icon: Icons.gavel,
-                          isSelected: _selectedRole == 'lawyer',
-                          onTap: () =>
-                              setState(() => _selectedRole = 'lawyer'))),
-                ],
-              ),
-
+              const Text('خطوة واحدة تفصلك عن البداية', textAlign: TextAlign.center, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 4),
+              const Text('أكمل بياناتك لضمان تجربة قانونية آمنة', textAlign: TextAlign.center, style: TextStyle(color: AppColors.outline, fontSize: 13)),
               const SizedBox(height: 32),
-              const Divider(),
+              const Text('نوع الحساب:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+              const SizedBox(height: 12),
+              Row(children: [
+                Expanded(child: _RoleCard(title: 'عميل', icon: Icons.person_search, selected: _selectedRole == 'user', onTap: () => setState(() => _selectedRole = 'user'))),
+                const SizedBox(width: 16),
+                Expanded(child: _RoleCard(title: 'محامي', icon: Icons.gavel, selected: _selectedRole == 'lawyer', onTap: () => setState(() => _selectedRole = 'lawyer'))),
+              ]),
               const SizedBox(height: 24),
-
-              // 2. المعلومات الأساسية
-              TextFormField(
-                controller: _nameController,
-                decoration: const InputDecoration(
-                    labelText: 'الاسم الكامل',
-                    prefixIcon: Icon(Icons.person_outline),
-                    border: OutlineInputBorder()),
-                validator: (val) =>
-                    val?.trim().isEmpty ?? true ? 'مطلوب' : null,
-              ),
+              TextFormField(controller: _nameController, decoration: const InputDecoration(labelText: 'الاسم الكامل', prefixIcon: Icon(Icons.person_outline), border: OutlineInputBorder()), validator: (v) => v?.trim().isEmpty ?? true ? 'مطلوب' : null),
               const SizedBox(height: 16),
-              TextFormField(
-                controller: _emailController,
-                decoration: const InputDecoration(
-                    labelText: 'البريد الإلكتروني (اختياري)',
-                    prefixIcon: Icon(Icons.email_outlined),
-                    border: OutlineInputBorder()),
-                validator: (val) =>
-                    (val != null && val.isNotEmpty && !val.contains('@'))
-                        ? 'بريد غير صحيح'
-                        : null,
+              TextFormField(controller: _emailController, decoration: const InputDecoration(labelText: 'البريد الإلكتروني (اختياري)', prefixIcon: Icon(Icons.email_outlined), border: OutlineInputBorder()), validator: (v) => v != null && v.isNotEmpty && !v.contains('@') ? 'بريد غير صحيح' : null),
+              AnimatedSize(duration: const Duration(milliseconds: 250), child: _selectedRole == 'lawyer' ? _buildLawyerSection() : const SizedBox.shrink()),
+              const SizedBox(height: 32),
+              isLoading ? const Center(child: LoadingWidget()) : ElevatedButton(
+                onPressed: _submit,
+                style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, minimumSize: const Size(double.infinity, 56), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+                child: Text(_selectedRole == 'lawyer' ? 'إرسال طلب الانضمام' : 'حفظ والدخول', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
               ),
-
-              // 3. قسم المحامي (يظهر بانسيابية أسفل البيانات)
-              AnimatedSize(
-                duration: const Duration(milliseconds: 300),
-                child: _selectedRole == 'lawyer'
-                    ? _buildLawyerSection()
-                    : const SizedBox.shrink(),
-              ),
-
-              const SizedBox(height: 40),
-
-              // 4. زر الحفظ في نهاية النموذج
-              isLoading
-                  ? const Center(child: LoadingWidget())
-                  : ElevatedButton(
-                      onPressed: _submit,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primary,
-                        minimumSize: const Size(double.infinity, 56),
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12)),
-                      ),
-                      child: Text(
-                          _selectedRole == 'lawyer'
-                              ? 'إرسال طلب الانضمام'
-                              : 'حفظ والدخول',
-                          style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white)),
-                    ),
-              const SizedBox(height: 24),
             ],
           ),
         ),
@@ -375,132 +186,35 @@ class _CompleteProfilePageState extends ConsumerState<CompleteProfilePage> {
     );
   }
 
-  Widget _buildHeader() {
-    return const Column(
-      children: [
-        Icon(Icons.assignment_ind_outlined, size: 70, color: AppColors.primary),
-        SizedBox(height: 12),
-        Text('خطوة واحدة تفصلك عن البداية',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-        Text('أكمل بياناتك لضمان تجربة قانونية آمنة',
-            style: TextStyle(color: AppColors.outline, fontSize: 13)),
-      ],
-    );
-  }
-
   Widget _buildLawyerSection() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const SizedBox(height: 32),
-        const Text('بيانات التوثيق المهنية:',
-            style: TextStyle(
-                fontWeight: FontWeight.bold, color: AppColors.primary)),
+        const SizedBox(height: 28),
+        const Text('بيانات التوثيق المهنية', style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.primary)),
+        const SizedBox(height: 20),
+        Center(child: Stack(children: [
+          CircleAvatar(radius: 50, backgroundColor: AppColors.surfaceVariant, backgroundImage: _profilePhotoBytes != null ? MemoryImage(_profilePhotoBytes!) : null, child: _profilePhotoBytes == null ? const Icon(Icons.camera_alt_outlined, size: 40, color: AppColors.outline) : null),
+          Positioned(bottom: 0, right: 0, child: CircleAvatar(backgroundColor: AppColors.primary, radius: 18, child: IconButton(icon: const Icon(Icons.edit, size: 16, color: Colors.white), onPressed: () => _pickImage('profile')))),
+        ])),
+        const SizedBox(height: 8),
+        const Center(child: Text('الصورة الشخصية', style: TextStyle(fontSize: 12, color: AppColors.outline))),
         const SizedBox(height: 24),
-
-        // الصورة الشخصية
-        Center(
-          child: Stack(
-            children: [
-              CircleAvatar(
-                radius: 50,
-                backgroundColor: AppColors.surfaceVariant,
-                backgroundImage: _profilePhotoBytes != null
-                    ? MemoryImage(_profilePhotoBytes!)
-                    : null,
-                child: _profilePhotoBytes == null
-                    ? const Icon(Icons.camera_alt_outlined,
-                        size: 40, color: AppColors.outline)
-                    : null,
-              ),
-              Positioned(
-                  bottom: 0,
-                  right: 0,
-                  child: CircleAvatar(
-                      backgroundColor: AppColors.primary,
-                      radius: 18,
-                      child: IconButton(
-                          icon: const Icon(Icons.edit,
-                              size: 16, color: Colors.white),
-                          onPressed: () => _pickImage('profile')))),
-            ],
-          ),
-        ),
-        const Center(
-            child: Text('الصورة الشخصية (Portrait)',
-                style: TextStyle(fontSize: 12, color: AppColors.outline))),
-
-        const SizedBox(height: 24),
-        TextFormField(
-          controller: _whatsappController,
-          decoration: const InputDecoration(
-              labelText: 'رقم الواتساب',
-              prefixIcon: Icon(Icons.phone),
-              border: OutlineInputBorder(),
-              hintText: '9647XXXXXXXX'),
-          keyboardType: TextInputType.phone,
-          validator: (val) =>
-              val?.trim().isEmpty ?? true ? 'مطلوب للتواصل' : null,
-        ),
-
-        const SizedBox(height: 24),
-        const Text('التخصصات القانونية (اختر واحدة أو أكثر):',
-            style: TextStyle(fontWeight: FontWeight.bold)),
+        const Text('التخصصات القانونية (اختر واحدة أو أكثر):', style: TextStyle(fontWeight: FontWeight.bold)),
         const SizedBox(height: 12),
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children: _allSpecializations.map((spec) {
-            final isSelected = _selectedSpecializations.contains(spec);
-            return FilterChip(
-              label: Text(spec),
-              selected: isSelected,
-              onSelected: (selected) {
-                setState(() {
-                  if (selected) {
-                    _selectedSpecializations.add(spec);
-                  } else {
-                    _selectedSpecializations.remove(spec);
-                  }
-                });
-              },
-              selectedColor: AppColors.primary.withValues(alpha: 0.2),
-              checkmarkColor: AppColors.primary,
-              labelStyle: TextStyle(
-                color: isSelected ? AppColors.primary : Colors.black87,
-                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-              ),
-            );
-          }).toList(),
-        ),
-
+        Wrap(spacing: 8, runSpacing: 8, children: _specializations.map((spec) {
+          final selected = _selectedSpecializations.contains(spec);
+          return FilterChip(label: Text(spec), selected: selected, onSelected: (value) => setState(() => value ? _selectedSpecializations.add(spec) : _selectedSpecializations.remove(spec)), selectedColor: AppColors.primary.withValues(alpha: 0.2), checkmarkColor: AppColors.primary);
+        }).toList()),
         const SizedBox(height: 24),
-        const Text('صورة هوية النقابة:',
-            style: TextStyle(fontWeight: FontWeight.bold)),
+        const Text('صورة هوية النقابة:', style: TextStyle(fontWeight: FontWeight.bold)),
         const SizedBox(height: 12),
         InkWell(
           onTap: () => _pickImage('id'),
           child: Container(
             height: 160,
-            decoration: BoxDecoration(
-                border: Border.all(
-                    color: _idCardBytes == null
-                        ? AppColors.error.withValues(alpha: 0.3)
-                        : AppColors.outline),
-                borderRadius: BorderRadius.circular(12),
-                color: Colors.white),
-            child: _idCardBytes == null
-                ? const Center(
-                    child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                        Icon(Icons.badge_outlined,
-                            size: 40, color: Colors.grey),
-                        Text('اضغط لرفع الهوية', style: TextStyle(fontSize: 12))
-                      ]))
-                : ClipRRect(
-                    borderRadius: BorderRadius.circular(12),
-                    child: Image.memory(_idCardBytes!, fit: BoxFit.cover)),
+            decoration: BoxDecoration(border: Border.all(color: _idCardBytes == null ? AppColors.error.withValues(alpha: 0.3) : AppColors.outline), borderRadius: BorderRadius.circular(12), color: Colors.white),
+            child: _idCardBytes == null ? const Column(mainAxisAlignment: MainAxisAlignment.center, children: [Icon(Icons.badge_outlined, size: 40, color: Colors.grey), Text('اضغط لرفع الهوية', style: TextStyle(fontSize: 12))]) : ClipRRect(borderRadius: BorderRadius.circular(12), child: Image.memory(_idCardBytes!, fit: BoxFit.cover)),
           ),
         ),
       ],
@@ -511,46 +225,18 @@ class _CompleteProfilePageState extends ConsumerState<CompleteProfilePage> {
 class _RoleCard extends StatelessWidget {
   final String title;
   final IconData icon;
-  final bool isSelected;
+  final bool selected;
   final VoidCallback onTap;
-  const _RoleCard(
-      {required this.title,
-      required this.icon,
-      required this.isSelected,
-      required this.onTap});
+  const _RoleCard({required this.title, required this.icon, required this.selected, required this.onTap});
+
   @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(16),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(vertical: 20),
-        decoration: BoxDecoration(
-          color: isSelected ? AppColors.primary : Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-              color: isSelected ? AppColors.primary : AppColors.surfaceVariant,
-              width: 2),
-          boxShadow: isSelected
-              ? [
-                  BoxShadow(
-                      color: AppColors.primary.withValues(alpha: 0.2),
-                      blurRadius: 8,
-                      offset: const Offset(0, 4))
-                ]
-              : [],
-        ),
-        child: Column(children: [
-          Icon(icon,
-              color: isSelected ? Colors.white : AppColors.primary, size: 30),
-          const SizedBox(height: 8),
-          Text(title,
-              style: TextStyle(
-                  color: isSelected ? Colors.white : Colors.black,
-                  fontWeight: FontWeight.bold))
-        ]),
-      ),
-    );
-  }
+  Widget build(BuildContext context) => InkWell(
+    onTap: onTap,
+    borderRadius: BorderRadius.circular(12),
+    child: Container(
+      padding: const EdgeInsets.symmetric(vertical: 16),
+      decoration: BoxDecoration(color: selected ? AppColors.primary.withValues(alpha: 0.08) : Colors.white, borderRadius: BorderRadius.circular(12), border: Border.all(color: selected ? AppColors.primary : AppColors.surfaceVariant, width: selected ? 2 : 1)),
+      child: Column(children: [Icon(icon, color: selected ? AppColors.primary : AppColors.outline, size: 28), const SizedBox(height: 6), Text(title, style: TextStyle(fontWeight: selected ? FontWeight.bold : FontWeight.normal, color: selected ? AppColors.primary : AppColors.textPrimary))]),
+    ),
+  );
 }
