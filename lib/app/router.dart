@@ -32,39 +32,163 @@ import '../features/lawyers/domain/entities/lawyer_profile.dart';
 import '../features/authentication/presentation/providers/auth_provider.dart';
 
 part 'router.g.dart';
-class GoRouterRefreshStream extends ChangeNotifier { GoRouterRefreshStream(Stream<dynamic> stream) { notifyListeners(); _subscription = stream.asBroadcastStream().listen((dynamic _) => notifyListeners()); } late final StreamSubscription<dynamic> _subscription; @override void dispose() { _subscription.cancel(); super.dispose(); } }
+
+class GoRouterRefreshStream extends ChangeNotifier {
+  GoRouterRefreshStream(Stream<dynamic> stream) {
+    notifyListeners();
+    _subscription = stream.asBroadcastStream().listen((dynamic _) => notifyListeners());
+  }
+
+  late final StreamSubscription<dynamic> _subscription;
+
+  @override
+  void dispose() {
+    _subscription.cancel();
+    super.dispose();
+  }
+}
 
 @riverpod
 GoRouter router(RouterRef ref) {
   final authState = ref.watch(authStateChangesProvider);
+
   return GoRouter(
-    initialLocation: '/', refreshListenable: GoRouterRefreshStream(ref.watch(authRepositoryProvider).authStateChanges()),
+    initialLocation: '/',
+    refreshListenable: GoRouterRefreshStream(
+      ref.watch(authRepositoryProvider).authStateChanges(),
+    ),
     redirect: (context, state) {
-      final user = authState.valueOrNull; final location = state.matchedLocation;
-      final login = location == '/login' || location == '/admin-login'; final signup = location == '/signup'; final otp = location == '/otp'; final complete = location == '/complete-profile'; final onboarding = location == '/lawyer-onboarding'; final pending = location == '/lawyer-pending'; final admin = location.startsWith('/admin') && location != '/admin-login';
-      // إنشاء طلب الاستشارة مسموح للعميل فقط. هذا الحاجز يمنع المحامي من الوصول
-      // إلى الصفحة حتى عبر رابط مباشر أو deep link.
+      final user = authState.valueOrNull;
+      final location = state.matchedLocation;
+
+      final login = location == '/login' || location == '/admin-login';
+      final signup = location == '/signup';
+      final otp = location == '/otp';
+      final complete = location == '/complete-profile';
+      final onboarding = location == '/lawyer-onboarding';
+      final pending = location == '/lawyer-pending';
+      final admin = location.startsWith('/admin') && location != '/admin-login';
+
+      // في التطبيق الحالي دور العميل محفوظ باسم "user"، بينما بعض الحسابات
+      // القديمة/المستقبلية قد تستخدم "client". كلاهما يمثل طالب الخدمة.
+      final isClient = user?.role == 'user' || user?.role == 'client';
+
+      // إنشاء طلب الاستشارة مسموح لطالب الخدمة فقط.
       final clientOnlyBooking = location == '/create-booking';
-      if (user == null) return (login || signup || otp) ? null : '/login';
-      if (user.role == 'admin') { if (complete || onboarding || login || signup) return '/admin'; return admin ? null : '/admin'; }
-      if (!user.isOnboardingComplete) return (complete || onboarding) ? null : '/complete-profile';
+
+      if (user == null) {
+        return (login || signup || otp) ? null : '/login';
+      }
+
+      if (user.role == 'admin') {
+        if (complete || onboarding || login || signup) return '/admin';
+        return admin ? null : '/admin';
+      }
+
+      if (!user.isOnboardingComplete) {
+        return (complete || onboarding) ? null : '/complete-profile';
+      }
+
       if (admin && user.role != 'admin') return '/';
-      if (clientOnlyBooking && user.role != 'client') return user.role == 'lawyer' ? '/lawyer-home' : '/';
-      if (user.role == 'lawyer' && !user.isVerified) return location == '/lawyer-setup' || pending ? null : '/lawyer-pending';
-      if (login || signup || otp || (complete && user.isOnboardingComplete)) return user.role == 'lawyer' && user.isVerified ? '/lawyer-home' : '/';
-      if (location == '/' && user.role == 'lawyer' && user.isVerified) return '/lawyer-home';
+
+      // لا نعيد العميل إلى الصفحة الرئيسية عند فتح صفحة الحجز.
+      // الحسابات المسجلة من صفحة التسجيل تستخدم role = "user".
+      if (clientOnlyBooking && !isClient) {
+        return user.role == 'lawyer' ? '/lawyer-home' : '/';
+      }
+
+      if (user.role == 'lawyer' && !user.isVerified) {
+        return location == '/lawyer-setup' || pending ? null : '/lawyer-pending';
+      }
+
+      if (login || signup || otp || (complete && user.isOnboardingComplete)) {
+        return user.role == 'lawyer' && user.isVerified ? '/lawyer-home' : '/';
+      }
+
+      if (location == '/' && user.role == 'lawyer' && user.isVerified) {
+        return '/lawyer-home';
+      }
+
       return null;
     },
     routes: [
-      GoRoute(path: '/login', builder: (c,s) => const LoginPage()), GoRoute(path: '/admin-login', builder: (c,s) => const LoginPage(isAdminLogin: true)), GoRoute(path: '/signup', builder: (c,s) => const SignupPage()), GoRoute(path: '/complete-profile', builder: (c,s) => const CompleteProfilePage()),
-      GoRoute(path: '/lawyer-onboarding', builder: (c,s) { final e=s.extra as Map<String,dynamic>? ?? {}; return LawyerOnboardingPage(fullName:e['fullName'] ?? '', email:e['email'] ?? ''); }), GoRoute(path: '/otp', builder: (c,s) => OtpPage(phone:s.extra as String? ?? '')),
-      GoRoute(path: '/lawyer-home', builder: (c,s) => const LawyerDashboardPage()), GoRoute(path: '/lawyer-profile-edit', builder: (c,s) => const LawyerProfileEditPage()), GoRoute(path: '/lawyer-availability', builder: (c,s) => const LawyerAvailabilityPage()), GoRoute(path: '/lawyer-setup', builder: (c,s) => const LawyerSetupPage()), GoRoute(path: '/lawyer-pending', builder: (c,s) => const LawyerPendingPage()),
-      GoRoute(path: '/lawyer-details/:id', builder: (c,s) => LawyerDetailsPage(profileId:s.pathParameters['id']!)),
-      GoRoute(path: '/create-booking', builder: (c,s) { final e=s.extra as Map<String,dynamic>? ?? {}; final lawyer=e['lawyer'] as LawyerProfile?; return lawyer == null ? const LawyersListPage() : CreateBookingPage(lawyer:lawyer, service:e['service'], isCustom:e['isCustom'] ?? false); }),
-      GoRoute(path: '/bookings', builder: (c,s) => const BookingsListPage()), GoRoute(path: '/booking-details', builder: (c,s) { final b=s.extra as Booking?; return b == null ? const BookingsListPage() : BookingDetailsPage(booking:b); }),
-      GoRoute(path: '/chat/:id', builder: (c,s) => ChatPage(conversationId:s.pathParameters['id']!)), GoRoute(path: '/upload-payment', builder: (c,s) { final b=s.extra as Booking?; return b == null ? const BookingsListPage() : PaymentUploadPage(booking:b); }),
-      GoRoute(path: '/profile', builder: (c,s) => const ProfilePage()), GoRoute(path: '/notification-settings', builder: (c,s) => const NotificationSettingsPage()), GoRoute(path: '/payment-methods', builder: (c,s) => const PaymentMethodsPage()), GoRoute(path: '/app-settings', builder: (c,s) => const AppSettingsPage()), GoRoute(path: '/help-center', builder: (c,s) => const HelpCenterPage()),
-      GoRoute(path: '/admin', builder: (c,s) => const AdminDashboardPage(), routes: [GoRoute(path:'lawyer-verifications', builder:(c,s)=>const LawyerVerificationPage()), GoRoute(path:'payments', builder:(c,s)=>const PaymentManagementPage())]), GoRoute(path:'/', builder:(c,s)=>const LawyersListPage()),
+      GoRoute(path: '/login', builder: (c, s) => const LoginPage()),
+      GoRoute(path: '/admin-login', builder: (c, s) => const LoginPage(isAdminLogin: true)),
+      GoRoute(path: '/signup', builder: (c, s) => const SignupPage()),
+      GoRoute(path: '/complete-profile', builder: (c, s) => const CompleteProfilePage()),
+      GoRoute(
+        path: '/lawyer-onboarding',
+        builder: (c, s) {
+          final e = s.extra as Map<String, dynamic>? ?? {};
+          return LawyerOnboardingPage(
+            fullName: e['fullName'] ?? '',
+            email: e['email'] ?? '',
+          );
+        },
+      ),
+      GoRoute(path: '/otp', builder: (c, s) => OtpPage(phone: s.extra as String? ?? '')),
+      GoRoute(path: '/lawyer-home', builder: (c, s) => const LawyerDashboardPage()),
+      GoRoute(path: '/lawyer-profile-edit', builder: (c, s) => const LawyerProfileEditPage()),
+      GoRoute(path: '/lawyer-availability', builder: (c, s) => const LawyerAvailabilityPage()),
+      GoRoute(path: '/lawyer-setup', builder: (c, s) => const LawyerSetupPage()),
+      GoRoute(path: '/lawyer-pending', builder: (c, s) => const LawyerPendingPage()),
+      GoRoute(
+        path: '/lawyer-details/:id',
+        builder: (c, s) => LawyerDetailsPage(profileId: s.pathParameters['id']!),
+      ),
+      GoRoute(
+        path: '/create-booking',
+        builder: (c, s) {
+          final e = s.extra as Map<String, dynamic>?;
+          final lawyer = e?['lawyer'] as LawyerProfile?;
+
+          // لا نعيد المستخدم بصمت إلى قائمة المحامين إذا فقدت بيانات التنقل.
+          // هذا يمنع ظهور سلوك "الضغط على حجز موعد يعيدني للرئيسية".
+          if (lawyer == null) {
+            return const Scaffold(
+              body: Center(
+                child: Text('تعذر فتح صفحة الحجز. يرجى العودة إلى ملف المحامي والمحاولة مرة أخرى.'),
+              ),
+            );
+          }
+
+          return CreateBookingPage(
+            lawyer: lawyer,
+            service: e?['service'],
+            isCustom: e?['isCustom'] ?? false,
+          );
+        },
+      ),
+      GoRoute(path: '/bookings', builder: (c, s) => const BookingsListPage()),
+      GoRoute(
+        path: '/booking-details',
+        builder: (c, s) {
+          final b = s.extra as Booking?;
+          return b == null ? const BookingsListPage() : BookingDetailsPage(booking: b);
+        },
+      ),
+      GoRoute(path: '/chat/:id', builder: (c, s) => ChatPage(conversationId: s.pathParameters['id']!)),
+      GoRoute(
+        path: '/upload-payment',
+        builder: (c, s) {
+          final b = s.extra as Booking?;
+          return b == null ? const BookingsListPage() : PaymentUploadPage(booking: b);
+        },
+      ),
+      GoRoute(path: '/profile', builder: (c, s) => const ProfilePage()),
+      GoRoute(path: '/notification-settings', builder: (c, s) => const NotificationSettingsPage()),
+      GoRoute(path: '/payment-methods', builder: (c, s) => const PaymentMethodsPage()),
+      GoRoute(path: '/app-settings', builder: (c, s) => const AppSettingsPage()),
+      GoRoute(path: '/help-center', builder: (c, s) => const HelpCenterPage()),
+      GoRoute(
+        path: '/admin',
+        builder: (c, s) => const AdminDashboardPage(),
+        routes: [
+          GoRoute(path: 'lawyer-verifications', builder: (c, s) => const LawyerVerificationPage()),
+          GoRoute(path: 'payments', builder: (c, s) => const PaymentManagementPage()),
+        ],
+      ),
+      GoRoute(path: '/', builder: (c, s) => const LawyersListPage()),
     ],
   );
 }
