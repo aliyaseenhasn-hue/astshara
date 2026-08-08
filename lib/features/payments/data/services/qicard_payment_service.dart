@@ -26,4 +26,21 @@ class QiCardPaymentService {
 
     return formUrl;
   }
+
+  Future<Map<String, dynamic>> checkPaymentStatus({required String bookingId}) async {
+    final response = await _supabase.functions.invoke(
+      'qicard-check-payment-status',
+      body: {'booking_id': bookingId},
+    );
+
+    final data = response.data;
+    if (data is! Map) {
+      throw Exception('تعذر التحقق من حالة الدفع');
+    }
+
+    final error = data['error'];
+    if (error != null) throw Exception(error.toString());
+
+    return Map<String, dynamic>.from(data);
+  }
 }
