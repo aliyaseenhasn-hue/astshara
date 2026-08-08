@@ -19,6 +19,8 @@ class BookingDetailsPage extends ConsumerWidget {
     final paymentAsync = ref.watch(bookingPaymentProvider(booking.id));
     final clientNameAsync = ref.watch(userNameProvider(booking.userId));
     final extraDetailsAsync = ref.watch(bookingDetailsProvider(booking.id));
+    final user = ref.watch(authStateChangesProvider).value;
+    final isLawyer = user?.role == 'lawyer';
 
     return Scaffold(
       appBar: AppBar(title: const Text('تفاصيل الاستشارة'), backgroundColor: AppColors.secondary, foregroundColor: Colors.white),
@@ -46,18 +48,23 @@ class BookingDetailsPage extends ConsumerWidget {
             ],
           ]), loading: () => const Text('جاري التحميل...'), error: (_, __) => const Text('تعذر تحميل الوصف'))),
           const SizedBox(height: 16),
-          _buildSection(title: 'حالة الدفع', icon: Icons.receipt_long_outlined, child: paymentAsync.when(data: (payment) => payment == null ? const Text('بانتظار إكمال الدفع.', style: TextStyle(color: AppColors.error)) : Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          _buildSection(title: 'حالة الدفع', icon: Icons.receipt_long_outlined, child: paymentAsync.when(data: (payment) => payment == null ? const Text('بانتظار موافقة المحامي قبل إتاحة الدفع.', style: TextStyle(color: AppColors.error)) : Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             _buildDetailRow('المبلغ:', '${payment.amount} د.ع'), const SizedBox(height: 8),
             _buildDetailRow('الوسيلة:', _paymentMethodText(payment.paymentMethod)), const SizedBox(height: 8),
             _buildDetailRow('حالة الدفع:', _paymentStatusText(payment.status)),
           ]), loading: () => const Center(child: CircularProgressIndicator()), error: (_, __) => const Text('تعذر تحميل بيانات الدفع'))),
           const SizedBox(height: 32),
-          if (booking.status == 'بانتظار التأكيد') Row(children: [
-            Expanded(child: ElevatedButton(onPressed: () => _updateStatus(context, ref, 'مؤكد'), style: ElevatedButton.styleFrom(backgroundColor: AppColors.success, foregroundColor: Colors.white), child: const Text('موافقة وتأكيد'))), const SizedBox(width: 12),
-            Expanded(child: ElevatedButton(onPressed: () => _updateStatus(context, ref, 'ملغي'), style: ElevatedButton.styleFrom(backgroundColor: AppColors.error, foregroundColor: Colors.white), child: const Text('رفض الطلب'))),
+          if (isLawyer && booking.status == 'قيد انتظار الدفع' && !booking.lawyerApproved) Row(children: [
+            Expanded(child: ElevatedButton(onPressed: () => _reviewBooking(context, ref, true), style: ElevatedButton.styleFrom(backgroundColor: AppColors.success, foregroundColor: Colors.white), child: const Text('موافقة على الطلب'))), const SizedBox(width: 12),
+            Expanded(child: ElevatedButton(onPressed: () => _reviewBooking(context, ref, false), style: ElevatedButton.styleFrom(backgroundColor: AppColors.error, foregroundColor: Colors.white), child: const Text('رفض الطلب'))),
           ]),
-          if (booking.status == 'مؤكد') ElevatedButton.icon(onPressed: () => _updateStatus(context, ref, 'قيد التنفيذ'), icon: const Icon(Icons.play_arrow), label: const Text('بدء الاستشارة'), style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 16))),
-          if (booking.status == 'قيد التنفيذ') ElevatedButton.icon(onPressed: () => _updateStatus(context, ref, 'مكتمل'), icon: const Icon(Icons.check_circle_outline), label: const Text('إنهاء الاستشارة'), style: ElevatedButton.styleFrom(backgroundColor: AppColors.success, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 16))),
+          if (!isLawyer && booking.status == 'قيد انتظار الدفع' && booking.lawyerApproved) ElevatedButton.icon(onPressed: () => context.push('/upload-payment', extra: booking), icon: const Icon(Icons.payment), label: const Text('إكمال الدفع وتأكيد الطلب'), style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 16))),
+          if (isLawyer && booking.status == 'بانتظار التأكيد') Row(children: [
+            Expanded(child: ElevatedButton(onPressed: () => _updateStatus(context, ref, 'مؤكد'), style: ElevatedButton.styleFrom(backgroundColor: AppColors.success, foregroundColor: Colors.white), child: const Text('تأكيد الحجز'))), const SizedBox(width: 12),
+            Expanded(child: ElevatedButton(onPressed: () => _updateStatus(context, ref, 'ملغي'), style: ElevatedButton.styleFrom(backgroundColor: AppColors.error, foregroundColor: Colors.white), child: const Text('رفض الحجز'))),
+          ]),
+          if (isLawyer && booking.status == 'مؤكد') ElevatedButton.icon(onPressed: () => _updateStatus(context, ref, 'قيد التنفيذ'), icon: const Icon(Icons.play_arrow), label: const Text('بدء الاستشارة'), style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 16))),
+          if (isLawyer && booking.status == 'قيد التنفيذ') ElevatedButton.icon(onPressed: () => _updateStatus(context, ref, 'مكتمل'), icon: const Icon(Icons.check_circle_outline), label: const Text('إنهاء الاستشارة'), style: ElevatedButton.styleFrom(backgroundColor: AppColors.success, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 16))),
           const SizedBox(height: 40),
         ]),
       ),
@@ -67,8 +74,8 @@ class BookingDetailsPage extends ConsumerWidget {
   Widget _buildStatusHeader() {
     Color color = Colors.grey; String text = booking.status;
     switch (booking.status) {
-      case 'قيد انتظار الدفع': color = Colors.orange; text = 'بانتظار إكمال الدفع'; break;
-      case 'بانتظار التأكيد': color = Colors.blue; text = 'بانتظار موافقة المحامي'; break;
+      case 'قيد انتظار الدفع': color = Colors.orange; text = booking.lawyerApproved ? 'تمت الموافقة — بانتظار الدفع' : 'بانتظار موافقة المحامي'; break;
+      case 'بانتظار التأكيد': color = Colors.blue; text = 'تم الدفع — بانتظار تأكيد الحجز'; break;
       case 'مؤكد': color = AppColors.success; text = 'الحجز مؤكد'; break;
       case 'قيد التنفيذ': color = AppColors.primary; text = 'الاستشارة قيد التنفيذ'; break;
       case 'مكتمل': color = AppColors.success; text = 'الاستشارة مكتملة'; break;
@@ -78,17 +85,31 @@ class BookingDetailsPage extends ConsumerWidget {
     return Container(padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16), decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(12), border: Border.all(color: color.withValues(alpha: 0.3))), child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [Icon(Icons.info_outline, color: color, size: 20), const SizedBox(width: 8), Text(text, style: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 16))]));
   }
 
-  Widget _buildSection({required String title, required IconData icon, required Widget child}) => Container(padding: const EdgeInsets.all(16), decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 10, offset: const Offset(0, 4))]), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Row(children: [Icon(icon, color: AppColors.primary, size: 20), const SizedBox(width: 8), Text(title, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: AppColors.secondary))]), const Padding(padding: EdgeInsets.symmetric(vertical: 12), child: Divider(height: 1)), child]));
-  Widget _buildDetailRow(String label, String value) => Row(children: [Text(label, style: const TextStyle(color: AppColors.textSecondary, fontSize: 14)), const SizedBox(width: 8), Expanded(child: Text(value, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)))]);
-  String _getConsultationTypeText(String? type) { switch (type) { case 'نصية': return 'استشارة نصية'; case 'صوتية': return 'استشارة صوتية'; case 'فيديو': return 'استشارة فيديو'; default: return type ?? 'استشارة قانونية'; } }
-  String _paymentStatusText(String? status) { switch (status) { case 'قيد معالجة الدفع': return 'قيد التحقق من الدفع'; case 'تم الدفع': return 'تم التحقق من الدفع'; case 'فشل الدفع': return 'فشل الدفع'; case 'تم استرداد المبلغ': return 'تم استرداد المبلغ'; default: return 'بانتظار الدفع'; } }
-  String _paymentMethodText(String method) { switch (method) { case 'ZainCash': return 'زين كاش'; case 'Asia Hawala': return 'آسيا حوالة'; case 'Qi Card': return 'كي كارد'; case 'MasterCard': return 'ماستركارد'; default: return method; } }
+  Future<void> _reviewBooking(BuildContext context, WidgetRef ref, bool approved) async {
+    try {
+      await ref.read(bookingsRepositoryProvider).reviewBooking(booking.id, approved);
+      ref.invalidate(lawyerBookingsProvider);
+      ref.invalidate(userBookingsProvider);
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(approved ? 'تمت الموافقة على الطلب، وأصبح بإمكان طالب الخدمة إكمال الدفع' : 'تم رفض طلب الاستشارة')));
+        Navigator.pop(context);
+      }
+    } catch (e) {
+      if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('تعذر تنفيذ العملية: $e'), backgroundColor: AppColors.error));
+    }
+  }
 
   Future<void> _updateStatus(BuildContext context, WidgetRef ref, String status) async {
     try {
       await ref.read(bookingsRepositoryProvider).updateBookingStatus(booking.id, status);
       ref.invalidate(lawyerBookingsProvider); ref.invalidate(userBookingsProvider);
-      if (context.mounted) { ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(status == 'مؤكد' ? 'تمت الموافقة على الطلب وتأكيد الحجز' : status == 'ملغي' ? 'تم رفض الطلب' : status == 'قيد التنفيذ' ? 'بدأت الاستشارة' : 'تم إنهاء الاستشارة'))); Navigator.pop(context); }
+      if (context.mounted) { ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(status == 'مؤكد' ? 'تم تأكيد الحجز' : status == 'ملغي' ? 'تم رفض الحجز' : status == 'قيد التنفيذ' ? 'بدأت الاستشارة' : 'تم إنهاء الاستشارة'))); Navigator.pop(context); }
     } catch (e) { if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('تعذر تنفيذ العملية: $e'), backgroundColor: AppColors.error)); }
   }
+
+  Widget _buildSection({required String title, required IconData icon, required Widget child}) => Container(padding: const EdgeInsets.all(16), decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 10, offset: const Offset(0, 4))]), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Row(children: [Icon(icon, color: AppColors.primary, size: 20), const SizedBox(width: 8), Text(title, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: AppColors.secondary))]), const Padding(padding: EdgeInsets.symmetric(vertical: 12), child: Divider(height: 1)), child]));
+  Widget _buildDetailRow(String label, String value) => Row(children: [Text(label, style: const TextStyle(color: AppColors.textSecondary, fontSize: 14)), const SizedBox(width: 8), Expanded(child: Text(value, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)))]);
+  String _getConsultationTypeText(String? type) { switch (type) { case 'نصية': return 'استشارة نصية'; case 'صوتية': return 'استشارة صوتية'; case 'فيديو': return 'استشارة فيديو'; default: return type ?? 'استشارة قانونية'; } }
+  String _paymentStatusText(String? status) { switch (status) { case 'قيد معالجة الدفع': return 'قيد التحقق من الدفع'; case 'تم الدفع': return 'تم التحقق من الدفع'; case 'فشل الدفع': return 'فشل الدفع'; case 'تم استرداد المبلغ': return 'تم استرداد المبلغ'; default: return 'بانتظار الدفع'; } }
+  String _paymentMethodText(String method) { switch (method) { case 'ZainCash': return 'زين كاش'; case 'Asia Hawala': return 'آسيا حوالة'; case 'Qi Card': return 'كي كارد'; case 'MasterCard': return 'ماستركارد'; default: return method; } }
 }
