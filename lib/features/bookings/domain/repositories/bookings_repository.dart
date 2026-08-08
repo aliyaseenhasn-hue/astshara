@@ -4,6 +4,7 @@ abstract class BookingsRepository {
   Future<Booking> createBooking({
     required String lawyerId,
     required DateTime scheduledAt,
+    String? slotId,
     required String packageName,
     required String consultationType,
     String? description,
