@@ -419,7 +419,7 @@ class _StatusChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    var color = Colors.grey;
+    Color color = Colors.grey;
     var text = status;
 
     switch (status) {
