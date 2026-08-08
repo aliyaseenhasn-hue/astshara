@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -19,6 +21,7 @@ class PaymentResultPage extends ConsumerStatefulWidget {
 }
 
 class _PaymentResultPageState extends ConsumerState<PaymentResultPage> {
+  Timer? _pollTimer;
   bool _checking = false;
   String? _checkedStatus;
   String? _bookingStatus;
@@ -35,15 +38,45 @@ class _PaymentResultPageState extends ConsumerState<PaymentResultPage> {
         status == 'مؤكد';
   }
 
+  bool _isFailed(String? value) {
+    final status = value?.trim().toLowerCase();
+    return status == 'failed' || status == 'authentication_failed' || status == 'فشل الدفع';
+  }
+
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _checkPaymentStatus());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkPaymentStatus();
+      _startPolling();
+    });
+  }
+
+  @override
+  void dispose() {
+    _pollTimer?.cancel();
+    super.dispose();
+  }
+
+  void _startPolling() {
+    if (widget.bookingId == null || widget.bookingId!.isEmpty) return;
+    _pollTimer?.cancel();
+    _pollTimer = Timer.periodic(
+      const Duration(seconds: 5),
+      (_) {
+        final status = _checkedStatus;
+        if (_isSuccess(status) || _isFailed(status)) {
+          _pollTimer?.cancel();
+          return;
+        }
+        _checkPaymentStatus();
+      },
+    );
   }
 
   Future<void> _checkPaymentStatus() async {
     final id = widget.bookingId;
-    if (id == null || id.isEmpty || _checking) return;
+    if (id == null || id.isEmpty || _checking || !mounted) return;
 
     setState(() {
       _checking = true;
@@ -60,10 +93,17 @@ class _PaymentResultPageState extends ConsumerState<PaymentResultPage> {
       if (data['error'] != null) throw Exception(data['error'].toString());
       if (!mounted) return;
 
+      final paymentStatus = data['payment_status']?.toString();
+      final bookingStatus = data['booking_status']?.toString();
+
       setState(() {
-        _checkedStatus = data['payment_status']?.toString();
-        _bookingStatus = data['booking_status']?.toString();
+        _checkedStatus = paymentStatus;
+        _bookingStatus = bookingStatus;
       });
+
+      if (_isSuccess(paymentStatus) || _isFailed(paymentStatus)) {
+        _pollTimer?.cancel();
+      }
     } catch (e) {
       if (!mounted) return;
       setState(() => _error = e.toString().replaceFirst('Exception: ', ''));
@@ -76,8 +116,7 @@ class _PaymentResultPageState extends ConsumerState<PaymentResultPage> {
   Widget build(BuildContext context) {
     final status = _checkedStatus ?? widget.status;
     final success = _isSuccess(status);
-    final failed = status?.trim().toLowerCase() == 'failed' ||
-        status?.trim() == 'فشل الدفع';
+    final failed = _isFailed(status);
 
     final title = success
         ? 'تم الدفع بنجاح'
@@ -93,7 +132,7 @@ class _PaymentResultPageState extends ConsumerState<PaymentResultPage> {
             ? 'لم يتم اعتماد الدفع. يمكنك العودة إلى حجوزاتك لمعرفة الحالة.'
             : _checking
                 ? 'جاري التحقق من حالة العملية لدى كي كارد...'
-                : 'لم نتمكن من تأكيد النتيجة بعد. أعد المحاولة بعد لحظات.';
+                : 'لم نتمكن من تأكيد النتيجة بعد. سيستمر التحقق تلقائياً.';
 
     return Scaffold(
       appBar: AppBar(
@@ -124,19 +163,13 @@ class _PaymentResultPageState extends ConsumerState<PaymentResultPage> {
               Text(
                 title,
                 textAlign: TextAlign.center,
-                style: const TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                ),
+                style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 12),
               Text(
                 message,
                 textAlign: TextAlign.center,
-                style: const TextStyle(
-                  height: 1.6,
-                  color: AppColors.textSecondary,
-                ),
+                style: const TextStyle(height: 1.6, color: AppColors.textSecondary),
               ),
               if (_error != null) ...[
                 const SizedBox(height: 12),
@@ -155,7 +188,7 @@ class _PaymentResultPageState extends ConsumerState<PaymentResultPage> {
                 ),
               ],
               const SizedBox(height: 28),
-              if (!success && !_checking && widget.bookingId != null)
+              if (!success && !failed && !_checking && widget.bookingId != null)
                 SizedBox(
                   width: double.infinity,
                   child: OutlinedButton(
