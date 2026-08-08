@@ -21,11 +21,18 @@ class PaymentResultPage extends ConsumerStatefulWidget {
 class _PaymentResultPageState extends ConsumerState<PaymentResultPage> {
   bool _checking = false;
   String? _checkedStatus;
+  String? _bookingStatus;
   String? _error;
 
   bool _isSuccess(String? value) {
     final status = value?.trim().toLowerCase();
-    return status == 'success' || status == 'successful' || status == 'paid' || status == 'completed';
+    return status == 'success' ||
+        status == 'successful' ||
+        status == 'paid' ||
+        status == 'completed' ||
+        status == 'تم الدفع' ||
+        status == 'قيد مراجعة المحامي' ||
+        status == 'مؤكد';
   }
 
   @override
@@ -52,7 +59,11 @@ class _PaymentResultPageState extends ConsumerState<PaymentResultPage> {
       if (data is! Map) throw Exception('تعذر التحقق من حالة الدفع');
       if (data['error'] != null) throw Exception(data['error'].toString());
       if (!mounted) return;
-      setState(() => _checkedStatus = data['payment_status']?.toString());
+
+      setState(() {
+        _checkedStatus = data['payment_status']?.toString();
+        _bookingStatus = data['booking_status']?.toString();
+      });
     } catch (e) {
       if (!mounted) return;
       setState(() => _error = e.toString().replaceFirst('Exception: ', ''));
@@ -65,7 +76,24 @@ class _PaymentResultPageState extends ConsumerState<PaymentResultPage> {
   Widget build(BuildContext context) {
     final status = _checkedStatus ?? widget.status;
     final success = _isSuccess(status);
-    final failed = status?.toLowerCase() == 'failed' || status == 'فشل الدفع';
+    final failed = status?.trim().toLowerCase() == 'failed' ||
+        status?.trim() == 'فشل الدفع';
+
+    final title = success
+        ? 'تم الدفع بنجاح'
+        : failed
+            ? 'لم تكتمل عملية الدفع'
+            : 'التحقق من نتيجة الدفع';
+
+    final message = success
+        ? (_bookingStatus == 'مؤكد'
+            ? 'تم تأكيد الحجز بنجاح.'
+            : 'تم استلام الدفع بنجاح، والحجز بانتظار إجراءات المحامي.')
+        : failed
+            ? 'لم يتم اعتماد الدفع. يمكنك العودة إلى حجوزاتك لمعرفة الحالة.'
+            : _checking
+                ? 'جاري التحقق من حالة العملية لدى كي كارد...'
+                : 'لم نتمكن من تأكيد النتيجة بعد. أعد المحاولة بعد لحظات.';
 
     return Scaffold(
       appBar: AppBar(
@@ -80,35 +108,51 @@ class _PaymentResultPageState extends ConsumerState<PaymentResultPage> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Icon(
-                success ? Icons.check_circle_outline : failed ? Icons.cancel_outlined : Icons.info_outline,
+                success
+                    ? Icons.check_circle_outline
+                    : failed
+                        ? Icons.cancel_outlined
+                        : Icons.info_outline,
                 size: 84,
-                color: success ? AppColors.success : failed ? AppColors.error : AppColors.primary,
+                color: success
+                    ? AppColors.success
+                    : failed
+                        ? AppColors.error
+                        : AppColors.primary,
               ),
               const SizedBox(height: 20),
               Text(
-                success ? 'تم التحقق من الدفع بنجاح' : failed ? 'لم تكتمل عملية الدفع' : 'التحقق من نتيجة الدفع',
+                title,
                 textAlign: TextAlign.center,
-                style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                style: const TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
               const SizedBox(height: 12),
               Text(
-                success
-                    ? 'تم تحديث الحجز بعد التحقق من حالة العملية لدى كي كارد.'
-                    : failed
-                        ? 'لم يتم اعتماد الدفع. يمكنك العودة إلى حجوزاتك لمعرفة الحالة.'
-                        : _checking
-                            ? 'جاري التحقق من حالة العملية لدى كي كارد...'
-                            : 'لم نتمكن من تأكيد النتيجة بعد. أعد المحاولة بعد لحظات.',
+                message,
                 textAlign: TextAlign.center,
-                style: const TextStyle(height: 1.6, color: AppColors.textSecondary),
+                style: const TextStyle(
+                  height: 1.6,
+                  color: AppColors.textSecondary,
+                ),
               ),
               if (_error != null) ...[
                 const SizedBox(height: 12),
-                Text(_error!, textAlign: TextAlign.center, style: const TextStyle(color: AppColors.error)),
+                Text(
+                  _error!,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(color: AppColors.error),
+                ),
               ],
               if (widget.bookingId != null && widget.bookingId!.isNotEmpty) ...[
                 const SizedBox(height: 16),
-                Text('رقم الحجز: ${widget.bookingId}', textAlign: TextAlign.center, style: const TextStyle(fontWeight: FontWeight.w600)),
+                Text(
+                  'رقم الحجز: ${widget.bookingId}',
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(fontWeight: FontWeight.w600),
+                ),
               ],
               const SizedBox(height: 28),
               if (!success && !_checking && widget.bookingId != null)
