@@ -21,7 +21,6 @@ class _LawyerSetupPageState extends ConsumerState<LawyerSetupPage> {
   final _bioController = TextEditingController();
   final _experienceController = TextEditingController();
   final _priceController = TextEditingController();
-  final _whatsappController = TextEditingController();
 
   Uint8List? _idCardBytes;
   Uint8List? _profilePhotoBytes;
@@ -32,13 +31,11 @@ class _LawyerSetupPageState extends ConsumerState<LawyerSetupPage> {
     _bioController.dispose();
     _experienceController.dispose();
     _priceController.dispose();
-    _whatsappController.dispose();
     super.dispose();
   }
 
   Future<void> _pickImage(String type) async {
-    final picker = ImagePicker();
-    final image = await picker.pickImage(source: ImageSource.gallery);
+    final image = await ImagePicker().pickImage(source: ImageSource.gallery);
     if (image != null) {
       final bytes = await image.readAsBytes();
       setState(() {
@@ -49,30 +46,24 @@ class _LawyerSetupPageState extends ConsumerState<LawyerSetupPage> {
   }
 
   Future<void> _submit() async {
-    if (_formKey.currentState?.validate() ?? false) {
-      final user = ref.read(authStateChangesProvider).value;
-      if (user == null) return;
+    if (!(_formKey.currentState?.validate() ?? false)) return;
+    final user = ref.read(authStateChangesProvider).value;
+    if (user == null) return;
 
-      await ref.read(lawyerSetupControllerProvider.notifier).completeProfile(
-            authUid: user.id,
-            fullName: user.fullName ?? '',
-            email: user.email,
-            whatsapp: _whatsappController.text.trim(),
-            licenseNumber: _licenseController.text.trim(),
-            bio: _bioController.text.trim(),
-            yearsExperience:
-                int.tryParse(_experienceController.text.trim()) ?? 0,
-            consultationPrice:
-                double.tryParse(_priceController.text.trim()) ?? 0,
-            profilePhotoBytes: _profilePhotoBytes,
-            idCardBytes: _idCardBytes,
-          );
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('تم تحديث البيانات بنجاح')),
+    await ref.read(lawyerSetupControllerProvider.notifier).completeProfile(
+          authUid: user.id,
+          fullName: user.fullName ?? '',
+          email: user.email,
+          licenseNumber: _licenseController.text.trim(),
+          bio: _bioController.text.trim(),
+          yearsExperience: int.tryParse(_experienceController.text.trim()) ?? 0,
+          consultationPrice: double.tryParse(_priceController.text.trim()) ?? 0,
+          profilePhotoBytes: _profilePhotoBytes,
+          idCardBytes: _idCardBytes,
         );
-      }
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تم تحديث البيانات بنجاح')));
     }
   }
 
@@ -105,25 +96,14 @@ class _LawyerSetupPageState extends ConsumerState<LawyerSetupPage> {
               const SizedBox(height: AppSizes.p24),
               TextFormField(
                 controller: _licenseController,
-                decoration: const InputDecoration(
-                    labelText: 'رقم هوية النقابة',
-                    border: OutlineInputBorder()),
-                validator: (val) => val?.isEmpty ?? true ? 'مطلوب' : null,
-              ),
-              const SizedBox(height: AppSizes.p16),
-              TextFormField(
-                controller: _whatsappController,
-                decoration: const InputDecoration(
-                    labelText: 'رقم الواتساب', border: OutlineInputBorder()),
+                decoration: const InputDecoration(labelText: 'رقم هوية النقابة', border: OutlineInputBorder()),
                 validator: (val) => val?.isEmpty ?? true ? 'مطلوب' : null,
               ),
               const SizedBox(height: AppSizes.p16),
               TextFormField(
                 controller: _bioController,
                 maxLines: 3,
-                decoration: const InputDecoration(
-                    labelText: 'نبذة تعريفية (Bio)',
-                    border: OutlineInputBorder()),
+                decoration: const InputDecoration(labelText: 'نبذة تعريفية', border: OutlineInputBorder()),
                 validator: (val) => val?.isEmpty ?? true ? 'مطلوب' : null,
               ),
               const SizedBox(height: AppSizes.p16),
@@ -132,9 +112,7 @@ class _LawyerSetupPageState extends ConsumerState<LawyerSetupPage> {
                   Expanded(
                     child: TextFormField(
                       controller: _experienceController,
-                      decoration: const InputDecoration(
-                          labelText: 'سنوات الخبرة',
-                          border: OutlineInputBorder()),
+                      decoration: const InputDecoration(labelText: 'سنوات الخبرة', border: OutlineInputBorder()),
                       keyboardType: TextInputType.number,
                       validator: (val) => val?.isEmpty ?? true ? 'مطلوب' : null,
                     ),
@@ -143,9 +121,7 @@ class _LawyerSetupPageState extends ConsumerState<LawyerSetupPage> {
                   Expanded(
                     child: TextFormField(
                       controller: _priceController,
-                      decoration: const InputDecoration(
-                          labelText: 'سعر الاستشارة (IQD)',
-                          border: OutlineInputBorder()),
+                      decoration: const InputDecoration(labelText: 'سعر الاستشارة (د.ع)', border: OutlineInputBorder()),
                       keyboardType: TextInputType.number,
                       validator: (val) => val?.isEmpty ?? true ? 'مطلوب' : null,
                     ),
@@ -153,8 +129,7 @@ class _LawyerSetupPageState extends ConsumerState<LawyerSetupPage> {
                 ],
               ),
               const SizedBox(height: AppSizes.p24),
-              const Text('هوية النقابة (صورة): * إلزامي',
-                  style: TextStyle(fontWeight: FontWeight.bold)),
+              const Text('هوية النقابة (صورة): * إلزامي', style: TextStyle(fontWeight: FontWeight.bold)),
               const SizedBox(height: AppSizes.p8),
               InkWell(
                 onTap: () => _pickImage('id'),
@@ -162,26 +137,20 @@ class _LawyerSetupPageState extends ConsumerState<LawyerSetupPage> {
                   height: 150,
                   decoration: BoxDecoration(
                     border: Border.all(
-                        color: _idCardBytes == null
-                            ? AppColors.error.withValues(alpha: 0.5)
-                            : Colors.grey,
-                        width: 2),
+                      color: _idCardBytes == null ? AppColors.error.withValues(alpha: 0.5) : Colors.grey,
+                      width: 2,
+                    ),
                     borderRadius: BorderRadius.circular(AppSizes.r8),
                   ),
                   child: _idCardBytes == null
                       ? const Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                              Icon(Icons.add_a_photo,
-                                  size: 40, color: Colors.red),
-                              Text('اضغط لرفع هوية النقابة',
-                                  style: TextStyle(color: Colors.red))
-                            ])
-                      : ClipRRect(
-                          borderRadius: BorderRadius.circular(AppSizes.r8),
-                          child: _idCardBytes != null
-                              ? Image.memory(_idCardBytes!, fit: BoxFit.cover)
-                              : const SizedBox()),
+                            Icon(Icons.add_a_photo, size: 40, color: Colors.red),
+                            Text('اضغط لرفع هوية النقابة', style: TextStyle(color: Colors.red)),
+                          ],
+                        )
+                      : ClipRRect(borderRadius: BorderRadius.circular(AppSizes.r8), child: Image.memory(_idCardBytes!, fit: BoxFit.cover)),
                 ),
               ),
               const SizedBox(height: AppSizes.p32),
@@ -190,10 +159,10 @@ class _LawyerSetupPageState extends ConsumerState<LawyerSetupPage> {
                   : ElevatedButton(
                       onPressed: _submit,
                       style: ElevatedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(
-                              vertical: AppSizes.p16),
-                          backgroundColor: AppColors.primary,
-                          foregroundColor: Colors.white),
+                        padding: const EdgeInsets.symmetric(vertical: AppSizes.p16),
+                        backgroundColor: AppColors.primary,
+                        foregroundColor: Colors.white,
+                      ),
                       child: const Text('حفظ وإرسال للمراجعة'),
                     ),
             ],
