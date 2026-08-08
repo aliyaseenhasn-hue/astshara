@@ -1,28 +1,28 @@
 import 'package:flutter/material.dart';
 
 class AppColors {
-  // Brand colors - lighter, cleaner sky-blue primary actions.
-  static const Color primary = Color(0xFF6EC6F5); // Light sky blue
-  static const Color primaryDark = Color(0xFF3FA9DD);
-  static const Color primaryLight = Color(0xFFBDEAFF);
-  static const Color secondary = Color(0xFF1A2A40);
-  static const Color secondaryDark = Color(0xFF0F1926);
-  static const Color secondaryLight = Color(0xFF2C3E50);
+  // الهوية البصرية: سمائي واضح + ذهبي فاتح.
+  static const Color primary = Color(0xFF5EC8F2); // Sky blue
+  static const Color primaryDark = Color(0xFF2FA9D8);
+  static const Color primaryLight = Color(0xFFBFEFFF);
+  static const Color secondary = Color(0xFF17263A);
+  static const Color secondaryDark = Color(0xFF0B1420);
+  static const Color secondaryLight = Color(0xFF29415A);
 
-  static const Color gold = Color(0xFFB38E44);
-  static const Color goldLight = Color(0xFFD4AF37);
-  static const Color goldDark = Color(0xFF8E6D2D);
+  static const Color gold = Color(0xFFF4D06F); // Light gold brand color
+  static const Color goldLight = Color(0xFFFFE9A6);
+  static const Color goldDark = Color(0xFFC9A227);
 
   static const Color background = Color(0xFFF7FAFC);
   static const Color surface = Color(0xFFFFFFFF);
-  static const Color surfaceVariant = Color(0xFFF1F7FB);
+  static const Color surfaceVariant = Color(0xFFF1F8FC);
   static const Color cardBackground = Color(0xFFFFFFFF);
-  static const Color outline = Color(0xFFD8E3EA);
-  static const Color divider = Color(0xFFE9F0F4);
+  static const Color outline = Color(0xFFD5E5EE);
+  static const Color divider = Color(0xFFE5EFF4);
 
-  static const Color textPrimary = Color(0xFF1A2A40);
-  static const Color textSecondary = Color(0xFF647789);
-  static const Color textOnPrimary = Color(0xFF12344A);
+  static const Color textPrimary = Color(0xFF17263A);
+  static const Color textSecondary = Color(0xFF617487);
+  static const Color textOnPrimary = Color(0xFF082B3B);
   static const Color textOnDark = Color(0xFFFFFFFF);
 
   static const Color error = Color(0xFFC0392B);
@@ -38,17 +38,17 @@ class AppColors {
   static const Color cancelledText = Color(0xFF721C24);
 
   static const List<Color> brandGradient = [
-    Color(0xFF1A2A40),
-    Color(0xFF2C3E50),
+    Color(0xFF5EC8F2),
+    Color(0xFF2FA9D8),
   ];
 
   static const List<Color> goldGradient = [
-    Color(0xFFB38E44),
-    Color(0xFF8E6D2D),
+    Color(0xFFFFE9A6),
+    Color(0xFFF4D06F),
   ];
 
   static const List<Color> skyGradient = [
-    Color(0xFFBDEAFF),
-    Color(0xFF6EC6F5),
+    Color(0xFFBFEFFF),
+    Color(0xFF5EC8F2),
   ];
 }
