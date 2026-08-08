@@ -66,6 +66,12 @@ final bookingContactProvider = FutureProvider.family<Map<String, dynamic>?, Stri
   return null;
 });
 
+final bookingParticipantContactProvider = FutureProvider.family<Map<String, dynamic>?, String>((ref, bookingId) async {
+  final response = await SupabaseConfig.client.rpc('get_booking_participant_contact_info', params: {'p_booking_id': bookingId});
+  if (response is List && response.isNotEmpty) return Map<String, dynamic>.from(response.first as Map);
+  return null;
+});
+
 @riverpod
 class BookingsController extends _$BookingsController {
   @override
