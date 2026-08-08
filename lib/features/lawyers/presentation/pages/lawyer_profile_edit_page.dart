@@ -33,7 +33,8 @@ class _LawyerProfileEditPageState extends ConsumerState<LawyerProfileEditPage> {
     if (profile != null && mounted) setState(() {
       _services = List.from(profile.services);
       _bioController.text = profile.bio ?? '';
-      _differentConsultationPriceController.text = profile.consultationPrice.toStringAsFixed(0);
+      final consultationPrice = profile.consultationPrice ?? 0;
+      _differentConsultationPriceController.text = consultationPrice > 0 ? consultationPrice.toStringAsFixed(0) : '';
       _profileId = profile.profileId;
     });
   }
