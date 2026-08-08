@@ -6,6 +6,7 @@ class Booking {
   final DateTime scheduledAt;
   final double price;
   final DateTime? createdAt;
+  final DateTime? startedAt;
   final String? lawyerName;
   final String? userName;
   final String? consultationType;
@@ -22,6 +23,7 @@ class Booking {
     required this.scheduledAt,
     required this.price,
     this.createdAt,
+    this.startedAt,
     this.lawyerName,
     this.userName,
     this.consultationType,
@@ -39,6 +41,7 @@ class Booking {
     DateTime? scheduledAt,
     double? price,
     DateTime? createdAt,
+    DateTime? startedAt,
     String? lawyerName,
     String? userName,
     String? consultationType,
@@ -55,6 +58,7 @@ class Booking {
       scheduledAt: scheduledAt ?? this.scheduledAt,
       price: price ?? this.price,
       createdAt: createdAt ?? this.createdAt,
+      startedAt: startedAt ?? this.startedAt,
       lawyerName: lawyerName ?? this.lawyerName,
       userName: userName ?? this.userName,
       consultationType: consultationType ?? this.consultationType,
