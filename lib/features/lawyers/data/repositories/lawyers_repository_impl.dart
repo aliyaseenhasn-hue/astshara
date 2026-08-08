@@ -91,14 +91,16 @@ class LawyersRepositoryImpl implements LawyersRepository {
     final user = _supabase.auth.currentUser;
     if (user == null) throw Exception('المستخدم غير مسجل دخول');
 
-    final filePath = '${user.id}/$fileName';
+    // لا نعيد استخدام الاسم نفسه حتى لا يتحول الرفع إلى UPDATE غير ضروري.
+    final safeFileName = fileName.replaceAll(RegExp(r'[^A-Za-z0-9._-]'), '_');
+    final filePath = '${user.id}/${DateTime.now().microsecondsSinceEpoch}_$safeFileName';
     try {
       await _supabase.storage.from(bucket).uploadBinary(
             filePath,
             bytes,
             fileOptions: const FileOptions(
               contentType: 'image/jpeg',
-              upsert: true,
+              upsert: false,
             ),
           );
       return await _supabase.storage
