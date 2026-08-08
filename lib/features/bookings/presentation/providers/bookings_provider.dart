@@ -11,6 +11,13 @@ import '../../domain/repositories/bookings_repository.dart';
 
 part 'bookings_provider.g.dart';
 
+class AvailableBookingSlot {
+  final String id;
+  final DateTime startsAt;
+
+  const AvailableBookingSlot({required this.id, required this.startsAt});
+}
+
 @riverpod
 BookingsRepository bookingsRepository(BookingsRepositoryRef ref) =>
     BookingsRepositoryImpl(SupabaseConfig.client);
@@ -43,17 +50,22 @@ Future<List<Booking>> lawyerBookings(LawyerBookingsRef ref) async {
 }
 
 final availableSlotsProvider =
-    FutureProvider.family<List<DateTime>, String>((ref, lawyerId) async {
+    FutureProvider.family<List<AvailableBookingSlot>, String>((ref, lawyerId) async {
   final rows = await SupabaseConfig.client
       .from('lawyer_availability_slots')
-      .select('starts_at')
+      .select('id, starts_at')
       .eq('lawyer_id', lawyerId)
       .eq('is_available', true)
       .gt('starts_at', DateTime.now().toUtc().toIso8601String())
       .order('starts_at');
-  return (rows as List)
-      .map((row) => DateTime.parse(row['starts_at'] as String).toLocal())
-      .toList();
+
+  return (rows as List).map((row) {
+    final map = Map<String, dynamic>.from(row as Map);
+    return AvailableBookingSlot(
+      id: map['id'] as String,
+      startsAt: DateTime.parse(map['starts_at'] as String).toLocal(),
+    );
+  }).toList();
 });
 
 final bookingDetailsProvider =
@@ -87,6 +99,7 @@ class BookingsController extends _$BookingsController {
   Future<Booking?> requestBooking({
     required String lawyerId,
     required DateTime scheduledAt,
+    String? slotId,
     required String packageName,
     required String consultationType,
     String? description,
@@ -99,8 +112,6 @@ class BookingsController extends _$BookingsController {
       final user = ref.read(authStateChangesProvider).value;
       if (user == null) throw Exception('يجب تسجيل الدخول أولاً');
 
-      // في التطبيق الحالي دور العميل في التسجيل محفوظ باسم "user".
-      // ندعم أيضًا "client" للحسابات التي قد تستخدم التسمية الجديدة.
       final isClient = user.role == 'user' || user.role == 'client';
       if (!isClient) {
         throw Exception('فقط طالب الخدمة يمكنه طلب حجز استشارة');
@@ -114,6 +125,7 @@ class BookingsController extends _$BookingsController {
       createdBooking = await repo.createBooking(
         lawyerId: lawyerId,
         scheduledAt: scheduledAt,
+        slotId: slotId,
         packageName: packageName,
         consultationType: consultationType,
         description: description,
