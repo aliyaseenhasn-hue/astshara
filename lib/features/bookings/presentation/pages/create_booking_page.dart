@@ -32,7 +32,7 @@ class _CreateBookingPageState extends ConsumerState<CreateBookingPage> {
   int _step = 0;
   LawyerService? _package;
   String _consultationType = 'نصية';
-  DateTime? _slot;
+  AvailableBookingSlot? _selectedSlot;
   Uint8List? _selectedFileBytes;
   String? _selectedFileName;
 
@@ -81,7 +81,7 @@ class _CreateBookingPageState extends ConsumerState<CreateBookingPage> {
         }
         return true;
       case 2:
-        if (_slot == null) {
+        if (_selectedSlot == null) {
           _showMessage('يرجى اختيار موعد متاح فعليًا');
           return false;
         }
@@ -108,14 +108,16 @@ class _CreateBookingPageState extends ConsumerState<CreateBookingPage> {
   }
 
   Future<void> _submit() async {
-    if (_package == null || _slot == null) return;
+    final slot = _selectedSlot;
+    if (_package == null || slot == null) return;
     if (!(_formKey.currentState?.validate() ?? false)) return;
 
     final booking = await ref
         .read(bookingsControllerProvider.notifier)
         .requestBooking(
           lawyerId: widget.lawyer.profileId,
-          scheduledAt: _slot!,
+          scheduledAt: slot.startsAt,
+          slotId: slot.id,
           packageName: _package!.title,
           consultationType: _consultationType,
           description: _descriptionController.text.trim(),
@@ -154,8 +156,7 @@ class _CreateBookingPageState extends ConsumerState<CreateBookingPage> {
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(bookingsControllerProvider);
-    final slotsAsync =
-        ref.watch(availableSlotsProvider(widget.lawyer.profileId));
+    final slotsAsync = ref.watch(availableSlotsProvider(widget.lawyer.profileId));
     final user = ref.watch(authStateChangesProvider).value;
 
     return Scaffold(
@@ -168,9 +169,7 @@ class _CreateBookingPageState extends ConsumerState<CreateBookingPage> {
         child: Stepper(
           currentStep: _step,
           onStepContinue: state.isLoading ? null : _next,
-          onStepCancel: _step == 0
-              ? null
-              : () => setState(() => _step--),
+          onStepCancel: _step == 0 ? null : () => setState(() => _step--),
           controlsBuilder: (context, details) {
             return Padding(
               padding: const EdgeInsets.only(top: 20),
@@ -201,25 +200,17 @@ class _CreateBookingPageState extends ConsumerState<CreateBookingPage> {
                   ? const Text('لا توجد باقات متاحة لهذا المحامي.')
                   : DropdownButtonFormField<LawyerService>(
                       value: _package,
-                      decoration: const InputDecoration(
-                        labelText: 'الباقة',
-                      ),
+                      decoration: const InputDecoration(labelText: 'الباقة'),
                       items: widget.lawyer.services
                           .map(
                             (service) => DropdownMenuItem<LawyerService>(
                               value: service,
-                              child: Text(
-                                '${service.title} — ${service.price} د.ع',
-                              ),
+                              child: Text('${service.title} — ${service.price} د.ع'),
                             ),
                           )
                           .toList(),
-                      onChanged: (value) {
-                        setState(() => _package = value);
-                      },
-                      validator: (value) => value == null
-                          ? 'يرجى اختيار باقة الاستشارة'
-                          : null,
+                      onChanged: (value) => setState(() => _package = value),
+                      validator: (value) => value == null ? 'يرجى اختيار باقة الاستشارة' : null,
                     ),
             ),
             Step(
@@ -227,37 +218,22 @@ class _CreateBookingPageState extends ConsumerState<CreateBookingPage> {
               isActive: _step >= 1,
               content: DropdownButtonFormField<String>(
                 value: _consultationType,
-                decoration: const InputDecoration(
-                  labelText: 'طريقة الاستشارة',
-                ),
+                decoration: const InputDecoration(labelText: 'طريقة الاستشارة'),
                 items: const ['نصية', 'صوتية', 'فيديو']
-                    .map(
-                      (type) => DropdownMenuItem<String>(
-                        value: type,
-                        child: Text(type),
-                      ),
-                    )
+                    .map((type) => DropdownMenuItem<String>(value: type, child: Text(type)))
                     .toList(),
-                onChanged: (value) {
-                  setState(() => _consultationType = value ?? 'نصية');
-                },
+                onChanged: (value) => setState(() => _consultationType = value ?? 'نصية'),
               ),
             ),
             Step(
               title: const Text('اختيار الموعد المتاح فعليًا'),
               isActive: _step >= 2,
               content: slotsAsync.when(
-                loading: () => const Center(
-                  child: CircularProgressIndicator(),
-                ),
-                error: (error, stack) => Text(
-                  'تعذر تحميل المواعيد المتاحة: $error',
-                ),
+                loading: () => const Center(child: CircularProgressIndicator()),
+                error: (error, stack) => Text('تعذر تحميل المواعيد المتاحة: $error'),
                 data: (items) {
                   if (items.isEmpty) {
-                    return const Text(
-                      'لا توجد مواعيد متاحة حاليًا لهذا المحامي.',
-                    );
+                    return const Text('لا توجد مواعيد متاحة حاليًا لهذا المحامي.');
                   }
 
                   return Wrap(
@@ -266,12 +242,10 @@ class _CreateBookingPageState extends ConsumerState<CreateBookingPage> {
                     children: items.map((slot) {
                       return ChoiceChip(
                         label: Text(
-                          '${slot.day}/${slot.month}  ${TimeOfDay.fromDateTime(slot).format(context)}',
+                          '${slot.startsAt.day}/${slot.startsAt.month}  ${TimeOfDay.fromDateTime(slot.startsAt).format(context)}',
                         ),
-                        selected: _slot == slot,
-                        onSelected: (_) {
-                          setState(() => _slot = slot);
-                        },
+                        selected: _selectedSlot?.id == slot.id,
+                        onSelected: (_) => setState(() => _selectedSlot = slot),
                       );
                     }).toList(),
                   );
@@ -284,34 +258,25 @@ class _CreateBookingPageState extends ConsumerState<CreateBookingPage> {
               content: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Text(
-                    'المحامي: ${widget.lawyer.fullName ?? 'محامي'}',
-                  ),
+                  Text('المحامي: ${widget.lawyer.fullName ?? 'محامي'}'),
                   Text('الباقة: ${_package?.title ?? '-'}'),
                   Text('طريقة الاستشارة: $_consultationType'),
                   Text(
-                    'الموعد: ${_slot == null ? '-' : '${_slot!.day}/${_slot!.month}/${_slot!.year} ${TimeOfDay.fromDateTime(_slot!).format(context)}'}',
+                    'الموعد: ${_selectedSlot == null ? '-' : '${_selectedSlot!.startsAt.day}/${_selectedSlot!.startsAt.month}/${_selectedSlot!.startsAt.year} ${TimeOfDay.fromDateTime(_selectedSlot!.startsAt).format(context)}'}',
                   ),
                   Text('الرسوم: ${_package?.price ?? 0} د.ع'),
                   const SizedBox(height: 16),
                   TextFormField(
                     controller: _descriptionController,
                     maxLines: 4,
-                    decoration: const InputDecoration(
-                      labelText: 'وصف الموضوع',
-                    ),
-                    validator: (value) =>
-                        value == null || value.trim().isEmpty
-                            ? 'وصف الموضوع مطلوب'
-                            : null,
+                    decoration: const InputDecoration(labelText: 'وصف الموضوع'),
+                    validator: (value) => value == null || value.trim().isEmpty ? 'وصف الموضوع مطلوب' : null,
                   ),
                   const SizedBox(height: 12),
                   OutlinedButton.icon(
                     onPressed: _pickFile,
                     icon: const Icon(Icons.upload_file),
-                    label: Text(
-                      _selectedFileName ?? 'إرفاق مستند (اختياري)',
-                    ),
+                    label: Text(_selectedFileName ?? 'إرفاق مستند (اختياري)'),
                   ),
                   const SizedBox(height: 12),
                   Text('العميل: ${user?.fullName ?? 'المستخدم'}'),
