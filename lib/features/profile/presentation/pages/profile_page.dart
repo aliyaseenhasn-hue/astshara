@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
+import '../../../../core/config/supabase_config.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_sizes.dart';
 import '../../../authentication/presentation/providers/auth_provider.dart';
@@ -46,12 +47,16 @@ class ProfilePage extends ConsumerWidget {
                               child: user.avatarUrl == null || user.avatarUrl!.isEmpty ? const Icon(Icons.person, size: 50, color: AppColors.primary) : null,
                             ),
                           ),
-                          Positioned(bottom: 0, right: 0, child: CircleAvatar(radius: 15, backgroundColor: AppColors.gold, child: IconButton(icon: const Icon(Icons.camera_alt, size: 14, color: Colors.white), onPressed: () => _updateAvatar(ref)))),
+                          Positioned(bottom: 0, right: 0, child: CircleAvatar(radius: 15, backgroundColor: AppColors.gold, child: IconButton(icon: const Icon(Icons.camera_alt, size: 14, color: Colors.white), onPressed: () => _updateAvatar(context, ref)))),
                         ]),
                         const SizedBox(height: 12),
                         GestureDetector(
-                          onTap: () => _showEditNameDialog(context, ref, user.fullName),
-                          child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [Text(user.fullName ?? 'مستخدم', style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)), const SizedBox(width: 8), const Icon(Icons.edit, size: 14, color: AppColors.gold)]),
+                          onTap: () => _showEditProfileDialog(context, ref),
+                          child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                            Text(user.fullName ?? 'مستخدم', style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
+                            const SizedBox(width: 8),
+                            const Icon(Icons.edit, size: 14, color: AppColors.gold),
+                          ]),
                         ),
                       ]),
                     ),
@@ -66,6 +71,7 @@ class ProfilePage extends ConsumerWidget {
                       _buildProfileTile(Icons.payment_rounded, 'طرق الدفع', () => context.push('/payment-methods')),
                       const SizedBox(height: AppSizes.p20),
                       _buildProfileSectionTitle('الإعدادات'),
+                      _buildProfileTile(Icons.person_outline, 'المعلومات الشخصية والتواصل', () => _showEditProfileDialog(context, ref)),
                       _buildProfileTile(Icons.notifications_active_outlined, 'إعدادات الإشعارات', () => context.push('/notification-settings')),
                       _buildProfileTile(Icons.settings_outlined, 'إعدادات التطبيق', () => context.push('/app-settings')),
                       const SizedBox(height: AppSizes.p20),
@@ -89,34 +95,91 @@ class ProfilePage extends ConsumerWidget {
     );
   }
 
-  Future<void> _updateAvatar(WidgetRef ref) async {
-    final picker = ImagePicker();
-    final image = await picker.pickImage(source: ImageSource.gallery, imageQuality: 70);
-    if (image != null) {
-      await image.readAsBytes();
+  Future<void> _updateAvatar(BuildContext context, WidgetRef ref) async {
+    try {
+      final picker = ImagePicker();
+      final image = await picker.pickImage(source: ImageSource.gallery, imageQuality: 80, maxWidth: 1200);
+      if (image == null) return;
+      final bytes = await image.readAsBytes();
+      final user = ref.read(authStateChangesProvider).value;
+      if (user == null) return;
+      final ext = image.name.split('.').last.toLowerCase();
+      final contentType = switch (ext) { 'png' => 'image/png', 'webp' => 'image/webp', _ => 'image/jpeg' };
+      final path = '${user.id}/profile_${DateTime.now().millisecondsSinceEpoch}.$ext';
+      await SupabaseConfig.client.storage.from('avatars').uploadBinary(path, bytes, fileOptions: FileOptions(upsert: true, contentType: contentType));
+      final url = SupabaseConfig.client.storage.from('avatars').getPublicUrl(path);
+      await SupabaseConfig.client.from('profiles').update({'avatar_url': url}).eq('auth_id', user.id);
+      await ref.read(authRepositoryProvider).refreshUser();
+      if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تم تحديث الصورة الشخصية')));
+    } catch (e) {
+      if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('تعذر تحديث الصورة: ${e.toString().replaceFirst('Exception: ', '')}'), backgroundColor: AppColors.error));
     }
   }
 
-  void _showEditNameDialog(BuildContext context, WidgetRef ref, String? currentName) {
-    final controller = TextEditingController(text: currentName);
-    showDialog(
+  Future<void> _showEditProfileDialog(BuildContext context, WidgetRef ref) async {
+    final user = ref.read(authStateChangesProvider).value;
+    if (user == null) return;
+    final row = await SupabaseConfig.client.from('profiles').select('full_name,phone,whatsapp_number,city').eq('auth_id', user.id).maybeSingle();
+    if (!context.mounted) return;
+    final nameController = TextEditingController(text: row?['full_name']?.toString() ?? user.fullName ?? '');
+    final phoneController = TextEditingController(text: row?['phone']?.toString() ?? user.phone ?? '');
+    final whatsappController = TextEditingController(text: row?['whatsapp_number']?.toString() ?? '');
+    final governorateController = TextEditingController(text: row?['city']?.toString() ?? '');
+    var saving = false;
+
+    await showDialog<void>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('تعديل الاسم'),
-        content: TextFormField(controller: controller, decoration: const InputDecoration(labelText: 'الاسم الكامل')),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('إلغاء')),
-          ElevatedButton(
-            onPressed: () async {
-              await ref.read(authControllerProvider.notifier).updateInitialProfile(fullName: controller.text.trim(), role: ref.read(authStateChangesProvider).value?.role ?? 'user');
-              if (context.mounted) Navigator.pop(context);
-            },
-            style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, foregroundColor: Colors.white),
-            child: const Text('حفظ التغييرات'),
-          ),
-        ],
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, setState) => AlertDialog(
+          title: const Text('المعلومات الشخصية والتواصل'),
+          content: SingleChildScrollView(child: Column(mainAxisSize: MainAxisSize.min, children: [
+            TextField(controller: nameController, decoration: const InputDecoration(labelText: 'الاسم الكامل', prefixIcon: Icon(Icons.person_outline))),
+            const SizedBox(height: 10),
+            TextField(controller: phoneController, keyboardType: TextInputType.phone, decoration: const InputDecoration(labelText: 'رقم الهاتف', prefixIcon: Icon(Icons.phone_outlined))),
+            const SizedBox(height: 10),
+            TextField(controller: whatsappController, keyboardType: TextInputType.phone, decoration: const InputDecoration(labelText: 'رقم واتساب للتواصل *', hintText: '+9647xxxxxxxxx', prefixIcon: Icon(Icons.chat_outlined)),),
+            const SizedBox(height: 10),
+            TextField(controller: governorateController, decoration: const InputDecoration(labelText: 'المحافظة', prefixIcon: Icon(Icons.location_on_outlined))),
+            const SizedBox(height: 10),
+            const Align(alignment: Alignment.centerRight, child: Text('رقم واتساب مطلوب لطلب الاستشارات عن بُعد.', style: TextStyle(fontSize: 12))),
+          ])),
+          actions: [
+            TextButton(onPressed: saving ? null : () => Navigator.pop(dialogContext), child: const Text('إلغاء')),
+            ElevatedButton(
+              onPressed: saving ? null : () async {
+                final name = nameController.text.trim();
+                final whatsapp = whatsappController.text.trim();
+                if (name.isEmpty || whatsapp.isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('الاسم الكامل ورقم واتساب مطلوبان')));
+                  return;
+                }
+                setState(() => saving = true);
+                try {
+                  await SupabaseConfig.client.from('profiles').update({
+                    'full_name': name,
+                    'phone': phoneController.text.trim().isEmpty ? null : phoneController.text.trim(),
+                    'whatsapp_number': whatsapp,
+                    'city': governorateController.text.trim().isEmpty ? null : governorateController.text.trim(),
+                    'updated_at': DateTime.now().toIso8601String(),
+                  }).eq('auth_id', user.id);
+                  if (user.role == 'lawyer') {
+                    await SupabaseConfig.client.from('lawyer_profiles').update({'whatsapp': whatsapp, 'full_name': name, 'updated_at': DateTime.now().toIso8601String()}).eq('profile_id', user.id);
+                  }
+                  await ref.read(authRepositoryProvider).refreshUser();
+                  if (dialogContext.mounted) Navigator.pop(dialogContext);
+                  if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تم حفظ المعلومات بنجاح')));
+                } catch (e) {
+                  if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('تعذر حفظ المعلومات: ${e.toString().replaceFirst('Exception: ', '')}'), backgroundColor: AppColors.error));
+                  setState(() => saving = false);
+                }
+              },
+              child: Text(saving ? 'جاري الحفظ...' : 'حفظ التغييرات'),
+            ),
+          ],
+        ),
       ),
     );
+    nameController.dispose(); phoneController.dispose(); whatsappController.dispose(); governorateController.dispose();
   }
 
   void _showDeleteConfirmation(BuildContext context, WidgetRef ref) {
