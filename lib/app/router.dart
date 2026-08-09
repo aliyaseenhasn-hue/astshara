@@ -30,6 +30,7 @@ import '../features/payments/presentation/pages/payment_upload_page.dart';
 import '../features/payments/presentation/pages/payment_result_page.dart';
 import '../features/profile/presentation/pages/profile_page.dart';
 import '../features/profile/presentation/pages/notification_settings_page.dart';
+import '../features/profile/presentation/pages/notifications_page.dart';
 import '../features/profile/presentation/pages/payment_methods_page.dart';
 import '../features/profile/presentation/pages/app_settings_page.dart';
 import '../features/profile/presentation/pages/help_center_page.dart';
@@ -77,7 +78,6 @@ Future<bool> _lawyerHasPendingManualPayment() async {
 
     return pending != null;
   } catch (_) {
-    // A temporary read failure must not lock the lawyer out of the app.
     return false;
   }
 }
@@ -181,10 +181,7 @@ GoRouter router(RouterRef ref) {
           return b == null ? const BookingsListPage() : BookingDetailsPage(booking: b);
         },
       ),
-      GoRoute(
-        path: '/manual-payment-required',
-        builder: (c, s) => const ManualPaymentRequiredPage(),
-      ),
+      GoRoute(path: '/manual-payment-required', builder: (c, s) => const ManualPaymentRequiredPage()),
       GoRoute(
         path: '/manual-payment',
         builder: (c, s) {
@@ -202,6 +199,7 @@ GoRouter router(RouterRef ref) {
       ),
       GoRoute(path: '/payment-result', builder: (c, s) => PaymentResultPage(status: s.uri.queryParameters['status'], bookingId: s.uri.queryParameters['booking_id'])),
       GoRoute(path: '/profile', builder: (c, s) => const ProfilePage()),
+      GoRoute(path: '/notifications', builder: (c, s) => const NotificationsPage()),
       GoRoute(path: '/notification-settings', builder: (c, s) => const NotificationSettingsPage()),
       GoRoute(path: '/payment-methods', builder: (c, s) => const PaymentMethodsPage()),
       GoRoute(path: '/app-settings', builder: (c, s) => const AppSettingsPage()),
