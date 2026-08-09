@@ -16,6 +16,7 @@ class BookingsRepositoryImpl implements BookingsRepository {
     required String consultationType,
     String? description,
     String? documentUrl,
+    String? consultationMode,
   }) async {
     final response = await _supabase.rpc('create_booking', params: {
       'p_lawyer_id': lawyerId,
@@ -26,6 +27,7 @@ class BookingsRepositoryImpl implements BookingsRepository {
       'p_description': description,
       'p_document_url': documentUrl,
       'p_client_whatsapp': null,
+      'p_consultation_mode': consultationMode ?? 'عن بعد',
     });
     return BookingModel.fromJson(Map<String, dynamic>.from(response as Map)).toEntity();
   }
@@ -60,6 +62,15 @@ class BookingsRepositoryImpl implements BookingsRepository {
   @override
   Future<Booking> reviewBooking(String bookingId, bool approved) async {
     final response = await _supabase.rpc('review_booking', params: {'p_booking_id': bookingId, 'p_approved': approved});
+    return BookingModel.fromJson(Map<String, dynamic>.from(response as Map)).toEntity();
+  }
+
+  @override
+  Future<Booking> recordManualPayment(String bookingId, double amount) async {
+    final response = await _supabase.rpc('record_manual_payment', params: {
+      'p_booking_id': bookingId,
+      'p_received_amount': amount,
+    });
     return BookingModel.fromJson(Map<String, dynamic>.from(response as Map)).toEntity();
   }
 
