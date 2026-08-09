@@ -9,40 +9,37 @@ class NotificationService {
   static final AudioPlayer _audioPlayer = AudioPlayer();
 
   static Future<void> initialize() async {
-    const AndroidInitializationSettings initializationSettingsAndroid =
-        AndroidInitializationSettings('@mipmap/ic_launcher');
-
-    const DarwinInitializationSettings initializationSettingsIOS =
-        DarwinInitializationSettings(
+    const android = AndroidInitializationSettings('@mipmap/ic_launcher');
+    const ios = DarwinInitializationSettings(
       requestAlertPermission: true,
       requestBadgePermission: true,
       requestSoundPermission: true,
     );
 
-    const InitializationSettings initializationSettings =
-        InitializationSettings(
-      android: initializationSettingsAndroid,
-      iOS: initializationSettingsIOS,
-    );
-
     await _notificationsPlugin.initialize(
-      initializationSettings,
+      const InitializationSettings(android: android, iOS: ios),
       onDidReceiveNotificationResponse: _onNotificationResponse,
     );
 
-    // طلب الإذن على iOS
+    final androidPlugin = _notificationsPlugin
+        .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
+    await androidPlugin?.requestNotificationsPermission();
+    await androidPlugin?.createNotificationChannel(
+      const AndroidNotificationChannel(
+        'law_connect_channel',
+        'إشعارات استشارة',
+        description: 'إشعارات الحجوزات والدفع والمحادثات والموافقات',
+        importance: Importance.max,
+        playSound: true,
+      ),
+    );
+
     await _notificationsPlugin
-        .resolvePlatformSpecificImplementation<
-            IOSFlutterLocalNotificationsPlugin>()
-        ?.requestPermissions(
-          alert: true,
-          badge: true,
-          sound: true,
-        );
+        .resolvePlatformSpecificImplementation<IOSFlutterLocalNotificationsPlugin>()
+        ?.requestPermissions(alert: true, badge: true, sound: true);
   }
 
   static void _onNotificationResponse(NotificationResponse response) {
-    // معالجة النقر على الإشعار
     debugPrint('Notification tapped: ${response.payload}');
   }
 
@@ -52,47 +49,41 @@ class NotificationService {
     String? payload,
   }) async {
     try {
-      // جلب نغمة الإشعار المختارة من الإعدادات المحلية
       final prefs = await SharedPreferences.getInstance();
       final soundType = prefs.getString('notification_sound') ?? 'default';
 
-      // تشغيل الصوت المخصص إذا لم يكن افتراضياً
       if (soundType != 'default') {
         await _playCustomSound(soundType);
       }
 
-      const AndroidNotificationDetails androidPlatformChannelSpecifics =
-          AndroidNotificationDetails(
+      const androidDetails = AndroidNotificationDetails(
         'law_connect_channel',
         'إشعارات استشارة',
-        channelDescription: 'إشعارات متعلقة باستشارات قانونية',
+        channelDescription: 'إشعارات الحجوزات والدفع والمحادثات والموافقات',
         importance: Importance.max,
         priority: Priority.high,
-        sound: RawResourceAndroidNotificationSound('notification'),
+        playSound: true,
+        enableVibration: true,
+        icon: '@mipmap/ic_launcher',
       );
 
-      const DarwinNotificationDetails iOSPlatformChannelSpecifics =
-          DarwinNotificationDetails(
+      const iosDetails = DarwinNotificationDetails(
         sound: 'notification.caf',
         presentAlert: true,
         presentBadge: true,
         presentSound: true,
       );
 
-      const NotificationDetails platformChannelSpecifics = NotificationDetails(
-        android: androidPlatformChannelSpecifics,
-        iOS: iOSPlatformChannelSpecifics,
-      );
-
       await _notificationsPlugin.show(
-        DateTime.now().millisecond,
+        DateTime.now().microsecondsSinceEpoch.remainder(2147483647),
         title,
         body,
-        platformChannelSpecifics,
+        const NotificationDetails(android: androidDetails, iOS: iosDetails),
         payload: payload,
       );
-    } catch (e) {
+    } catch (e, stack) {
       debugPrint('Error showing notification: $e');
+      debugPrintStack(stackTrace: stack);
     }
   }
 
@@ -101,7 +92,6 @@ class NotificationService {
       await _audioPlayer.play(AssetSource('sounds/$soundName.mp3'));
     } catch (e) {
       debugPrint('Warning: Failed to play custom sound: $e');
-      // سيعمل صوت النظام الافتراضي
     }
   }
 
