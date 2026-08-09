@@ -105,7 +105,7 @@ class LawConnectApp extends ConsumerWidget {
                       tooltip: 'الإشعارات',
                       icon: const Icon(Icons.notifications_none_rounded),
                       color: AppThemeNotificationColors.icon,
-                      onPressed: () => context.push('/notifications'),
+                      onPressed: () => router.push('/notifications'),
                     ),
                   ),
                 ),
