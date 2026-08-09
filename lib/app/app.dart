@@ -74,10 +74,20 @@ class LawConnectApp extends ConsumerWidget {
           navigationIndex = 3;
         }
 
+        Widget content = child ?? const SizedBox.shrink();
+        if (showAppNavigation) {
+          content = Column(
+            children: [
+              Expanded(child: content),
+              MainBottomNav(currentIndex: navigationIndex),
+            ],
+          );
+        }
+
         return Stack(
           children: [
-            if (child != null) child,
-            if (showAppNavigation) ...[
+            content,
+            if (showAppNavigation)
               Positioned(
                 top: MediaQuery.paddingOf(context).top + 8,
                 right: 12,
@@ -100,13 +110,6 @@ class LawConnectApp extends ConsumerWidget {
                   ),
                 ),
               ),
-              Positioned(
-                left: 0,
-                right: 0,
-                bottom: 0,
-                child: MainBottomNav(currentIndex: navigationIndex),
-              ),
-            ],
             if (isLoading)
               Positioned.fill(
                 child: Container(
