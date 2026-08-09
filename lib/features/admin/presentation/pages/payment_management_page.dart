@@ -15,13 +15,31 @@ class PaymentManagementPage extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('مراجعة الدفعات'),
+        title: const Text('مراقبة الدفعات'),
         backgroundColor: AppColors.primary,
         foregroundColor: Colors.white,
       ),
       body: paymentsAsync.when(
         data: (payments) => payments.isEmpty
-            ? const Center(child: Text('لا توجد دفعات معلقة للمراجعة'))
+            ? const Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.verified_outlined, size: 56, color: AppColors.success),
+                    SizedBox(height: 12),
+                    Text('لا توجد دفعات تحتاج تدخلاً إدارياً', style: TextStyle(fontWeight: FontWeight.bold)),
+                    SizedBox(height: 8),
+                    Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 32),
+                      child: Text(
+                        'يتم التحقق من عمليات كي كارد واعتماد الدفع تلقائياً بعد تأكيد نجاح العملية.',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(color: AppColors.textSecondary),
+                      ),
+                    ),
+                  ],
+                ),
+              )
             : ListView.builder(
                 padding: const EdgeInsets.all(AppSizes.p20),
                 itemCount: payments.length,
@@ -29,111 +47,51 @@ class PaymentManagementPage extends ConsumerWidget {
                   final payment = payments[index];
                   return Card(
                     margin: const EdgeInsets.only(bottom: 16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        ListTile(
-                          title: Text('المبلغ: ${payment.amount} د.ع',
-                              style:
-                                  const TextStyle(fontWeight: FontWeight.bold)),
-                          subtitle: Text('الوسيلة: ${payment.paymentMethod}'),
-                          trailing: Text(
-                            payment.createdAt != null
-                                ? DateFormat('yyyy-MM-dd')
-                                    .format(payment.createdAt!)
-                                : '',
-                            style: const TextStyle(fontSize: 12),
-                          ),
-                        ),
-                        if (payment.transactionNumber != null)
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 16),
-                            child: Text(
-                                'رقم العملية: ${payment.transactionNumber}',
-                                style:
-                                    const TextStyle(color: AppColors.primary)),
-                          ),
-                        const SizedBox(height: 12),
-                        if (payment.receiptUrl != null)
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 16),
-                            child: InkWell(
-                              child: Container(
-                                height: 100,
-                                width: double.infinity,
-                                decoration: BoxDecoration(
-                                  border: Border.all(
-                                      color: AppColors.surfaceVariant),
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: ClipRRect(
-                                  borderRadius: BorderRadius.circular(8),
-                                  child: Image.network(payment.receiptUrl!,
-                                      fit: BoxFit.cover,
-                                      errorBuilder: (c, e, s) => const Center(
-                                          child: Text('خطأ في تحميل الصورة'))),
-                                ),
-                              ),
-                            ),
-                          ),
-                        const SizedBox(height: 16),
-                        Padding(
-                          padding: const EdgeInsets.all(16),
-                          child: Row(
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
                             children: [
-                              Expanded(
-                                child: ElevatedButton(
-                                  onPressed: () => ref
-                                      .read(paymentManagementProvider.notifier)
-                                      .approvePayment(payment),
-                                  style: ElevatedButton.styleFrom(
-                                      backgroundColor: AppColors.success,
-                                      foregroundColor: Colors.white),
-                                  child: const Text('تأكيد الدفع'),
-                                ),
+                              const Icon(Icons.sync_outlined, color: Colors.orange),
+                              const SizedBox(width: 8),
+                              const Expanded(
+                                child: Text('الدفع قيد التحقق الآلي', style: TextStyle(fontWeight: FontWeight.bold)),
                               ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: OutlinedButton(
-                                  onPressed: () => ref
-                                      .read(paymentManagementProvider.notifier)
-                                      .rejectPayment(payment),
-                                  style: OutlinedButton.styleFrom(
-                                      foregroundColor: AppColors.error,
-                                      side: const BorderSide(
-                                          color: AppColors.error)),
-                                  child: const Text('رفض'),
-                                ),
-                              ),
+                              if (payment.createdAt != null)
+                                Text(DateFormat('yyyy-MM-dd').format(payment.createdAt!), style: const TextStyle(fontSize: 12)),
                             ],
                           ),
-                        ),
-                      ],
+                          const SizedBox(height: 12),
+                          Text('المبلغ: ${payment.amount.toStringAsFixed(0)} د.ع'),
+                          const SizedBox(height: 4),
+                          Text('الوسيلة: ${payment.paymentMethod}'),
+                          if (payment.transactionNumber != null) ...[
+                            const SizedBox(height: 4),
+                            Text('رقم العملية: ${payment.transactionNumber}'),
+                          ],
+                          const SizedBox(height: 14),
+                          Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: AppColors.primary.withValues(alpha: .06),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: const Text(
+                              'لن يحتاج هذا الدفع إلى موافقة الإدارة بشكل طبيعي. سيتم تحديث الحالة تلقائياً عند تأكيد نجاح العملية من بوابة الدفع.',
+                              style: TextStyle(color: AppColors.textSecondary, height: 1.5),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   );
                 },
               ),
         loading: () => const LoadingWidget(),
-        error: (err, stack) => Center(child: Text('خطأ: $err')),
-      ),
-    );
-  }
-
-  void _showFullImage(BuildContext context, String url) {
-    showDialog(
-      context: context,
-      builder: (context) => Dialog(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            AppBar(
-                title: const Text('إيصال الدفع'),
-                leading: IconButton(
-                    icon: const Icon(Icons.close),
-                    onPressed: () => Navigator.pop(context))),
-            Image.network(url, fit: BoxFit.contain),
-          ],
-        ),
+        error: (err, stack) => Center(child: Text('تعذر تحميل الدفعات: $err')),
       ),
     );
   }
