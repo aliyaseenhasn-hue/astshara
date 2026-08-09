@@ -6,37 +6,71 @@ import '../../data/repositories/lawyers_repository_impl.dart';
 
 class SpecializationChangePage extends ConsumerStatefulWidget {
   const SpecializationChangePage({super.key});
+
   @override
   ConsumerState<SpecializationChangePage> createState() => _SpecializationChangePageState();
 }
 
 class _SpecializationChangePageState extends ConsumerState<SpecializationChangePage> {
-  final _options = const ['مدني', 'جنائي', 'تجاري', 'أحوال شخصية', 'عمالي', 'إداري', 'عقاري', 'دولي'];
-  final _selected = <String>{};
+  static const _options = <String>[
+    'مدني', 'جنائي', 'تجاري', 'أحوال شخصية', 'عمالي', 'إداري', 'عقاري', 'دولي',
+  ];
+
+  final Set<String> _selected = <String>{};
   PlatformFile? _idCard;
   bool _saving = false;
 
   Future<void> _pick() async {
-    final r = await FilePicker.platform.pickFiles(type: FileType.custom, allowedExtensions: ['jpg', 'jpeg', 'png', 'webp', 'pdf'], withData: true);
-    if (r?.files.isNotEmpty == true && mounted) setState(() => _idCard = r!.files.first);
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ['jpg', 'jpeg', 'png', 'webp', 'pdf'],
+      withData: true,
+    );
+    if (!mounted || result == null || result.files.isEmpty) return;
+    final file = result.files.first;
+    if (file.bytes == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('تعذر قراءة الملف المختار.')),
+      );
+      return;
+    }
+    setState(() => _idCard = file);
   }
 
   Future<void> _submit() async {
-    if (_selected.isEmpty || _idCard?.bytes == null) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('اختر تخصصاً وأرفق صورة هوية النقابة.')));
+    final idCard = _idCard;
+    if (_selected.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('اختر تخصصاً واحداً على الأقل.')),
+      );
       return;
     }
+    if (idCard == null || idCard.bytes == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('أرفق صورة هوية النقابة.')),
+      );
+      return;
+    }
+
     setState(() => _saving = true);
     try {
       final repo = LawyersRepositoryImpl(SupabaseConfig.client);
-      final url = await repo.uploadFile(_idCard!.bytes!, _idCard!.name, 'lawyer_documents');
-      await repo.requestSpecializationChange(_selected.toList(), unionIdCardUrl: url);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تم إرسال الطلب إلى الإدارة للمراجعة.')));
-        Navigator.pop(context);
-      }
-    } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString().replaceFirst('Exception: ', ''))));
+      final url = await repo.uploadFile(idCard.bytes!, idCard.name, 'lawyer_documents');
+      await repo.requestSpecializationChange(
+        _selected.toList(growable: false),
+        unionIdCardUrl: url,
+      );
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('تم إرسال الطلب إلى الإدارة للمراجعة.')),
+      );
+      Navigator.of(context).pop();
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(error.toString().replaceFirst('Exception: ', ''))),
+      );
     } finally {
       if (mounted) setState(() => _saving = false);
     }
@@ -49,21 +83,56 @@ class _SpecializationChangePageState extends ConsumerState<SpecializationChangeP
       body: ListView(
         padding: const EdgeInsets.all(20),
         children: [
-          const Text('التخصصات المطلوبة', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          const Text(
+            'التخصصات المطلوبة',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          ),
           const SizedBox(height: 10),
           Wrap(
             spacing: 8,
             runSpacing: 8,
-            children: _options.map((s) => FilterChip(label: Text(s), selected: _selected.contains(s), onSelected: (v) => setState(() => v ? _selected.add(s) : _selected.remove(s))).toList(),
+            children: _options.map((specialization) {
+              return FilterChip(
+                label: Text(specialization),
+                selected: _selected.contains(specialization),
+                onSelected: (selected) {
+                  setState(() {
+                    if (selected) {
+                      _selected.add(specialization);
+                    } else {
+                      _selected.remove(specialization);
+                    }
+                  });
+                },
+              );
+            }).toList(growable: false),
           ),
           const SizedBox(height: 24),
-          const Text('هوية النقابة', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          const Text(
+            'هوية النقابة',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          ),
           const SizedBox(height: 8),
-          const Text('يجب إرفاق صورة واضحة لهوية النقابة حتى يتمكن الأدمن من مراجعة الطلب.'),
+          const Text(
+            'يجب إرفاق صورة واضحة لهوية النقابة حتى يتمكن الأدمن من مراجعة الطلب.',
+          ),
           const SizedBox(height: 12),
-          OutlinedButton.icon(onPressed: _saving ? null : _pick, icon: const Icon(Icons.badge_outlined), label: Text(_idCard?.name ?? 'إرفاق هوية النقابة')),
+          OutlinedButton.icon(
+            onPressed: _saving ? null : _pick,
+            icon: const Icon(Icons.badge_outlined),
+            label: Text(_idCard?.name ?? 'إرفاق هوية النقابة'),
+          ),
           const SizedBox(height: 24),
-          ElevatedButton(onPressed: _saving ? null : _submit, child: _saving ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)) : const Text('إرسال الطلب للمراجعة')),
+          ElevatedButton(
+            onPressed: _saving ? null : _submit,
+            child: _saving
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Text('إرسال الطلب للمراجعة'),
+          ),
         ],
       ),
     );
