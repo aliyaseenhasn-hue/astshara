@@ -5,7 +5,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/config/supabase_config.dart';
 import '../core/providers/theme_mode_provider.dart';
 import '../shared/widgets/loading_widget.dart';
-import '../shared/widgets/main_bottom_nav.dart';
 import '../shared/providers/global_loading_provider.dart';
 import '../features/profile/presentation/providers/notifications_provider.dart';
 import 'router.dart';
@@ -57,35 +56,11 @@ class LawConnectApp extends ConsumerWidget {
             location == '/manual-payment';
         final canShowGlobalChrome = authUser != null &&
             !isAuthRoute && !isAdminRoute && !isRestrictedRoute;
-        final showAppNavigation = canShowGlobalChrome &&
-            location != '/' && location != '/profile';
         final showGlobalBell = canShowGlobalChrome && location != '/';
 
-        int navigationIndex = 0;
-        if (location == '/chats' || location.startsWith('/chat/')) {
-          navigationIndex = 2;
-        } else if (location == '/bookings' ||
-            location.startsWith('/booking-details') ||
-            location == '/upload-payment' ||
-            location == '/payment-result') {
-          navigationIndex = 1;
-        } else if (location == '/app-settings' ||
-            location == '/notification-settings' ||
-            location == '/payment-methods' ||
-            location == '/help-center' ||
-            location == '/profile') {
-          navigationIndex = 3;
-        }
-
-        Widget content = child ?? const SizedBox.shrink();
-        if (showAppNavigation) {
-          content = Column(
-            children: [
-              Expanded(child: content),
-              MainBottomNav(currentIndex: navigationIndex),
-            ],
-          );
-        }
+        // شريط التنقل السفلي موجود حصراً داخل AppShell عبر ShellRoute.
+        // لا نضيفه هنا مرة ثانية حتى لا يظهر مرتين في الواجهة.
+        final content = child ?? const SizedBox.shrink();
 
         return Stack(
           children: [
