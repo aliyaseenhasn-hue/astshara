@@ -2,9 +2,198 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/config/supabase_config.dart';
 
-class SpecializationChangeRequestsPage extends ConsumerStatefulWidget { const SpecializationChangeRequestsPage({super.key}); @override ConsumerState<SpecializationChangeRequestsPage> createState()=>_SpecializationChangeRequestsPageState(); }
+class SpecializationChangeRequestsPage extends ConsumerStatefulWidget {
+  const SpecializationChangeRequestsPage({super.key});
+
+  @override
+  ConsumerState<SpecializationChangeRequestsPage> createState() => _SpecializationChangeRequestsPageState();
+}
+
 class _SpecializationChangeRequestsPageState extends ConsumerState<SpecializationChangeRequestsPage> {
-  Future<List<Map<String,dynamic>>> _load() async {final rows=await SupabaseConfig.client.from('specialization_change_requests').select('id,lawyer_id,requested_specializations,status,union_id_card_url,created_at,review_note').eq('status','pending').order('created_at',ascending:false);final list=<Map<String,dynamic>>[];for(final row in (rows as List)){final m=Map<String,dynamic>.from(row);final p=await SupabaseConfig.client.from('lawyer_profiles').select('full_name,license_number').eq('profile_id',m['lawyer_id']).maybeSingle();m['lawyer_name']=p?['full_name']??'محامي';m['license_number']=p?['license_number'];list.add(m);}return list;}
-  Future<void> _review(String id,bool approved) async {final controller=TextEditingController();final note=await showDialog<String?>(context:context,builder:(_)=>AlertDialog(title:Text(approved?'الموافقة على الطلب':'رفض الطلب'),content:TextField(controller:controller,maxLines:3,decoration:const InputDecoration(labelText:'ملاحظة (اختياري)')),actions:[TextButton(onPressed:()=>Navigator.pop(context,null),child:const Text('إلغاء')),ElevatedButton(onPressed:()=>Navigator.pop(context,controller.text.trim()),child:const Text('تأكيد'))]));controller.dispose();if(note==null)return;try{await SupabaseConfig.client.rpc('review_specialization_change',params:{'p_request_id':id,'p_approved':approved,'p_note':note});if(mounted)setState((){});}catch(e){if(mounted)ScaffoldMessenger.of(context).showSnackBar(SnackBar(content:Text(e.toString().replaceFirst('Exception: ',''))));}}
-  @override Widget build(BuildContext context)=>Scaffold(appBar:AppBar(title:const Text('طلبات تغيير التخصص')),body:FutureBuilder<List<Map<String,dynamic>>>(future:_load(),builder:(context,s){if(!s.hasData)return const Center(child:CircularProgressIndicator());final rows=s.data!;if(rows.isEmpty)return const Center(child:Text('لا توجد طلبات تغيير تخصص معلقة.'));return ListView.builder(padding:const EdgeInsets.all(16),itemCount:rows.length,itemBuilder:(context,i){final r=rows[i];return Card(margin:const EdgeInsets.only(bottom:14),child:Padding(padding:const EdgeInsets.all(16),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[Text(r['lawyer_name'] as String,style:const TextStyle(fontWeight:FontWeight.bold,fontSize:17)),if(r['license_number']!=null)Text('رقم الإجازة: ${r['license_number']}'),const SizedBox(height:8),Text('التخصصات: ${(r['requested_specializations'] as List).join('، ')}'),const SizedBox(height:12),if(r['union_id_card_url']!=null)OutlinedButton.icon(onPressed:()=>showDialog(context:context,builder:(_)=>Dialog(child:InteractiveViewer(child:Image.network(r['union_id_card_url'] as String,errorBuilder:(_,__,___)=>const Padding(padding:EdgeInsets.all(30),child:Text('تعذر فتح الهوية')))))),icon:const Icon(Icons.badge_outlined),label:const Text('عرض هوية النقابة')),const SizedBox(height:12),Row(children:[Expanded(child:ElevatedButton.icon(onPressed:()=>_review(r['id'] as String,true),icon:const Icon(Icons.check),label:const Text('موافقة'))),const SizedBox(width:10),Expanded(child:OutlinedButton.icon(onPressed:()=>_review(r['id'] as String,false),icon:const Icon(Icons.close),label:const Text('رفض')))])])));});});
+  late Future<List<Map<String, dynamic>>> _future;
+
+  @override
+  void initState() {
+    super.initState();
+    _future = _load();
+  }
+
+  Future<List<Map<String, dynamic>>> _load() async {
+    final rows = await SupabaseConfig.client
+        .from('specialization_change_requests')
+        .select('id,lawyer_id,requested_specializations,status,union_id_card_url,created_at,review_note')
+        .eq('status', 'pending')
+        .order('created_at', ascending: false);
+
+    final result = <Map<String, dynamic>>[];
+    for (final item in rows as List) {
+      final request = Map<String, dynamic>.from(item as Map);
+      final profile = await SupabaseConfig.client
+          .from('lawyer_profiles')
+          .select('full_name,license_number')
+          .eq('profile_id', request['lawyer_id'])
+          .maybeSingle();
+      request['lawyer_name'] = profile?['full_name'] ?? 'محامي';
+      request['license_number'] = profile?['license_number'];
+      result.add(request);
+    }
+    return result;
+  }
+
+  Future<void> _review(String id, bool approved) async {
+    final controller = TextEditingController();
+    final note = await showDialog<String?>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: Text(approved ? 'الموافقة على الطلب' : 'رفض الطلب'),
+          content: TextField(
+            controller: controller,
+            maxLines: 3,
+            decoration: const InputDecoration(labelText: 'ملاحظة (اختياري)'),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: const Text('إلغاء'),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.of(dialogContext).pop(controller.text.trim()),
+              child: const Text('تأكيد'),
+            ),
+          ],
+        );
+      },
+    );
+    controller.dispose();
+    if (note == null) return;
+
+    try {
+      await SupabaseConfig.client.rpc(
+        'review_specialization_change',
+        params: {
+          'p_request_id': id,
+          'p_approved': approved,
+          'p_note': note,
+        },
+      );
+      if (!mounted) return;
+      setState(() => _future = _load());
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(approved ? 'تمت الموافقة على الطلب.' : 'تم رفض الطلب.')),
+      );
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(error.toString().replaceFirst('Exception: ', ''))),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('طلبات تغيير التخصص'),
+        actions: [
+          IconButton(
+            onPressed: () => setState(() => _future = _load()),
+            icon: const Icon(Icons.refresh),
+            tooltip: 'تحديث',
+          ),
+        ],
+      ),
+      body: FutureBuilder<List<Map<String, dynamic>>>(
+        future: _future,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          if (snapshot.hasError) {
+            return Center(child: Text('تعذر تحميل الطلبات: ${snapshot.error}'));
+          }
+
+          final rows = snapshot.data ?? <Map<String, dynamic>>[];
+          if (rows.isEmpty) {
+            return const Center(child: Text('لا توجد طلبات تغيير تخصص معلقة.'));
+          }
+
+          return ListView.builder(
+            padding: const EdgeInsets.all(16),
+            itemCount: rows.length,
+            itemBuilder: (context, index) {
+              final row = rows[index];
+              final specialties = row['requested_specializations'];
+              final specialtyText = specialties is List
+                  ? specialties.map((e) => e.toString()).join('، ')
+                  : specialties?.toString() ?? '-';
+              final idCardUrl = row['union_id_card_url']?.toString();
+
+              return Card(
+                margin: const EdgeInsets.only(bottom: 14),
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        row['lawyer_name']?.toString() ?? 'محامي',
+                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 17),
+                      ),
+                      if (row['license_number'] != null)
+                        Text('رقم الإجازة: ${row['license_number']}'),
+                      const SizedBox(height: 8),
+                      Text('التخصصات: $specialtyText'),
+                      const SizedBox(height: 12),
+                      if (idCardUrl != null && idCardUrl.isNotEmpty)
+                        OutlinedButton.icon(
+                          onPressed: () {
+                            showDialog<void>(
+                              context: context,
+                              builder: (_) => Dialog(
+                                child: InteractiveViewer(
+                                  child: Image.network(
+                                    idCardUrl,
+                                    errorBuilder: (_, __, ___) => const Padding(
+                                      padding: EdgeInsets.all(30),
+                                      child: Text('تعذر فتح هوية النقابة.'),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            );
+                          },
+                          icon: const Icon(Icons.badge_outlined),
+                          label: const Text('عرض هوية النقابة'),
+                        ),
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: ElevatedButton.icon(
+                              onPressed: () => _review(row['id'].toString(), true),
+                              icon: const Icon(Icons.check),
+                              label: const Text('موافقة'),
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: OutlinedButton.icon(
+                              onPressed: () => _review(row['id'].toString(), false),
+                              icon: const Icon(Icons.close),
+                              label: const Text('رفض'),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          );
+        },
+      ),
+    );
+  }
 }
