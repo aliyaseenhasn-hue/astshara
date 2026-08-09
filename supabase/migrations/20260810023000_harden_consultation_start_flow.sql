@@ -2,6 +2,7 @@
 -- 1) الاستشارة المكتبية لا تبدأ قبل تسجيل الدفع اليدوي بالكامل.
 -- 2) لا تُعرض أرقام واتساب للاستشارة المكتبية.
 -- 3) لا يمكن إنهاء الاستشارة قبل وجود وقت بدء فعلي.
+-- 4) لا تسمح دوال دورة الحجز بتنفيذها من مستخدم مجهول.
 
 create or replace function public.get_booking_participant_contact_info(p_booking_id uuid)
 returns table(lawyer_name text, lawyer_phone text, lawyer_whatsapp text, client_name text, client_phone text, client_whatsapp text)
@@ -28,6 +29,7 @@ begin
   where lp.profile_id = v_booking.lawyer_id;
 end;
 $function$;
+revoke execute on function public.get_booking_participant_contact_info(uuid) from anon;
 grant execute on function public.get_booking_participant_contact_info(uuid) to authenticated;
 
 create or replace function public.change_booking_status(p_booking_id uuid, p_new_status text)
@@ -63,4 +65,5 @@ begin
   return v_booking;
 end;
 $function$;
-grant execute on function public.change_booking_status(uuid, text) to authenticated;
+revoke execute on function public.change_booking_status(uuid,text) from anon;
+grant execute on function public.change_booking_status(uuid,text) to authenticated;
