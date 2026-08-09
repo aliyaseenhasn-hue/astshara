@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_sizes.dart';
 import '../../../../core/providers/theme_mode_provider.dart';
@@ -32,7 +33,11 @@ class AppSettingsPage extends ConsumerWidget {
                 color: isDark ? AppColors.gold : AppColors.primary,
               ),
               title: const Text('مظهر التطبيق'),
-              subtitle: Text(isDark ? 'الوضع الداكن' : 'الوضع الفاتح'),
+              subtitle: Text(
+                isDark
+                    ? 'الوضع الداكن — هوية سمائية وذهبية واضحة'
+                    : 'الوضع الفاتح — هوية سمائية وذهبية واضحة',
+              ),
               value: isDark,
               activeColor: AppColors.gold,
               onChanged: (value) {
@@ -44,10 +49,17 @@ class AppSettingsPage extends ConsumerWidget {
           ),
           _buildSettingTile(
             context,
+            Icons.notifications_rounded,
+            'الإشعارات',
+            'عرض الإشعارات الواردة',
+            () => context.push('/notifications'),
+          ),
+          _buildSettingTile(
+            context,
             Icons.notifications_none_rounded,
-            'تنبيهات النظام',
-            'مفعلة',
-            () {},
+            'إعدادات التنبيهات',
+            'النغمة والتنبيهات المحلية',
+            () => context.push('/notification-settings'),
           ),
           const Divider(height: 40),
           _buildSettingTile(
@@ -74,16 +86,14 @@ class AppSettingsPage extends ConsumerWidget {
       child: ListTile(
         leading: Icon(icon, color: AppColors.primary),
         title: Text(title),
-        trailing: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(value, style: const TextStyle(color: AppColors.textSecondary, fontSize: 13)),
-            if (onTap != null) ...[
-              const SizedBox(width: 8),
-              const Icon(Icons.arrow_forward_ios_rounded, size: 14, color: AppColors.outline),
-            ],
-          ],
-        ),
+        subtitle: Text(value),
+        trailing: onTap == null
+            ? null
+            : const Icon(
+                Icons.arrow_forward_ios_rounded,
+                size: 14,
+                color: AppColors.outline,
+              ),
         onTap: onTap,
       ),
     );
