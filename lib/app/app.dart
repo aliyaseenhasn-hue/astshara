@@ -2,9 +2,12 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../core/config/supabase_config.dart';
 import '../core/providers/theme_mode_provider.dart';
 import '../shared/widgets/loading_widget.dart';
+import '../shared/widgets/main_bottom_nav.dart';
 import '../shared/providers/global_loading_provider.dart';
+import '../features/profile/presentation/providers/notifications_provider.dart';
 import 'router.dart';
 import 'theme.dart';
 
@@ -16,6 +19,7 @@ class LawConnectApp extends ConsumerWidget {
     final router = ref.watch(routerProvider);
     final isLoading = ref.watch(globalLoadingProvider);
     final themeMode = ref.watch(themeModeProvider);
+    final unread = ref.watch(unreadNotificationsCountProvider).valueOrNull ?? 0;
 
     return MaterialApp.router(
       title: 'LawConnect',
@@ -36,13 +40,73 @@ class LawConnectApp extends ConsumerWidget {
       ],
       theme: AppTheme.light,
       darkTheme: AppTheme.dark,
-      // لا نعتمد على إعدادات الجهاز؛ المستخدم يختار الوضع من التطبيق.
       themeMode: themeMode,
       routerConfig: router,
       builder: (context, child) {
+        final location = router.routerDelegate.currentConfiguration.uri.path;
+        final authUser = SupabaseConfig.client.auth.currentUser;
+        final isAuthRoute = location == '/login' ||
+            location == '/admin-login' ||
+            location == '/signup' ||
+            location == '/otp' ||
+            location == '/complete-profile' ||
+            location == '/lawyer-onboarding';
+        final isAdminRoute = location.startsWith('/admin');
+        final isRestrictedRoute = location == '/lawyer-pending' ||
+            location == '/manual-payment-required' ||
+            location == '/manual-payment';
+        final showAppNavigation = authUser != null &&
+            !isAuthRoute && !isAdminRoute && !isRestrictedRoute;
+
+        int navigationIndex = 0;
+        if (location == '/chats' || location.startsWith('/chat/')) {
+          navigationIndex = 2;
+        } else if (location == '/bookings' ||
+            location.startsWith('/booking-details') ||
+            location == '/upload-payment' ||
+            location == '/payment-result') {
+          navigationIndex = 1;
+        } else if (location == '/app-settings' ||
+            location == '/notification-settings' ||
+            location == '/payment-methods' ||
+            location == '/help-center' ||
+            location == '/profile') {
+          navigationIndex = 3;
+        }
+
         return Stack(
           children: [
             if (child != null) child,
+            if (showAppNavigation) ...[
+              Positioned(
+                top: MediaQuery.paddingOf(context).top + 8,
+                right: 12,
+                child: Material(
+                  color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.94),
+                  elevation: 3,
+                  shadowColor: Colors.black.withValues(alpha: 0.18),
+                  shape: const CircleBorder(),
+                  child: Badge.count(
+                    count: unread > 99 ? 99 : unread,
+                    isLabelVisible: unread > 0,
+                    backgroundColor: AppThemeNotificationColors.badge,
+                    textColor: Colors.white,
+                    child: IconButton(
+                      tooltip: 'الإشعارات',
+                      icon: const Icon(Icons.notifications_none_rounded),
+                      color: AppThemeNotificationColors.icon,
+                      onPressed: () => context.push('/notifications'),
+                    ),
+                  ),
+                ),
+              ),
+              Positioned(
+                left: 0,
+                right: 0,
+                bottom: 0,
+                child: MainBottomNav(currentIndex: navigationIndex),
+              ),
+            ],
             if (isLoading)
               Positioned.fill(
                 child: Container(
@@ -55,4 +119,9 @@ class LawConnectApp extends ConsumerWidget {
       },
     );
   }
+}
+
+class AppThemeNotificationColors {
+  static const badge = Color(0xFFD9A441);
+  static const icon = Color(0xFF176B87);
 }
