@@ -55,8 +55,11 @@ class LawConnectApp extends ConsumerWidget {
         final isRestrictedRoute = location == '/lawyer-pending' ||
             location == '/manual-payment-required' ||
             location == '/manual-payment';
-        final showAppNavigation = authUser != null &&
+        final canShowGlobalChrome = authUser != null &&
             !isAuthRoute && !isAdminRoute && !isRestrictedRoute;
+        final showAppNavigation = canShowGlobalChrome &&
+            location != '/' && location != '/profile';
+        final showGlobalBell = canShowGlobalChrome && location != '/';
 
         int navigationIndex = 0;
         if (location == '/chats' || location.startsWith('/chat/')) {
@@ -87,7 +90,7 @@ class LawConnectApp extends ConsumerWidget {
         return Stack(
           children: [
             content,
-            if (showAppNavigation)
+            if (showGlobalBell)
               Positioned(
                 top: MediaQuery.paddingOf(context).top + 8,
                 right: 12,
