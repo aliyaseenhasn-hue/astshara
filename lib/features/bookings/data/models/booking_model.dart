@@ -11,6 +11,10 @@ class BookingModel {
   final DateTime? startedAt;
   final String? whatsappNumber;
   final bool lawyerApproved;
+  final String? consultationMode;
+  final bool manualPaymentRequired;
+  final double? manualReceivedAmount;
+  final DateTime? manualReceivedAt;
 
   const BookingModel({
     required this.id,
@@ -23,28 +27,30 @@ class BookingModel {
     this.startedAt,
     this.whatsappNumber,
     this.lawyerApproved = false,
+    this.consultationMode,
+    this.manualPaymentRequired = false,
+    this.manualReceivedAmount,
+    this.manualReceivedAt,
   });
 
-  factory BookingModel.fromJson(Map<String, dynamic> json) {
-    return BookingModel(
-      id: json['id'] as String? ?? '',
-      userId: json['user_id'] as String? ?? '',
-      lawyerId: json['lawyer_id'] as String? ?? '',
-      status: json['status'] as String? ?? 'قيد انتظار الدفع',
-      scheduledAt: json['scheduled_at'] != null
-          ? DateTime.parse(json['scheduled_at'] as String)
-          : DateTime.now(),
-      price: (json['price'] as num?)?.toDouble() ?? 0.0,
-      createdAt: json['created_at'] != null
-          ? DateTime.parse(json['created_at'] as String)
-          : null,
-      startedAt: json['started_at'] != null
-          ? DateTime.parse(json['started_at'] as String)
-          : null,
-      whatsappNumber: json['whatsapp_number'] as String?,
-      lawyerApproved: json['lawyer_approved'] as bool? ?? false,
-    );
-  }
+  factory BookingModel.fromJson(Map<String, dynamic> json) => BookingModel(
+        id: json['id'] as String? ?? '',
+        userId: json['user_id'] as String? ?? '',
+        lawyerId: json['lawyer_id'] as String? ?? '',
+        status: json['status'] as String? ?? 'قيد انتظار الدفع',
+        scheduledAt: json['scheduled_at'] != null
+            ? DateTime.parse(json['scheduled_at'] as String)
+            : DateTime.now(),
+        price: (json['price'] as num?)?.toDouble() ?? 0,
+        createdAt: json['created_at'] != null ? DateTime.parse(json['created_at'] as String) : null,
+        startedAt: json['started_at'] != null ? DateTime.parse(json['started_at'] as String) : null,
+        whatsappNumber: json['whatsapp_number'] as String?,
+        lawyerApproved: json['lawyer_approved'] as bool? ?? false,
+        consultationMode: json['consultation_mode'] as String?,
+        manualPaymentRequired: json['manual_payment_required'] as bool? ?? false,
+        manualReceivedAmount: (json['manual_received_amount'] as num?)?.toDouble(),
+        manualReceivedAt: json['manual_received_at'] != null ? DateTime.parse(json['manual_received_at'] as String) : null,
+      );
 
   Booking toEntity() => Booking(
         id: id,
@@ -57,5 +63,9 @@ class BookingModel {
         startedAt: startedAt,
         whatsappNumber: whatsappNumber,
         lawyerApproved: lawyerApproved,
+        consultationMode: consultationMode,
+        manualPaymentRequired: manualPaymentRequired,
+        manualReceivedAmount: manualReceivedAmount,
+        manualReceivedAt: manualReceivedAt,
       );
 }

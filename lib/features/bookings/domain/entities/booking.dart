@@ -10,10 +10,14 @@ class Booking {
   final String? lawyerName;
   final String? userName;
   final String? consultationType;
+  final String? consultationMode;
   final String? description;
   final String? documentUrl;
   final String? whatsappNumber;
   final bool lawyerApproved;
+  final bool manualPaymentRequired;
+  final double? manualReceivedAmount;
+  final DateTime? manualReceivedAt;
 
   const Booking({
     required this.id,
@@ -27,28 +31,29 @@ class Booking {
     this.lawyerName,
     this.userName,
     this.consultationType,
+    this.consultationMode,
     this.description,
     this.documentUrl,
     this.whatsappNumber,
     this.lawyerApproved = false,
+    this.manualPaymentRequired = false,
+    this.manualReceivedAmount,
+    this.manualReceivedAt,
   });
 
+  bool get isInOffice => consultationMode == 'في المكتب';
+  bool get isManualPaymentPending => isInOffice &&
+      manualPaymentRequired &&
+      (manualReceivedAmount == null || manualReceivedAmount! <= 0);
+
   Booking copyWith({
-    String? id,
-    String? userId,
-    String? lawyerId,
-    String? status,
-    DateTime? scheduledAt,
-    double? price,
-    DateTime? createdAt,
-    DateTime? startedAt,
-    String? lawyerName,
-    String? userName,
-    String? consultationType,
-    String? description,
-    String? documentUrl,
-    String? whatsappNumber,
-    bool? lawyerApproved,
+    String? id, String? userId, String? lawyerId, String? status,
+    DateTime? scheduledAt, double? price, DateTime? createdAt,
+    DateTime? startedAt, String? lawyerName, String? userName,
+    String? consultationType, String? consultationMode, String? description,
+    String? documentUrl, String? whatsappNumber, bool? lawyerApproved,
+    bool? manualPaymentRequired, double? manualReceivedAmount,
+    DateTime? manualReceivedAt,
   }) {
     return Booking(
       id: id ?? this.id,
@@ -62,10 +67,14 @@ class Booking {
       lawyerName: lawyerName ?? this.lawyerName,
       userName: userName ?? this.userName,
       consultationType: consultationType ?? this.consultationType,
+      consultationMode: consultationMode ?? this.consultationMode,
       description: description ?? this.description,
       documentUrl: documentUrl ?? this.documentUrl,
       whatsappNumber: whatsappNumber ?? this.whatsappNumber,
       lawyerApproved: lawyerApproved ?? this.lawyerApproved,
+      manualPaymentRequired: manualPaymentRequired ?? this.manualPaymentRequired,
+      manualReceivedAmount: manualReceivedAmount ?? this.manualReceivedAmount,
+      manualReceivedAt: manualReceivedAt ?? this.manualReceivedAt,
     );
   }
 }
