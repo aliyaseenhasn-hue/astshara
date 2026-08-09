@@ -10,6 +10,17 @@ import '../../../bookings/presentation/providers/bookings_provider.dart';
 import '../../../bookings/domain/entities/booking.dart';
 import 'package:intl/intl.dart' as intl;
 
+final bookingClientNameProvider = FutureProvider.family<String?, String>((ref, bookingId) async {
+  final response = await SupabaseConfig.client.rpc('get_booking_client_name', params: {
+    'p_booking_id': bookingId,
+  });
+  final rows = response as List;
+  if (rows.isEmpty) return null;
+  final row = Map<String, dynamic>.from(rows.first as Map);
+  final name = row['full_name']?.toString().trim();
+  return name == null || name.isEmpty ? null : name;
+});
+
 class LawyerDashboardPage extends ConsumerWidget {
   const LawyerDashboardPage({super.key});
   @override
@@ -70,6 +81,30 @@ class LawyerDashboardPage extends ConsumerWidget {
 }
 
 class _StatCard extends StatelessWidget { final String title, value; final IconData icon; final Color? color; const _StatCard({required this.title, required this.value, required this.icon, this.color}); @override Widget build(BuildContext context) => Card(child: Padding(padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 6), child: Column(children: [Icon(icon, color: color ?? AppColors.primary), const SizedBox(height: 8), Text(value, style: const TextStyle(fontWeight: FontWeight.bold)), const SizedBox(height: 4), Text(title, style: const TextStyle(fontSize: 10, color: AppColors.textSecondary))]))); }
-class _BookingTile extends StatelessWidget { final Booking booking; const _BookingTile({required this.booking}); @override Widget build(BuildContext context) => Card(margin: const EdgeInsets.only(bottom: 10), child: Consumer(builder: (context, ref, _) { final name = ref.watch(userNameProvider(booking.userId)); return ListTile(leading: const CircleAvatar(child: Icon(Icons.person_outline)), title: name.maybeWhen(data: (value) => Text(value ?? 'طالب خدمة'), orElse: () => const Text('تحميل...')), subtitle: Text('${intl.DateFormat('yyyy/MM/dd').format(booking.scheduledAt)} • ${booking.packageName ?? 'استشارة'}'), trailing: _StatusChip(booking.status), onTap: () => context.push('/booking-details', extra: booking)); })); }
+class _BookingTile extends ConsumerWidget {
+  final Booking booking;
+  const _BookingTile({required this.booking});
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final nameAsync = ref.watch(bookingClientNameProvider(booking.id));
+    return Card(
+      margin: const EdgeInsets.only(bottom: 10),
+      child: ListTile(
+        leading: const CircleAvatar(child: Icon(Icons.person_outline)),
+        title: nameAsync.when(
+          loading: () => const Text('جاري تحميل اسم العميل...'),
+          error: (_, __) => const Text('اسم العميل غير متوفر'),
+          data: (name) => Text(
+            name ?? 'اسم العميل غير متوفر',
+            style: const TextStyle(fontWeight: FontWeight.bold),
+          ),
+        ),
+        subtitle: Text('${intl.DateFormat('yyyy/MM/dd').format(booking.scheduledAt)} • ${booking.packageName ?? 'استشارة'}'),
+        trailing: _StatusChip(booking.status),
+        onTap: () => context.push('/booking-details', extra: booking),
+      ),
+    );
+  }
+}
 class _StatusChip extends StatelessWidget { final String status; const _StatusChip(this.status); @override Widget build(BuildContext context) { final color = _color(status); return Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5), decoration: BoxDecoration(color: color.withValues(alpha: .1), borderRadius: BorderRadius.circular(8)), child: Text(status, style: TextStyle(color: color, fontSize: 10, fontWeight: FontWeight.bold))); } Color _color(String value) { switch (value) { case 'مؤكد': return AppColors.success; case 'قيد التنفيذ': return Colors.blue; case 'مكتمل': return Colors.green; case 'ملغي': case 'مسترد': return AppColors.error; case 'بانتظار التأكيد': return Colors.orange; default: return Colors.grey; } } }
 class _ActionTile extends StatelessWidget { final String title, subtitle; final IconData icon; final VoidCallback onTap; const _ActionTile({required this.title, required this.subtitle, required this.icon, required this.onTap}); @override Widget build(BuildContext context) => Card(margin: const EdgeInsets.only(bottom: 10), child: ListTile(leading: Icon(icon, color: AppColors.primary), title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold)), subtitle: Text(subtitle, style: const TextStyle(fontSize: 12)), trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 14), onTap: onTap)); }
