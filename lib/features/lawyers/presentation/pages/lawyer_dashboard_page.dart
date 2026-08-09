@@ -50,18 +50,13 @@ class LawyerDashboardPage extends ConsumerWidget {
     );
   }
 
+  // Notifications are rendered once by the global app chrome in app.dart.
+  // Keeping an AppBar action here would create a duplicate bell.
   Widget _buildSliverAppBar(BuildContext context, dynamic user) => SliverAppBar(
     expandedHeight: 240,
     pinned: true,
     stretch: true,
     backgroundColor: AppColors.primary,
-    actions: [
-      IconButton(
-        tooltip: 'الإشعارات',
-        icon: const Icon(Icons.notifications_none_rounded, color: AppColors.goldLight),
-        onPressed: () => context.push('/notifications'),
-      ),
-    ],
     flexibleSpace: FlexibleSpaceBar(
       background: Container(
         decoration: const BoxDecoration(gradient: LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [AppColors.secondary, AppColors.secondaryDark])),
