@@ -28,22 +28,13 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   Future<void> _submit() async {
     if (_formKey.currentState?.validate() ?? false) {
       String phone = _phoneController.text.trim().replaceAll(' ', '');
-
       if (phone.startsWith('+964')) phone = phone.substring(4);
       if (phone.startsWith('964')) phone = phone.substring(3);
       if (phone.startsWith('0')) phone = phone.substring(1);
-
       final formattedPhone = '964$phone';
-      debugPrint('Submitting phone: $formattedPhone');
-
       try {
-        await ref
-            .read(authControllerProvider.notifier)
-            .signInWithPhone(formattedPhone);
-
-        if (mounted) {
-          context.push('/otp', extra: formattedPhone);
-        }
+        await ref.read(authControllerProvider.notifier).signInWithPhone(formattedPhone);
+        if (mounted) context.push('/otp', extra: formattedPhone);
       } catch (e) {
         debugPrint('Error during sign in: $e');
       }
@@ -57,214 +48,155 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     ref.listen<AsyncValue<void>>(authControllerProvider, (prev, next) {
       next.whenOrNull(
         error: (err, stack) {
-          String errorMessage =
-              err is AuthException ? err.message : err.toString();
+          final errorMessage = err is AuthException ? err.message : err.toString();
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-                content: Text('فشل: $errorMessage'),
-                backgroundColor: AppColors.error),
+            SnackBar(content: Text('فشل: $errorMessage'), backgroundColor: AppColors.error),
           );
         },
       );
     });
 
     return Scaffold(
+      backgroundColor: AppColors.secondaryDark,
       body: Container(
         width: double.infinity,
         height: double.infinity,
         decoration: const BoxDecoration(
           gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: AppColors.brandGradient,
-            stops: [0.6, 1.0],
+            begin: Alignment.topRight,
+            end: Alignment.bottomLeft,
+            colors: [AppColors.secondaryDark, AppColors.primaryDark, AppColors.goldDark],
+            stops: [0.0, 0.58, 1.0],
           ),
         ),
         child: Stack(
           children: [
-            // Decorative Circles from Design System
             Positioned(
-              top: -40,
-              left: -40,
+              top: -55,
+              left: -55,
+              child: Container(
+                width: 210,
+                height: 210,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(color: AppColors.gold.withValues(alpha: 0.28), width: 28),
+                ),
+              ),
+            ),
+            Positioned(
+              top: 110,
+              right: -70,
               child: Container(
                 width: 180,
                 height: 180,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  border: Border.all(
-                    color: AppColors.gold.withValues(alpha: 0.1),
-                    width: 30,
-                  ),
+                  color: AppColors.primary.withValues(alpha: 0.12),
                 ),
               ),
             ),
             Positioned(
-              bottom: -30,
-              right: -20,
+              bottom: -45,
+              right: -25,
               child: Container(
-                width: 120,
-                height: 120,
+                width: 150,
+                height: 150,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  border: Border.all(
-                    color: AppColors.gold.withValues(alpha: 0.08),
-                    width: 20,
-                  ),
+                  border: Border.all(color: AppColors.goldLight.withValues(alpha: 0.22), width: 20),
                 ),
               ),
             ),
-
             SafeArea(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: AppSizes.p32, vertical: 40),
+                padding: const EdgeInsets.symmetric(horizontal: AppSizes.p32, vertical: 40),
                 child: Form(
                   key: _formKey,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       const SizedBox(height: 20),
-                      // Brand Mark
                       Row(
                         children: [
                           Container(
-                            width: 50,
-                            height: 50,
+                            width: 52,
+                            height: 52,
                             decoration: BoxDecoration(
-                              color: AppColors.gold.withValues(alpha: 0.2),
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(
-                                color: AppColors.gold.withValues(alpha: 0.4),
-                                width: 1.5,
-                              ),
+                              gradient: const LinearGradient(colors: AppColors.goldGradient),
+                              borderRadius: BorderRadius.circular(14),
+                              boxShadow: [BoxShadow(color: AppColors.gold.withValues(alpha: 0.28), blurRadius: 18)],
                             ),
-                            child: const Icon(Icons.account_balance,
-                                color: AppColors.gold, size: 28),
+                            child: const Icon(Icons.account_balance, color: AppColors.secondaryDark, size: 29),
                           ),
                           const SizedBox(width: 12),
                           const Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(
-                                'استشارة',
-                                style: TextStyle(
-                                  fontSize: 22,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.white,
-                                  letterSpacing: 0.5,
-                                ),
-                              ),
-                              Text(
-                                'ISTISHARA',
-                                style: TextStyle(
-                                  fontSize: 10,
-                                  color: Colors.white54,
-                                  letterSpacing: 2.0,
-                                ),
-                              ),
+                              Text('استشارة', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.white, letterSpacing: 0.5)),
+                              Text('ISTISHARA', style: TextStyle(fontSize: 10, color: AppColors.goldLight, letterSpacing: 2.0)),
                             ],
                           ),
                         ],
                       ),
                       const SizedBox(height: 40),
-                      const Text(
-                        'مرحباً بك',
-                        style: TextStyle(
-                          fontSize: 28,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
-                      ),
+                      const Text('مرحباً بك', style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.white)),
                       const SizedBox(height: 8),
-                      const Text(
-                        'منصتك القانونية الموثوقة\nفي العراق',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.white70,
-                          height: 1.5,
-                        ),
-                      ),
+                      const Text('منصتك القانونية الموثوقة\nفي العراق', style: TextStyle(fontSize: 14, color: Colors.white70, height: 1.5)),
                       const SizedBox(height: 50),
-
-                      // Phone Input Styled as per Design System
                       TextFormField(
                         controller: _phoneController,
-                        style:
-                            const TextStyle(color: Colors.white, fontSize: 16),
+                        style: const TextStyle(color: Colors.white, fontSize: 16),
                         decoration: InputDecoration(
                           hintText: 'رقم الهاتف — 07xxxxxxxx',
-                          hintStyle: TextStyle(
-                              color: Colors.white.withValues(alpha: 0.5)),
-                          prefixIcon: const Icon(Icons.phone_android_rounded,
-                              color: AppColors.primary),
-                          fillColor: Colors.white.withValues(alpha: 0.1),
+                          hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.58)),
+                          prefixIcon: const Icon(Icons.phone_android_rounded, color: AppColors.gold),
+                          filled: true,
+                          fillColor: Colors.white.withValues(alpha: 0.10),
                           enabledBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(
-                                color: Colors.white.withValues(alpha: 0.3)),
+                            borderSide: BorderSide(color: AppColors.gold.withValues(alpha: 0.42)),
                           ),
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
-                            borderSide: const BorderSide(
-                                color: AppColors.primary, width: 2),
+                            borderSide: const BorderSide(color: AppColors.goldLight, width: 2),
                           ),
                         ),
                         keyboardType: TextInputType.phone,
-                        validator: (val) =>
-                            val?.isEmpty ?? true ? 'رقم الهاتف مطلوب' : null,
+                        validator: (val) => val?.isEmpty ?? true ? 'رقم الهاتف مطلوب' : null,
                       ),
-
                       const SizedBox(height: 24),
                       state.isLoading
                           ? const LoadingWidget()
                           : ElevatedButton(
                               onPressed: _submit,
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: AppColors.primary,
-                                foregroundColor: Colors.white,
-                                padding:
-                                    const EdgeInsets.symmetric(vertical: 18),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                elevation: 4,
+                                backgroundColor: AppColors.gold,
+                                foregroundColor: AppColors.secondaryDark,
+                                padding: const EdgeInsets.symmetric(vertical: 18),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                elevation: 6,
                               ),
-                              child: const Text(
-                                'إرسال رمز التحقق',
-                                style: TextStyle(
-                                    fontSize: 16, fontWeight: FontWeight.bold),
-                              ),
+                              child: const Text('إرسال رمز التحقق', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                             ),
-
                       const SizedBox(height: 24),
                       const Row(
                         children: [
-                          Expanded(child: Divider(color: Colors.white10)),
-                          Padding(
-                            padding: EdgeInsets.symmetric(horizontal: 16),
-                            child: Text('أو',
-                                style: TextStyle(
-                                    color: Colors.white24, fontSize: 12)),
-                          ),
-                          Expanded(child: Divider(color: Colors.white10)),
+                          Expanded(child: Divider(color: Colors.white24)),
+                          Padding(padding: EdgeInsets.symmetric(horizontal: 16), child: Text('أو', style: TextStyle(color: Colors.white70, fontSize: 12))),
+                          Expanded(child: Divider(color: Colors.white24)),
                         ],
                       ),
                       const SizedBox(height: 24),
                       OutlinedButton.icon(
-                        onPressed: () => ref
-                            .read(authControllerProvider.notifier)
-                            .signInWithGoogle(),
-                        icon: const Icon(Icons.g_mobiledata,
-                            size: 30, color: Colors.white),
+                        onPressed: () => ref.read(authControllerProvider.notifier).signInWithGoogle(),
+                        icon: const Icon(Icons.g_mobiledata, size: 30, color: Colors.white),
                         label: const Text('المتابعة باستخدام Google'),
                         style: OutlinedButton.styleFrom(
-                          foregroundColor: Colors.white70,
+                          foregroundColor: Colors.white,
                           padding: const EdgeInsets.symmetric(vertical: 12),
-                          side: BorderSide(
-                              color: Colors.white.withValues(alpha: 0.15)),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
+                          side: const BorderSide(color: AppColors.primaryLight),
+                          backgroundColor: AppColors.primaryDark.withValues(alpha: 0.28),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                         ),
                       ),
                     ],
