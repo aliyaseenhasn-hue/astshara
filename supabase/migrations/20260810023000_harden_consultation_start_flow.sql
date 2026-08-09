@@ -29,7 +29,7 @@ begin
   where lp.profile_id = v_booking.lawyer_id;
 end;
 $function$;
-revoke execute on function public.get_booking_participant_contact_info(uuid) from anon;
+revoke execute on function public.get_booking_participant_contact_info(uuid) from public;
 grant execute on function public.get_booking_participant_contact_info(uuid) to authenticated;
 
 create or replace function public.change_booking_status(p_booking_id uuid, p_new_status text)
@@ -65,5 +65,5 @@ begin
   return v_booking;
 end;
 $function$;
-revoke execute on function public.change_booking_status(uuid,text) from anon;
+revoke execute on function public.change_booking_status(uuid,text) from public;
 grant execute on function public.change_booking_status(uuid,text) to authenticated;
