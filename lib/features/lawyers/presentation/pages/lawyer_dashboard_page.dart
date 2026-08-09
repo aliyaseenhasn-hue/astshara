@@ -2,6 +2,7 @@ import 'package:astshara/features/lawyers/presentation/providers/lawyers_provide
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../../core/config/supabase_config.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_sizes.dart';
 import '../../../../shared/widgets/loading_widget.dart';
@@ -11,9 +12,7 @@ import '../../../bookings/domain/entities/booking.dart';
 import 'package:intl/intl.dart' as intl;
 
 final bookingClientNameProvider = FutureProvider.family<String?, String>((ref, bookingId) async {
-  final response = await SupabaseConfig.client.rpc('get_booking_client_name', params: {
-    'p_booking_id': bookingId,
-  });
+  final response = await SupabaseConfig.client.rpc('get_booking_client_name', params: {'p_booking_id': bookingId});
   final rows = response as List;
   if (rows.isEmpty) return null;
   final row = Map<String, dynamic>.from(rows.first as Map);
@@ -87,23 +86,17 @@ class _BookingTile extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final nameAsync = ref.watch(bookingClientNameProvider(booking.id));
-    return Card(
-      margin: const EdgeInsets.only(bottom: 10),
-      child: ListTile(
-        leading: const CircleAvatar(child: Icon(Icons.person_outline)),
-        title: nameAsync.when(
-          loading: () => const Text('جاري تحميل اسم العميل...'),
-          error: (_, __) => const Text('اسم العميل غير متوفر'),
-          data: (name) => Text(
-            name ?? 'اسم العميل غير متوفر',
-            style: const TextStyle(fontWeight: FontWeight.bold),
-          ),
-        ),
-        subtitle: Text('${intl.DateFormat('yyyy/MM/dd').format(booking.scheduledAt)} • ${booking.packageName ?? 'استشارة'}'),
-        trailing: _StatusChip(booking.status),
-        onTap: () => context.push('/booking-details', extra: booking),
+    return Card(margin: const EdgeInsets.only(bottom: 10), child: ListTile(
+      leading: const CircleAvatar(child: Icon(Icons.person_outline)),
+      title: nameAsync.when(
+        loading: () => const Text('جاري تحميل اسم العميل...'),
+        error: (_, __) => const Text('اسم العميل غير متوفر'),
+        data: (name) => Text(name ?? 'اسم العميل غير متوفر', style: const TextStyle(fontWeight: FontWeight.bold)),
       ),
-    );
+      subtitle: Text('${intl.DateFormat('yyyy/MM/dd').format(booking.scheduledAt)} • ${booking.packageName ?? 'استشارة'}'),
+      trailing: _StatusChip(booking.status),
+      onTap: () => context.push('/booking-details', extra: booking),
+    ));
   }
 }
 class _StatusChip extends StatelessWidget { final String status; const _StatusChip(this.status); @override Widget build(BuildContext context) { final color = _color(status); return Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5), decoration: BoxDecoration(color: color.withValues(alpha: .1), borderRadius: BorderRadius.circular(8)), child: Text(status, style: TextStyle(color: color, fontSize: 10, fontWeight: FontWeight.bold))); } Color _color(String value) { switch (value) { case 'مؤكد': return AppColors.success; case 'قيد التنفيذ': return Colors.blue; case 'مكتمل': return Colors.green; case 'ملغي': case 'مسترد': return AppColors.error; case 'بانتظار التأكيد': return Colors.orange; default: return Colors.grey; } } }
