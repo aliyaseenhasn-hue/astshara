@@ -26,6 +26,7 @@ import '../features/bookings/presentation/pages/booking_details_page.dart';
 import '../features/bookings/presentation/pages/manual_payment_page.dart';
 import '../features/bookings/presentation/pages/manual_payment_required_page.dart';
 import '../features/chat/presentation/pages/chat_page.dart';
+import '../features/chat/presentation/pages/conversations_page.dart';
 import '../features/payments/presentation/pages/payment_upload_page.dart';
 import '../features/payments/presentation/pages/payment_result_page.dart';
 import '../features/profile/presentation/pages/profile_page.dart';
@@ -174,6 +175,7 @@ GoRouter router(RouterRef ref) {
         },
       ),
       GoRoute(path: '/bookings', builder: (c, s) => const BookingsListPage()),
+      GoRoute(path: '/chats', builder: (c, s) => const ConversationsPage()),
       GoRoute(
         path: '/booking-details',
         builder: (c, s) {
