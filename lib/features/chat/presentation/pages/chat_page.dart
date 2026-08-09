@@ -1,8 +1,8 @@
-import 'package:intl/intl.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_sizes.dart';
+import '../../../../core/utils/app_time_format.dart';
 import '../../../../shared/widgets/loading_widget.dart';
 import '../../../authentication/presentation/providers/auth_provider.dart';
 import '../providers/chat_provider.dart';
@@ -37,20 +37,20 @@ class _ChatPageState extends ConsumerState<ChatPage> {
 
   @override
   Widget build(BuildContext context) {
-    final messagesAsync =
-        ref.watch(chatMessagesProvider(widget.conversationId));
-    final otherPartyNameAsync =
-        ref.watch(chatOtherPartyNameProvider(widget.conversationId));
+    final messagesAsync = ref.watch(chatMessagesProvider(widget.conversationId));
+    final otherPartyNameAsync = ref.watch(chatOtherPartyNameProvider(widget.conversationId));
     final currentProfileIdAsync = ref.watch(currentProfileIdProvider);
+    final scheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
       appBar: AppBar(
         titleSpacing: 0,
         title: Row(
           children: [
-            const CircleAvatar(
+            CircleAvatar(
               radius: 18,
-              backgroundColor: AppColors.surfaceVariant,
+              backgroundColor: scheme.surfaceContainerHighest,
               child: Icon(Icons.person, size: 20, color: AppColors.primary),
             ),
             const SizedBox(width: 10),
@@ -62,16 +62,13 @@ class _ChatPageState extends ConsumerState<ChatPage> {
                     data: (name) => name ?? 'محادثة',
                     orElse: () => '...',
                   ),
-                  style: const TextStyle(
-                      fontSize: 16, fontWeight: FontWeight.bold),
+                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                 ),
                 const Row(
                   children: [
                     CircleAvatar(radius: 3, backgroundColor: Colors.green),
                     SizedBox(width: 4),
-                    Text('متصل الآن',
-                        style:
-                            TextStyle(fontSize: 11, color: AppColors.outline)),
+                    Text('متصل الآن', style: TextStyle(fontSize: 11)),
                   ],
                 ),
               ],
@@ -79,14 +76,13 @@ class _ChatPageState extends ConsumerState<ChatPage> {
           ],
         ),
         actions: [
-          IconButton(
-              onPressed: () {}, icon: const Icon(Icons.videocam_outlined)),
+          IconButton(onPressed: () {}, icon: const Icon(Icons.videocam_outlined)),
           IconButton(onPressed: () {}, icon: const Icon(Icons.call_outlined)),
           IconButton(onPressed: () {}, icon: const Icon(Icons.more_vert)),
         ],
       ),
-      body: Container(
-        color: AppColors.background,
+      body: ColoredBox(
+        color: scheme.surface,
         child: Column(
           children: [
             Expanded(
@@ -97,32 +93,33 @@ class _ChatPageState extends ConsumerState<ChatPage> {
                   itemBuilder: (context, index) {
                     final msg = messages[index];
                     final isMe = msg.senderId == currentProfileIdAsync.value;
-
                     return _MessageBubble(
-                        message: msg.content,
-                        isMe: isMe,
-                        time: msg.createdAt != null
-                            ? DateFormat('HH:mm').format(msg.createdAt!)
-                            : '...');
+                      message: msg.content,
+                      isMe: isMe,
+                      time: msg.createdAt != null
+                          ? AppTimeFormat.time12(msg.createdAt!)
+                          : '...',
+                    );
                   },
                 ),
                 loading: () => const LoadingWidget(),
                 error: (err, stack) => Center(child: Text('خطأ: $err')),
               ),
             ),
-            _buildInputArea(),
+            _buildInputArea(context),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildInputArea() {
+  Widget _buildInputArea(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        border: Border(top: BorderSide(color: AppColors.surfaceVariant)),
+      decoration: BoxDecoration(
+        color: scheme.surfaceContainer,
+        border: Border(top: BorderSide(color: scheme.outlineVariant)),
       ),
       child: SafeArea(
         child: Row(
@@ -130,15 +127,15 @@ class _ChatPageState extends ConsumerState<ChatPage> {
             Expanded(
               child: Container(
                 decoration: BoxDecoration(
-                  color: AppColors.background,
+                  color: scheme.surfaceContainerHighest,
                   borderRadius: BorderRadius.circular(24),
                 ),
                 child: Row(
                   children: [
                     IconButton(
-                        onPressed: () {},
-                        icon: const Icon(Icons.attach_file,
-                            color: AppColors.outline)),
+                      onPressed: () {},
+                      icon: Icon(Icons.attach_file, color: scheme.onSurfaceVariant),
+                    ),
                     Expanded(
                       child: TextField(
                         controller: _messageController,
@@ -157,13 +154,13 @@ class _ChatPageState extends ConsumerState<ChatPage> {
             ),
             const SizedBox(width: 12),
             CircleAvatar(
-              backgroundColor: AppColors.primary,
+              backgroundColor: AppColors.gold,
               radius: 22,
               child: IconButton(
                 onPressed: _send,
                 icon: Icon(
                   _messageController.text.isEmpty ? Icons.mic : Icons.send,
-                  color: Colors.white,
+                  color: AppColors.textOnPrimary,
                   size: 22,
                 ),
               ),
@@ -179,46 +176,36 @@ class _MessageBubble extends StatelessWidget {
   final String message;
   final bool isMe;
   final String time;
-  const _MessageBubble(
-      {required this.message, required this.isMe, required this.time});
+  const _MessageBubble({required this.message, required this.isMe, required this.time});
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final bubbleColor = isMe ? AppColors.primary : scheme.surfaceContainerHighest;
+    final textColor = isMe ? AppColors.textOnPrimary : scheme.onSurface;
+
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Column(
-        crossAxisAlignment:
-            isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+        crossAxisAlignment: isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
         children: [
           Container(
             padding: const EdgeInsets.all(12),
-            constraints: BoxConstraints(
-                maxWidth: MediaQuery.of(context).size.width * 0.75),
+            constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.75),
             decoration: BoxDecoration(
-              color: isMe ? AppColors.primary : Colors.white,
+              color: bubbleColor,
               borderRadius: BorderRadius.only(
                 topLeft: const Radius.circular(16),
                 topRight: const Radius.circular(16),
                 bottomLeft: isMe ? const Radius.circular(16) : Radius.zero,
                 bottomRight: isMe ? Radius.zero : const Radius.circular(16),
               ),
-              boxShadow: [
-                if (!isMe)
-                  BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.05),
-                      blurRadius: 4,
-                      offset: const Offset(0, 2)),
-              ],
+              border: isMe ? null : Border.all(color: scheme.outlineVariant),
             ),
-            child: Text(
-              message,
-              style: TextStyle(
-                  color: isMe ? Colors.white : Colors.black, fontSize: 14),
-            ),
+            child: Text(message, style: TextStyle(color: textColor, fontSize: 14)),
           ),
           const SizedBox(height: 4),
-          Text(time,
-              style: const TextStyle(fontSize: 10, color: AppColors.outline)),
+          Text(time, style: TextStyle(fontSize: 10, color: scheme.onSurfaceVariant)),
         ],
       ),
     );
