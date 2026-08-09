@@ -25,13 +25,7 @@ class AppSettingsPage extends ConsumerWidget {
         padding: const EdgeInsets.all(AppSizes.p20),
         children: [
           _buildSectionTitle('التطبيق'),
-          _buildSettingTile(
-            context,
-            Icons.language_rounded,
-            'لغة التطبيق',
-            'العربية',
-            null,
-          ),
+          _buildSettingTile(context, Icons.language_rounded, 'لغة التطبيق', 'العربية', null),
           Card(
             margin: const EdgeInsets.only(bottom: 12),
             child: SwitchListTile(
@@ -43,22 +37,12 @@ class AppSettingsPage extends ConsumerWidget {
               subtitle: Text(isDark ? 'الوضع الداكن' : 'الوضع الفاتح'),
               value: isDark,
               activeColor: AppColors.gold,
-              onChanged: (value) {
-                ref.read(themeModeProvider.notifier).setMode(
-                      value ? ThemeMode.dark : ThemeMode.light,
-                    );
-              },
+              onChanged: (value) => ref.read(themeModeProvider.notifier).setMode(
+                    value ? ThemeMode.dark : ThemeMode.light,
+                  ),
             ),
           ),
-
           _buildSectionTitle('الإشعارات'),
-          _buildSettingTile(
-            context,
-            Icons.notifications_rounded,
-            'الإشعارات',
-            'عرض الإشعارات الواردة',
-            () => context.push('/notifications'),
-          ),
           _buildSettingTile(
             context,
             Icons.tune_rounded,
@@ -66,7 +50,6 @@ class AppSettingsPage extends ConsumerWidget {
             'النغمة والتنبيهات المحلية',
             () => context.push('/notification-settings'),
           ),
-
           _buildSectionTitle('المدفوعات والدعم'),
           _buildSettingTile(
             context,
@@ -82,7 +65,6 @@ class AppSettingsPage extends ConsumerWidget {
             'المساعدة والدعم',
             () => context.push('/help-center'),
           ),
-
           _buildSectionTitle('الحساب'),
           Card(
             margin: const EdgeInsets.only(bottom: 12),
@@ -97,10 +79,7 @@ class AppSettingsPage extends ConsumerWidget {
               ),
               title: const Text(
                 'تسجيل الخروج',
-                style: TextStyle(
-                  color: AppColors.error,
-                  fontWeight: FontWeight.bold,
-                ),
+                style: TextStyle(color: AppColors.error, fontWeight: FontWeight.bold),
               ),
               onTap: () => _logout(context, ref),
             ),
@@ -118,42 +97,27 @@ class AppSettingsPage extends ConsumerWidget {
               ),
               title: const Text(
                 'حذف الحساب نهائياً',
-                style: TextStyle(
-                  color: AppColors.error,
-                  fontWeight: FontWeight.bold,
-                ),
+                style: TextStyle(color: AppColors.error, fontWeight: FontWeight.bold),
               ),
               subtitle: const Text('لا يمكن التراجع عن هذا الإجراء'),
               onTap: () => _showDeleteConfirmation(context, ref),
             ),
           ),
-
           const SizedBox(height: 12),
-          Center(
-            child: Text(
-              'إصدار التطبيق 2.0.0',
-              style: TextStyle(color: AppColors.outline),
-            ),
-          ),
+          const Center(child: Text('إصدار التطبيق 2.0.0', style: TextStyle(color: AppColors.outline))),
           const SizedBox(height: AppSizes.p48),
         ],
       ),
     );
   }
 
-  Widget _buildSectionTitle(String title) {
-    return Padding(
-      padding: const EdgeInsets.only(left: 8, right: 8, top: 16, bottom: 8),
-      child: Text(
-        title,
-        style: const TextStyle(
-          color: AppColors.textSecondary,
-          fontWeight: FontWeight.bold,
-          fontSize: 13,
+  Widget _buildSectionTitle(String title) => Padding(
+        padding: const EdgeInsets.only(left: 8, right: 8, top: 16, bottom: 8),
+        child: Text(
+          title,
+          style: const TextStyle(color: AppColors.textSecondary, fontWeight: FontWeight.bold, fontSize: 13),
         ),
-      ),
-    );
-  }
+      );
 
   Widget _buildSettingTile(
     BuildContext context,
@@ -161,31 +125,25 @@ class AppSettingsPage extends ConsumerWidget {
     String title,
     String value,
     VoidCallback? onTap,
-  ) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      child: ListTile(
-        leading: Container(
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: AppColors.surfaceVariant,
-            borderRadius: BorderRadius.circular(10),
+  ) => Card(
+        margin: const EdgeInsets.only(bottom: 12),
+        child: ListTile(
+          leading: Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: AppColors.surfaceVariant,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(icon, color: AppColors.primary, size: 20),
           ),
-          child: Icon(icon, color: AppColors.primary, size: 20),
+          title: Text(title),
+          subtitle: Text(value),
+          trailing: onTap == null
+              ? null
+              : const Icon(Icons.arrow_forward_ios_rounded, size: 14, color: AppColors.outline),
+          onTap: onTap,
         ),
-        title: Text(title),
-        subtitle: Text(value),
-        trailing: onTap == null
-            ? null
-            : const Icon(
-                Icons.arrow_forward_ios_rounded,
-                size: 14,
-                color: AppColors.outline,
-              ),
-        onTap: onTap,
-      ),
-    );
-  }
+      );
 
   Future<void> _logout(BuildContext context, WidgetRef ref) async {
     await ref.read(authControllerProvider.notifier).logout();
@@ -197,24 +155,16 @@ class AppSettingsPage extends ConsumerWidget {
       context: context,
       builder: (dialogContext) => AlertDialog(
         title: const Text('حذف الحساب؟'),
-        content: const Text(
-          'هل أنت متأكد من حذف حسابك نهائياً؟ لا يمكن التراجع عن هذا الإجراء وسيتم حذف بيانات حسابك.',
-        ),
+        content: const Text('هل أنت متأكد من حذف حسابك نهائياً؟ لا يمكن التراجع عن هذا الإجراء وسيتم حذف بيانات حسابك.'),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext),
-            child: const Text('إلغاء'),
-          ),
+          TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('إلغاء')),
           ElevatedButton(
             onPressed: () async {
               Navigator.pop(dialogContext);
               await ref.read(authControllerProvider.notifier).deleteAccount();
               if (context.mounted) context.go('/login');
             },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.error,
-              foregroundColor: Colors.white,
-            ),
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.error, foregroundColor: Colors.white),
             child: const Text('نعم، احذف الحساب'),
           ),
         ],
