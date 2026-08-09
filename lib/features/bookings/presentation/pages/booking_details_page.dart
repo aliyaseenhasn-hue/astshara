@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../../../../core/config/supabase_config.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_sizes.dart';
 import '../../../../core/utils/app_time_format.dart';
@@ -258,6 +259,45 @@ class BookingDetailsPage extends ConsumerWidget {
       await ref.read(bookingsRepositoryProvider).updateBookingStatus(booking.id, status);
       ref.invalidate(lawyerBookingsProvider);
       ref.invalidate(userBookingsProvider);
+      ref.invalidate(bookingDetailsProvider(booking.id));
+      ref.invalidate(bookingParticipantContactProvider(booking.id));
+
+      if (!context.mounted) return;
+
+      if (status == 'قيد التنفيذ') {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('بدأت الاستشارة بنجاح. سيتم فتح واتساب للتواصل مع العميل.')));
+        try {
+          final response = await SupabaseConfig.client.rpc(
+            'get_booking_participant_contact_info',
+            params: {'p_booking_id': booking.id},
+          );
+          if (!context.mounted) return;
+          if (response is List && response.isNotEmpty) {
+            final contact = Map<String, dynamic>.from(response.first as Map);
+            final whatsapp = contact['client_whatsapp']?.toString().trim();
+            if (whatsapp != null && whatsapp.isNotEmpty) {
+              await _openWhatsApp(context, whatsapp);
+            } else {
+              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('بدأت الاستشارة، لكن رقم واتساب العميل غير متوفر.')));
+            }
+          } else {
+            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('بدأت الاستشارة، لكن تعذر تحميل بيانات تواصل العميل.')));
+          }
+        } catch (_) {
+          if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('بدأت الاستشارة، لكن تعذر فتح بيانات تواصل العميل.')));
+        }
+        if (context.mounted) Navigator.pop(context);
+        return;
+      }
+
+      if (status == 'مكتمل') {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تم إنهاء الاستشارة بنجاح.')));
+          Navigator.pop(context);
+        }
+        return;
+      }
+
       if (context.mounted) Navigator.pop(context);
     } catch (e) {
       if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString().replaceFirst('Exception: ', '')), backgroundColor: AppColors.error));
