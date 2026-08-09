@@ -1,41 +1,27 @@
 create or replace function public.get_booking_client_name(p_booking_id uuid)
-returns text
+returns table(full_name text)
 language plpgsql
 security definer
 set search_path = public
 as $function$
 declare
-  v_profile_id uuid;
-  v_booking public.bookings%rowtype;
-  v_name text;
+  v_auth_uid uuid := auth.uid();
 begin
-  if auth.uid() is null then
-    raise exception 'يجب تسجيل الدخول أولاً';
-  end if;
-
-  select id into v_profile_id
-  from public.profiles
-  where auth_id = auth.uid()
+  if v_auth_uid is null then raise exception 'غير مصرح'; end if;
+  return query
+  select nullif(trim(p.full_name), '')::text
+  from public.bookings b
+  join public.profiles p on p.id = b.user_id
+  where b.id = p_booking_id
+    and (
+      p.auth_id = v_auth_uid
+      or exists (
+        select 1 from public.lawyer_profiles lp
+        where lp.id = b.lawyer_id and lp.auth_user_id = v_auth_uid
+      )
+      or public.is_admin()
+    )
   limit 1;
-
-  if v_profile_id is null then
-    raise exception 'ملف المستخدم غير مكتمل';
-  end if;
-
-  select * into v_booking
-  from public.bookings
-  where id = p_booking_id
-    and (user_id = v_profile_id or lawyer_id = v_profile_id or public.is_admin());
-
-  if not found then
-    raise exception 'غير مصرح بهذا الحجز';
-  end if;
-
-  select nullif(trim(full_name), '') into v_name
-  from public.profiles
-  where id = v_booking.user_id;
-
-  return v_name;
 end;
 $function$;
 
