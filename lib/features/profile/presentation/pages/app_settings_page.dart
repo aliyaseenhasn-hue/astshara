@@ -1,12 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_sizes.dart';
+import '../../../../core/providers/theme_mode_provider.dart';
 
-class AppSettingsPage extends StatelessWidget {
+class AppSettingsPage extends ConsumerWidget {
   const AppSettingsPage({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final themeMode = ref.watch(themeModeProvider);
+    final isDark = themeMode == ThemeMode.dark;
+
     return Scaffold(
       appBar: AppBar(title: const Text('إعدادات التطبيق')),
       body: ListView(
@@ -17,14 +22,25 @@ class AppSettingsPage extends StatelessWidget {
             Icons.language_rounded,
             'لغة التطبيق',
             'العربية',
-            () {},
+            null,
           ),
-          _buildSettingTile(
-            context,
-            Icons.dark_mode_outlined,
-            'المظهر (Theme)',
-            'الوضع الفاتح',
-            () {},
+          Card(
+            margin: const EdgeInsets.only(bottom: 12),
+            child: SwitchListTile(
+              secondary: Icon(
+                isDark ? Icons.dark_mode_rounded : Icons.light_mode_rounded,
+                color: isDark ? AppColors.gold : AppColors.primary,
+              ),
+              title: const Text('مظهر التطبيق'),
+              subtitle: Text(isDark ? 'الوضع الداكن' : 'الوضع الفاتح'),
+              value: isDark,
+              activeColor: AppColors.gold,
+              onChanged: (value) {
+                ref.read(themeModeProvider.notifier).setMode(
+                      value ? ThemeMode.dark : ThemeMode.light,
+                    );
+              },
+            ),
           ),
           _buildSettingTile(
             context,
@@ -46,8 +62,13 @@ class AppSettingsPage extends StatelessWidget {
     );
   }
 
-  Widget _buildSettingTile(BuildContext context, IconData icon, String title,
-      String value, VoidCallback? onTap) {
+  Widget _buildSettingTile(
+    BuildContext context,
+    IconData icon,
+    String title,
+    String value,
+    VoidCallback? onTap,
+  ) {
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       child: ListTile(
@@ -56,13 +77,10 @@ class AppSettingsPage extends StatelessWidget {
         trailing: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(value,
-                style: const TextStyle(
-                    color: AppColors.textSecondary, fontSize: 13)),
+            Text(value, style: const TextStyle(color: AppColors.textSecondary, fontSize: 13)),
             if (onTap != null) ...[
               const SizedBox(width: 8),
-              const Icon(Icons.arrow_forward_ios_rounded,
-                  size: 14, color: AppColors.outline),
+              const Icon(Icons.arrow_forward_ios_rounded, size: 14, color: AppColors.outline),
             ],
           ],
         ),
