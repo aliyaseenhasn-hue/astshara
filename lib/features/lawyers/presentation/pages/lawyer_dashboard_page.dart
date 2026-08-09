@@ -35,18 +35,8 @@ class LawyerDashboardPage extends ConsumerWidget {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text(
-                          'طلبات الاستشارة الواردة',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.textPrimary,
-                          ),
-                        ),
-                        TextButton(
-                          onPressed: () => context.push('/bookings'),
-                          child: const Text('عرض الكل'),
-                        ),
+                        const Text('طلبات الاستشارة الواردة', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
+                        TextButton(onPressed: () => context.push('/bookings'), child: const Text('عرض الكل')),
                       ],
                     ),
                     const SizedBox(height: AppSizes.p8),
@@ -57,18 +47,10 @@ class LawyerDashboardPage extends ConsumerWidget {
                         shrinkWrap: true,
                         physics: const NeverScrollableScrollPhysics(),
                         itemCount: bookings.length > 5 ? 5 : bookings.length,
-                        itemBuilder: (context, index) =>
-                            _BookingTile(booking: bookings[index]),
+                        itemBuilder: (context, index) => _BookingTile(booking: bookings[index]),
                       ),
                     const SizedBox(height: AppSizes.p32),
-                    const Text(
-                      'الإجراءات الإدارية',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.textPrimary,
-                      ),
-                    ),
+                    const Text('الإجراءات الإدارية', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
                     const SizedBox(height: 16),
                     _buildQuickActions(context),
                     const SizedBox(height: AppSizes.p48),
@@ -90,60 +72,27 @@ class LawyerDashboardPage extends ConsumerWidget {
       pinned: true,
       stretch: true,
       backgroundColor: AppColors.primary,
-      actions: [
-        IconButton(
-          icon: const Icon(Icons.settings_outlined, color: Colors.white),
-          onPressed: () => context.push('/profile'),
-        ),
-      ],
+      actions: [IconButton(icon: const Icon(Icons.settings_outlined, color: Colors.white), onPressed: () => context.push('/profile'))],
       flexibleSpace: FlexibleSpaceBar(
         background: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [AppColors.secondary, AppColors.secondaryDark],
-            ),
-          ),
+          decoration: const BoxDecoration(gradient: LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [AppColors.secondary, AppColors.secondaryDark])),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               const SizedBox(height: 40),
               Container(
                 padding: const EdgeInsets.all(3),
-                decoration: const BoxDecoration(
-                  color: Colors.white,
-                  shape: BoxShape.circle,
-                ),
+                decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
                 child: CircleAvatar(
                   radius: 45,
                   backgroundColor: AppColors.surfaceVariant,
-                  backgroundImage:
-                      user?.avatarUrl != null && user!.avatarUrl!.isNotEmpty
-                          ? NetworkImage(user.avatarUrl!)
-                          : null,
-                  child: user?.avatarUrl == null || user!.avatarUrl!.isEmpty
-                      ? const Icon(
-                          Icons.person,
-                          size: 50,
-                          color: AppColors.primary,
-                        )
-                      : null,
+                  backgroundImage: user?.avatarUrl != null && user!.avatarUrl!.isNotEmpty ? NetworkImage(user.avatarUrl!) : null,
+                  child: user?.avatarUrl == null || user!.avatarUrl!.isEmpty ? const Icon(Icons.person, size: 50, color: AppColors.primary) : null,
                 ),
               ),
               const SizedBox(height: 12),
-              Text(
-                user?.fullName ?? 'أستاذ قانون',
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const Text(
-                'لوحة التحكم المهنية',
-                style: TextStyle(color: Colors.white70, fontSize: 13),
-              ),
+              Text(user?.fullName ?? 'أستاذ قانون', style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
+              const Text('لوحة التحكم المهنية', style: TextStyle(color: Colors.white70, fontSize: 13)),
             ],
           ),
         ),
@@ -152,20 +101,8 @@ class LawyerDashboardPage extends ConsumerWidget {
   }
 
   Widget _buildStatsGrid(List<Booking> bookings) {
-    final earnings = bookings
-        .where((b) => b.status == 'مكتمل')
-        .fold<double>(0.0, (sum, b) => sum + b.price);
-    final active = bookings
-        .where(
-          (b) => [
-            'قيد انتظار الدفع',
-            'قيد معالجة الدفع',
-            'مؤكد',
-            'قيد التنفيذ',
-          ].contains(b.status),
-        )
-        .length;
-
+    final earnings = bookings.where((b) => b.status == 'مكتمل').fold<double>(0.0, (sum, b) => sum + b.price);
+    final active = bookings.where((b) => ['قيد انتظار الدفع', 'قيد معالجة الدفع', 'مؤكد', 'قيد التنفيذ'].contains(b.status)).length;
     return GridView.count(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
@@ -174,23 +111,9 @@ class LawyerDashboardPage extends ConsumerWidget {
       mainAxisSpacing: 12,
       childAspectRatio: .9,
       children: [
-        _StatCard(
-          title: 'الاستشارات',
-          value: bookings.where((b) => b.status == 'مكتمل').length.toString(),
-          icon: Icons.gavel_rounded,
-        ),
-        _StatCard(
-          title: 'نشطة',
-          value: active.toString(),
-          icon: Icons.timer_rounded,
-          color: Colors.orange,
-        ),
-        _StatCard(
-          title: 'الأرباح (د.ع)',
-          value: '${(earnings / 1000).toStringAsFixed(1)} ألف',
-          icon: Icons.payments_rounded,
-          color: AppColors.success,
-        ),
+        _StatCard(title: 'الاستشارات', value: bookings.where((b) => b.status == 'مكتمل').length.toString(), icon: Icons.gavel_rounded),
+        _StatCard(title: 'نشطة', value: active.toString(), icon: Icons.timer_rounded, color: Colors.orange),
+        _StatCard(title: 'الأرباح (د.ع)', value: '${(earnings / 1000).toStringAsFixed(1)} ألف', icon: Icons.payments_rounded, color: AppColors.success),
       ],
     );
   }
@@ -201,16 +124,9 @@ class LawyerDashboardPage extends ConsumerWidget {
         padding: const EdgeInsets.all(32),
         child: Column(
           children: [
-            Icon(
-              Icons.assignment_late_outlined,
-              size: 48,
-              color: AppColors.outline.withValues(alpha: .3),
-            ),
+            Icon(Icons.assignment_late_outlined, size: 48, color: AppColors.outline.withValues(alpha: .3)),
             const SizedBox(height: 16),
-            const Text(
-              'لا توجد طلبات استشارة حالية',
-              style: TextStyle(color: AppColors.textSecondary),
-            ),
+            const Text('لا توجد طلبات استشارة حالية', style: TextStyle(color: AppColors.textSecondary)),
           ],
         ),
       ),
@@ -220,112 +136,61 @@ class LawyerDashboardPage extends ConsumerWidget {
   Widget _buildQuickActions(BuildContext context) {
     return Column(
       children: [
-        _ActionTile(
-          title: 'إدارة المواعيد المتاحة',
-          subtitle: 'نشر المواعيد التي يمكن حجزها فعليًا',
-          icon: Icons.event_available_rounded,
-          onTap: () => context.push('/lawyer-availability'),
-        ),
-        _ActionTile(
-          title: 'جدول الحجوزات',
-          subtitle: 'عرض الاستشارات ومتابعة حالاتها',
-          icon: Icons.calendar_today_rounded,
-          onTap: () => context.push('/bookings'),
-        ),
-        _ActionTile(
-          title: 'المحفظة المالية',
-          subtitle: 'تتبع المستحقات وطلبات السحب',
-          icon: Icons.account_balance_wallet_rounded,
-          onTap: () => context.push('/payment-methods'),
-        ),
-        _ActionTile(
-          title: 'تغيير التخصص',
-          subtitle: 'إرسال طلب تعديل الاختصاصات',
-          icon: Icons.edit_note_rounded,
-          onTap: () => _showSpecializationRequest(context),
-        ),
-        _ActionTile(
-          title: 'تعديل باقات الاستشارة',
-          subtitle: 'إضافة أو تعديل خدماتك وأسعارك',
-          icon: Icons.design_services_rounded,
-          onTap: () => context.push('/lawyer-profile-edit'),
-        ),
+        _ActionTile(title: 'إدارة المواعيد المتاحة', subtitle: 'نشر المواعيد التي يمكن حجزها فعليًا', icon: Icons.event_available_rounded, onTap: () => context.push('/lawyer-availability')),
+        _ActionTile(title: 'جدول الحجوزات', subtitle: 'عرض الاستشارات ومتابعة حالاتها', icon: Icons.calendar_today_rounded, onTap: () => context.push('/bookings')),
+        _ActionTile(title: 'المحفظة المالية', subtitle: 'تتبع المستحقات وطلبات السحب', icon: Icons.account_balance_wallet_rounded, onTap: () => context.push('/payment-methods')),
+        _ActionTile(title: 'تغيير التخصص', subtitle: 'إرسال طلب تعديل الاختصاصات', icon: Icons.edit_note_rounded, onTap: () => _showSpecializationRequest(context)),
+        _ActionTile(title: 'تعديل باقات الاستشارة', subtitle: 'إضافة أو تعديل خدماتك وأسعارك', icon: Icons.design_services_rounded, onTap: () => context.push('/lawyer-profile-edit')),
       ],
     );
   }
 
   void _showSpecializationRequest(BuildContext context) {
-    final specs = [
-      'جنائي',
-      'أحوال شخصية',
-      'مدني',
-      'تجاري',
-      'عمل',
-      'عقارات',
-      'إداري',
-      'عسكري',
-    ];
+    final specs = ['جنائي', 'أحوال شخصية', 'مدني', 'تجاري', 'عمل', 'عقارات', 'إداري', 'عسكري'];
     final selected = <String>[];
-
     showDialog<void>(
       context: context,
       builder: (dialogContext) => StatefulBuilder(
-        builder: (context, setState) {
-          return AlertDialog(
-            title: const Text('طلب تغيير التخصص'),
-            content: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Text('اختر التخصصات الجديدة المطلوبة:'),
-                  const SizedBox(height: 16),
-                  Wrap(
-                    spacing: 8,
-                    children: specs.map((spec) {
-                      final selectedNow = selected.contains(spec);
-                      return FilterChip(
-                        label: Text(spec),
-                        selected: selectedNow,
-                        onSelected: (value) {
-                          setState(() {
-                            if (value) {
-                              selected.add(spec);
-                            } else {
-                              selected.remove(spec);
-                            }
-                          });
-                        },
-                      );
-                    }).toList(),
-                  ),
-                ],
-              ),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(dialogContext),
-                child: const Text('إلغاء'),
-              ),
-              ElevatedButton(
-                onPressed: selected.isEmpty
-                    ? null
-                    : () {
-                        Navigator.pop(dialogContext);
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('تم إرسال طلب التغيير للإدارة'),
-                          ),
-                        );
-                      },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary,
-                  foregroundColor: Colors.white,
+        builder: (context, setState) => AlertDialog(
+          title: const Text('طلب تغيير التخصص'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text('اختر التخصصات الجديدة المطلوبة:'),
+                const SizedBox(height: 16),
+                Wrap(
+                  spacing: 8,
+                  children: specs.map((spec) {
+                    final selectedNow = selected.contains(spec);
+                    return FilterChip(
+                      label: Text(spec),
+                      selected: selectedNow,
+                      onSelected: (value) => setState(() {
+                        if (value) {
+                          selected.add(spec);
+                        } else {
+                          selected.remove(spec);
+                        }
+                      }),
+                    );
+                  }).toList(),
                 ),
-                child: const Text('إرسال الطلب'),
-              ),
-            ],
-          );
-        },
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('إلغاء')),
+            ElevatedButton(
+              onPressed: selected.isEmpty ? null : () {
+                Navigator.pop(dialogContext);
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تم إرسال طلب التغيير للإدارة')));
+              },
+              style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, foregroundColor: Colors.white),
+              child: const Text('إرسال الطلب'),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -336,75 +201,44 @@ class _StatCard extends StatelessWidget {
   final String value;
   final IconData icon;
   final Color? color;
-
-  const _StatCard({
-    required this.title,
-    required this.value,
-    required this.icon,
-    this.color,
-  });
-
+  const _StatCard({required this.title, required this.value, required this.icon, this.color});
   @override
-  Widget build(BuildContext context) {
-    return Card(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(icon, color: color ?? AppColors.primary, size: 28),
-          const SizedBox(height: 12),
-          Text(
-            value,
-            style: const TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: AppColors.textPrimary,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            title,
-            style: const TextStyle(
-              fontSize: 11,
-              color: AppColors.textSecondary,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+  Widget build(BuildContext context) => Card(
+    child: Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Icon(icon, color: color ?? AppColors.primary, size: 28),
+        const SizedBox(height: 12),
+        Text(value, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
+        const SizedBox(height: 4),
+        Text(title, style: const TextStyle(fontSize: 11, color: AppColors.textSecondary)),
+      ],
+    ),
+  );
 }
 
 class _BookingTile extends StatelessWidget {
   final Booking booking;
-
   const _BookingTile({required this.booking});
-
   @override
   Widget build(BuildContext context) {
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       child: Consumer(
         builder: (context, ref, child) {
-          final name = ref.watch(userNameProvider(booking.userId));
+          final name = ref.watch(bookingClientNameProvider(booking.id));
           return ListTile(
-            leading: const CircleAvatar(
-              backgroundColor: AppColors.surfaceVariant,
-              child: Icon(Icons.person_outline, color: AppColors.primary),
-            ),
+            leading: const CircleAvatar(backgroundColor: AppColors.surfaceVariant, child: Icon(Icons.person_outline, color: AppColors.primary)),
             title: Text(
               name.maybeWhen(
-                data: (n) => n ?? 'عميل جديد',
-                orElse: () => 'تحميل...',
+                data: (n) => n != null && n.trim().isNotEmpty ? n : 'اسم العميل غير متوفر',
+                loading: () => 'جاري تحميل اسم العميل...',
+                error: (_, __) => 'اسم العميل غير متوفر',
+                orElse: () => 'اسم العميل غير متوفر',
               ),
-              style: const TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 14,
-              ),
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
             ),
-            subtitle: Text(
-              intl.DateFormat('yyyy/MM/dd').format(booking.scheduledAt),
-              style: const TextStyle(fontSize: 12),
-            ),
+            subtitle: Text(intl.DateFormat('yyyy/MM/dd').format(booking.scheduledAt), style: const TextStyle(fontSize: 12)),
             trailing: _StatusChip(status: booking.status),
             onTap: () => context.push('/booking-details', extra: booking),
           );
@@ -416,53 +250,24 @@ class _BookingTile extends StatelessWidget {
 
 class _StatusChip extends StatelessWidget {
   final String status;
-
   const _StatusChip({required this.status});
-
   @override
   Widget build(BuildContext context) {
     Color color = Colors.grey;
-    final text = status;
-
     switch (status) {
-      case 'قيد انتظار الدفع':
-        color = Colors.orange;
-        break;
-      case 'قيد معالجة الدفع':
-        color = Colors.blue;
-        break;
-      case 'مؤكد':
-        color = AppColors.success;
-        break;
-      case 'قيد التنفيذ':
-        color = AppColors.primary;
-        break;
-      case 'مكتمل':
-        color = AppColors.success;
-        break;
+      case 'قيد انتظار الدفع': color = Colors.orange; break;
+      case 'قيد معالجة الدفع': color = Colors.blue; break;
+      case 'مؤكد': color = AppColors.success; break;
+      case 'قيد التنفيذ': color = AppColors.primary; break;
+      case 'مكتمل': color = AppColors.success; break;
       case 'ملغي':
-      case 'مرفوض':
-        color = AppColors.error;
-        break;
-      case 'مسترد':
-        color = Colors.grey;
-        break;
+      case 'مرفوض': color = AppColors.error; break;
+      case 'مسترد': color = Colors.grey; break;
     }
-
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: .1),
-        borderRadius: BorderRadius.circular(6),
-      ),
-      child: Text(
-        text,
-        style: TextStyle(
-          color: color,
-          fontSize: 10,
-          fontWeight: FontWeight.bold,
-        ),
-      ),
+      decoration: BoxDecoration(color: color.withValues(alpha: .1), borderRadius: BorderRadius.circular(6)),
+      child: Text(status, style: TextStyle(color: color, fontSize: 10, fontWeight: FontWeight.bold)),
     );
   }
 }
@@ -472,31 +277,16 @@ class _ActionTile extends StatelessWidget {
   final String subtitle;
   final IconData icon;
   final VoidCallback onTap;
-
-  const _ActionTile({
-    required this.title,
-    required this.subtitle,
-    required this.icon,
-    required this.onTap,
-  });
-
+  const _ActionTile({required this.title, required this.subtitle, required this.icon, required this.onTap});
   @override
-  Widget build(BuildContext context) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      child: ListTile(
-        leading: Icon(icon, color: AppColors.primary),
-        title: Text(
-          title,
-          style: const TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 15,
-          ),
-        ),
-        subtitle: Text(subtitle, style: const TextStyle(fontSize: 12)),
-        trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 14),
-        onTap: onTap,
-      ),
-    );
-  }
+  Widget build(BuildContext context) => Card(
+    margin: const EdgeInsets.only(bottom: 12),
+    child: ListTile(
+      leading: Icon(icon, color: AppColors.primary),
+      title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+      subtitle: Text(subtitle, style: const TextStyle(fontSize: 12)),
+      trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 14),
+      onTap: onTap,
+    ),
+  );
 }
