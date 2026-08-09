@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:astshara/core/config/supabase_config.dart';
 import '../../../authentication/presentation/providers/auth_provider.dart';
 import '../../../../core/constants/app_colors.dart';
+import '../../../../core/utils/app_time_format.dart';
 
 class LawyerAvailabilityPage extends ConsumerStatefulWidget {
   const LawyerAvailabilityPage({super.key});
@@ -73,7 +74,7 @@ class _LawyerAvailabilityPageState extends ConsumerState<LawyerAvailabilityPage>
                 child: ListTile(
                   leading: Icon(isPast ? Icons.history : (slot['is_available'] == true ? Icons.event_available : Icons.event_busy), color: isPast ? AppColors.outline : (slot['is_available'] == true ? AppColors.success : AppColors.outline)),
                   title: Text(DateFormat('yyyy-MM-dd').format(start)),
-                  subtitle: Text('${DateFormat('HH:mm').format(start)}${isPast ? ' • موعد سابق' : (slot['is_available'] == true ? ' • متاح' : ' • محجوز')}'),
+                  subtitle: Text('${AppTimeFormat.time12(start)}${isPast ? ' • موعد سابق' : (slot['is_available'] == true ? ' • متاح' : ' • محجوز')}'),
                   trailing: canDelete ? IconButton(tooltip: isPast ? 'حذف الموعد السابق' : 'حذف الموعد', icon: const Icon(Icons.delete_outline), onPressed: () => _delete(slot['id'] as String)) : const Icon(Icons.lock_outline),
                 ),
               );
