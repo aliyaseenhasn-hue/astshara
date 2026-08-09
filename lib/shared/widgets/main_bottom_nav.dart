@@ -17,19 +17,20 @@ class MainBottomNav extends StatelessWidget {
         color: AppColors.secondary,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.1),
+            color: Colors.black.withValues(alpha: 0.14),
             blurRadius: 10,
             offset: const Offset(0, -2),
           ),
         ],
       ),
       child: SafeArea(
+        top: false,
         child: BottomNavigationBar(
           type: BottomNavigationBarType.fixed,
           backgroundColor: AppColors.secondary,
           selectedItemColor: AppColors.goldLight,
           unselectedItemColor: AppColors.primaryLight.withValues(alpha: 0.72),
-          currentIndex: currentIndex,
+          currentIndex: currentIndex.clamp(0, 3),
           elevation: 0,
           selectedLabelStyle: const TextStyle(
             fontSize: 11,
@@ -45,17 +46,17 @@ class MainBottomNav extends StatelessWidget {
             BottomNavigationBarItem(
               icon: Icon(Icons.calendar_month_outlined),
               activeIcon: Icon(Icons.calendar_month_rounded),
-              label: 'حجوزاتي',
+              label: 'الحجوزات',
             ),
             BottomNavigationBarItem(
-              icon: Icon(Icons.chat_bubble_outline),
+              icon: Icon(Icons.chat_bubble_outline_rounded),
               activeIcon: Icon(Icons.chat_bubble_rounded),
               label: 'المحادثات',
             ),
             BottomNavigationBarItem(
-              icon: Icon(Icons.person_outline),
-              activeIcon: Icon(Icons.person_rounded),
-              label: 'حسابي',
+              icon: Icon(Icons.settings_outlined),
+              activeIcon: Icon(Icons.settings_rounded),
+              label: 'الإعدادات',
             ),
           ],
           onTap: (index) {
@@ -68,10 +69,10 @@ class MainBottomNav extends StatelessWidget {
                 context.go('/bookings');
                 break;
               case 2:
-                // سيتم توجيهها لصفحة قائمة المحادثات عند توفرها
+                context.go('/chats');
                 break;
               case 3:
-                context.go('/profile');
+                context.go('/app-settings');
                 break;
             }
           },
