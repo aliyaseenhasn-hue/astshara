@@ -30,10 +30,7 @@ class LawyerDashboardPage extends ConsumerWidget {
                   const SizedBox(height: AppSizes.p32),
                   _sectionHeader(context, 'طلبات الاستشارة الواردة', 'عرض الكل', () => context.push('/bookings')),
                   const SizedBox(height: AppSizes.p12),
-                  if (bookings.isEmpty)
-                    _buildEmptyState()
-                  else
-                    ListView.builder(shrinkWrap: true, physics: const NeverScrollableScrollPhysics(), itemCount: bookings.length > 5 ? 5 : bookings.length, itemBuilder: (context, index) => _BookingCard(booking: bookings[index])),
+                  if (bookings.isEmpty) _buildEmptyState() else ...bookings.take(5).map((booking) => _BookingCard(booking: booking)),
                   const SizedBox(height: AppSizes.p32),
                   const Text('الإجراءات الإدارية', style: TextStyle(fontSize: 19, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
                   const SizedBox(height: 12),
