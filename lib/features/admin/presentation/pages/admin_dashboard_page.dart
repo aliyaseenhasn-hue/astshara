@@ -59,7 +59,7 @@ class AdminDashboardPage extends ConsumerWidget {
 
   Widget _buildStatCard(String title, String value, IconData icon, Color color) => Container(
     padding: const EdgeInsets.all(16), decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), boxShadow: [BoxShadow(color: color.withValues(alpha: .1), blurRadius: 10, offset: const Offset(0, 4))]),
-    child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [Icon(icon, color: color, size: 28), const SizedBox(height: 8), Text(value, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppColors.primary)), Text(title, style: const TextStyle(fontSize: 12, color: AppColors.outline), textAlign: TextAlign.center)],
+    child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [Icon(icon, color: color, size: 28), const SizedBox(height: 8), Text(value, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppColors.primary)), Text(title, style: const TextStyle(fontSize: 12, color: AppColors.outline), textAlign: TextAlign.center)]),
   );
 
   Widget _buildRevenueCard(double amount) => Container(
