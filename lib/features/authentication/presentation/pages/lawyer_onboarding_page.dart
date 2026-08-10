@@ -8,7 +8,6 @@ import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_sizes.dart';
 import '../../../../shared/widgets/loading_widget.dart';
 import '../../../lawyers/presentation/providers/lawyer_setup_provider.dart';
-import '../providers/auth_provider.dart';
 
 class LawyerOnboardingPage extends ConsumerStatefulWidget {
   final String fullName;
@@ -18,6 +17,9 @@ class LawyerOnboardingPage extends ConsumerStatefulWidget {
 
   @override
   ConsumerState<LawyerOnboardingPage> createState() => _LawyerOnboardingPageState();
+
+  @override
+  String toString({DiagnosticLevel minLevel = DiagnosticLevel.info}) => 'LawyerOnboardingPage(fullName: $fullName, email: $email)';
 }
 
 class _LawyerOnboardingPageState extends ConsumerState<LawyerOnboardingPage> {
