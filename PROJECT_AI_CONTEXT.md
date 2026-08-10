@@ -142,6 +142,8 @@ Storage buckets الفعلية:
 
 `AuthRepository` أصبح يعرّف `refreshUser()` حتى يمكن تحديث حالة المستخدم بعد تعديل الملف.
 
+رفع الصورة يستخدم `FileOptions` من `storage_client`، ولذلك أصبحت `storage_client` dependency مباشرة في `pubspec.yaml` وليست مجرد dependency عابرة.
+
 ## 13) صفحة طلب الاستشارة
 `lib/features/bookings/presentation/pages/create_booking_page.dart`:
 - تعرض رقم WhatsApp في خطوة مراجعة الحجز.
@@ -187,13 +189,15 @@ RPCs الحساسة تشمل:
 - الشريط السفلي الواحد وعدم تكرار عناصر التنقل.
 
 ## 17) CI والنشر
-Workflow: `.github/workflows/deploy.yml`.
-- يعمل على push إلى `main` وworkflow_dispatch.
-- ينشئ `.env` من GitHub Secrets.
-- يبني Flutter Web release باستخدام dart2js.
-- ينشر GitHub Pages.
+Workflow الفعلي الموحد: `.github/workflows/deploy.yml`.
+- يعمل على push إلى `main` وPull Request إلى `main` وworkflow_dispatch.
+- خطوة `analyze` تنفذ `flutter analyze` قبل البناء.
+- خطوة `build` تعتمد على نجاح التحليل.
+- ينشئ `.env` من GitHub Secrets ويوقف البناء برسالة واضحة إذا كانت الأسرار ناقصة.
+- يبني Flutter Web release باستخدام dart2js مع `--no-wasm-dry-run`.
+- يرفع `build/web` كـPages artifact ثم ينشر GitHub Pages.
+- تم حذف `.github/workflows/flutter-ci.yml` لأنه كان workflow مكرراً يؤدي إلى تشغيل تحليل/بناء ثانٍ غير ضروري.
 - لا تعتبر CI ناجحاً إلا بعد ظهور Run فعلي ناجح.
-- يجب أن يكون `flutter analyze` خطوة صريحة قبل build.
 
 ## 18) سجل التعديلات — أغسطس 2026
 ### بدء الاستشارة والدفع
@@ -205,12 +209,18 @@ Workflow: `.github/workflows/deploy.yml`.
 - `supabase/migrations/20260810030000_require_whatsapp_and_sync_profile_contact.sql`: إضافة `profiles.whatsapp_number` وفرض WhatsApp عند إنشاء الحجز، مع اشتراط WhatsApp للمحامي عن بعد فقط.
 - `supabase/migrations/20260810032000_remove_legacy_create_booking_overload.sql`: حذف overload القديم لـ `create_booking`.
 - `profile_page.dart`: تعديل الاسم/الهاتف/WhatsApp/المحافظة والصورة.
+- إصلاح استيراد `FileOptions` وإعلان `storage_client` كـ direct dependency بعد فشل CI بسبب `FileOptions` غير معروف.
 
 ### الحجز والتفاصيل
 - `bookings_provider.dart`: جلب اسم المحامي والعميل وWhatsApp الحالي.
 - `create_booking_page.dart`: عرض WhatsApp في مراجعة الطلب ومنع الإرسال بدونه.
 - `booking_details_page.dart`: إصلاح ظهور اسم المحامي للعميل وفصل بدء المكتب عن WhatsApp.
 - `auth_repository.dart`: إضافة `refreshUser()` للواجهة.
+
+### CI
+- تم توحيد Workflow النشر والتحليل في `.github/workflows/deploy.yml`.
+- تم حذف `.github/workflows/flutter-ci.yml` المكرر.
+- تم الإبقاء على تحليل Flutter كمرحلة مستقلة قبل build.
 
 ## 19) اختبارات القبول المطلوبة
 - `flutter analyze` بدون أخطاء.
@@ -230,5 +240,11 @@ Workflow: `.github/workflows/deploy.yml`.
 - تعديل الاسم/الهاتف/WhatsApp/المحافظة/الصورة يعمل ويستمر بعد إعادة تسجيل الدخول.
 - تسجيل الخروج وحذف الحساب والإشعارات والثيمات تبقى عاملة.
 
-## 20) مبدأ المصدر الواحد
+## 20) حالة آخر تحقق
+- آخر commit قبل توحيد الـworkflow: `0df1bbcc4d6a89bced1359ddcb296b187fa19480` لإعلان `storage_client` كاعتماد مباشر.
+- آخر تعديل تالٍ: حذف workflow المكرر `.github/workflows/flutter-ci.yml`، والـcommit الناتج `9c66d8a7911caa30856d29a425de13f509eea267`.
+- تعذر تشغيل `flutter analyze` محلياً من بيئة الوكيل لأن شبكة التنفيذ لا تستطيع الوصول إلى GitHub؛ لذلك مصدر التحقق النهائي هو GitHub Actions نفسه.
+- آخر خطأ CI معروف من السجل المقدم كان `FileOptions` غير معروف في `profile_page.dart`. تم إصلاح الاستيراد، ثم تم جعل `storage_client` dependency مباشرة لتثبيت العقد البرمجية المستخدمة.
+
+## 21) مبدأ المصدر الواحد
 إذا اختلف هذا الملف عن الكود أو Supabase، افحص الواقع أولاً، أصلح النظام الحقيقي، ثم حدّث هذا الملف. لا تترك التوثيق قديماً.
