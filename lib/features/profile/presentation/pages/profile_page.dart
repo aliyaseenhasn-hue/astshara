@@ -168,8 +168,7 @@ class ProfilePage extends ConsumerWidget {
       final row = await SupabaseConfig.client.from('profiles').select('full_name,phone,whatsapp_number,city').eq('auth_id', user.id).maybeSingle();
       if (!context.mounted) return;
       final nameController = TextEditingController(text: row?['full_name']?.toString() ?? user.fullName ?? '');
-      final phoneController = TextEditingController(text: row?['phone']?.toString() ?? user.phone ?? '');
-      final whatsappController = TextEditingController(text: row?['whatsapp_number']?.toString() ?? '');
+      final whatsappController = TextEditingController(text: row?['whatsapp_number']?.toString() ?? row?['phone']?.toString() ?? user.phone ?? '');
       final governorateController = TextEditingController(text: row?['city']?.toString() ?? '');
       var saving = false;
       await showDialog<void>(
@@ -182,8 +181,6 @@ class ProfilePage extends ConsumerWidget {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   TextField(controller: nameController, decoration: const InputDecoration(labelText: 'الاسم الكامل', prefixIcon: Icon(Icons.person_outline))),
-                  const SizedBox(height: 10),
-                  TextField(controller: phoneController, keyboardType: TextInputType.phone, decoration: const InputDecoration(labelText: 'رقم الهاتف', prefixIcon: Icon(Icons.phone_outlined))),
                   const SizedBox(height: 10),
                   TextField(controller: whatsappController, keyboardType: TextInputType.phone, decoration: const InputDecoration(labelText: 'رقم واتساب للتواصل *', hintText: '+9647xxxxxxxxx', prefixIcon: Icon(Icons.chat_outlined))),
                   const SizedBox(height: 10),
@@ -207,7 +204,7 @@ class ProfilePage extends ConsumerWidget {
                   try {
                     await SupabaseConfig.client.rpc('update_own_profile_contact', params: {
                       'p_full_name': name,
-                      'p_phone': phoneController.text.trim().isEmpty ? null : phoneController.text.trim(),
+                      'p_phone': whatsapp,
                       'p_whatsapp_number': whatsapp,
                       'p_city': governorateController.text.trim().isEmpty ? null : governorateController.text.trim(),
                     });
@@ -226,7 +223,6 @@ class ProfilePage extends ConsumerWidget {
         ),
       );
       nameController.dispose();
-      phoneController.dispose();
       whatsappController.dispose();
       governorateController.dispose();
     } catch (e) {
