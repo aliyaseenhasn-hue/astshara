@@ -33,7 +33,6 @@ import '../features/profile/presentation/pages/profile_page.dart';
 import '../features/profile/presentation/pages/notification_settings_page.dart';
 import '../features/profile/presentation/pages/notifications_page.dart';
 import '../features/profile/presentation/pages/payment_methods_page.dart';
-import '../features/profile/presentation/pages/app_settings_page.dart';
 import '../features/profile/presentation/pages/help_center_page.dart';
 import '../features/bookings/domain/entities/booking.dart';
 import '../features/lawyers/domain/entities/lawyer_profile.dart';
@@ -60,11 +59,7 @@ Future<bool> _lawyerHasPendingManualPayment() async {
   try {
     final authUser = SupabaseConfig.client.auth.currentUser;
     if (authUser == null) return false;
-    final profile = await SupabaseConfig.client
-        .from('profiles')
-        .select('id')
-        .eq('auth_id', authUser.id)
-        .maybeSingle();
+    final profile = await SupabaseConfig.client.from('profiles').select('id').eq('auth_id', authUser.id).maybeSingle();
     final profileId = profile?['id'] as String?;
     if (profileId == null) return false;
     final pending = await SupabaseConfig.client
@@ -87,9 +82,7 @@ GoRouter router(RouterRef ref) {
   final authState = ref.watch(authStateChangesProvider);
   return GoRouter(
     initialLocation: '/',
-    refreshListenable: GoRouterRefreshStream(
-      ref.watch(authRepositoryProvider).authStateChanges(),
-    ),
+    refreshListenable: GoRouterRefreshStream(ref.watch(authRepositoryProvider).authStateChanges()),
     redirect: (context, state) async {
       final user = authState.valueOrNull;
       final location = state.matchedLocation;
@@ -112,27 +105,17 @@ GoRouter router(RouterRef ref) {
         if (complete || onboarding || login || signup) return '/admin';
         return admin ? null : '/admin';
       }
-      if (!user.isOnboardingComplete) {
-        return (complete || onboarding) ? null : '/complete-profile';
-      }
+      if (!user.isOnboardingComplete) return (complete || onboarding) ? null : '/complete-profile';
       if (admin && user.role != 'admin') return '/';
-      if (clientOnlyBooking && !isClient) {
-        return user.role == 'lawyer' ? '/lawyer-home' : '/';
-      }
+      if (clientOnlyBooking && !isClient) return user.role == 'lawyer' ? '/lawyer-home' : '/';
       if (user.role == 'lawyer') {
-        if (!user.isVerified) {
-          return location == '/lawyer-setup' || pending ? null : '/lawyer-pending';
-        }
+        if (!user.isVerified) return location == '/lawyer-setup' || pending ? null : '/lawyer-pending';
         if (!manualPaymentGate && !manualPayment) {
           if (await _lawyerHasPendingManualPayment()) return '/manual-payment-required';
         }
       }
-      if (login || signup || otp || (complete && user.isOnboardingComplete)) {
-        return user.role == 'lawyer' && user.isVerified ? '/lawyer-home' : '/';
-      }
-      if (location == '/' && user.role == 'lawyer' && user.isVerified) {
-        return '/lawyer-home';
-      }
+      if (login || signup || otp || (complete && user.isOnboardingComplete)) return user.role == 'lawyer' && user.isVerified ? '/lawyer-home' : '/';
+      if (location == '/' && user.role == 'lawyer' && user.isVerified) return '/lawyer-home';
       return null;
     },
     routes: [
@@ -140,19 +123,13 @@ GoRouter router(RouterRef ref) {
       GoRoute(path: '/admin-login', builder: (c, s) => const LoginPage(isAdminLogin: true)),
       GoRoute(path: '/signup', builder: (c, s) => const SignupPage()),
       GoRoute(path: '/complete-profile', builder: (c, s) => const CompleteProfilePage()),
-      GoRoute(
-        path: '/lawyer-onboarding',
-        builder: (c, s) {
-          final e = s.extra as Map<String, dynamic>? ?? {};
-          return LawyerOnboardingPage(fullName: e['fullName'] ?? '', email: e['email'] ?? '');
-        },
-      ),
+      GoRoute(path: '/lawyer-onboarding', builder: (c, s) {
+        final e = s.extra as Map<String, dynamic>? ?? {};
+        return LawyerOnboardingPage(fullName: e['fullName'] ?? '', email: e['email'] ?? '');
+      }),
       GoRoute(path: '/otp', builder: (c, s) => OtpPage(phone: s.extra as String? ?? '')),
       ShellRoute(
-        builder: (context, state, child) => AppShell(
-          location: state.matchedLocation,
-          child: child,
-        ),
+        builder: (context, state, child) => AppShell(location: state.matchedLocation, child: child),
         routes: [
           GoRoute(path: '/', builder: (c, s) => const LawyersListPage()),
           GoRoute(path: '/lawyer-home', builder: (c, s) => const LawyerDashboardPage()),
@@ -161,60 +138,43 @@ GoRouter router(RouterRef ref) {
           GoRoute(path: '/lawyer-specialization-change', builder: (c, s) => const SpecializationChangePage()),
           GoRoute(path: '/lawyer-setup', builder: (c, s) => const LawyerSetupPage()),
           GoRoute(path: '/lawyer-details/:id', builder: (c, s) => LawyerDetailsPage(profileId: s.pathParameters['id']!)),
-          GoRoute(
-            path: '/create-booking',
-            builder: (c, s) {
-              final e = s.extra as Map<String, dynamic>?;
-              final lawyer = e?['lawyer'] as LawyerProfile?;
-              if (lawyer == null) {
-                return const Scaffold(body: Center(child: Text('تعذر فتح صفحة الحجز. يرجى العودة إلى ملف المحامي والمحاولة مرة أخرى.')));
-              }
-              return CreateBookingPage(lawyer: lawyer, service: e?['service'], isCustom: e?['isCustom'] == true);
-            },
-          ),
+          GoRoute(path: '/create-booking', builder: (c, s) {
+            final e = s.extra as Map<String, dynamic>?;
+            final lawyer = e?['lawyer'] as LawyerProfile?;
+            if (lawyer == null) return const Scaffold(body: Center(child: Text('تعذر فتح صفحة الحجز. يرجى العودة إلى ملف المحامي والمحاولة مرة أخرى.')));
+            return CreateBookingPage(lawyer: lawyer, service: e?['service'], isCustom: e?['isCustom'] == true);
+          }),
           GoRoute(path: '/bookings', builder: (c, s) => const BookingsListPage()),
           GoRoute(path: '/chats', builder: (c, s) => const ConversationsPage()),
-          GoRoute(
-            path: '/booking-details',
-            builder: (c, s) {
-              final b = s.extra as Booking?;
-              return b == null ? const BookingsListPage() : BookingDetailsPage(booking: b);
-            },
-          ),
+          GoRoute(path: '/booking-details', builder: (c, s) {
+            final b = s.extra as Booking?;
+            return b == null ? const BookingsListPage() : BookingDetailsPage(booking: b);
+          }),
           GoRoute(path: '/manual-payment-required', builder: (c, s) => const ManualPaymentRequiredPage()),
-          GoRoute(
-            path: '/manual-payment',
-            builder: (c, s) {
-              final b = s.extra as Booking?;
-              return b == null ? const ManualPaymentRequiredPage() : ManualPaymentPage(booking: b);
-            },
-          ),
+          GoRoute(path: '/manual-payment', builder: (c, s) {
+            final b = s.extra as Booking?;
+            return b == null ? const ManualPaymentRequiredPage() : ManualPaymentPage(booking: b);
+          }),
           GoRoute(path: '/chat/:id', builder: (c, s) => ChatPage(conversationId: s.pathParameters['id']!)),
-          GoRoute(
-            path: '/upload-payment',
-            builder: (c, s) {
-              final b = s.extra as Booking?;
-              return b == null ? const BookingsListPage() : PaymentUploadPage(booking: b);
-            },
-          ),
+          GoRoute(path: '/upload-payment', builder: (c, s) {
+            final b = s.extra as Booking?;
+            return b == null ? const BookingsListPage() : PaymentUploadPage(booking: b);
+          }),
           GoRoute(path: '/payment-result', builder: (c, s) => PaymentResultPage(status: s.uri.queryParameters['status'], bookingId: s.uri.queryParameters['booking_id'])),
           GoRoute(path: '/profile', builder: (c, s) => const ProfilePage()),
           GoRoute(path: '/notifications', builder: (c, s) => const NotificationsPage()),
           GoRoute(path: '/notification-settings', builder: (c, s) => const NotificationSettingsPage()),
           GoRoute(path: '/payment-methods', builder: (c, s) => const PaymentMethodsPage()),
-          GoRoute(path: '/app-settings', builder: (c, s) => const AppSettingsPage()),
+          // The settings gear intentionally opens the existing profile/settings page.
+          GoRoute(path: '/app-settings', builder: (c, s) => const ProfilePage()),
           GoRoute(path: '/help-center', builder: (c, s) => const HelpCenterPage()),
         ],
       ),
-      GoRoute(
-        path: '/admin',
-        builder: (c, s) => const AdminDashboardPage(),
-        routes: [
-          GoRoute(path: 'lawyer-verifications', builder: (c, s) => const LawyerVerificationPage()),
-          GoRoute(path: 'payments', builder: (c, s) => const PaymentManagementPage()),
-          GoRoute(path: 'specialization-change-requests', builder: (c, s) => const SpecializationChangeRequestsPage()),
-        ],
-      ),
+      GoRoute(path: '/admin', builder: (c, s) => const AdminDashboardPage(), routes: [
+        GoRoute(path: 'lawyer-verifications', builder: (c, s) => const LawyerVerificationPage()),
+        GoRoute(path: 'payments', builder: (c, s) => const PaymentManagementPage()),
+        GoRoute(path: 'specialization-change-requests', builder: (c, s) => const SpecializationChangeRequestsPage()),
+      ]),
       GoRoute(path: '/lawyer-pending', builder: (c, s) => const LawyerPendingPage()),
     ],
   );
