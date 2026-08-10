@@ -17,6 +17,7 @@ dependencies:
 
   # Backend (Supabase)
   supabase_flutter: ^2.6.0
+  storage_client: ^2.6.0
   
   # Navigation
   go_router: ^14.2.0
