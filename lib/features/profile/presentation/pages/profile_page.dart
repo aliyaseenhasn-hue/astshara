@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:storage_client/storage_client.dart';
 import '../../../../core/config/supabase_config.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_sizes.dart';
@@ -41,19 +42,12 @@ class ProfilePage extends ConsumerWidget {
                             children: [
                               Container(
                                 padding: const EdgeInsets.all(3),
-                                decoration: const BoxDecoration(
-                                  color: Colors.white,
-                                  shape: BoxShape.circle,
-                                ),
+                                decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
                                 child: CircleAvatar(
                                   radius: 45,
                                   backgroundColor: AppColors.surfaceVariant,
-                                  backgroundImage: user.avatarUrl != null && user.avatarUrl!.isNotEmpty
-                                      ? NetworkImage(user.avatarUrl!)
-                                      : null,
-                                  child: user.avatarUrl == null || user.avatarUrl!.isEmpty
-                                      ? const Icon(Icons.person, size: 50, color: AppColors.primary)
-                                      : null,
+                                  backgroundImage: user.avatarUrl != null && user.avatarUrl!.isNotEmpty ? NetworkImage(user.avatarUrl!) : null,
+                                  child: user.avatarUrl == null || user.avatarUrl!.isEmpty ? const Icon(Icons.person, size: 50, color: AppColors.primary) : null,
                                 ),
                               ),
                               Positioned(
@@ -62,10 +56,7 @@ class ProfilePage extends ConsumerWidget {
                                 child: CircleAvatar(
                                   radius: 15,
                                   backgroundColor: AppColors.gold,
-                                  child: IconButton(
-                                    icon: const Icon(Icons.camera_alt, size: 14, color: Colors.white),
-                                    onPressed: () => _updateAvatar(context, ref),
-                                  ),
+                                  child: IconButton(icon: const Icon(Icons.camera_alt, size: 14, color: Colors.white), onPressed: () => _updateAvatar(context, ref)),
                                 ),
                               ),
                             ],
@@ -76,10 +67,7 @@ class ProfilePage extends ConsumerWidget {
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Text(
-                                  user.fullName ?? 'مستخدم',
-                                  style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
-                                ),
+                                Text(user.fullName ?? 'مستخدم', style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
                                 const SizedBox(width: 8),
                                 const Icon(Icons.edit, size: 14, color: AppColors.gold),
                               ],
@@ -148,23 +136,13 @@ class ProfilePage extends ConsumerWidget {
         _ => 'image/jpeg',
       };
       final path = '${user.id}/profile_${DateTime.now().millisecondsSinceEpoch}.$ext';
-      await SupabaseConfig.client.storage.from('avatars').uploadBinary(
-        path,
-        bytes,
-        fileOptions: FileOptions(upsert: true, contentType: contentType),
-      );
+      await SupabaseConfig.client.storage.from('avatars').uploadBinary(path, bytes, fileOptions: FileOptions(upsert: true, contentType: contentType));
       final url = SupabaseConfig.client.storage.from('avatars').getPublicUrl(path);
       await SupabaseConfig.client.from('profiles').update({'avatar_url': url}).eq('auth_id', user.id);
       await ref.read(authRepositoryProvider).refreshUser();
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تم تحديث الصورة الشخصية')));
-      }
+      if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تم تحديث الصورة الشخصية')));
     } catch (e) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('تعذر تحديث الصورة: ${e.toString().replaceFirst('Exception: ', '')}'), backgroundColor: AppColors.error),
-        );
-      }
+      if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('تعذر تحديث الصورة: ${e.toString().replaceFirst('Exception: ', '')}'), backgroundColor: AppColors.error));
     }
   }
 
@@ -178,7 +156,6 @@ class ProfilePage extends ConsumerWidget {
     final whatsappController = TextEditingController(text: row?['whatsapp_number']?.toString() ?? '');
     final governorateController = TextEditingController(text: row?['city']?.toString() ?? '');
     var saving = false;
-
     await showDialog<void>(
       context: context,
       builder: (dialogContext) => StatefulBuilder(
@@ -192,7 +169,7 @@ class ProfilePage extends ConsumerWidget {
                 const SizedBox(height: 10),
                 TextField(controller: phoneController, keyboardType: TextInputType.phone, decoration: const InputDecoration(labelText: 'رقم الهاتف', prefixIcon: Icon(Icons.phone_outlined))),
                 const SizedBox(height: 10),
-                TextField(controller: whatsappController, keyboardType: TextInputType.phone, decoration: const InputDecoration(labelText: 'رقم واتساب للتواصل *', hintText: '+9647xxxxxxxxx', prefixIcon: Icon(Icons.chat_outlined)),),
+                TextField(controller: whatsappController, keyboardType: TextInputType.phone, decoration: const InputDecoration(labelText: 'رقم واتساب للتواصل *', hintText: '+9647xxxxxxxxx', prefixIcon: Icon(Icons.chat_outlined))),
                 const SizedBox(height: 10),
                 TextField(controller: governorateController, decoration: const InputDecoration(labelText: 'المحافظة', prefixIcon: Icon(Icons.location_on_outlined))),
                 const SizedBox(height: 10),
@@ -212,25 +189,13 @@ class ProfilePage extends ConsumerWidget {
                 }
                 setState(() => saving = true);
                 try {
-                  await SupabaseConfig.client.from('profiles').update({
-                    'full_name': name,
-                    'phone': phoneController.text.trim().isEmpty ? null : phoneController.text.trim(),
-                    'whatsapp_number': whatsapp,
-                    'city': governorateController.text.trim().isEmpty ? null : governorateController.text.trim(),
-                    'updated_at': DateTime.now().toIso8601String(),
-                  }).eq('auth_id', user.id);
-                  if (user.role == 'lawyer') {
-                    await SupabaseConfig.client.from('lawyer_profiles').update({'whatsapp': whatsapp, 'full_name': name, 'updated_at': DateTime.now().toIso8601String()}).eq('profile_id', user.id);
-                  }
+                  await SupabaseConfig.client.from('profiles').update({'full_name': name, 'phone': phoneController.text.trim().isEmpty ? null : phoneController.text.trim(), 'whatsapp_number': whatsapp, 'city': governorateController.text.trim().isEmpty ? null : governorateController.text.trim(), 'updated_at': DateTime.now().toIso8601String()}).eq('auth_id', user.id);
+                  if (user.role == 'lawyer') await SupabaseConfig.client.from('lawyer_profiles').update({'whatsapp': whatsapp, 'full_name': name, 'updated_at': DateTime.now().toIso8601String()}).eq('profile_id', user.id);
                   await ref.read(authRepositoryProvider).refreshUser();
                   if (dialogContext.mounted) Navigator.pop(dialogContext);
                   if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تم حفظ المعلومات بنجاح')));
                 } catch (e) {
-                  if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('تعذر حفظ المعلومات: ${e.toString().replaceFirst('Exception: ', '')}'), backgroundColor: AppColors.error),
-                    );
-                  }
+                  if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('تعذر حفظ المعلومات: ${e.toString().replaceFirst('Exception: ', '')}'), backgroundColor: AppColors.error));
                   setState(() => saving = false);
                 }
               },
@@ -247,24 +212,14 @@ class ProfilePage extends ConsumerWidget {
   }
 
   void _showDeleteConfirmation(BuildContext context, WidgetRef ref) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('حذف الحساب؟'),
-        content: const Text('هل أنت متأكد من حذف حسابك نهائياً؟ لا يمكن التراجع عن هذا الإجراء وسيتم حذف كافة بياناتك وحجوزاتك.'),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('إلغاء')),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context);
-              ref.read(authControllerProvider.notifier).deleteAccount();
-            },
-            style: ElevatedButton.styleFrom(backgroundColor: AppColors.error, foregroundColor: Colors.white, elevation: 0),
-            child: const Text('نعم، احذف الحساب', style: TextStyle(fontWeight: FontWeight.bold)),
-          ),
-        ],
-      ),
-    );
+    showDialog(context: context, builder: (context) => AlertDialog(
+      title: const Text('حذف الحساب؟'),
+      content: const Text('هل أنت متأكد من حذف حسابك نهائياً؟ لا يمكن التراجع عن هذا الإجراء وسيتم حذف كافة بياناتك وحجوزاتك.'),
+      actions: [
+        TextButton(onPressed: () => Navigator.pop(context), child: const Text('إلغاء')),
+        ElevatedButton(onPressed: () { Navigator.pop(context); ref.read(authControllerProvider.notifier).deleteAccount(); }, style: ElevatedButton.styleFrom(backgroundColor: AppColors.error, foregroundColor: Colors.white, elevation: 0), child: const Text('نعم، احذف الحساب', style: TextStyle(fontWeight: FontWeight.bold))),
+      ],
+    ));
   }
 
   Widget _buildProfileSectionTitle(String title) => Padding(
