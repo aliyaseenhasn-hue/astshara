@@ -11,6 +11,18 @@ LawyersRepository lawyersRepository(LawyersRepositoryRef ref) => LawyersReposito
 
 final searchQueryProvider = StateProvider<String>((ref) => '');
 
+String _normalizeSpecialization(String value) {
+  return value.trim().toLowerCase().replaceAll(RegExp(r'[إأآ]'), 'ا').replaceAll('ة', 'ه');
+}
+
+bool _matchesCategory(LawyerProfile lawyer, String category) {
+  final wanted = _normalizeSpecialization(category);
+  return lawyer.specializations.any((specialization) {
+    final actual = _normalizeSpecialization(specialization);
+    return actual == wanted || actual.contains(wanted) || wanted.contains(actual);
+  });
+}
+
 @riverpod
 Future<List<LawyerProfile>> lawyersList(LawyersListRef ref) {
   final category = ref.watch(selectedCategoryProvider);
@@ -25,9 +37,7 @@ Future<List<LawyerProfile>> lawyersList(LawyersListRef ref) {
           l.specializations.any((s) => s.toLowerCase().contains(q)));
     }
     if (category != null && category.isNotEmpty) {
-      final c = category.trim();
-      filtered = filtered.where((l) =>
-          l.specializations.any((s) => s.trim().toLowerCase() == c.toLowerCase()));
+      filtered = filtered.where((l) => _matchesCategory(l, category));
     }
     final list = filtered.toList()
       ..sort((a, b) {
