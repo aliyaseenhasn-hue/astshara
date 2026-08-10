@@ -49,6 +49,8 @@ begin
   where id = v_profile_id;
 
   if v_role = 'lawyer' then
+    -- Some historical lawyer rows use id as the profile key, while newer rows
+    -- use profile_id. Support both schemas without failing the whole save.
     update public.lawyer_profiles
     set whatsapp = v_whatsapp,
         updated_at = now()
