@@ -56,7 +56,8 @@
 - Workflow النشر الفعلية: `.github/workflows/deploy.yml`.
 - النشر يستمع إلى `push` على `main` ثم يبني Flutter Web ويستخدم GitHub Pages.
 - build command: `flutter build web --release --no-wasm-dry-run --base-href "/astshara/"` مع أسرار Supabase.
-- إذا لم يظهر تعديل في الموقع، افحص أولاً أن Workflow اشتغلت على commit التعديل وأن GitHub Pages يشير إلى artifact الناتج من آخر deployment، ثم افحص cache/service worker قبل تغيير الواجهة مرة أخرى.
+- Workflow يتضمن الآن `flutter test` قبل مرحلة البناء.
+- إذا لم يظهر تعديل في التطبيق المنشور، افحص أولاً أن Workflow اشتغلت على commit التعديل وأن GitHub Pages يشير إلى artifact الناتج من آخر deployment، ثم افحص cache/service worker قبل تغيير الواجهة مرة أخرى.
 
 ## 7) لوحة الإدارة
 - `lib/features/admin/presentation/pages/admin_dashboard_page.dart` تحتوي على بطاقات تفاعلية للإجراءات الإدارية.
@@ -73,7 +74,20 @@
 - المكتب له تدفق منفصل، والدفع اليدوي يبقى معلقاً حتى تسجيل المبلغ المستلم.
 - عند الإكمال: `completed_at`، عدّ الاستشارات المكتملة، التقييم، وعدم كشف البيانات الحساسة.
 
-## 10) التحقق
-- الهدف: `flutter analyze` بدون أخطاء، `flutter build web` ناجح، وCI ناجح.
-- لا تعتبر warnings/info فشلاً إلا إذا كان CI يعاملها كأخطاء.
+## 10) تدقيق الإصدار النهائي — 2026-08-11
+- تم تدقيق مخطط قاعدة البيانات الفعلي، RLS، RPC، Triggers، Storage policies، حالات الحجز، سلامة البيانات، ومؤشرات الأداء.
+- تم العثور على ثغرة صلاحيات في سياسات UPDATE للمحادثات والرسائل والإشعارات: كانت تسمح نظرياً بإعادة إسناد الملكية/المشاركين لأن `WITH CHECK` لم يكن مقيداً. تم إصلاحها في migration `20260811005500_harden_update_policy_ownership.sql`.
+- تم تشديد سياسات RLS وStorage من `public` إلى `authenticated` وإزالة الاعتماد على `auth.role()` في المسارات التي تم تعديلها.
+- تم إزالة `PUBLIC EXECUTE` الافتراضي من دوال `SECURITY DEFINER`، وقصر الدوال التطبيقية على `authenticated` والدوال العامة المخصصة لعرض المحامين على `anon, authenticated`، ومنع استدعاء دوال الـtriggers عبر PostgREST.
+- تمت إضافة قيد فريد للحجوزات النشطة على `(lawyer_id, scheduled_at)` لمنع double booking في ظروف التزامن.
+- تمت إضافة قيود قاعدة بيانات تمنع حالات `قيد التنفيذ` بدون `started_at`، و`مكتمل` بدون timestamps، و`ملغي` بدون `cancelled_at`.
+- تم تحسين RLS الخاص بإنجازات المحامي باستخدام `(select auth.uid())`.
+- تمت إضافة `test/booking_invariants_test.dart`، وأصبح CI يشغل `flutter test` قبل البناء.
+- نتيجة فحوص البيانات الحالية: لا توجد حجوزات orphan، ولا مدفوعات orphan، ولا تقييمات orphan، ولا حالات حجز متناقضة في البيانات الحالية، ولا حجوزات نشطة مزدوجة لنفس المحامي والوقت، ولا اختلافات حالية بين مبلغ الدفع وسعر الحجز.
+- Security Advisor ما زال يعرض تحذيرات متعلقة بدوال `SECURITY DEFINER` المقصودة ودوال العرض العامة، وبعض التحذيرات تبدو cached/متأخرة مقارنةً بـ`pg_policies` الفعلي؛ لذلك لا تعتبر Advisors نظيفة بالكامل حتى يتم تأكيد تحديثها.
+
+## 11) التحقق
+- الهدف: `flutter analyze` بدون أخطاء، `flutter test` ناجح، `flutter build web` ناجح، وCI ناجح.
+- لا تعتبر warnings/info فشلاً إلا إذا كان CI يعاملها كأخطاء، لكن يجب مراجعة التحذيرات الأمنية والأداء ذات الأثر الحقيقي.
 - عند ظهور خطأ CI يجب الاعتماد على commit الذي شغّل الـworkflow فعلياً، وليس نتيجة تشغيل قديمة.
+- حتى يتم الحصول على Run فعلي ناجح بعد آخر commit، حالة CI النهائية تعتبر **غير متحقق منها**.
