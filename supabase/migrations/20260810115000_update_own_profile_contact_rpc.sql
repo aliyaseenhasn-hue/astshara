@@ -1,6 +1,5 @@
 -- Update the authenticated user's own profile contact data atomically.
--- This avoids client-side RLS failures and uses the profile row id when syncing
--- the lawyer's WhatsApp contact.
+-- WhatsApp is the single contact number exposed by the profile UI.
 
 create or replace function public.update_own_profile_contact(
   p_full_name text,
@@ -26,7 +25,7 @@ begin
     raise exception 'الاسم الكامل مطلوب';
   end if;
 
-  v_whatsapp := nullif(trim(coalesce(p_whatsapp_number, '')), '');
+  v_whatsapp := nullif(trim(coalesce(p_whatsapp_number, p_phone, '')), '');
   if v_whatsapp is null then
     raise exception 'رقم واتساب مطلوب';
   end if;
@@ -43,7 +42,7 @@ begin
 
   update public.profiles
   set full_name = trim(p_full_name),
-      phone = nullif(trim(coalesce(p_phone, '')), ''),
+      phone = v_whatsapp,
       whatsapp_number = v_whatsapp,
       city = nullif(trim(coalesce(p_city, '')), ''),
       updated_at = now()
