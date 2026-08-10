@@ -6,6 +6,7 @@ import 'package:storage_client/storage_client.dart';
 import '../../../../core/config/supabase_config.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_sizes.dart';
+import '../../../../core/providers/theme_mode_provider.dart';
 import '../../../authentication/presentation/providers/auth_provider.dart';
 
 class ProfilePage extends ConsumerWidget {
@@ -14,6 +15,8 @@ class ProfilePage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final user = ref.watch(authStateChangesProvider).value;
+    final themeMode = ref.watch(themeModeProvider);
+    final isDark = themeMode == ThemeMode.dark;
     return Scaffold(
       backgroundColor: AppColors.background,
       body: user == null
@@ -86,13 +89,25 @@ class ProfilePage extends ConsumerWidget {
                       _buildProfileTile(Icons.history, 'سجل الاستشارات', () => context.push('/bookings')),
                       _buildProfileTile(Icons.payment_rounded, 'طرق الدفع', () => context.push('/payment-methods')),
                       const SizedBox(height: AppSizes.p20),
-                      _buildProfileSectionTitle('الإعدادات'),
+                      _buildProfileSectionTitle('الملف الشخصي'),
                       _buildProfileTile(Icons.person_outline, 'المعلومات الشخصية والتواصل', () => _showEditProfileDialog(context, ref)),
+                      const SizedBox(height: AppSizes.p20),
+                      _buildProfileSectionTitle('الإعدادات'),
+                      Card(
+                        margin: const EdgeInsets.only(bottom: 12),
+                        child: SwitchListTile(
+                          secondary: Icon(isDark ? Icons.dark_mode_rounded : Icons.light_mode_rounded, color: isDark ? AppColors.gold : AppColors.primary),
+                          title: const Text('مظهر التطبيق'),
+                          subtitle: Text(isDark ? 'الوضع الداكن' : 'الوضع الفاتح'),
+                          value: isDark,
+                          activeColor: AppColors.gold,
+                          onChanged: (value) => ref.read(themeModeProvider.notifier).setMode(value ? ThemeMode.dark : ThemeMode.light),
+                        ),
+                      ),
                       _buildProfileTile(Icons.notifications_active_outlined, 'إعدادات الإشعارات', () => context.push('/notification-settings')),
-                      _buildProfileTile(Icons.settings_outlined, 'إعدادات التطبيق', () => context.push('/app-settings')),
+                      _buildProfileTile(Icons.help_outline_rounded, 'مركز المساعدة', () => context.push('/help-center')),
                       const SizedBox(height: AppSizes.p20),
                       _buildProfileSectionTitle('الدعم'),
-                      _buildProfileTile(Icons.help_outline_rounded, 'مركز المساعدة', () => context.push('/help-center')),
                       _buildProfileTile(Icons.privacy_tip_outlined, 'سياسة الخصوصية', () {}),
                       const Padding(padding: EdgeInsets.symmetric(vertical: AppSizes.p24), child: Divider()),
                       ListTile(
@@ -102,7 +117,7 @@ class ProfilePage extends ConsumerWidget {
                           child: const Icon(Icons.logout_rounded, color: AppColors.error, size: 22),
                         ),
                         title: const Text('تسجيل الخروج', style: TextStyle(color: AppColors.error, fontWeight: FontWeight.bold)),
-                        onTap: () => ref.read(authControllerProvider.notifier).logout(),
+                        onTap: () => _logout(context, ref),
                       ),
                       const SizedBox(height: 12),
                       Center(
@@ -209,6 +224,11 @@ class ProfilePage extends ConsumerWidget {
     phoneController.dispose();
     whatsappController.dispose();
     governorateController.dispose();
+  }
+
+  Future<void> _logout(BuildContext context, WidgetRef ref) async {
+    await ref.read(authControllerProvider.notifier).logout();
+    if (context.mounted) context.go('/login');
   }
 
   void _showDeleteConfirmation(BuildContext context, WidgetRef ref) {
