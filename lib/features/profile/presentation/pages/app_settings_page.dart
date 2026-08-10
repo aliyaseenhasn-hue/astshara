@@ -24,6 +24,14 @@ class AppSettingsPage extends ConsumerWidget {
       body: ListView(
         padding: const EdgeInsets.all(AppSizes.p20),
         children: [
+          _buildSectionTitle('الحساب والبيانات الشخصية'),
+          _buildSettingTile(
+            context,
+            Icons.person_outline_rounded,
+            'المعلومات الشخصية والتواصل',
+            'الاسم، الهاتف، واتساب، المحافظة والصورة الشخصية',
+            () => context.push('/profile'),
+          ),
           _buildSectionTitle('التطبيق'),
           _buildSettingTile(context, Icons.language_rounded, 'لغة التطبيق', 'العربية', null),
           Card(
