@@ -33,7 +33,10 @@ class LawyerDashboardPage extends ConsumerWidget {
                     TextButton(onPressed: () => context.push('/bookings'), child: const Text('عرض الكل')),
                   ]),
                   const SizedBox(height: AppSizes.p8),
-                  if (bookings.isEmpty) _buildEmptyState() else ListView.builder(shrinkWrap: true, physics: const NeverScrollableScrollPhysics(), itemCount: bookings.length > 5 ? 5 : bookings.length, itemBuilder: (context, index) => _BookingTile(booking: bookings[index])),
+                  if (bookings.isEmpty)
+                    _buildEmptyState()
+                  else
+                    ListView.builder(shrinkWrap: true, physics: const NeverScrollableScrollPhysics(), itemCount: bookings.length > 5 ? 5 : bookings.length, itemBuilder: (context, index) => _BookingTile(booking: bookings[index])),
                   const SizedBox(height: AppSizes.p32),
                   const Text('الإجراءات الإدارية', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
                   const SizedBox(height: 16),
@@ -50,8 +53,6 @@ class LawyerDashboardPage extends ConsumerWidget {
     );
   }
 
-  // Notifications are rendered once by the global app chrome in app.dart.
-  // Keeping an AppBar action here would create a duplicate bell.
   Widget _buildSliverAppBar(BuildContext context, dynamic user) => SliverAppBar(
     expandedHeight: 240,
     pinned: true,
@@ -84,11 +85,11 @@ class LawyerDashboardPage extends ConsumerWidget {
   Widget _buildEmptyState() => Card(child: Padding(padding: const EdgeInsets.all(32), child: Column(children: [Icon(Icons.assignment_late_outlined, size: 48, color: AppColors.outline.withValues(alpha: .3)), const SizedBox(height: 16), const Text('لا توجد طلبات استشارة حالية', style: TextStyle(color: AppColors.textSecondary))])));
 
   Widget _buildQuickActions(BuildContext context) => Column(children: [
-    _ActionTile(title: 'إدارة المواعيد المتاحة', subtitle: 'نشر المواعيد التي يمكن حجزها فعليًا', icon: Icons.event_available_rounded, onTap: () => context.push('/lawyer-availability')),
-    _ActionTile(title: 'جدول الحجوزات', subtitle: 'عرض الاستشارات ومتابعة حالاتها', icon: Icons.calendar_today_rounded, onTap: () => context.push('/bookings')),
-    _ActionTile(title: 'المحفظة المالية', subtitle: 'تتبع المستحقات وطلبات السحب', icon: Icons.account_balance_wallet_rounded, onTap: () => context.push('/payment-methods')),
-    _ActionTile(title: 'تغيير التخصص', subtitle: 'إرسال طلب تعديل الاختصاصات', icon: Icons.edit_note_rounded, onTap: () => context.push('/lawyer-specialization-change')),
-    _ActionTile(title: 'تعديل باقات الاستشارة', subtitle: 'إضافة أو تعديل خدماتك وأسعارك', icon: Icons.design_services_rounded, onTap: () => context.push('/lawyer-profile-edit')),
+    _ActionCard(title: 'إدارة المواعيد المتاحة', subtitle: 'نشر المواعيد التي يمكن حجزها فعليًا', icon: Icons.event_available_rounded, onTap: () => context.push('/lawyer-availability')),
+    _ActionCard(title: 'جدول الحجوزات', subtitle: 'عرض الاستشارات ومتابعة حالاتها', icon: Icons.calendar_today_rounded, onTap: () => context.push('/bookings')),
+    _ActionCard(title: 'المحفظة المالية', subtitle: 'تتبع المستحقات وطلبات السحب', icon: Icons.account_balance_wallet_rounded, onTap: () => context.push('/payment-methods')),
+    _ActionCard(title: 'تغيير التخصص', subtitle: 'إرسال طلب تعديل الاختصاصات', icon: Icons.edit_note_rounded, onTap: () => context.push('/lawyer-specialization-change')),
+    _ActionCard(title: 'تعديل باقات الاستشارة', subtitle: 'إضافة أو تعديل خدماتك وأسعارك', icon: Icons.design_services_rounded, onTap: () => context.push('/lawyer-profile-edit')),
   ]);
 }
 
@@ -98,10 +99,41 @@ class _StatCard extends StatelessWidget {
   @override Widget build(BuildContext context) => Card(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [Icon(icon, color: color ?? AppColors.primary, size: 28), const SizedBox(height: 12), Text(value, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textPrimary)), const SizedBox(height: 4), Text(title, style: const TextStyle(fontSize: 11, color: AppColors.textSecondary))]));
 }
 
-class _BookingTile extends StatelessWidget {
+class _BookingTile extends StatefulWidget {
   final Booking booking;
   const _BookingTile({required this.booking});
-  @override Widget build(BuildContext context) => Card(margin: const EdgeInsets.only(bottom: 12), child: Consumer(builder: (context, ref, child) { final name = ref.watch(bookingClientNameProvider(booking.id)); return ListTile(leading: const CircleAvatar(backgroundColor: AppColors.surfaceVariant, child: Icon(Icons.person_outline, color: AppColors.primary)), title: Text(name.maybeWhen(data: (n) => n != null && n.trim().isNotEmpty ? n : 'اسم العميل غير متوفر', loading: () => 'جاري تحميل اسم العميل...', error: (_, __) => 'اسم العميل غير متوفر', orElse: () => 'اسم العميل غير متوفر'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)), subtitle: Text(intl.DateFormat('yyyy/MM/dd').format(booking.scheduledAt), style: const TextStyle(fontSize: 12)), trailing: _StatusChip(status: booking.status), onTap: () => context.push('/booking-details', extra: booking)); }));
+  @override State<_BookingTile> createState() => _BookingTileState();
+}
+
+class _BookingTileState extends State<_BookingTile> {
+  bool _hovered = false;
+  @override
+  Widget build(BuildContext context) => MouseRegion(
+    cursor: SystemMouseCursors.click,
+    onEnter: (_) => setState(() => _hovered = true),
+    onExit: (_) => setState(() => _hovered = false),
+    child: AnimatedScale(
+      scale: _hovered ? 1.015 : 1,
+      duration: const Duration(milliseconds: 180),
+      curve: Curves.easeOutCubic,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        margin: const EdgeInsets.only(bottom: 12),
+        decoration: BoxDecoration(borderRadius: BorderRadius.circular(16), boxShadow: _hovered ? [BoxShadow(color: AppColors.secondary.withValues(alpha: .18), blurRadius: 16, offset: const Offset(0, 6))] : const []),
+        child: Card(child: Consumer(builder: (context, ref, child) {
+          final name = ref.watch(bookingClientNameProvider(widget.booking.id));
+          return ListTile(
+            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            leading: CircleAvatar(backgroundColor: _hovered ? AppColors.secondary.withValues(alpha: .15) : AppColors.surfaceVariant, child: Icon(Icons.person_outline, color: _hovered ? AppColors.secondary : AppColors.primary)),
+            title: Text(name.maybeWhen(data: (n) => n != null && n.trim().isNotEmpty ? n : 'اسم العميل غير متوفر', loading: () => 'جاري تحميل اسم العميل...', error: (_, __) => 'اسم العميل غير متوفر', orElse: () => 'اسم العميل غير متوفر'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+            subtitle: Text(intl.DateFormat('yyyy/MM/dd').format(widget.booking.scheduledAt), style: const TextStyle(fontSize: 12)),
+            trailing: _StatusChip(status: widget.booking.status),
+            onTap: () => context.push('/booking-details', extra: widget.booking),
+          );
+        })),
+      ),
+    ),
+  );
 }
 
 class _StatusChip extends StatelessWidget {
@@ -110,8 +142,40 @@ class _StatusChip extends StatelessWidget {
   @override Widget build(BuildContext context) { Color color = Colors.grey; switch (status) { case 'قيد انتظار الدفع': color = Colors.orange; break; case 'قيد معالجة الدفع': color = Colors.blue; break; case 'مؤكد': color = AppColors.success; break; case 'قيد التنفيذ': color = AppColors.primary; break; case 'مكتمل': color = AppColors.success; break; case 'ملغي': case 'مرفوض': color = AppColors.error; break; case 'مسترد': color = Colors.grey; break; } return Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4), decoration: BoxDecoration(color: color.withValues(alpha: .1), borderRadius: BorderRadius.circular(6)), child: Text(status, style: TextStyle(color: color, fontSize: 10, fontWeight: FontWeight.bold))); }
 }
 
-class _ActionTile extends StatelessWidget {
+class _ActionCard extends StatefulWidget {
   final String title; final String subtitle; final IconData icon; final VoidCallback onTap;
-  const _ActionTile({required this.title, required this.subtitle, required this.icon, required this.onTap});
-  @override Widget build(BuildContext context) => Card(margin: const EdgeInsets.only(bottom: 12), child: ListTile(leading: Icon(icon, color: AppColors.primary), title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)), subtitle: Text(subtitle, style: const TextStyle(fontSize: 12)), trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 14), onTap: onTap));
+  const _ActionCard({required this.title, required this.subtitle, required this.icon, required this.onTap});
+  @override State<_ActionCard> createState() => _ActionCardState();
+}
+
+class _ActionCardState extends State<_ActionCard> {
+  bool _hovered = false;
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.only(bottom: 12),
+    child: MouseRegion(
+      cursor: SystemMouseCursors.click,
+      onEnter: (_) => setState(() => _hovered = true),
+      onExit: (_) => setState(() => _hovered = false),
+      child: AnimatedScale(
+        scale: _hovered ? 1.02 : 1,
+        duration: const Duration(milliseconds: 180),
+        curve: Curves.easeOutCubic,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 180),
+          decoration: BoxDecoration(borderRadius: BorderRadius.circular(16), boxShadow: _hovered ? [BoxShadow(color: AppColors.primary.withValues(alpha: .16), blurRadius: 18, offset: const Offset(0, 7))] : const []),
+          child: Card(
+            child: ListTile(
+              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              leading: AnimatedContainer(duration: const Duration(milliseconds: 180), padding: const EdgeInsets.all(10), decoration: BoxDecoration(color: _hovered ? AppColors.primary.withValues(alpha: .14) : AppColors.surfaceVariant, borderRadius: BorderRadius.circular(12)), child: Icon(widget.icon, color: _hovered ? AppColors.secondary : AppColors.primary)),
+              title: Text(widget.title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+              subtitle: Text(widget.subtitle, style: const TextStyle(fontSize: 12)),
+              trailing: AnimatedSlide(duration: const Duration(milliseconds: 180), offset: Offset(_hovered ? -0.12 : 0, 0), child: const Icon(Icons.arrow_forward_ios_rounded, size: 14)),
+              onTap: widget.onTap,
+            ),
+          ),
+        ),
+      ),
+    ),
+  );
 }
