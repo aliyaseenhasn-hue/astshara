@@ -17,9 +17,6 @@ class LawyerOnboardingPage extends ConsumerStatefulWidget {
 
   @override
   ConsumerState<LawyerOnboardingPage> createState() => _LawyerOnboardingPageState();
-
-  @override
-  String toString({DiagnosticLevel minLevel = DiagnosticLevel.info}) => 'LawyerOnboardingPage(fullName: $fullName, email: $email)';
 }
 
 class _LawyerOnboardingPageState extends ConsumerState<LawyerOnboardingPage> {
