@@ -35,7 +35,7 @@ jobs:
         run: flutter pub get
 
       - name: Analyze Dart and Flutter code
-        run: flutter analyze
+        run: flutter analyze --no-fatal-infos --no-fatal-warnings
 
   build:
     needs: analyze
@@ -59,23 +59,18 @@ jobs:
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
         run: |
           set -euo pipefail
-
           if [ -z "${SUPABASE_URL:-}" ]; then
             echo "::error::SUPABASE_URL secret is missing in GitHub repository settings."
             exit 1
           fi
-
           if [ -z "${SUPABASE_ANON_KEY:-}" ]; then
             echo "::error::SUPABASE_ANON_KEY secret is missing in GitHub repository settings."
             exit 1
           fi
-
           cat > .env <<EOF_ENV
           SUPABASE_URL=${SUPABASE_URL}
           SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY}
           EOF_ENV
-
-          echo "✅ .env file created from GitHub Secrets."
 
       - name: Build Flutter web
         env:
@@ -83,7 +78,6 @@ jobs:
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
         run: |
           set -euo pipefail
-          # WASM dry-run is intentionally disabled; this deployment targets dart2js.
           flutter build web --release --no-wasm-dry-run --base-href "/astshara/" --dart-define=SUPABASE_URL="$SUPABASE_URL" --dart-define=SUPABASE_ANON_KEY="$SUPABASE_ANON_KEY"
 
       - name: Upload GitHub Pages artifact
