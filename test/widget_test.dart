@@ -1,25 +1,33 @@
-// This is a basic Flutter widget test.
-//
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
-
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:astshara/app/app.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:astshara/features/profile/presentation/providers/notifications_provider.dart';
 
 void main() {
+  setUpAll(() async {
+    // The production app initializes Supabase in main(). A widget test does not
+    // run main(), so initialize an isolated client explicitly to keep the smoke
+    // test deterministic and independent from production credentials/network.
+    await Supabase.initialize(
+      url: 'https://test.supabase.co',
+      anonKey: 'test-anon-key',
+    );
+  });
+
   testWidgets('App smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
     await tester.pumpWidget(
-      const ProviderScope(
-        child: LawConnectApp(),
+      ProviderScope(
+        overrides: [
+          unreadNotificationsCountProvider.overrideWith((ref) async => 0),
+        ],
+        child: const LawConnectApp(),
       ),
     );
 
-    // Verify that the app starts (Check for a known title or widget)
+    await tester.pump();
+
     expect(find.byType(LawConnectApp), findsOneWidget);
   });
 }
