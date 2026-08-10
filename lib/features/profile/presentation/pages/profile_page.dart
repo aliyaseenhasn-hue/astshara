@@ -164,66 +164,74 @@ class ProfilePage extends ConsumerWidget {
   Future<void> _showEditProfileDialog(BuildContext context, WidgetRef ref) async {
     final user = ref.read(authStateChangesProvider).value;
     if (user == null) return;
-    final row = await SupabaseConfig.client.from('profiles').select('full_name,phone,whatsapp_number,city').eq('auth_id', user.id).maybeSingle();
-    if (!context.mounted) return;
-    final nameController = TextEditingController(text: row?['full_name']?.toString() ?? user.fullName ?? '');
-    final phoneController = TextEditingController(text: row?['phone']?.toString() ?? user.phone ?? '');
-    final whatsappController = TextEditingController(text: row?['whatsapp_number']?.toString() ?? '');
-    final governorateController = TextEditingController(text: row?['city']?.toString() ?? '');
-    var saving = false;
-    await showDialog<void>(
-      context: context,
-      builder: (dialogContext) => StatefulBuilder(
-        builder: (context, setState) => AlertDialog(
-          title: const Text('المعلومات الشخصية والتواصل'),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextField(controller: nameController, decoration: const InputDecoration(labelText: 'الاسم الكامل', prefixIcon: Icon(Icons.person_outline))),
-                const SizedBox(height: 10),
-                TextField(controller: phoneController, keyboardType: TextInputType.phone, decoration: const InputDecoration(labelText: 'رقم الهاتف', prefixIcon: Icon(Icons.phone_outlined))),
-                const SizedBox(height: 10),
-                TextField(controller: whatsappController, keyboardType: TextInputType.phone, decoration: const InputDecoration(labelText: 'رقم واتساب للتواصل *', hintText: '+9647xxxxxxxxx', prefixIcon: Icon(Icons.chat_outlined))),
-                const SizedBox(height: 10),
-                TextField(controller: governorateController, decoration: const InputDecoration(labelText: 'المحافظة', prefixIcon: Icon(Icons.location_on_outlined))),
-                const SizedBox(height: 10),
-                const Align(alignment: Alignment.centerRight, child: Text('رقم واتساب مطلوب لطلب الاستشارات عن بُعد.', style: TextStyle(fontSize: 12))),
-              ],
+    try {
+      final row = await SupabaseConfig.client.from('profiles').select('full_name,phone,whatsapp_number,city').eq('auth_id', user.id).maybeSingle();
+      if (!context.mounted) return;
+      final nameController = TextEditingController(text: row?['full_name']?.toString() ?? user.fullName ?? '');
+      final phoneController = TextEditingController(text: row?['phone']?.toString() ?? user.phone ?? '');
+      final whatsappController = TextEditingController(text: row?['whatsapp_number']?.toString() ?? '');
+      final governorateController = TextEditingController(text: row?['city']?.toString() ?? '');
+      var saving = false;
+      await showDialog<void>(
+        context: context,
+        builder: (dialogContext) => StatefulBuilder(
+          builder: (context, setState) => AlertDialog(
+            title: const Text('المعلومات الشخصية والتواصل'),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(controller: nameController, decoration: const InputDecoration(labelText: 'الاسم الكامل', prefixIcon: Icon(Icons.person_outline))),
+                  const SizedBox(height: 10),
+                  TextField(controller: phoneController, keyboardType: TextInputType.phone, decoration: const InputDecoration(labelText: 'رقم الهاتف', prefixIcon: Icon(Icons.phone_outlined))),
+                  const SizedBox(height: 10),
+                  TextField(controller: whatsappController, keyboardType: TextInputType.phone, decoration: const InputDecoration(labelText: 'رقم واتساب للتواصل *', hintText: '+9647xxxxxxxxx', prefixIcon: Icon(Icons.chat_outlined))),
+                  const SizedBox(height: 10),
+                  TextField(controller: governorateController, decoration: const InputDecoration(labelText: 'المحافظة', prefixIcon: Icon(Icons.location_on_outlined))),
+                  const SizedBox(height: 10),
+                  const Align(alignment: Alignment.centerRight, child: Text('رقم واتساب مطلوب لطلب الاستشارات عن بُعد.', style: TextStyle(fontSize: 12))),
+                ],
+              ),
             ),
+            actions: [
+              TextButton(onPressed: saving ? null : () => Navigator.pop(dialogContext), child: const Text('إلغاء')),
+              ElevatedButton(
+                onPressed: saving ? null : () async {
+                  final name = nameController.text.trim();
+                  final whatsapp = whatsappController.text.trim();
+                  if (name.isEmpty || whatsapp.isEmpty) {
+                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('الاسم الكامل ورقم واتساب مطلوبان')));
+                    return;
+                  }
+                  setState(() => saving = true);
+                  try {
+                    await SupabaseConfig.client.rpc('update_own_profile_contact', params: {
+                      'p_full_name': name,
+                      'p_phone': phoneController.text.trim().isEmpty ? null : phoneController.text.trim(),
+                      'p_whatsapp_number': whatsapp,
+                      'p_city': governorateController.text.trim().isEmpty ? null : governorateController.text.trim(),
+                    });
+                    await ref.read(authRepositoryProvider).refreshUser();
+                    if (dialogContext.mounted) Navigator.pop(dialogContext);
+                    if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تم حفظ المعلومات بنجاح')));
+                  } catch (e) {
+                    if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('تعذر حفظ المعلومات: ${e.toString().replaceFirst('Exception: ', '')}'), backgroundColor: AppColors.error));
+                    setState(() => saving = false);
+                  }
+                },
+                child: Text(saving ? 'جاري الحفظ...' : 'حفظ التغييرات'),
+              ),
+            ],
           ),
-          actions: [
-            TextButton(onPressed: saving ? null : () => Navigator.pop(dialogContext), child: const Text('إلغاء')),
-            ElevatedButton(
-              onPressed: saving ? null : () async {
-                final name = nameController.text.trim();
-                final whatsapp = whatsappController.text.trim();
-                if (name.isEmpty || whatsapp.isEmpty) {
-                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('الاسم الكامل ورقم واتساب مطلوبان')));
-                  return;
-                }
-                setState(() => saving = true);
-                try {
-                  await SupabaseConfig.client.from('profiles').update({'full_name': name, 'phone': phoneController.text.trim().isEmpty ? null : phoneController.text.trim(), 'whatsapp_number': whatsapp, 'city': governorateController.text.trim().isEmpty ? null : governorateController.text.trim(), 'updated_at': DateTime.now().toIso8601String()}).eq('auth_id', user.id);
-                  if (user.role == 'lawyer') await SupabaseConfig.client.from('lawyer_profiles').update({'whatsapp': whatsapp, 'full_name': name, 'updated_at': DateTime.now().toIso8601String()}).eq('profile_id', user.id);
-                  await ref.read(authRepositoryProvider).refreshUser();
-                  if (dialogContext.mounted) Navigator.pop(dialogContext);
-                  if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تم حفظ المعلومات بنجاح')));
-                } catch (e) {
-                  if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('تعذر حفظ المعلومات: ${e.toString().replaceFirst('Exception: ', '')}'), backgroundColor: AppColors.error));
-                  setState(() => saving = false);
-                }
-              },
-              child: Text(saving ? 'جاري الحفظ...' : 'حفظ التغييرات'),
-            ),
-          ],
         ),
-      ),
-    );
-    nameController.dispose();
-    phoneController.dispose();
-    whatsappController.dispose();
-    governorateController.dispose();
+      );
+      nameController.dispose();
+      phoneController.dispose();
+      whatsappController.dispose();
+      governorateController.dispose();
+    } catch (e) {
+      if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('تعذر تحميل المعلومات: ${e.toString().replaceFirst('Exception: ', '')}'), backgroundColor: AppColors.error));
+    }
   }
 
   Future<void> _logout(BuildContext context, WidgetRef ref) async {
