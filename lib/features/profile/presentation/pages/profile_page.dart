@@ -13,7 +13,6 @@ class ProfilePage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final user = ref.watch(authStateChangesProvider).value;
-
     return Scaffold(
       backgroundColor: AppColors.background,
       body: user == null
@@ -34,31 +33,60 @@ class ProfilePage extends ConsumerWidget {
                           colors: [AppColors.secondary, AppColors.secondaryDark],
                         ),
                       ),
-                      child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-                        const SizedBox(height: 40),
-                        Stack(children: [
-                          Container(
-                            padding: const EdgeInsets.all(3),
-                            decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
-                            child: CircleAvatar(
-                              radius: 45,
-                              backgroundColor: AppColors.surfaceVariant,
-                              backgroundImage: user.avatarUrl != null && user.avatarUrl!.isNotEmpty ? NetworkImage(user.avatarUrl!) : null,
-                              child: user.avatarUrl == null || user.avatarUrl!.isEmpty ? const Icon(Icons.person, size: 50, color: AppColors.primary) : null,
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const SizedBox(height: 40),
+                          Stack(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(3),
+                                decoration: const BoxDecoration(
+                                  color: Colors.white,
+                                  shape: BoxShape.circle,
+                                ),
+                                child: CircleAvatar(
+                                  radius: 45,
+                                  backgroundColor: AppColors.surfaceVariant,
+                                  backgroundImage: user.avatarUrl != null && user.avatarUrl!.isNotEmpty
+                                      ? NetworkImage(user.avatarUrl!)
+                                      : null,
+                                  child: user.avatarUrl == null || user.avatarUrl!.isEmpty
+                                      ? const Icon(Icons.person, size: 50, color: AppColors.primary)
+                                      : null,
+                                ),
+                              ),
+                              Positioned(
+                                bottom: 0,
+                                right: 0,
+                                child: CircleAvatar(
+                                  radius: 15,
+                                  backgroundColor: AppColors.gold,
+                                  child: IconButton(
+                                    icon: const Icon(Icons.camera_alt, size: 14, color: Colors.white),
+                                    onPressed: () => _updateAvatar(context, ref),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+                          GestureDetector(
+                            onTap: () => _showEditProfileDialog(context, ref),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Text(
+                                  user.fullName ?? 'مستخدم',
+                                  style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
+                                ),
+                                const SizedBox(width: 8),
+                                const Icon(Icons.edit, size: 14, color: AppColors.gold),
+                              ],
                             ),
                           ),
-                          Positioned(bottom: 0, right: 0, child: CircleAvatar(radius: 15, backgroundColor: AppColors.gold, child: IconButton(icon: const Icon(Icons.camera_alt, size: 14, color: Colors.white), onPressed: () => _updateAvatar(context, ref)))),
-                        ]),
-                        const SizedBox(height: 12),
-                        GestureDetector(
-                          onTap: () => _showEditProfileDialog(context, ref),
-                          child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                            Text(user.fullName ?? 'مستخدم', style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
-                            const SizedBox(width: 8),
-                            const Icon(Icons.edit, size: 14, color: AppColors.gold),
-                          ]),
-                        ),
-                      ]),
+                        ],
+                      ),
                     ),
                   ),
                 ),
@@ -80,12 +108,22 @@ class ProfilePage extends ConsumerWidget {
                       _buildProfileTile(Icons.privacy_tip_outlined, 'سياسة الخصوصية', () {}),
                       const Padding(padding: EdgeInsets.symmetric(vertical: AppSizes.p24), child: Divider()),
                       ListTile(
-                        leading: Container(padding: const EdgeInsets.all(10), decoration: BoxDecoration(color: AppColors.error.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(12)), child: const Icon(Icons.logout_rounded, color: AppColors.error, size: 22)),
+                        leading: Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(color: AppColors.error.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(12)),
+                          child: const Icon(Icons.logout_rounded, color: AppColors.error, size: 22),
+                        ),
                         title: const Text('تسجيل الخروج', style: TextStyle(color: AppColors.error, fontWeight: FontWeight.bold)),
                         onTap: () => ref.read(authControllerProvider.notifier).logout(),
                       ),
                       const SizedBox(height: 12),
-                      Center(child: TextButton.icon(onPressed: () => _showDeleteConfirmation(context, ref), icon: const Icon(Icons.delete_forever_outlined, color: AppColors.textSecondary, size: 18), label: const Text('حذف الحساب نهائياً', style: TextStyle(color: AppColors.textSecondary, fontSize: 13)))),
+                      Center(
+                        child: TextButton.icon(
+                          onPressed: () => _showDeleteConfirmation(context, ref),
+                          icon: const Icon(Icons.delete_forever_outlined, color: AppColors.textSecondary, size: 18),
+                          label: const Text('حذف الحساب نهائياً', style: TextStyle(color: AppColors.textSecondary, fontSize: 13)),
+                        ),
+                      ),
                       const SizedBox(height: AppSizes.p48),
                     ]),
                   ),
@@ -104,15 +142,29 @@ class ProfilePage extends ConsumerWidget {
       final user = ref.read(authStateChangesProvider).value;
       if (user == null) return;
       final ext = image.name.split('.').last.toLowerCase();
-      final contentType = switch (ext) { 'png' => 'image/png', 'webp' => 'image/webp', _ => 'image/jpeg' };
+      final contentType = switch (ext) {
+        'png' => 'image/png',
+        'webp' => 'image/webp',
+        _ => 'image/jpeg',
+      };
       final path = '${user.id}/profile_${DateTime.now().millisecondsSinceEpoch}.$ext';
-      await SupabaseConfig.client.storage.from('avatars').uploadBinary(path, bytes, fileOptions: FileOptions(upsert: true, contentType: contentType));
+      await SupabaseConfig.client.storage.from('avatars').uploadBinary(
+        path,
+        bytes,
+        fileOptions: FileOptions(upsert: true, contentType: contentType),
+      );
       final url = SupabaseConfig.client.storage.from('avatars').getPublicUrl(path);
       await SupabaseConfig.client.from('profiles').update({'avatar_url': url}).eq('auth_id', user.id);
       await ref.read(authRepositoryProvider).refreshUser();
-      if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تم تحديث الصورة الشخصية')));
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تم تحديث الصورة الشخصية')));
+      }
     } catch (e) {
-      if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('تعذر تحديث الصورة: ${e.toString().replaceFirst('Exception: ', '')}'), backgroundColor: AppColors.error));
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('تعذر تحديث الصورة: ${e.toString().replaceFirst('Exception: ', '')}'), backgroundColor: AppColors.error),
+        );
+      }
     }
   }
 
@@ -132,17 +184,22 @@ class ProfilePage extends ConsumerWidget {
       builder: (dialogContext) => StatefulBuilder(
         builder: (context, setState) => AlertDialog(
           title: const Text('المعلومات الشخصية والتواصل'),
-          content: SingleChildScrollView(child: Column(mainAxisSize: MainAxisSize.min, children: [
-            TextField(controller: nameController, decoration: const InputDecoration(labelText: 'الاسم الكامل', prefixIcon: Icon(Icons.person_outline))),
-            const SizedBox(height: 10),
-            TextField(controller: phoneController, keyboardType: TextInputType.phone, decoration: const InputDecoration(labelText: 'رقم الهاتف', prefixIcon: Icon(Icons.phone_outlined))),
-            const SizedBox(height: 10),
-            TextField(controller: whatsappController, keyboardType: TextInputType.phone, decoration: const InputDecoration(labelText: 'رقم واتساب للتواصل *', hintText: '+9647xxxxxxxxx', prefixIcon: Icon(Icons.chat_outlined)),),
-            const SizedBox(height: 10),
-            TextField(controller: governorateController, decoration: const InputDecoration(labelText: 'المحافظة', prefixIcon: Icon(Icons.location_on_outlined))),
-            const SizedBox(height: 10),
-            const Align(alignment: Alignment.centerRight, child: Text('رقم واتساب مطلوب لطلب الاستشارات عن بُعد.', style: TextStyle(fontSize: 12))),
-          ])),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(controller: nameController, decoration: const InputDecoration(labelText: 'الاسم الكامل', prefixIcon: Icon(Icons.person_outline))),
+                const SizedBox(height: 10),
+                TextField(controller: phoneController, keyboardType: TextInputType.phone, decoration: const InputDecoration(labelText: 'رقم الهاتف', prefixIcon: Icon(Icons.phone_outlined))),
+                const SizedBox(height: 10),
+                TextField(controller: whatsappController, keyboardType: TextInputType.phone, decoration: const InputDecoration(labelText: 'رقم واتساب للتواصل *', hintText: '+9647xxxxxxxxx', prefixIcon: Icon(Icons.chat_outlined)),),
+                const SizedBox(height: 10),
+                TextField(controller: governorateController, decoration: const InputDecoration(labelText: 'المحافظة', prefixIcon: Icon(Icons.location_on_outlined))),
+                const SizedBox(height: 10),
+                const Align(alignment: Alignment.centerRight, child: Text('رقم واتساب مطلوب لطلب الاستشارات عن بُعد.', style: TextStyle(fontSize: 12))),
+              ],
+            ),
+          ),
           actions: [
             TextButton(onPressed: saving ? null : () => Navigator.pop(dialogContext), child: const Text('إلغاء')),
             ElevatedButton(
@@ -169,7 +226,11 @@ class ProfilePage extends ConsumerWidget {
                   if (dialogContext.mounted) Navigator.pop(dialogContext);
                   if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تم حفظ المعلومات بنجاح')));
                 } catch (e) {
-                  if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('تعذر حفظ المعلومات: ${e.toString().replaceFirst('Exception: ', '')}'), backgroundColor: AppColors.error));
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('تعذر حفظ المعلومات: ${e.toString().replaceFirst('Exception: ', '')}'), backgroundColor: AppColors.error),
+                    );
+                  }
                   setState(() => saving = false);
                 }
               },
@@ -179,7 +240,10 @@ class ProfilePage extends ConsumerWidget {
         ),
       ),
     );
-    nameController.dispose(); phoneController.dispose(); whatsappController.dispose(); governorateController.dispose();
+    nameController.dispose();
+    phoneController.dispose();
+    whatsappController.dispose();
+    governorateController.dispose();
   }
 
   void _showDeleteConfirmation(BuildContext context, WidgetRef ref) {
@@ -190,7 +254,14 @@ class ProfilePage extends ConsumerWidget {
         content: const Text('هل أنت متأكد من حذف حسابك نهائياً؟ لا يمكن التراجع عن هذا الإجراء وسيتم حذف كافة بياناتك وحجوزاتك.'),
         actions: [
           TextButton(onPressed: () => Navigator.pop(context), child: const Text('إلغاء')),
-          ElevatedButton(onPressed: () { Navigator.pop(context); ref.read(authControllerProvider.notifier).deleteAccount(); }, style: ElevatedButton.styleFrom(backgroundColor: AppColors.error, foregroundColor: Colors.white, elevation: 0), child: const Text('نعم، احذف الحساب', style: TextStyle(fontWeight: FontWeight.bold))),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              ref.read(authControllerProvider.notifier).deleteAccount();
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.error, foregroundColor: Colors.white, elevation: 0),
+            child: const Text('نعم، احذف الحساب', style: TextStyle(fontWeight: FontWeight.bold)),
+          ),
         ],
       ),
     );
