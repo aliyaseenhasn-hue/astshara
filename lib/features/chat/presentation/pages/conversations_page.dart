@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/config/supabase_config.dart';
-import '../../../../core/constants/app_colors.dart';
 import '../providers/chat_provider.dart';
 
 final conversationsListProvider = FutureProvider.autoDispose<List<Map<String, dynamic>>>((ref) async {
@@ -33,48 +32,47 @@ class ConversationsPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final scheme = Theme.of(context).colorScheme;
     final conversations = ref.watch(conversationsListProvider);
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: scheme.surface,
       appBar: AppBar(
         title: const Text('المحادثات'),
-        backgroundColor: AppColors.secondary,
-        foregroundColor: Colors.white,
+        centerTitle: false,
+        backgroundColor: scheme.surface,
+        foregroundColor: scheme.onSurface,
+        elevation: 0,
       ),
       body: conversations.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, _) => Center(
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Text(
-              'تعذر تحميل المحادثات\n$error',
-              textAlign: TextAlign.center,
-            ),
+        loading: () => Center(child: CircularProgressIndicator(color: scheme.primary)),
+        error: (error, _) => _StateView(
+          icon: Icons.cloud_off_rounded,
+          title: 'تعذر تحميل المحادثات',
+          message: error.toString().replaceFirst('Exception: ', ''),
+          action: TextButton.icon(
+            onPressed: () => ref.invalidate(conversationsListProvider),
+            icon: const Icon(Icons.refresh_rounded),
+            label: const Text('إعادة المحاولة'),
           ),
         ),
         data: (items) {
           if (items.isEmpty) {
-            return const Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(Icons.chat_bubble_outline_rounded, size: 64, color: AppColors.outline),
-                  SizedBox(height: 12),
-                  Text('لا توجد محادثات حالياً'),
-                  SizedBox(height: 6),
-                  Text('ستظهر هنا المحادثات بعد بدء الاستشارة.'),
-                ],
-              ),
+            return const _StateView(
+              icon: Icons.chat_bubble_outline_rounded,
+              title: 'لا توجد محادثات حالياً',
+              message: 'ستظهر هنا المحادثات بعد بدء الاستشارة.',
             );
           }
 
           return RefreshIndicator(
+            color: scheme.primary,
             onRefresh: () async => ref.invalidate(conversationsListProvider),
             child: ListView.separated(
-              padding: const EdgeInsets.all(16),
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 28),
               itemCount: items.length,
-              separatorBuilder: (_, __) => const SizedBox(height: 8),
+              separatorBuilder: (_, __) => const SizedBox(height: 10),
               itemBuilder: (context, index) {
                 final conversation = items[index];
                 final id = conversation['id']?.toString();
@@ -84,28 +82,56 @@ class ConversationsPage extends ConsumerWidget {
                   builder: (context, ref, _) {
                     final name = ref.watch(chatOtherPartyNameProvider(id));
                     final lastMessage = conversation['last_message']?.toString().trim();
-                    return Card(
-                      child: ListTile(
-                        leading: const CircleAvatar(
-                          backgroundColor: AppColors.surfaceVariant,
-                          child: Icon(Icons.person_outline_rounded, color: AppColors.primary),
-                        ),
-                        title: Text(
-                          name.maybeWhen(
-                            data: (value) => value?.trim().isNotEmpty == true ? value! : 'المحادثة',
-                            orElse: () => 'جاري تحميل الاسم...',
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                        subtitle: Text(
-                          lastMessage?.isNotEmpty == true ? lastMessage! : 'لا توجد رسائل بعد',
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        trailing: const Icon(Icons.chevron_left_rounded),
+                    final displayName = name.maybeWhen(
+                      data: (value) => value?.trim().isNotEmpty == true ? value! : 'المحادثة',
+                      orElse: () => 'جاري تحميل الاسم...',
+                    );
+
+                    return Material(
+                      color: scheme.surfaceContainerHighest.withValues(alpha: .45),
+                      borderRadius: BorderRadius.circular(18),
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(18),
                         onTap: () => context.push('/chat/$id'),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
+                          child: Row(
+                            children: [
+                              CircleAvatar(
+                                radius: 26,
+                                backgroundColor: scheme.primaryContainer,
+                                child: Icon(Icons.person_outline_rounded, color: scheme.primary),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      displayName,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: TextStyle(
+                                        color: scheme.onSurface,
+                                        fontSize: 15,
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 5),
+                                    Text(
+                                      lastMessage?.isNotEmpty == true ? lastMessage! : 'لا توجد رسائل بعد',
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 13),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Icon(Icons.chevron_left_rounded, color: scheme.onSurfaceVariant),
+                            ],
+                          ),
+                        ),
                       ),
                     );
                   },
@@ -114,6 +140,61 @@ class ConversationsPage extends ConsumerWidget {
             ),
           );
         },
+      ),
+    );
+  }
+}
+
+class _StateView extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String message;
+  final Widget? action;
+
+  const _StateView({
+    required this.icon,
+    required this.title,
+    required this.message,
+    this.action,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(28),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 72,
+              height: 72,
+              decoration: BoxDecoration(
+                color: scheme.primaryContainer,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(icon, size: 34, color: scheme.primary),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              title,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: scheme.onSurface,
+                fontSize: 17,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            const SizedBox(height: 7),
+            Text(
+              message,
+              textAlign: TextAlign.center,
+              style: TextStyle(color: scheme.onSurfaceVariant, height: 1.5),
+            ),
+            if (action != null) ...[const SizedBox(height: 12), action!],
+          ],
+        ),
       ),
     );
   }
