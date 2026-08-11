@@ -60,6 +60,21 @@ class LawyerDetailsPage extends ConsumerWidget {
                 _Tabs(lawyer: lawyer),
                 const SizedBox(height: 18),
                 LawyerAchievementsGallery(lawyerId: lawyer.profileId, editable: false),
+                const SizedBox(height: 18),
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    onPressed: () => context.push('/create-booking', extra: {'lawyer': lawyer, 'isCustom': true}),
+                    icon: const Icon(Icons.edit_note_rounded),
+                    label: const Text('طلب استشارة بنوع مختلف'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: AppColors.primaryDark,
+                      side: const BorderSide(color: AppColors.primaryDark),
+                      minimumSize: const Size.fromHeight(50),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                    ),
+                  ),
+                ),
               ]))),
             ]),
             Positioned(left: 16, right: 16, bottom: 12, child: SafeArea(top: false, child: Row(textDirection: TextDirection.rtl, children: [
@@ -90,7 +105,7 @@ class _Stats extends StatelessWidget {
     ]),
   );
   Widget _divider() => Container(width: 1, height: 56, color: AppColors.divider);
-  Widget _item(String value, String label, IconData icon) => Expanded(child: Column(children: [Icon(icon, color: AppColors.primaryDark, size: 24), const SizedBox(height: 7), Text(value, style: const TextStyle(fontSize: 21, fontWeight: FontWeight.w800, color: AppColors.secondary)), const SizedBox(height: 2), Text(label, style: const TextStyle(fontSize: 10, color: AppColors.textSecondary))]));
+  Widget _item(String value, String label, IconData icon) => Expanded(child: Column(children: [Icon(icon, color: AppColors.primaryDark, size: 24), const SizedBox(height: 7), Text(value, style: const TextStyle(fontSize: 21, fontWeight: FontWeight.w800, color: AppColors.secondary)), const SizedBox(height: 2), Text(label, style: const TextStyle(fontSize: 10, color: AppColors.textSecondary)]));
 }
 
 class _Tabs extends StatelessWidget {
