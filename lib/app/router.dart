@@ -12,6 +12,7 @@ import '../features/admin/presentation/pages/admin_dashboard_page.dart';
 import '../features/admin/presentation/pages/lawyer_verification_page.dart';
 import '../features/admin/presentation/pages/payment_management_page.dart';
 import '../features/admin/presentation/pages/specialization_change_requests_page.dart';
+import '../features/home/presentation/pages/home_page.dart';
 import '../features/lawyers/presentation/pages/lawyers_list_page.dart';
 import '../features/lawyers/presentation/pages/lawyer_details_page.dart';
 import '../features/lawyers/presentation/pages/lawyer_setup_page.dart';
@@ -62,15 +63,7 @@ Future<bool> _lawyerHasPendingManualPayment() async {
     final profile = await SupabaseConfig.client.from('profiles').select('id').eq('auth_id', authUser.id).maybeSingle();
     final profileId = profile?['id'] as String?;
     if (profileId == null) return false;
-    final pending = await SupabaseConfig.client
-        .from('bookings')
-        .select('id')
-        .eq('lawyer_id', profileId)
-        .eq('manual_payment_required', true)
-        .isFilter('manual_received_at', null)
-        .inFilter('status', ['بانتظار التأكيد', 'قيد مراجعة المحامي'])
-        .limit(1)
-        .maybeSingle();
+    final pending = await SupabaseConfig.client.from('bookings').select('id').eq('lawyer_id', profileId).eq('manual_payment_required', true).isFilter('manual_received_at', null).inFilter('status', ['بانتظار التأكيد', 'قيد مراجعة المحامي']).limit(1).maybeSingle();
     return pending != null;
   } catch (_) {
     return false;
@@ -131,7 +124,8 @@ GoRouter router(RouterRef ref) {
       ShellRoute(
         builder: (context, state, child) => AppShell(location: state.matchedLocation, child: child),
         routes: [
-          GoRoute(path: '/', builder: (c, s) => const LawyersListPage()),
+          GoRoute(path: '/', builder: (c, s) => const HomePage()),
+          GoRoute(path: '/lawyers', builder: (c, s) => const LawyersListPage()),
           GoRoute(path: '/lawyer-home', builder: (c, s) => const LawyerDashboardPage()),
           GoRoute(path: '/lawyer-profile-edit', builder: (c, s) => const LawyerProfileEditPage()),
           GoRoute(path: '/lawyer-availability', builder: (c, s) => const LawyerAvailabilityPage()),
@@ -165,7 +159,6 @@ GoRouter router(RouterRef ref) {
           GoRoute(path: '/notifications', builder: (c, s) => const NotificationsPage()),
           GoRoute(path: '/notification-settings', builder: (c, s) => const NotificationSettingsPage()),
           GoRoute(path: '/payment-methods', builder: (c, s) => const PaymentMethodsPage()),
-          // The settings gear intentionally opens the existing profile/settings page.
           GoRoute(path: '/app-settings', builder: (c, s) => const ProfilePage()),
           GoRoute(path: '/help-center', builder: (c, s) => const HelpCenterPage()),
         ],
