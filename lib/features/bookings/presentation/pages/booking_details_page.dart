@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
-import '../../../../core/config/supabase_config.dart';
 import '../../../../core/utils/app_time_format.dart';
 import '../../../authentication/presentation/providers/auth_provider.dart';
 import '../../../payments/presentation/providers/payments_provider.dart';
@@ -78,67 +77,21 @@ class BookingDetailsPage extends ConsumerWidget {
     );
   }
 
-  Widget _contactContent(BuildContext context, Map<String, dynamic> c, bool isLawyer) {
-    final scheme = Theme.of(context).colorScheme;
-    final name = isLawyer ? c['client_name'] ?? 'طالب خدمة' : c['lawyer_name'] ?? 'المحامي';
-    final phone = isLawyer ? c['client_phone'] : c['lawyer_phone'];
-    final whatsapp = isLawyer ? c['client_whatsapp'] : c['lawyer_whatsapp'];
-    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(name.toString(), style: TextStyle(fontWeight: FontWeight.bold, color: scheme.onSurface)), const SizedBox(height: 10), if (phone != null) _row(context, 'رقم الهاتف', phone.toString()), if (whatsapp != null && booking.status == 'قيد التنفيذ') SizedBox(width: double.infinity, child: ElevatedButton.icon(onPressed: () => _openWhatsApp(context, whatsapp.toString()), icon: const Icon(Icons.chat_rounded), label: const Text('بدء الاستشارة عبر واتساب'), style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF25D366), foregroundColor: Colors.white, minimumSize: const Size.fromHeight(48))))]);
-  }
+  Widget _contactContent(BuildContext context, Map<String, dynamic> c, bool isLawyer) { final scheme = Theme.of(context).colorScheme; final name = isLawyer ? c['client_name'] ?? 'طالب خدمة' : c['lawyer_name'] ?? 'المحامي'; final phone = isLawyer ? c['client_phone'] : c['lawyer_phone']; final whatsapp = isLawyer ? c['client_whatsapp'] : c['lawyer_whatsapp']; return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(name.toString(), style: TextStyle(fontWeight: FontWeight.bold, color: scheme.onSurface)), const SizedBox(height: 10), if (phone != null) _row(context, 'رقم الهاتف', phone.toString()), if (whatsapp != null && booking.status == 'قيد التنفيذ') SizedBox(width: double.infinity, child: ElevatedButton.icon(onPressed: () => _openWhatsApp(context, whatsapp.toString()), icon: const Icon(Icons.chat_rounded), label: const Text('بدء الاستشارة عبر واتساب'), style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF25D366), foregroundColor: Colors.white, minimumSize: const Size.fromHeight(48))))]); }
 
-  bool _canReportNoShow({required bool isLawyer}) {
-    final now = DateTime.now();
-    if (isLawyer) {
-      if (booking.status == 'مؤكد') return !now.isBefore(booking.scheduledAt.add(const Duration(minutes: 10)));
-      if (booking.status == 'قيد التنفيذ' && booking.startedAt != null) return !now.isBefore(booking.startedAt!.add(const Duration(minutes: 10)));
-      return false;
-    }
-    return booking.status == 'مؤكد' && booking.startedAt == null && !now.isBefore(booking.scheduledAt.add(const Duration(minutes: 10)));
-  }
+  bool _canReportNoShow({required bool isLawyer}) { final now = DateTime.now(); if (isLawyer) { if (booking.status == 'مؤكد') return !now.isBefore(booking.scheduledAt.add(const Duration(minutes: 10))); if (booking.status == 'قيد التنفيذ' && booking.startedAt != null) return !now.isBefore(booking.startedAt!.add(const Duration(minutes: 10))); return false; } return booking.status == 'مؤكد' && booking.startedAt == null && !now.isBefore(booking.scheduledAt.add(const Duration(minutes: 10))); }
 
-  Widget _startButton(BuildContext context, WidgetRef ref, AsyncValue<Map<String, dynamic>?> detailsAsync) {
-    final scheme = Theme.of(context).colorScheme;
-    final duration = int.tryParse('${detailsAsync.valueOrNull?['package_duration_minutes'] ?? 30}') ?? 30;
-    final now = DateTime.now();
-    final opensAt = booking.scheduledAt.subtract(const Duration(minutes: 5));
-    final closesAt = booking.scheduledAt.add(Duration(minutes: duration));
-    if (now.isAfter(closesAt)) return _infoCard(context, 'انتهى وقت بدء الاستشارة لهذا الموعد.', Icons.timer_off_outlined);
-    if (now.isBefore(opensAt)) return _infoCard(context, 'يمكن بدء الاستشارة قبل الموعد بـ 5 دقائق. المتاح بعد حوالي ${opensAt.difference(now).inMinutes + 1} دقيقة.', Icons.schedule_rounded);
-    return ElevatedButton.icon(onPressed: () => _updateStatus(context, ref, 'قيد التنفيذ'), icon: const Icon(Icons.play_arrow_rounded), label: const Text('بدء الاستشارة الآن'), style: _button(context, color: scheme.primary));
-  }
+  Widget _startButton(BuildContext context, WidgetRef ref, AsyncValue<Map<String, dynamic>?> detailsAsync) { final scheme = Theme.of(context).colorScheme; final duration = int.tryParse('${detailsAsync.valueOrNull?['package_duration_minutes'] ?? 30}') ?? 30; final now = DateTime.now(); final opensAt = booking.scheduledAt.subtract(const Duration(minutes: 5)); final closesAt = booking.scheduledAt.add(Duration(minutes: duration)); if (now.isAfter(closesAt)) return _infoCard(context, 'انتهى وقت بدء الاستشارة لهذا الموعد.', Icons.timer_off_outlined); if (now.isBefore(opensAt)) return _infoCard(context, 'يمكن بدء الاستشارة قبل الموعد بـ 5 دقائق. المتاح بعد حوالي ${opensAt.difference(now).inMinutes + 1} دقيقة.', Icons.schedule_rounded); return ElevatedButton.icon(onPressed: () => _updateStatus(context, ref, 'قيد التنفيذ'), icon: const Icon(Icons.play_arrow_rounded), label: const Text('بدء الاستشارة الآن'), style: _button(context, color: scheme.primary)); }
 
-  Future<void> _openWhatsApp(BuildContext context, String value) async {
-    var phone = value.replaceAll(RegExp(r'[^0-9+]'), '');
-    if (phone.startsWith('00')) phone = '+${phone.substring(2)}';
-    if (phone.startsWith('07')) phone = '+964${phone.substring(1)}';
-    final opened = await launchUrl(Uri.parse('https://wa.me/${phone.replaceAll('+', '')}'), mode: LaunchMode.externalApplication);
-    if (!opened && context.mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تعذر فتح واتساب')));
-  }
+  Future<void> _openWhatsApp(BuildContext context, String value) async { var phone = value.replaceAll(RegExp(r'[^0-9+]'), ''); if (phone.startsWith('00')) phone = '+${phone.substring(2)}'; if (phone.startsWith('07')) phone = '+964${phone.substring(1)}'; final opened = await launchUrl(Uri.parse('https://wa.me/${phone.replaceAll('+', '')}'), mode: LaunchMode.externalApplication); if (!opened && context.mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تعذر فتح واتساب'))); }
 
-  String _consultationMethod(String? type, String? mode) {
-    if (mode == 'في المكتب') return 'حضور في مكتب المحامي';
-    return switch (type) {'نصية' => 'محادثة نصية عبر واتساب', 'صوتية' => 'تواصل صوتي عبر واتساب', 'فيديو' => 'مكالمة فيديو عبر واتساب', _ => 'عن بعد'};
-  }
-
+  String _consultationMethod(String? type, String? mode) { if (mode == 'في المكتب') return 'حضور في مكتب المحامي'; return switch (type) {'نصية' => 'محادثة نصية عبر واتساب', 'صوتية' => 'تواصل صوتي عبر واتساب', 'فيديو' => 'مكالمة فيديو عبر واتساب', _ => 'عن بعد'}; }
   String _paymentStatus(String value) => switch (value) {'pending' || 'قيد الانتظار' => 'قيد الانتظار', 'submitted' || 'قيد المعالجة' => 'قيد المعالجة', 'processing' => 'قيد المراجعة', 'approved' || 'مقبول' || 'paid' => 'تمت الموافقة', 'rejected' || 'مرفوض' => 'مرفوض', 'refunded' || 'مسترد' => 'مسترد', 'cancelled' || 'ملغي' => 'ملغي', _ => value};
-  String _paymentMethod(String value) => switch (value) {'ZainCash' || 'زين كاش' => 'زين كاش', 'Qi Card' || 'Qicard' || 'كي كارد' => 'كي كارد', 'MasterCard' || 'mastercard' => 'ماستركارد', 'bank_transfer' || 'تحويل مصرفي' => 'تحويل مصرفي', _ => value};
+  String _paymentMethod(String value) => value.trim().isEmpty ? 'غير محددة' : value;
 
-  Widget _statusHeader(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    final color = switch (booking.status) {'قيد انتظار الدفع' || 'بانتظار الاسترداد' => Colors.orange, 'قيد معالجة الدفع' => Colors.blue, 'قيد مراجعة المحامي' => Colors.deepPurple, 'بانتظار مراجعة عدم الحضور' => Colors.deepOrange, 'مؤكد' || 'مكتمل' => scheme.primary, 'قيد التنفيذ' => scheme.primary, 'ملغي' => scheme.error, _ => scheme.onSurfaceVariant};
-    return Container(padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15), decoration: BoxDecoration(color: color.withValues(alpha: .10), borderRadius: BorderRadius.circular(18), border: Border.all(color: color.withValues(alpha: .22))), child: Row(children: [Icon(Icons.circle, size: 10, color: color), const SizedBox(width: 10), Expanded(child: Text(booking.status, style: TextStyle(color: color, fontWeight: FontWeight.bold))), Text('#${booking.id.length >= 8 ? booking.id.substring(0, 8) : booking.id}', style: TextStyle(fontSize: 11, color: scheme.onSurfaceVariant))]));
-  }
-
-  Widget _section(BuildContext context, String title, IconData icon, Widget child) {
-    final scheme = Theme.of(context).colorScheme;
-    return Container(padding: const EdgeInsets.all(16), decoration: BoxDecoration(color: scheme.surfaceContainerLowest, borderRadius: BorderRadius.circular(20), border: Border.all(color: scheme.outlineVariant)), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Row(children: [Container(padding: const EdgeInsets.all(8), decoration: BoxDecoration(color: scheme.primaryContainer, borderRadius: BorderRadius.circular(10)), child: Icon(icon, color: scheme.primary, size: 19)), const SizedBox(width: 10), Text(title, style: TextStyle(fontWeight: FontWeight.bold, color: scheme.onSurface))]), const SizedBox(height: 14), child]));
-  }
-
-  Widget _infoCard(BuildContext context, String text, IconData icon) {
-    final scheme = Theme.of(context).colorScheme;
-    return Container(padding: const EdgeInsets.all(14), decoration: BoxDecoration(color: scheme.primaryContainer.withValues(alpha: .55), borderRadius: BorderRadius.circular(16)), child: Row(children: [Icon(icon, color: scheme.primary), const SizedBox(width: 10), Expanded(child: Text(text, style: TextStyle(color: scheme.onSurface, height: 1.5)))]));
-  }
-
+  Widget _statusHeader(BuildContext context) { final scheme = Theme.of(context).colorScheme; return Container(padding: const EdgeInsets.all(18), decoration: BoxDecoration(color: scheme.primaryContainer, borderRadius: BorderRadius.circular(22)), child: Row(children: [Icon(Icons.event_available_rounded, color: scheme.primary, size: 34), const SizedBox(width: 12), Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text('حالة الحجز', style: TextStyle(color: scheme.onPrimaryContainer)), const SizedBox(height: 4), Text(booking.status, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20, color: scheme.onPrimaryContainer))]))])); }
+  Widget _section(BuildContext context, String title, IconData icon, Widget child) { final scheme = Theme.of(context).colorScheme; return Card(elevation: 0, color: scheme.surfaceContainerLowest, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20), side: BorderSide(color: scheme.outlineVariant)), child: Padding(padding: const EdgeInsets.all(16), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Row(children: [Icon(icon, color: scheme.primary), const SizedBox(width: 8), Text(title, style: TextStyle(fontWeight: FontWeight.bold, color: scheme.onSurface))]), const SizedBox(height: 14), child]))); }
+  Widget _infoCard(BuildContext context, String text, IconData icon) { final scheme = Theme.of(context).colorScheme; return Container(padding: const EdgeInsets.all(14), decoration: BoxDecoration(color: scheme.surfaceContainerHighest, borderRadius: BorderRadius.circular(16)), child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [Icon(icon, color: scheme.primary), const SizedBox(width: 10), Expanded(child: Text(text, style: TextStyle(color: scheme.onSurface, height: 1.5)))])); }
   Widget _row(BuildContext context, String label, String value) { final scheme = Theme.of(context).colorScheme; return Padding(padding: const EdgeInsets.only(bottom: 8), child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [Text('$label: ', style: TextStyle(color: scheme.onSurfaceVariant)), Expanded(child: Text(value, style: TextStyle(fontWeight: FontWeight.w600, color: scheme.onSurface)))])); }
   ButtonStyle _button(BuildContext context, {Color? color}) { final scheme = Theme.of(context).colorScheme; return ElevatedButton.styleFrom(backgroundColor: color ?? scheme.primary, foregroundColor: scheme.onPrimary, minimumSize: const Size.fromHeight(50), padding: const EdgeInsets.symmetric(vertical: 15), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14))); }
 
