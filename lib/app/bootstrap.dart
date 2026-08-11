@@ -12,12 +12,9 @@ Future<ProviderContainer> bootstrap() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   try {
-    // Web production builds receive Supabase credentials through --dart-define.
-    // Keep dotenv as a local-development fallback, but never make application
-    // startup depend on a runtime .env asset being available on Pages.
     try {
       await dotenv.load(fileName: '.env');
-    } catch (e) {
+    } catch (_) {
       debugPrint('⚠️ Warning: .env file not available - using build-time configuration');
     }
 
