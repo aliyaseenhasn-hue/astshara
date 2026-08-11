@@ -49,7 +49,7 @@ class SupabaseConfig {
     try {
       await Supabase.initialize(
         url: url,
-        anonKey: anonKey,
+        publishableKey: anonKey,
       );
       debugPrint('✅ Supabase initialized successfully');
     } catch (e) {
@@ -63,14 +63,7 @@ class SupabaseConfig {
   }
 
   static SupabaseClient get client {
-    final testClient = _testClient;
-    if (testClient != null) return testClient;
-
-    try {
-      return Supabase.instance.client;
-    } catch (e) {
-      debugPrint('❌ Error getting Supabase client: $e');
-      rethrow;
-    }
+    if (_testClient != null) return _testClient!;
+    return Supabase.instance.client;
   }
 }
