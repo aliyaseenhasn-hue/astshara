@@ -113,7 +113,7 @@ class ProfilePage extends ConsumerWidget {
                         onTap: () => _logout(context, ref),
                       ),
                       const SizedBox(height: 12),
-                      Center(child: TextButton.icon(onPressed: () => _showDeleteConfirmation(context, ref), icon: Icon(Icons.delete_forever_outlined, color: scheme.onSurfaceVariant, size: 18), label: Text('حذف الحساب نهائياً', style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 13))),
+                      Center(child: TextButton.icon(onPressed: () => _showDeleteConfirmation(context, ref), icon: Icon(Icons.delete_forever_outlined, color: scheme.onSurfaceVariant, size: 18), label: Text('حذف الحساب نهائياً', style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 13)))),
                       const SizedBox(height: AppSizes.p48),
                     ]),
                   ),
