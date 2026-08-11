@@ -36,7 +36,7 @@ class MainBottomNav extends StatelessWidget {
           backgroundColor: background,
           selectedItemColor: selected,
           unselectedItemColor: unselected,
-          currentIndex: currentIndex.clamp(0, _items.length - 1),
+          currentIndex: currentIndex.clamp(0, _items.length - 1).toInt(),
           elevation: 0,
           selectedLabelStyle: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
           unselectedLabelStyle: const TextStyle(fontSize: 11),
