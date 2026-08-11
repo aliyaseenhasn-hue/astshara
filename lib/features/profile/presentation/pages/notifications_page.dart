@@ -39,23 +39,41 @@ class NotificationsPage extends ConsumerWidget {
                 await markAllNotificationsAsRead();
                 await refresh();
               },
-              child: Text('قراءة الكل', style: TextStyle(color: scheme.primary, fontWeight: FontWeight.bold)),
+              child: Text(
+                'قراءة الكل',
+                style: TextStyle(
+                  color: scheme.primary,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             ),
         ],
       ),
       body: notifications.when(
-        loading: () => Center(child: CircularProgressIndicator(color: scheme.primary)),
+        loading: () => Center(
+          child: CircularProgressIndicator(color: scheme.primary),
+        ),
         error: (_, __) => Center(
           child: Padding(
             padding: const EdgeInsets.all(AppSizes.p20),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.notifications_off_rounded, size: 52, color: scheme.onSurfaceVariant),
+                Icon(
+                  Icons.notifications_off_rounded,
+                  size: 52,
+                  color: scheme.onSurfaceVariant,
+                ),
                 const SizedBox(height: 12),
-                Text('تعذر تحميل التنبيهات', style: TextStyle(color: scheme.onSurface)),
+                Text(
+                  'تعذر تحميل التنبيهات',
+                  style: TextStyle(color: scheme.onSurface),
+                ),
                 const SizedBox(height: 12),
-                OutlinedButton(onPressed: refresh, child: const Text('إعادة المحاولة')),
+                OutlinedButton(
+                  onPressed: refresh,
+                  child: const Text('إعادة المحاولة'),
+                ),
               ],
             ),
           ),
@@ -68,11 +86,31 @@ class NotificationsPage extends ConsumerWidget {
                 physics: const AlwaysScrollableScrollPhysics(),
                 children: [
                   const SizedBox(height: 150),
-                  Icon(Icons.notifications_none_rounded, size: 76, color: scheme.outline),
+                  Icon(
+                    Icons.notifications_none_rounded,
+                    size: 76,
+                    color: scheme.outline,
+                  ),
                   const SizedBox(height: 16),
-                  Center(child: Text('لا توجد تنبيهات حالياً', style: TextStyle(color: scheme.onSurfaceVariant, fontWeight: FontWeight.w600))),
+                  Center(
+                    child: Text(
+                      'لا توجد تنبيهات حالياً',
+                      style: TextStyle(
+                        color: scheme.onSurfaceVariant,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
                   const SizedBox(height: 6),
-                  Center(child: Text('سنخبرك هنا عند وصول أي تحديث جديد.', style: TextStyle(color: scheme.outline, fontSize: 12))),
+                  Center(
+                    child: Text(
+                      'سنخبرك هنا عند وصول أي تحديث جديد.',
+                      style: TextStyle(
+                        color: scheme.outline,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ),
                 ],
               ),
             );
@@ -83,7 +121,9 @@ class NotificationsPage extends ConsumerWidget {
           final previous = <dynamic>[];
           for (final item in items) {
             final date = item.createdAt.toLocal();
-            if (date.year == now.year && date.month == now.month && date.day == now.day) {
+            if (date.year == now.year &&
+                date.month == now.month &&
+                date.day == now.day) {
               today.add(item);
             } else {
               previous.add(item);
@@ -98,11 +138,23 @@ class NotificationsPage extends ConsumerWidget {
               children: [
                 if (today.isNotEmpty) ...[
                   _GroupTitle('اليوم', scheme: scheme),
-                  ...today.map((item) => _NotificationCard(item: item, iconForType: _iconForType, onChanged: refresh)),
+                  ...today.map(
+                    (item) => _NotificationCard(
+                      item: item,
+                      iconForType: _iconForType,
+                      onChanged: refresh,
+                    ),
+                  ),
                 ],
                 if (previous.isNotEmpty) ...[
                   _GroupTitle('سابقاً', scheme: scheme),
-                  ...previous.map((item) => _NotificationCard(item: item, iconForType: _iconForType, onChanged: refresh)),
+                  ...previous.map(
+                    (item) => _NotificationCard(
+                      item: item,
+                      iconForType: _iconForType,
+                      onChanged: refresh,
+                    ),
+                  ),
                 ],
               ],
             ),
@@ -116,12 +168,21 @@ class NotificationsPage extends ConsumerWidget {
 class _GroupTitle extends StatelessWidget {
   final String title;
   final ColorScheme scheme;
+
   const _GroupTitle(this.title, {required this.scheme});
 
   @override
   Widget build(BuildContext context) => Padding(
         padding: const EdgeInsets.fromLTRB(4, 18, 4, 10),
-        child: Text(title, style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: scheme.onSurfaceVariant)),
+        child: Text(
+          title,
+          textAlign: TextAlign.right,
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.bold,
+            color: scheme.onSurfaceVariant,
+          ),
+        ),
       );
 }
 
@@ -130,21 +191,30 @@ class _NotificationCard extends StatelessWidget {
   final IconData Function(String) iconForType;
   final Future<void> Function() onChanged;
 
-  const _NotificationCard({required this.item, required this.iconForType, required this.onChanged});
+  const _NotificationCard({
+    required this.item,
+    required this.iconForType,
+    required this.onChanged,
+  });
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final date = DateFormat('HH:mm', 'ar').format(item.createdAt.toLocal());
     final unread = !item.isRead;
-    final rtl = Directionality.of(context) == TextDirection.rtl;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
       decoration: BoxDecoration(
-        color: unread ? scheme.primaryContainer.withValues(alpha: .28) : scheme.surfaceContainerLow,
+        color: unread
+            ? scheme.primaryContainer.withValues(alpha: .28)
+            : scheme.surfaceContainerLow,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: unread ? scheme.primary.withValues(alpha: .35) : scheme.outlineVariant.withValues(alpha: .7)),
+        border: Border.all(
+          color: unread
+              ? scheme.primary.withValues(alpha: .35)
+              : scheme.outlineVariant.withValues(alpha: .7),
+        ),
       ),
       child: InkWell(
         borderRadius: BorderRadius.circular(18),
@@ -157,47 +227,79 @@ class _NotificationCard extends StatelessWidget {
         child: Padding(
           padding: const EdgeInsets.all(14),
           child: Row(
-            textDirection: rtl ? TextDirection.rtl : TextDirection.ltr,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Container(
                 width: 46,
                 height: 46,
                 decoration: BoxDecoration(
-                  color: unread ? scheme.primaryContainer : scheme.surfaceContainerHighest,
+                  color: unread
+                      ? scheme.primaryContainer
+                      : scheme.surfaceContainerHighest,
                   borderRadius: BorderRadius.circular(14),
                 ),
-                child: Icon(iconForType(item.type), color: unread ? scheme.onPrimaryContainer : scheme.primary),
+                child: Icon(
+                  iconForType(item.type),
+                  color: unread
+                      ? scheme.onPrimaryContainer
+                      : scheme.primary,
+                ),
               ),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
-                  crossAxisAlignment: rtl ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
                     Row(
-                      textDirection: rtl ? TextDirection.rtl : TextDirection.ltr,
                       children: [
                         Expanded(
                           child: Text(
                             item.title,
-                            textAlign: rtl ? TextAlign.right : TextAlign.left,
-                            style: TextStyle(fontWeight: unread ? FontWeight.w800 : FontWeight.w600, fontSize: 14, color: scheme.onSurface),
+                            textAlign: TextAlign.right,
+                            style: TextStyle(
+                              fontWeight: unread
+                                  ? FontWeight.w800
+                                  : FontWeight.w600,
+                              fontSize: 14,
+                              color: scheme.onSurface,
+                            ),
                           ),
                         ),
                         if (unread) ...[
                           const SizedBox(width: 8),
-                          Container(width: 8, height: 8, decoration: BoxDecoration(color: scheme.primary, shape: BoxShape.circle)),
+                          Container(
+                            width: 8,
+                            height: 8,
+                            decoration: BoxDecoration(
+                              color: scheme.primary,
+                              shape: BoxShape.circle,
+                            ),
+                          ),
                         ],
                       ],
                     ),
                     if (item.body.isNotEmpty) ...[
                       const SizedBox(height: 5),
-                      Text(item.body, textAlign: rtl ? TextAlign.right : TextAlign.left, style: TextStyle(fontSize: 12, height: 1.5, color: scheme.onSurfaceVariant)),
+                      Text(
+                        item.body,
+                        textAlign: TextAlign.right,
+                        style: TextStyle(
+                          fontSize: 12,
+                          height: 1.5,
+                          color: scheme.onSurfaceVariant,
+                        ),
+                      ),
                     ],
                     const SizedBox(height: 7),
                     Align(
-                      alignment: rtl ? Alignment.centerRight : Alignment.centerLeft,
-                      child: Text(date, style: TextStyle(fontSize: 10, color: scheme.outline)),
+                      alignment: Alignment.centerRight,
+                      child: Text(
+                        date,
+                        style: TextStyle(
+                          fontSize: 10,
+                          color: scheme.outline,
+                        ),
+                      ),
                     ),
                   ],
                 ),
