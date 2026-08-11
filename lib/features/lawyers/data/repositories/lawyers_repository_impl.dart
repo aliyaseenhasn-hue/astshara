@@ -1,5 +1,4 @@
 import 'package:flutter/foundation.dart';
-import 'dart:typed_data';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../domain/entities/lawyer_profile.dart';
 import '../../domain/repositories/lawyers_repository.dart';
