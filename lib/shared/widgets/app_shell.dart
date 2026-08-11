@@ -10,21 +10,23 @@ class AppShell extends StatelessWidget {
   int get currentIndex {
     if (location == '/app-settings' ||
         location == '/profile' ||
-        location == '/notifications' ||
         location == '/notification-settings' ||
         location == '/payment-methods' ||
         location == '/help-center') {
-      return 3;
+      return 4;
     }
-    if (location == '/chats' || location.startsWith('/chat/')) return 2;
+    if (location == '/notifications') return 3;
     if (location == '/bookings' ||
         location == '/booking-details' ||
         location == '/manual-payment' ||
         location == '/manual-payment-required' ||
         location == '/upload-payment' ||
-        location == '/payment-result') {
-      return 1;
+        location == '/payment-result' ||
+        location == '/chats' ||
+        location.startsWith('/chat/')) {
+      return 2;
     }
+    if (location == '/lawyers' || location.startsWith('/lawyer-details/')) return 1;
     return 0;
   }
 
