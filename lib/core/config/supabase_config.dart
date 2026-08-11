@@ -3,6 +3,18 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class SupabaseConfig {
+  static SupabaseClient? _testClient;
+
+  @visibleForTesting
+  static void setTestClient(SupabaseClient client) {
+    _testClient = client;
+  }
+
+  @visibleForTesting
+  static void clearTestClient() {
+    _testClient = null;
+  }
+
   static String get url {
     final url = dotenv.env['SUPABASE_URL'] ??
         dotenv.env['NEXT_PUBLIC_SUPABASE_URL'] ??
@@ -52,6 +64,9 @@ class SupabaseConfig {
   }
 
   static SupabaseClient get client {
+    final testClient = _testClient;
+    if (testClient != null) return testClient;
+
     try {
       return Supabase.instance.client;
     } catch (e) {
