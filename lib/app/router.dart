@@ -103,6 +103,7 @@ GoRouter router(RouterRef ref) {
       if (clientOnlyBooking && !isClient) return user.role == 'lawyer' ? '/lawyer-home' : '/';
       if (user.role == 'lawyer') {
         if (!user.isVerified) return location == '/lawyer-setup' || pending ? null : '/lawyer-pending';
+        if (location == '/lawyers' || location.startsWith('/lawyer-details/')) return '/lawyer-home';
         if (!manualPaymentGate && !manualPayment) {
           if (await _lawyerHasPendingManualPayment()) return '/manual-payment-required';
         }
