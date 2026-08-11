@@ -17,25 +17,22 @@ class ProfilePage extends ConsumerWidget {
     final user = ref.watch(authStateChangesProvider).value;
     final themeMode = ref.watch(themeModeProvider);
     final isDark = themeMode == ThemeMode.dark;
+    final scheme = Theme.of(context).colorScheme;
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: scheme.surface,
       body: user == null
-          ? const Center(child: Text('يرجى تسجيل الدخول'))
+          ? Center(child: Text('يرجى تسجيل الدخول', style: TextStyle(color: scheme.onSurface)))
           : CustomScrollView(
               slivers: [
                 SliverAppBar(
                   expandedHeight: 220,
                   pinned: true,
-                  backgroundColor: AppColors.primary,
+                  backgroundColor: AppColors.secondary,
                   foregroundColor: Colors.white,
                   flexibleSpace: FlexibleSpaceBar(
                     background: Container(
                       decoration: const BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
-                          colors: [AppColors.secondary, AppColors.secondaryDark],
-                        ),
+                        gradient: LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [AppColors.secondary, AppColors.secondaryDark]),
                       ),
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
@@ -59,7 +56,7 @@ class ProfilePage extends ConsumerWidget {
                                 child: CircleAvatar(
                                   radius: 15,
                                   backgroundColor: AppColors.gold,
-                                  child: IconButton(icon: const Icon(Icons.camera_alt, size: 14, color: Colors.white), onPressed: () => _updateAvatar(context, ref)),
+                                  child: IconButton(icon: const Icon(Icons.camera_alt, size: 14, color: AppColors.secondaryDark), onPressed: () => _updateAvatar(context, ref)),
                                 ),
                               ),
                             ],
@@ -85,14 +82,14 @@ class ProfilePage extends ConsumerWidget {
                   padding: const EdgeInsets.symmetric(horizontal: AppSizes.p20, vertical: 20),
                   sliver: SliverList(
                     delegate: SliverChildListDelegate([
-                      _buildProfileSectionTitle('المعاملات'),
-                      _buildProfileTile(Icons.history, 'سجل الاستشارات', () => context.push('/bookings')),
-                      _buildProfileTile(Icons.payment_rounded, 'طرق الدفع', () => context.push('/payment-methods')),
+                      _buildProfileSectionTitle(context, 'المعاملات'),
+                      _buildProfileTile(context, Icons.history, 'سجل الاستشارات', () => context.push('/bookings')),
+                      _buildProfileTile(context, Icons.payment_rounded, 'طرق الدفع', () => context.push('/payment-methods')),
                       const SizedBox(height: AppSizes.p20),
-                      _buildProfileSectionTitle('الملف الشخصي'),
-                      _buildProfileTile(Icons.person_outline, 'المعلومات الشخصية والتواصل', () => _showEditProfileDialog(context, ref)),
+                      _buildProfileSectionTitle(context, 'الملف الشخصي'),
+                      _buildProfileTile(context, Icons.person_outline, 'المعلومات الشخصية والتواصل', () => _showEditProfileDialog(context, ref)),
                       const SizedBox(height: AppSizes.p20),
-                      _buildProfileSectionTitle('الإعدادات'),
+                      _buildProfileSectionTitle(context, 'الإعدادات'),
                       Card(
                         margin: const EdgeInsets.only(bottom: 12),
                         child: SwitchListTile(
@@ -104,29 +101,19 @@ class ProfilePage extends ConsumerWidget {
                           onChanged: (value) => ref.read(themeModeProvider.notifier).setMode(value ? ThemeMode.dark : ThemeMode.light),
                         ),
                       ),
-                      _buildProfileTile(Icons.notifications_active_outlined, 'إعدادات الإشعارات', () => context.push('/notification-settings')),
-                      _buildProfileTile(Icons.help_outline_rounded, 'مركز المساعدة', () => context.push('/help-center')),
+                      _buildProfileTile(context, Icons.notifications_active_outlined, 'إعدادات الإشعارات', () => context.push('/notification-settings')),
+                      _buildProfileTile(context, Icons.help_outline_rounded, 'مركز المساعدة', () => context.push('/help-center')),
                       const SizedBox(height: AppSizes.p20),
-                      _buildProfileSectionTitle('الدعم'),
-                      _buildProfileTile(Icons.privacy_tip_outlined, 'سياسة الخصوصية', () {}),
+                      _buildProfileSectionTitle(context, 'الدعم'),
+                      _buildProfileTile(context, Icons.privacy_tip_outlined, 'سياسة الخصوصية', () {}),
                       const Padding(padding: EdgeInsets.symmetric(vertical: AppSizes.p24), child: Divider()),
                       ListTile(
-                        leading: Container(
-                          padding: const EdgeInsets.all(10),
-                          decoration: BoxDecoration(color: AppColors.error.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(12)),
-                          child: const Icon(Icons.logout_rounded, color: AppColors.error, size: 22),
-                        ),
+                        leading: Container(padding: const EdgeInsets.all(10), decoration: BoxDecoration(color: AppColors.error.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(12)), child: const Icon(Icons.logout_rounded, color: AppColors.error, size: 22)),
                         title: const Text('تسجيل الخروج', style: TextStyle(color: AppColors.error, fontWeight: FontWeight.bold)),
                         onTap: () => _logout(context, ref),
                       ),
                       const SizedBox(height: 12),
-                      Center(
-                        child: TextButton.icon(
-                          onPressed: () => _showDeleteConfirmation(context, ref),
-                          icon: const Icon(Icons.delete_forever_outlined, color: AppColors.textSecondary, size: 18),
-                          label: const Text('حذف الحساب نهائياً', style: TextStyle(color: AppColors.textSecondary, fontSize: 13)),
-                        ),
-                      ),
+                      Center(child: TextButton.icon(onPressed: () => _showDeleteConfirmation(context, ref), icon: Icon(Icons.delete_forever_outlined, color: scheme.onSurfaceVariant, size: 18), label: Text('حذف الحساب نهائياً', style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 13))),
                       const SizedBox(height: AppSizes.p48),
                     ]),
                   ),
@@ -145,11 +132,7 @@ class ProfilePage extends ConsumerWidget {
       final user = ref.read(authStateChangesProvider).value;
       if (user == null) return;
       final ext = image.name.split('.').last.toLowerCase();
-      final contentType = switch (ext) {
-        'png' => 'image/png',
-        'webp' => 'image/webp',
-        _ => 'image/jpeg',
-      };
+      final contentType = switch (ext) {'png' => 'image/png', 'webp' => 'image/webp', _ => 'image/jpeg'};
       final path = '${user.id}/profile_${DateTime.now().millisecondsSinceEpoch}.$ext';
       await SupabaseConfig.client.storage.from('avatars').uploadBinary(path, bytes, fileOptions: FileOptions(upsert: true, contentType: contentType));
       final url = SupabaseConfig.client.storage.from('avatars').getPublicUrl(path);
@@ -176,20 +159,15 @@ class ProfilePage extends ConsumerWidget {
         builder: (dialogContext) => StatefulBuilder(
           builder: (context, setState) => AlertDialog(
             title: const Text('المعلومات الشخصية والتواصل'),
-            content: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  TextField(controller: nameController, decoration: const InputDecoration(labelText: 'الاسم الكامل', prefixIcon: Icon(Icons.person_outline))),
-                  const SizedBox(height: 10),
-                  TextField(controller: whatsappController, keyboardType: TextInputType.phone, decoration: const InputDecoration(labelText: 'رقم واتساب للتواصل *', hintText: '+9647xxxxxxxxx', prefixIcon: Icon(Icons.chat_outlined))),
-                  const SizedBox(height: 10),
-                  TextField(controller: governorateController, decoration: const InputDecoration(labelText: 'المحافظة', prefixIcon: Icon(Icons.location_on_outlined))),
-                  const SizedBox(height: 10),
-                  const Align(alignment: Alignment.centerRight, child: Text('رقم واتساب مطلوب لطلب الاستشارات عن بُعد.', style: TextStyle(fontSize: 12))),
-                ],
-              ),
-            ),
+            content: SingleChildScrollView(child: Column(mainAxisSize: MainAxisSize.min, children: [
+              TextField(controller: nameController, decoration: const InputDecoration(labelText: 'الاسم الكامل', prefixIcon: Icon(Icons.person_outline))),
+              const SizedBox(height: 10),
+              TextField(controller: whatsappController, keyboardType: TextInputType.phone, decoration: const InputDecoration(labelText: 'رقم واتساب للتواصل *', hintText: '+9647xxxxxxxxx', prefixIcon: Icon(Icons.chat_outlined))),
+              const SizedBox(height: 10),
+              TextField(controller: governorateController, decoration: const InputDecoration(labelText: 'المحافظة', prefixIcon: Icon(Icons.location_on_outlined))),
+              const SizedBox(height: 10),
+              const Align(alignment: Alignment.centerRight, child: Text('رقم واتساب مطلوب لطلب الاستشارات عن بُعد.', style: TextStyle(fontSize: 12))),
+            ])),
             actions: [
               TextButton(onPressed: saving ? null : () => Navigator.pop(dialogContext), child: const Text('إلغاء')),
               ElevatedButton(
@@ -202,12 +180,7 @@ class ProfilePage extends ConsumerWidget {
                   }
                   setState(() => saving = true);
                   try {
-                    await SupabaseConfig.client.rpc('update_own_profile_contact', params: {
-                      'p_full_name': name,
-                      'p_phone': whatsapp,
-                      'p_whatsapp_number': whatsapp,
-                      'p_city': governorateController.text.trim().isEmpty ? null : governorateController.text.trim(),
-                    });
+                    await SupabaseConfig.client.rpc('update_own_profile_contact', params: {'p_full_name': name, 'p_phone': whatsapp, 'p_whatsapp_number': whatsapp, 'p_city': governorateController.text.trim().isEmpty ? null : governorateController.text.trim()});
                     await ref.read(authRepositoryProvider).refreshUser();
                     if (dialogContext.mounted) Navigator.pop(dialogContext);
                     if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تم حفظ المعلومات بنجاح')));
@@ -236,28 +209,24 @@ class ProfilePage extends ConsumerWidget {
   }
 
   void _showDeleteConfirmation(BuildContext context, WidgetRef ref) {
-    showDialog(context: context, builder: (context) => AlertDialog(
-      title: const Text('حذف الحساب؟'),
-      content: const Text('هل أنت متأكد من حذف حسابك نهائياً؟ لا يمكن التراجع عن هذا الإجراء وسيتم حذف كافة بياناتك وحجوزاتك.'),
-      actions: [
-        TextButton(onPressed: () => Navigator.pop(context), child: const Text('إلغاء')),
-        ElevatedButton(onPressed: () { Navigator.pop(context); ref.read(authControllerProvider.notifier).deleteAccount(); }, style: ElevatedButton.styleFrom(backgroundColor: AppColors.error, foregroundColor: Colors.white, elevation: 0), child: const Text('نعم، احذف الحساب', style: TextStyle(fontWeight: FontWeight.bold))),
-      ],
-    ));
+    showDialog(context: context, builder: (context) => AlertDialog(title: const Text('حذف الحساب؟'), content: const Text('هل أنت متأكد من حذف حسابك نهائياً؟ لا يمكن التراجع عن هذا الإجراء وسيتم حذف كافة بياناتك وحجوزاتك.'), actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('إلغاء')), ElevatedButton(onPressed: () { Navigator.pop(context); ref.read(authControllerProvider.notifier).deleteAccount(); }, style: ElevatedButton.styleFrom(backgroundColor: AppColors.error, foregroundColor: Colors.white, elevation: 0), child: const Text('نعم، احذف الحساب', style: TextStyle(fontWeight: FontWeight.bold)))],));
   }
 
-  Widget _buildProfileSectionTitle(String title) => Padding(
-    padding: const EdgeInsets.only(left: 8, bottom: 8, right: 8),
-    child: Text(title, style: const TextStyle(color: AppColors.textSecondary, fontWeight: FontWeight.bold, fontSize: 13, letterSpacing: 1)),
-  );
+  Widget _buildProfileSectionTitle(BuildContext context, String title) {
+    final scheme = Theme.of(context).colorScheme;
+    return Padding(padding: const EdgeInsets.only(left: 8, bottom: 8, right: 8), child: Text(title, style: TextStyle(color: scheme.onSurfaceVariant, fontWeight: FontWeight.bold, fontSize: 13, letterSpacing: 1)));
+  }
 
-  Widget _buildProfileTile(IconData icon, String title, VoidCallback onTap) => Card(
-    margin: const EdgeInsets.only(bottom: 12),
-    child: ListTile(
-      leading: Container(padding: const EdgeInsets.all(8), decoration: BoxDecoration(color: AppColors.surfaceVariant, borderRadius: BorderRadius.circular(10)), child: Icon(icon, color: AppColors.primary, size: 20)),
-      title: Text(title),
-      trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 14, color: AppColors.outline),
-      onTap: onTap,
-    ),
-  );
+  Widget _buildProfileTile(BuildContext context, IconData icon, String title, VoidCallback onTap) {
+    final scheme = Theme.of(context).colorScheme;
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12),
+      child: ListTile(
+        leading: Container(padding: const EdgeInsets.all(8), decoration: BoxDecoration(color: scheme.surfaceContainerHighest, borderRadius: BorderRadius.circular(10)), child: Icon(icon, color: scheme.primary, size: 20)),
+        title: Text(title, style: TextStyle(color: scheme.onSurface)),
+        trailing: Icon(Icons.arrow_forward_ios_rounded, size: 14, color: scheme.onSurfaceVariant),
+        onTap: onTap,
+      ),
+    );
+  }
 }
