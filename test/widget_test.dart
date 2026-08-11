@@ -6,13 +6,21 @@ import 'package:astshara/app/app.dart';
 import 'package:astshara/core/config/supabase_config.dart';
 import 'package:astshara/features/profile/presentation/providers/notifications_provider.dart';
 
+const _testSupabaseUrl = 'https://test.supabase.co';
+// Syntactically valid, expired-independent JWT used only to construct an
+// offline SupabaseClient. No request is made with this credential.
+const _testSupabaseAnonKey =
+    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.'
+    'eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjoxNzAwMDAwMDAwLCJleHAiOjQ3MDAwMDAwMDB9.'
+    'dGVzdC1zaWduYXR1cmU';
+
 void main() {
   late SupabaseClient testClient;
 
   setUp(() {
     testClient = SupabaseClient(
-      'https://test.supabase.co',
-      'test-anon-key',
+      _testSupabaseUrl,
+      _testSupabaseAnonKey,
     );
     SupabaseConfig.setTestClient(testClient);
   });
