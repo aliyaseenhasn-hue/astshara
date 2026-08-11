@@ -26,7 +26,7 @@ class BookingDetailsPage extends ConsumerWidget {
         ? ref.watch(bookingParticipantContactProvider(booking.id))
         : const AsyncValue.data(null);
     final canReview = isLawyer && !booking.lawyerApproved && ['قيد انتظار الدفع', 'قيد معالجة الدفع', 'قيد مراجعة المحامي'].contains(booking.status);
-    final canReportNoShow = _canReportNoShow(isLawyer: isLawyer);
+    final canReportNoShow = _canReportNoShow(isLawyer);
 
     return Scaffold(
       backgroundColor: scheme.surface,
@@ -79,7 +79,7 @@ class BookingDetailsPage extends ConsumerWidget {
 
   Widget _contactContent(BuildContext context, Map<String, dynamic> c, bool isLawyer) { final scheme = Theme.of(context).colorScheme; final name = isLawyer ? c['client_name'] ?? 'طالب خدمة' : c['lawyer_name'] ?? 'المحامي'; final phone = isLawyer ? c['client_phone'] : c['lawyer_phone']; final whatsapp = isLawyer ? c['client_whatsapp'] : c['lawyer_whatsapp']; return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(name.toString(), style: TextStyle(fontWeight: FontWeight.bold, color: scheme.onSurface)), const SizedBox(height: 10), if (phone != null) _row(context, 'رقم الهاتف', phone.toString()), if (whatsapp != null && booking.status == 'قيد التنفيذ') SizedBox(width: double.infinity, child: ElevatedButton.icon(onPressed: () => _openWhatsApp(context, whatsapp.toString()), icon: const Icon(Icons.chat_rounded), label: const Text('بدء الاستشارة عبر واتساب'), style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF25D366), foregroundColor: Colors.white, minimumSize: const Size.fromHeight(48))))]); }
 
-  bool _canReportNoShow({required bool isLawyer}) { final now = DateTime.now(); if (isLawyer) { if (booking.status == 'مؤكد') return !now.isBefore(booking.scheduledAt.add(const Duration(minutes: 10))); if (booking.status == 'قيد التنفيذ' && booking.startedAt != null) return !now.isBefore(booking.startedAt!.add(const Duration(minutes: 10))); return false; } return booking.status == 'مؤكد' && booking.startedAt == null && !now.isBefore(booking.scheduledAt.add(const Duration(minutes: 10))); }
+  bool _canReportNoShow(bool isLawyer) { final now = DateTime.now(); if (isLawyer) { if (booking.status == 'مؤكد') return !now.isBefore(booking.scheduledAt.add(const Duration(minutes: 10))); if (booking.status == 'قيد التنفيذ' && booking.startedAt != null) return !now.isBefore(booking.startedAt!.add(const Duration(minutes: 10))); return false; } return booking.status == 'مؤكد' && booking.startedAt == null && !now.isBefore(booking.scheduledAt.add(const Duration(minutes: 10))); }
 
   Widget _startButton(BuildContext context, WidgetRef ref, AsyncValue<Map<String, dynamic>?> detailsAsync) { final scheme = Theme.of(context).colorScheme; final duration = int.tryParse('${detailsAsync.valueOrNull?['package_duration_minutes'] ?? 30}') ?? 30; final now = DateTime.now(); final opensAt = booking.scheduledAt.subtract(const Duration(minutes: 5)); final closesAt = booking.scheduledAt.add(Duration(minutes: duration)); if (now.isAfter(closesAt)) return _infoCard(context, 'انتهى وقت بدء الاستشارة لهذا الموعد.', Icons.timer_off_outlined); if (now.isBefore(opensAt)) return _infoCard(context, 'يمكن بدء الاستشارة قبل الموعد بـ 5 دقائق. المتاح بعد حوالي ${opensAt.difference(now).inMinutes + 1} دقيقة.', Icons.schedule_rounded); return ElevatedButton.icon(onPressed: () => _updateStatus(context, ref, 'قيد التنفيذ'), icon: const Icon(Icons.play_arrow_rounded), label: const Text('بدء الاستشارة الآن'), style: _button(context, color: scheme.primary)); }
 
