@@ -16,37 +16,32 @@ class SupabaseConfig {
   }
 
   static String get url {
-    final url = dotenv.env['SUPABASE_URL'] ??
+    final value = dotenv.env['SUPABASE_URL'] ??
         dotenv.env['NEXT_PUBLIC_SUPABASE_URL'] ??
         '';
-
-    if (url.isEmpty) {
+    if (value.isEmpty) {
       debugPrint('❌ Error: SUPABASE_URL is not set');
     }
-    return url;
+    return value;
   }
 
   static String get anonKey {
-    final key = dotenv.env['SUPABASE_ANON_KEY'] ??
+    final value = dotenv.env['SUPABASE_ANON_KEY'] ??
         dotenv.env['NEXT_PUBLIC_SUPABASE_ANON_KEY'] ??
         dotenv.env['NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY'] ??
         '';
-
-    if (key.isEmpty) {
+    if (value.isEmpty) {
       debugPrint('❌ Error: SUPABASE_ANON_KEY is not set');
     }
-    return key;
+    return value;
   }
 
-  static String get hfToken {
-    final token = dotenv.env['HUGGING_FACE_TOKEN'] ?? '';
-    if (token.isEmpty) {
-      debugPrint('⚠️ Warning: HUGGING_FACE_TOKEN is not set');
-    }
-    return token;
-  }
+  static String get hfToken => dotenv.env['HUGGING_FACE_TOKEN'] ?? '';
 
-  static Future<void> initialize() async {
+  static Future<void> initializeWithCredentials({
+    required String url,
+    required String anonKey,
+  }) async {
     if (url.isEmpty || anonKey.isEmpty) {
       throw Exception('Supabase configuration is incomplete');
     }
@@ -61,6 +56,10 @@ class SupabaseConfig {
       debugPrint('❌ Error initializing Supabase: $e');
       rethrow;
     }
+  }
+
+  static Future<void> initialize() async {
+    await initializeWithCredentials(url: url, anonKey: anonKey);
   }
 
   static SupabaseClient get client {
