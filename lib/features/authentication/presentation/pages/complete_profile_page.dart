@@ -130,8 +130,8 @@ class _CompleteProfilePageState extends ConsumerState<CompleteProfilePage> {
               Navigator.pop(context);
               ref.read(authControllerProvider.notifier).logout();
             },
-            style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
-            child: const Text('تأكيد الإلغاء', style: TextStyle(color: Colors.white)),
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.error, foregroundColor: Colors.white),
+            child: const Text('تأكيد الإلغاء'),
           ),
         ],
       ),
@@ -141,12 +141,13 @@ class _CompleteProfilePageState extends ConsumerState<CompleteProfilePage> {
   @override
   Widget build(BuildContext context) {
     final isLoading = ref.watch(globalLoadingProvider);
+    final scheme = Theme.of(context).colorScheme;
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: scheme.surface,
       appBar: AppBar(
         title: const Text('إكمال الملف الشخصي'),
         centerTitle: true,
-        leading: IconButton(icon: const Icon(Icons.close, color: AppColors.error), onPressed: _cancelAndLogout),
+        leading: IconButton(icon: const Icon(Icons.close), onPressed: _cancelAndLogout),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(AppSizes.p24),
@@ -155,13 +156,13 @@ class _CompleteProfilePageState extends ConsumerState<CompleteProfilePage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const Icon(Icons.assignment_ind_outlined, size: 70, color: AppColors.primary),
+              Icon(Icons.assignment_ind_outlined, size: 70, color: scheme.primary),
               const SizedBox(height: 12),
-              const Text('خطوة واحدة تفصلك عن البداية', textAlign: TextAlign.center, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              Text('خطوة واحدة تفصلك عن البداية', textAlign: TextAlign.center, style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold, color: scheme.onSurface)),
               const SizedBox(height: 4),
-              const Text('أكمل بياناتك لضمان تجربة قانونية آمنة', textAlign: TextAlign.center, style: TextStyle(color: AppColors.outline, fontSize: 13)),
+              Text('أكمل بياناتك لضمان تجربة قانونية آمنة', textAlign: TextAlign.center, style: Theme.of(context).textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant)),
               const SizedBox(height: 32),
-              const Text('نوع الحساب:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+              Text('نوع الحساب', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold, color: scheme.onSurface)),
               const SizedBox(height: 12),
               Row(children: [
                 Expanded(child: _RoleCard(title: 'عميل', icon: Icons.person_search, selected: _selectedRole == 'user', onTap: () => setState(() => _selectedRole = 'user'))),
@@ -176,8 +177,7 @@ class _CompleteProfilePageState extends ConsumerState<CompleteProfilePage> {
               const SizedBox(height: 32),
               isLoading ? const Center(child: LoadingWidget()) : ElevatedButton(
                 onPressed: _submit,
-                style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, minimumSize: const Size(double.infinity, 56), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
-                child: Text(_selectedRole == 'lawyer' ? 'إرسال طلب الانضمام' : 'حفظ والدخول', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
+                child: Text(_selectedRole == 'lawyer' ? 'إرسال طلب الانضمام' : 'حفظ والدخول'),
               ),
             ],
           ),
@@ -187,34 +187,36 @@ class _CompleteProfilePageState extends ConsumerState<CompleteProfilePage> {
   }
 
   Widget _buildLawyerSection() {
+    final scheme = Theme.of(context).colorScheme;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         const SizedBox(height: 28),
-        const Text('بيانات التوثيق المهنية', style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.primary)),
+        Text('بيانات التوثيق المهنية', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold, color: scheme.primary)),
         const SizedBox(height: 20),
         Center(child: Stack(children: [
-          CircleAvatar(radius: 50, backgroundColor: AppColors.surfaceVariant, backgroundImage: _profilePhotoBytes != null ? MemoryImage(_profilePhotoBytes!) : null, child: _profilePhotoBytes == null ? const Icon(Icons.camera_alt_outlined, size: 40, color: AppColors.outline) : null),
-          Positioned(bottom: 0, right: 0, child: CircleAvatar(backgroundColor: AppColors.primary, radius: 18, child: IconButton(icon: const Icon(Icons.edit, size: 16, color: Colors.white), onPressed: () => _pickImage('profile')))),
+          CircleAvatar(radius: 50, backgroundColor: scheme.surfaceContainerHighest, backgroundImage: _profilePhotoBytes != null ? MemoryImage(_profilePhotoBytes!) : null, child: _profilePhotoBytes == null ? Icon(Icons.camera_alt_outlined, size: 40, color: scheme.onSurfaceVariant) : null),
+          Positioned(bottom: 0, right: 0, child: CircleAvatar(backgroundColor: scheme.primary, radius: 18, child: IconButton(icon: Icon(Icons.edit, size: 16, color: scheme.onPrimary), onPressed: () => _pickImage('profile')))),
         ])),
         const SizedBox(height: 8),
-        const Center(child: Text('الصورة الشخصية', style: TextStyle(fontSize: 12, color: AppColors.outline))),
+        Text('الصورة الشخصية', textAlign: TextAlign.center, style: Theme.of(context).textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant)),
         const SizedBox(height: 24),
-        const Text('التخصصات القانونية (اختر واحدة أو أكثر):', style: TextStyle(fontWeight: FontWeight.bold)),
+        Text('التخصصات القانونية (اختر واحدة أو أكثر)', style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold, color: scheme.onSurface)),
         const SizedBox(height: 12),
         Wrap(spacing: 8, runSpacing: 8, children: _specializations.map((spec) {
           final selected = _selectedSpecializations.contains(spec);
-          return FilterChip(label: Text(spec), selected: selected, onSelected: (value) => setState(() => value ? _selectedSpecializations.add(spec) : _selectedSpecializations.remove(spec)), selectedColor: AppColors.primary.withValues(alpha: 0.2), checkmarkColor: AppColors.primary);
+          return FilterChip(label: Text(spec), selected: selected, onSelected: (value) => setState(() => value ? _selectedSpecializations.add(spec) : _selectedSpecializations.remove(spec)), selectedColor: scheme.primaryContainer, checkmarkColor: scheme.primary, labelStyle: TextStyle(color: selected ? scheme.onPrimaryContainer : scheme.onSurface));
         }).toList()),
         const SizedBox(height: 24),
-        const Text('صورة هوية النقابة:', style: TextStyle(fontWeight: FontWeight.bold)),
+        Text('صورة هوية النقابة', style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold, color: scheme.onSurface)),
         const SizedBox(height: 12),
         InkWell(
           onTap: () => _pickImage('id'),
+          borderRadius: BorderRadius.circular(12),
           child: Container(
             height: 160,
-            decoration: BoxDecoration(border: Border.all(color: _idCardBytes == null ? AppColors.error.withValues(alpha: 0.3) : AppColors.outline), borderRadius: BorderRadius.circular(12), color: Colors.white),
-            child: _idCardBytes == null ? const Column(mainAxisAlignment: MainAxisAlignment.center, children: [Icon(Icons.badge_outlined, size: 40, color: Colors.grey), Text('اضغط لرفع الهوية', style: TextStyle(fontSize: 12))]) : ClipRRect(borderRadius: BorderRadius.circular(12), child: Image.memory(_idCardBytes!, fit: BoxFit.cover)),
+            decoration: BoxDecoration(border: Border.all(color: _idCardBytes == null ? scheme.error.withValues(alpha: 0.55) : scheme.outline), borderRadius: BorderRadius.circular(12), color: scheme.surfaceContainerHighest),
+            child: _idCardBytes == null ? Column(mainAxisAlignment: MainAxisAlignment.center, children: [Icon(Icons.badge_outlined, size: 40, color: scheme.onSurfaceVariant), const SizedBox(height: 8), Text('اضغط لرفع الهوية', style: TextStyle(fontSize: 12, color: scheme.onSurface))]) : ClipRRect(borderRadius: BorderRadius.circular(12), child: Image.memory(_idCardBytes!, fit: BoxFit.cover)),
           ),
         ),
       ],
@@ -230,13 +232,17 @@ class _RoleCard extends StatelessWidget {
   const _RoleCard({required this.title, required this.icon, required this.selected, required this.onTap});
 
   @override
-  Widget build(BuildContext context) => InkWell(
-    onTap: onTap,
-    borderRadius: BorderRadius.circular(12),
-    child: Container(
-      padding: const EdgeInsets.symmetric(vertical: 16),
-      decoration: BoxDecoration(color: selected ? AppColors.primary.withValues(alpha: 0.08) : Colors.white, borderRadius: BorderRadius.circular(12), border: Border.all(color: selected ? AppColors.primary : AppColors.surfaceVariant, width: selected ? 2 : 1)),
-      child: Column(children: [Icon(icon, color: selected ? AppColors.primary : AppColors.outline, size: 28), const SizedBox(height: 6), Text(title, style: TextStyle(fontWeight: selected ? FontWeight.bold : FontWeight.normal, color: selected ? AppColors.primary : AppColors.textPrimary))]),
-    ),
-  );
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        padding: const EdgeInsets.symmetric(vertical: 16),
+        decoration: BoxDecoration(color: selected ? scheme.primaryContainer : scheme.surface, borderRadius: BorderRadius.circular(12), border: Border.all(color: selected ? scheme.primary : scheme.outline, width: selected ? 2 : 1)),
+        child: Column(children: [Icon(icon, color: selected ? scheme.primary : scheme.onSurfaceVariant, size: 28), const SizedBox(height: 6), Text(title, style: TextStyle(fontWeight: selected ? FontWeight.bold : FontWeight.normal, color: selected ? scheme.onPrimaryContainer : scheme.onSurface))]),
+      ),
+    );
+  }
 }
