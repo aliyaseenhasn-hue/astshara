@@ -251,8 +251,9 @@ class BookingDetailsPage extends ConsumerWidget {
     if (phone.startsWith('00')) phone = '+${phone.substring(2)}';
     if (phone.startsWith('07')) phone = '+964${phone.substring(1)}';
     final uri = Uri.parse('https://wa.me/${phone.replaceAll('+', '')}');
-    if (!await launchUrl(uri, mode: LaunchMode.externalApplication) && context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تعذر فتح واتساب'));
+    final opened = await launchUrl(uri, mode: LaunchMode.externalApplication);
+    if (!opened && context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تعذر فتح واتساب')));
     }
   }
 
