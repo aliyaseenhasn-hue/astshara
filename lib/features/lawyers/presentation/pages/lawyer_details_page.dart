@@ -105,7 +105,7 @@ class _Stats extends StatelessWidget {
     ]),
   );
   Widget _divider() => Container(width: 1, height: 56, color: AppColors.divider);
-  Widget _item(String value, String label, IconData icon) => Expanded(child: Column(children: [Icon(icon, color: AppColors.primaryDark, size: 24), const SizedBox(height: 7), Text(value, style: const TextStyle(fontSize: 21, fontWeight: FontWeight.w800, color: AppColors.secondary)), const SizedBox(height: 2), Text(label, style: const TextStyle(fontSize: 10, color: AppColors.textSecondary)]));
+  Widget _item(String value, String label, IconData icon) => Expanded(child: Column(children: [Icon(icon, color: AppColors.primaryDark, size: 24), const SizedBox(height: 7), Text(value, style: const TextStyle(fontSize: 21, fontWeight: FontWeight.w800, color: AppColors.secondary)), const SizedBox(height: 2), Text(label, style: const TextStyle(fontSize: 10, color: AppColors.textSecondary))]));
 }
 
 class _Tabs extends StatelessWidget {
