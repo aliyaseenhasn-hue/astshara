@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
-import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_sizes.dart';
 import '../providers/notifications_provider.dart';
 
@@ -43,18 +42,23 @@ class NotificationsPage extends ConsumerWidget {
       ),
       body: notifications.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (_, __) => Center(child: Padding(padding: const EdgeInsets.all(AppSizes.p20), child: Column(mainAxisSize: MainAxisSize.min, children: [
-          Icon(Icons.notifications_off_rounded, size: 52, color: scheme.onSurfaceVariant),
-          const SizedBox(height: 12),
-          Text('تعذر تحميل التنبيهات', style: TextStyle(color: scheme.onSurface)),
-          const SizedBox(height: 12),
-          const OutlinedButton(onPressed: null, child: Text('إعادة المحاولة')),
-        ]))),
+        error: (_, __) => Center(
+          child: Padding(
+            padding: const EdgeInsets.all(AppSizes.p20),
+            child: Column(mainAxisSize: MainAxisSize.min, children: [
+              Icon(Icons.notifications_off_rounded, size: 52, color: scheme.onSurfaceVariant),
+              const SizedBox(height: 12),
+              Text('تعذر تحميل التنبيهات', style: TextStyle(color: scheme.onSurface)),
+              const SizedBox(height: 12),
+              OutlinedButton(onPressed: () => ref.invalidate(notificationsProvider), child: const Text('إعادة المحاولة')),
+            ]),
+          ),
+        ),
         data: (items) {
           if (items.isEmpty) {
             return RefreshIndicator(
               onRefresh: () async { ref.invalidate(notificationsProvider); ref.invalidate(unreadNotificationsCountProvider); },
-              child: ListView(children: [const SizedBox(height: 180), Icon(Icons.notifications_none_rounded, size: 72, color: scheme.onSurfaceVariant), const SizedBox(height: 16), Center(child: Text('لا توجد تنبيهات حالياً', style: TextStyle(color: scheme.onSurfaceVariant)))])
+              child: ListView(children: [const SizedBox(height: 180), Icon(Icons.notifications_none_rounded, size: 72, color: scheme.onSurfaceVariant), const SizedBox(height: 16), Center(child: Text('لا توجد تنبيهات حالياً', style: TextStyle(color: scheme.onSurfaceVariant)))]),
             );
           }
 
