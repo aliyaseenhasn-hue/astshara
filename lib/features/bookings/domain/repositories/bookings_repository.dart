@@ -18,6 +18,6 @@ abstract class BookingsRepository {
   Future<Booking> reviewBooking(String bookingId, bool approved);
   Future<Booking> recordManualPayment(String bookingId, double amount);
   Future<void> archiveBookingForLawyer(String bookingId);
-  Future<void> reportNoShow(String bookingId);
+  Future<void> reportNoShow(String bookingId, [bool? isLawyer]);
   Future<String> uploadDocument(dynamic fileBytes, String fileName);
 }
