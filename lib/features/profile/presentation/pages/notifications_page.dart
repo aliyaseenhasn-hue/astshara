@@ -22,11 +22,11 @@ class NotificationsPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final notifications = ref.watch(notificationsProvider);
     final unread = ref.watch(unreadNotificationsCountProvider).valueOrNull ?? 0;
+    final scheme = Theme.of(context).colorScheme;
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: scheme.surface,
       appBar: AppBar(
-        backgroundColor: AppColors.surface,
         title: const Text('التنبيهات'),
         leading: const BackButton(),
         actions: [
@@ -37,24 +37,24 @@ class NotificationsPage extends ConsumerWidget {
                 ref.invalidate(notificationsProvider);
                 ref.invalidate(unreadNotificationsCountProvider);
               },
-              child: const Text('قراءة الكل', style: TextStyle(color: AppColors.goldDark, fontWeight: FontWeight.bold)),
+              child: Text('قراءة الكل', style: TextStyle(color: scheme.secondary, fontWeight: FontWeight.bold)),
             ),
         ],
       ),
       body: notifications.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (_, __) => Center(child: Padding(padding: const EdgeInsets.all(AppSizes.p20), child: Column(mainAxisSize: MainAxisSize.min, children: [
-          const Icon(Icons.notifications_off_rounded, size: 52, color: AppColors.outline),
+          Icon(Icons.notifications_off_rounded, size: 52, color: scheme.onSurfaceVariant),
           const SizedBox(height: 12),
-          const Text('تعذر تحميل التنبيهات'),
+          Text('تعذر تحميل التنبيهات', style: TextStyle(color: scheme.onSurface)),
           const SizedBox(height: 12),
-          OutlinedButton(onPressed: () => ref.invalidate(notificationsProvider), child: const Text('إعادة المحاولة')),
+          const OutlinedButton(onPressed: null, child: Text('إعادة المحاولة')),
         ]))),
         data: (items) {
           if (items.isEmpty) {
             return RefreshIndicator(
               onRefresh: () async { ref.invalidate(notificationsProvider); ref.invalidate(unreadNotificationsCountProvider); },
-              child: ListView(children: const [SizedBox(height: 180), Icon(Icons.notifications_none_rounded, size: 72, color: AppColors.outline), SizedBox(height: 16), Center(child: Text('لا توجد تنبيهات حالياً', style: TextStyle(color: AppColors.textSecondary)))])
+              child: ListView(children: [const SizedBox(height: 180), Icon(Icons.notifications_none_rounded, size: 72, color: scheme.onSurfaceVariant), const SizedBox(height: 16), Center(child: Text('لا توجد تنبيهات حالياً', style: TextStyle(color: scheme.onSurfaceVariant)))])
             );
           }
 
@@ -76,11 +76,11 @@ class NotificationsPage extends ConsumerWidget {
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 28),
               children: [
                 if (today.isNotEmpty) ...[
-                  const _GroupTitle('اليوم'),
+                  _GroupTitle('اليوم', scheme: scheme),
                   ...today.map((item) => _NotificationCard(item: item, iconForType: _iconForType, onChanged: () { ref.invalidate(notificationsProvider); ref.invalidate(unreadNotificationsCountProvider); })),
                 ],
                 if (previous.isNotEmpty) ...[
-                  const _GroupTitle('سابقاً'),
+                  _GroupTitle('سابقاً', scheme: scheme),
                   ...previous.map((item) => _NotificationCard(item: item, iconForType: _iconForType, onChanged: () { ref.invalidate(notificationsProvider); ref.invalidate(unreadNotificationsCountProvider); })),
                 ],
               ],
@@ -94,9 +94,10 @@ class NotificationsPage extends ConsumerWidget {
 
 class _GroupTitle extends StatelessWidget {
   final String title;
-  const _GroupTitle(this.title);
+  final ColorScheme scheme;
+  const _GroupTitle(this.title, {required this.scheme});
   @override
-  Widget build(BuildContext context) => Padding(padding: const EdgeInsets.fromLTRB(4, 18, 4, 10), child: Text(title, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.textSecondary)));
+  Widget build(BuildContext context) => Padding(padding: const EdgeInsets.fromLTRB(4, 18, 4, 10), child: Text(title, style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: scheme.onSurfaceVariant)));
 }
 
 class _NotificationCard extends StatelessWidget {
@@ -107,15 +108,16 @@ class _NotificationCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     final date = DateFormat('HH:mm', 'ar').format(item.createdAt.toLocal());
     final unread = !item.isRead;
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
       decoration: BoxDecoration(
-        color: unread ? AppColors.surface : AppColors.surface,
+        color: scheme.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: unread ? AppColors.gold.withValues(alpha: .35) : AppColors.outline),
-        boxShadow: [if (unread) BoxShadow(color: AppColors.gold.withValues(alpha: .08), blurRadius: 14, offset: const Offset(0, 4))],
+        border: Border.all(color: unread ? scheme.secondary.withValues(alpha: .45) : scheme.outline),
+        boxShadow: [if (unread) BoxShadow(color: scheme.secondary.withValues(alpha: .08), blurRadius: 14, offset: const Offset(0, 4))],
       ),
       child: InkWell(
         borderRadius: BorderRadius.circular(16),
@@ -123,13 +125,13 @@ class _NotificationCard extends StatelessWidget {
         child: Padding(
           padding: const EdgeInsets.all(14),
           child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Container(width: 46, height: 46, decoration: BoxDecoration(color: unread ? AppColors.gold.withValues(alpha: .16) : AppColors.surfaceVariant, borderRadius: BorderRadius.circular(14)), child: Icon(iconForType(item.type), color: unread ? AppColors.goldDark : AppColors.primaryDark)),
+            Container(width: 46, height: 46, decoration: BoxDecoration(color: unread ? scheme.secondaryContainer : scheme.surface, borderRadius: BorderRadius.circular(14)), child: Icon(iconForType(item.type), color: unread ? scheme.onSecondaryContainer : scheme.primary)),
             const SizedBox(width: 12),
             Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Row(children: [Expanded(child: Text(item.title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.textPrimary))), if (unread) Container(width: 8, height: 8, decoration: const BoxDecoration(color: AppColors.goldDark, shape: BoxShape.circle))]),
-              if (item.body.isNotEmpty) ...[const SizedBox(height: 5), Text(item.body, style: const TextStyle(fontSize: 12, height: 1.5, color: AppColors.textSecondary))],
+              Row(children: [Expanded(child: Text(item.title, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: scheme.onSurface))), if (unread) Container(width: 8, height: 8, decoration: BoxDecoration(color: scheme.secondary, shape: BoxShape.circle))]),
+              if (item.body.isNotEmpty) ...[const SizedBox(height: 5), Text(item.body, style: TextStyle(fontSize: 12, height: 1.5, color: scheme.onSurfaceVariant))],
               const SizedBox(height: 7),
-              Text(date, style: const TextStyle(fontSize: 10, color: AppColors.outline)),
+              Text(date, style: TextStyle(fontSize: 10, color: scheme.outline)),
             ])),
           ]),
         ),
