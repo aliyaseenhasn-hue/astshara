@@ -55,20 +55,27 @@ class _LawyerProfileEditPageState extends ConsumerState<LawyerProfileEditPage> {
 
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
+    _formKey.currentState!.save();
+    final differentPrice = double.tryParse(_differentConsultationPriceController.text.trim()) ?? 0;
+    if (differentPrice <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('يرجى تحديد سعر الاستشارة المختلفة بشكل صحيح'), backgroundColor: AppColors.error));
+      return;
+    }
     setState(() => _isLoading = true);
     try {
       final user = ref.read(authStateChangesProvider).value;
-      if (user == null || _profileId == null) return;
-      final services = _services.where((s) => s.title.trim().isNotEmpty && s.price >= 0).toList();
-      await ref.read(lawyersRepositoryProvider).updateLawyerProfile(
-        profileId: _profileId!,
-        bio: _bioController.text.trim(),
-        consultationPrice: double.tryParse(_differentConsultationPriceController.text.trim()),
-        services: services,
-      );
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تم حفظ الملف المهني بنجاح')));
+      if (user == null) return;
+      final repo = ref.read(lawyersRepositoryProvider);
+      final profile = await repo.getLawyerProfile(user.id);
+      if (profile == null) return;
+      await repo.updateLawyerProfile(profile.copyWith(bio: _bioController.text.trim(), services: _services, consultationPrice: differentPrice));
+      ref.invalidate(lawyerProfileProvider(profile.profileId));
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تم حفظ الملف الشخصي بنجاح')));
+        Navigator.pop(context);
+      }
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('تعذر حفظ الملف: $e'), backgroundColor: AppColors.error));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('خطأ في الحفظ: $e'), backgroundColor: AppColors.error));
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -79,28 +86,41 @@ class _LawyerProfileEditPageState extends ConsumerState<LawyerProfileEditPage> {
     final scheme = Theme.of(context).colorScheme;
     return Scaffold(
       backgroundColor: scheme.surface,
-      appBar: AppBar(title: const Text('تعديل الملف المهني')),
-      body: Form(
-        key: _formKey,
-        child: ListView(
-          padding: const EdgeInsets.all(AppSizes.p20),
-          children: [
-            TextFormField(controller: _bioController, maxLines: 5, decoration: const InputDecoration(labelText: 'نبذة مهنية'), validator: (v) => v == null || v.trim().isEmpty ? 'النبذة المهنية مطلوبة' : null),
-            const SizedBox(height: 20),
-            Text('الاستشارة المختلفة', style: TextStyle(fontWeight: FontWeight.bold, color: scheme.onSurface)),
-            const SizedBox(height: 8),
-            TextFormField(controller: _differentConsultationPriceController, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'السعر بالدينار العراقي', suffixText: 'د.ع'), validator: (v) { final value = double.tryParse(v?.trim() ?? ''); return value == null || value < 0 ? 'أدخل سعراً صحيحاً' : null; }),
-            const SizedBox(height: 20),
-            Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [Text('باقات الاستشارة', style: TextStyle(fontWeight: FontWeight.bold, color: scheme.onSurface)), TextButton.icon(onPressed: _addService, icon: const Icon(Icons.add), label: const Text('إضافة'))]),
-            const SizedBox(height: 8),
-            ...List.generate(_services.length, (index) => Card(elevation: 0, margin: const EdgeInsets.only(bottom: 10), child: Padding(padding: const EdgeInsets.all(12), child: Row(children: [Expanded(child: TextFormField(initialValue: _services[index].title, decoration: const InputDecoration(labelText: 'اسم الباقة'), onChanged: (value) => _services[index] = _services[index].copyWith(title: value), validator: (v) => v == null || v.trim().isEmpty ? 'اسم الباقة مطلوب' : null)), const SizedBox(width: 10), SizedBox(width: 110, child: TextFormField(initialValue: _services[index].price.toStringAsFixed(0), keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'السعر'), onChanged: (value) => _services[index] = _services[index].copyWith(price: double.tryParse(value) ?? 0))), IconButton(onPressed: () => _removeService(index), icon: const Icon(Icons.delete_outline, color: AppColors.error))]))),
-            const SizedBox(height: 12),
-            const LawyerAchievementsGalleryEditor(),
-            const SizedBox(height: 24),
-            SizedBox(height: 52, child: ElevatedButton(onPressed: _isLoading ? null : _save, child: Text(_isLoading ? 'جاري الحفظ...' : 'حفظ التغييرات'))),
-          ],
-        ),
-      ),
+      appBar: AppBar(title: const Text('تعديل الملف الشخصي'), actions: [if (!_isLoading) IconButton(icon: const Icon(Icons.check), onPressed: _save)]),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : SingleChildScrollView(
+              padding: const EdgeInsets.all(AppSizes.p20),
+              child: Form(key: _formKey, child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+                Text('السيرة الذاتية', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: scheme.onSurface)),
+                const SizedBox(height: 8),
+                TextFormField(controller: _bioController, maxLines: 6, maxLength: 1000, decoration: const InputDecoration(hintText: 'اكتب نبذة مهنية عن خبرتك وتخصصك والإنجازات التي تود تعريف العملاء بها...', border: OutlineInputBorder()), validator: (value) => value == null || value.trim().isEmpty ? 'السيرة الذاتية مطلوبة' : null),
+                const SizedBox(height: 28),
+                if (_profileId != null) ...[LawyerAchievementsGallery(lawyerId: _profileId!, editable: true), const SizedBox(height: 28)],
+                Text('سعر الاستشارة المختلفة', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: scheme.onSurface)),
+                const SizedBox(height: 8),
+                Text('هذا هو السعر الذي سيدفعه العميل عند اختيار «استشارة مختلفة».', style: TextStyle(fontSize: 14, color: scheme.onSurfaceVariant)),
+                const SizedBox(height: 12),
+                TextFormField(controller: _differentConsultationPriceController, decoration: const InputDecoration(labelText: 'السعر (د.ع)', hintText: 'مثلاً: 50000', border: OutlineInputBorder()), keyboardType: TextInputType.number, validator: (val) { final price = double.tryParse(val?.trim() ?? ''); return price == null || price <= 0 ? 'حدد سعرًا أكبر من صفر' : null; }),
+                const SizedBox(height: 28),
+                Text('باقات الاستشارة', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: scheme.onSurface)),
+                const SizedBox(height: 8),
+                Text('أضف باقات استشارية مخصصة لعملائك.', style: TextStyle(fontSize: 14, color: scheme.onSurfaceVariant)),
+                const SizedBox(height: 16),
+                ListView.builder(shrinkWrap: true, physics: const NeverScrollableScrollPhysics(), itemCount: _services.length, itemBuilder: (context, index) => _buildServiceEditor(index)),
+                const SizedBox(height: 16),
+                OutlinedButton.icon(onPressed: _addService, icon: const Icon(Icons.add), label: const Text('إضافة باقة جديدة'), style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 16), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)))),
+                const SizedBox(height: 40),
+              ])),
+            ),
     );
   }
+
+  Widget _buildServiceEditor(int index) => Card(margin: const EdgeInsets.only(bottom: 16), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12), side: BorderSide(color: AppColors.outline.withValues(alpha: 0.5))), child: Padding(padding: const EdgeInsets.all(16), child: Column(children: [
+    Row(children: [Expanded(child: TextFormField(initialValue: _services[index].title, decoration: const InputDecoration(labelText: 'عنوان الباقة', hintText: 'مثلاً: استشارة هاتفية 30 دقيقة'), onSaved: (val) => _services[index] = _services[index].copyWith(title: val ?? ''), validator: (val) => val == null || val.isEmpty ? 'مطلوب' : null)), IconButton(icon: const Icon(Icons.delete_outline, color: AppColors.error), onPressed: () => _removeService(index))]),
+    const SizedBox(height: 12),
+    TextFormField(initialValue: _services[index].price.toString(), decoration: const InputDecoration(labelText: 'السعر (د.ع)'), keyboardType: TextInputType.number, onSaved: (val) => _services[index] = _services[index].copyWith(price: double.tryParse(val ?? '0') ?? 0), validator: (val) => val == null || val.isEmpty ? 'مطلوب' : null),
+    const SizedBox(height: 12),
+    TextFormField(initialValue: _services[index].description, decoration: const InputDecoration(labelText: 'وصف مختصر (اختياري)'), maxLines: 2, onSaved: (val) => _services[index] = _services[index].copyWith(description: val)),
+  ])));
 }
