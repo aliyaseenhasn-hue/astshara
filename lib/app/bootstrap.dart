@@ -5,23 +5,38 @@ import '../core/config/supabase_config.dart';
 import '../core/services/notification_service.dart';
 import '../core/services/realtime_notification_service.dart';
 
+const _buildSupabaseUrl = String.fromEnvironment('SUPABASE_URL');
+const _buildSupabaseAnonKey = String.fromEnvironment('SUPABASE_ANON_KEY');
+
 Future<ProviderContainer> bootstrap() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   try {
+    // Web production builds receive Supabase credentials through --dart-define.
+    // Keep dotenv as a local-development fallback, but never make application
+    // startup depend on a runtime .env asset being available on Pages.
     try {
       await dotenv.load(fileName: '.env');
     } catch (e) {
-      debugPrint('⚠️ Warning: .env file not found - $e');
+      debugPrint('⚠️ Warning: .env file not available - using build-time configuration');
     }
 
-    final supabaseUrl = dotenv.env['SUPABASE_URL'];
-    final supabaseAnonKey = dotenv.env['SUPABASE_ANON_KEY'];
-    if (supabaseUrl != null && supabaseAnonKey != null) {
-      await SupabaseConfig.initialize();
-    } else {
+    final supabaseUrl = _buildSupabaseUrl.isNotEmpty
+        ? _buildSupabaseUrl
+        : dotenv.env['SUPABASE_URL'];
+    final supabaseAnonKey = _buildSupabaseAnonKey.isNotEmpty
+        ? _buildSupabaseAnonKey
+        : dotenv.env['SUPABASE_ANON_KEY'];
+
+    if (supabaseUrl == null || supabaseUrl.isEmpty ||
+        supabaseAnonKey == null || supabaseAnonKey.isEmpty) {
       throw Exception('Supabase credentials not found');
     }
+
+    await SupabaseConfig.initializeWithCredentials(
+      url: supabaseUrl,
+      anonKey: supabaseAnonKey,
+    );
 
     try {
       await NotificationService.initialize();
