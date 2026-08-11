@@ -10,32 +10,12 @@ class MainBottomNav extends ConsumerWidget {
 
   const MainBottomNav({super.key, required this.currentIndex});
 
-  static const _items = <BottomNavigationBarItem>[
-    BottomNavigationBarItem(
-      icon: Icon(Icons.home_outlined),
-      activeIcon: Icon(Icons.home_rounded),
-      label: 'الرئيسية',
-    ),
-    BottomNavigationBarItem(
-      icon: Icon(Icons.people_outline_rounded),
-      activeIcon: Icon(Icons.people_rounded),
-      label: 'المحامون',
-    ),
-    BottomNavigationBarItem(
-      icon: Icon(Icons.calendar_month_outlined),
-      activeIcon: Icon(Icons.calendar_month_rounded),
-      label: 'استشاراتي',
-    ),
-    BottomNavigationBarItem(
-      icon: Icon(Icons.notifications_none_rounded),
-      activeIcon: Icon(Icons.notifications_rounded),
-      label: 'التنبيهات',
-    ),
-    BottomNavigationBarItem(
-      icon: Icon(Icons.settings_outlined),
-      activeIcon: Icon(Icons.settings_rounded),
-      label: 'الإعدادات',
-    ),
+  static const _items = <_NavItem>[
+    _NavItem(Icons.home_outlined, Icons.home_rounded, 'الرئيسية'),
+    _NavItem(Icons.people_outline_rounded, Icons.people_rounded, 'المحامون'),
+    _NavItem(Icons.calendar_month_outlined, Icons.calendar_month_rounded, 'استشاراتي'),
+    _NavItem(Icons.notifications_none_rounded, Icons.notifications_rounded, 'التنبيهات'),
+    _NavItem(Icons.settings_outlined, Icons.settings_rounded, 'الإعدادات'),
   ];
 
   @override
@@ -43,53 +23,40 @@ class MainBottomNav extends ConsumerWidget {
     final scheme = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final unread = ref.watch(unreadNotificationsCountProvider).valueOrNull ?? 0;
-    final background = scheme.surface;
-    final selected = scheme.primary;
-    final unselected = scheme.onSurfaceVariant.withValues(alpha: .78);
-    final items = [
-      _items[0],
-      _items[1],
-      _items[2],
-      BottomNavigationBarItem(
-        icon: _NotificationIcon(count: unread),
-        activeIcon: _NotificationIcon(count: unread, active: true),
-        label: 'التنبيهات',
-      ),
-      _items[4],
-    ];
+    final selectedIndex = currentIndex.clamp(0, _items.length - 1).toInt();
 
     return Container(
       decoration: BoxDecoration(
-        color: background,
+        color: scheme.surface,
         border: Border(
           top: BorderSide(
-            color: scheme.outlineVariant.withValues(alpha: isDark ? .45 : .7),
+            color: scheme.outlineVariant.withValues(alpha: isDark ? .38 : .62),
           ),
         ),
         boxShadow: [
           BoxShadow(
-            color: scheme.shadow.withValues(alpha: isDark ? .22 : .07),
-            blurRadius: 14,
-            offset: const Offset(0, -3),
+            color: scheme.shadow.withValues(alpha: isDark ? .24 : .08),
+            blurRadius: 20,
+            offset: const Offset(0, -6),
           ),
         ],
       ),
       child: SafeArea(
         top: false,
-        child: BottomNavigationBar(
-          type: BottomNavigationBarType.fixed,
-          backgroundColor: background,
-          selectedItemColor: selected,
-          unselectedItemColor: unselected,
-          currentIndex: currentIndex.clamp(0, items.length - 1).toInt(),
-          elevation: 0,
-          selectedLabelStyle: const TextStyle(
-            fontSize: 10,
-            fontWeight: FontWeight.bold,
-          ),
-          unselectedLabelStyle: const TextStyle(fontSize: 10),
-          items: items,
-          onTap: (index) => _navigate(context, index),
+        minimum: const EdgeInsets.fromLTRB(8, 7, 8, 6),
+        child: Row(
+          children: List.generate(_items.length, (index) {
+            final item = _items[index];
+            final selected = index == selectedIndex;
+            return Expanded(
+              child: _NavDestination(
+                item: item,
+                selected: selected,
+                unreadCount: index == 3 ? unread : 0,
+                onTap: () => _navigate(context, index),
+              ),
+            );
+          }),
         ),
       ),
     );
@@ -110,11 +77,88 @@ class MainBottomNav extends ConsumerWidget {
   }
 }
 
-class _NotificationIcon extends StatelessWidget {
-  final int count;
-  final bool active;
+class _NavItem {
+  final IconData icon;
+  final IconData activeIcon;
+  final String label;
 
-  const _NotificationIcon({required this.count, this.active = false});
+  const _NavItem(this.icon, this.activeIcon, this.label);
+}
+
+class _NavDestination extends StatelessWidget {
+  final _NavItem item;
+  final bool selected;
+  final int unreadCount;
+  final VoidCallback onTap;
+
+  const _NavDestination({
+    required this.item,
+    required this.selected,
+    required this.unreadCount,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final iconColor = selected ? scheme.primary : scheme.onSurfaceVariant;
+
+    return Semantics(
+      button: true,
+      selected: selected,
+      label: item.label,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(18),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 2),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 220),
+                curve: Curves.easeOutCubic,
+                padding: EdgeInsets.symmetric(
+                  horizontal: selected ? 16 : 12,
+                  vertical: 6,
+                ),
+                decoration: BoxDecoration(
+                  color: selected
+                      ? scheme.primary.withValues(alpha: .12)
+                      : Colors.transparent,
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: _BadgeIcon(
+                  icon: selected ? item.activeIcon : item.icon,
+                  color: iconColor,
+                  count: unreadCount,
+                ),
+              ),
+              const SizedBox(height: 2),
+              AnimatedDefaultTextStyle(
+                duration: const Duration(milliseconds: 180),
+                style: TextStyle(
+                  color: iconColor,
+                  fontSize: selected ? 10.5 : 10,
+                  fontWeight: selected ? FontWeight.w800 : FontWeight.w500,
+                  height: 1.1,
+                ),
+                child: Text(item.label),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _BadgeIcon extends StatelessWidget {
+  final IconData icon;
+  final Color color;
+  final int count;
+
+  const _BadgeIcon({required this.icon, required this.color, required this.count});
 
   @override
   Widget build(BuildContext context) {
@@ -122,28 +166,26 @@ class _NotificationIcon extends StatelessWidget {
     return Stack(
       clipBehavior: Clip.none,
       children: [
-        Icon(
-          active ? Icons.notifications_rounded : Icons.notifications_none_rounded,
-        ),
+        Icon(icon, color: color, size: 23),
         if (count > 0)
           Positioned(
-            top: -7,
-            right: -9,
+            top: -8,
+            right: -11,
             child: Container(
-              constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
+              constraints: const BoxConstraints(minWidth: 17, minHeight: 17),
               padding: const EdgeInsets.symmetric(horizontal: 4),
+              alignment: Alignment.center,
               decoration: BoxDecoration(
                 color: scheme.error,
                 borderRadius: BorderRadius.circular(99),
                 border: Border.all(color: scheme.surface, width: 1.5),
               ),
-              alignment: Alignment.center,
               child: Text(
                 count > 99 ? '99+' : '$count',
                 style: TextStyle(
                   color: scheme.onError,
                   fontSize: 8,
-                  fontWeight: FontWeight.w800,
+                  fontWeight: FontWeight.w900,
                   height: 1,
                 ),
               ),
