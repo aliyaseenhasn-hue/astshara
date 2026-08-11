@@ -1,127 +1,89 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../../core/config/supabase_config.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../lawyers/presentation/providers/lawyers_provider.dart';
 
+/// الصفحة الرئيسية المطابقة لبنية شاشتي Stitch الفاتحة والداكنة.
 class HomePage extends ConsumerWidget {
   const HomePage({super.key});
 
   static const _categories = <({IconData icon, String title, String value})>[
     (icon: Icons.gavel_rounded, title: 'جنائي', value: 'جنائي'),
+    (icon: Icons.business_center_rounded, title: 'مدني', value: 'مدني'),
     (icon: Icons.family_restroom_rounded, title: 'أحوال شخصية', value: 'أحوال شخصية'),
-    (icon: Icons.account_balance_rounded, title: 'مدني', value: 'مدني'),
-    (icon: Icons.business_center_rounded, title: 'تجاري', value: 'تجاري'),
+    (icon: Icons.storefront_rounded, title: 'تجاري', value: 'تجاري'),
   ];
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final lawyersAsync = ref.watch(lawyersListProvider);
+    final scheme = Theme.of(context).colorScheme;
+    final dark = Theme.of(context).brightness == Brightness.dark;
+    final lawyers = ref.watch(lawyersListProvider);
+    final metadata = SupabaseConfig.client.auth.currentUser?.userMetadata;
+    final name = (metadata?['full_name'] ?? metadata?['name'] ?? 'أحمد').toString();
+
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: scheme.surface,
       body: CustomScrollView(
         slivers: [
-          SliverAppBar(
-            pinned: true,
-            expandedHeight: 300,
-            backgroundColor: AppColors.secondaryDark,
-            foregroundColor: Colors.white,
-            flexibleSpace: FlexibleSpaceBar(
-              background: Container(
-                decoration: const BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topRight,
-                    end: Alignment.bottomLeft,
-                    colors: [AppColors.secondaryDark, AppColors.secondary, AppColors.primaryDark],
-                    stops: [0, .58, 1],
-                  ),
-                ),
-                child: SafeArea(
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(20, 58, 20, 20),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Container(
-                              width: 44,
-                              height: 44,
-                              decoration: BoxDecoration(color: AppColors.gold, borderRadius: BorderRadius.circular(13)),
-                              child: const Icon(Icons.balance_rounded, color: AppColors.secondaryDark),
-                            ),
-                            const SizedBox(width: 12),
-                            const Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text('استشارة', style: TextStyle(color: AppColors.gold, fontSize: 20, fontWeight: FontWeight.bold)),
-                                  Text('منصتك القانونية الموثوقة', style: TextStyle(color: Colors.white70, fontSize: 11)),
-                                ],
-                              ),
-                            ),
-                            IconButton(onPressed: () => context.push('/notifications'), icon: const Icon(Icons.notifications_none_rounded, color: Colors.white)),
-                          ],
-                        ),
-                        const Spacer(),
-                        const Text('كيف يمكننا مساعدتك اليوم؟', style: TextStyle(color: Colors.white, fontSize: 25, height: 1.25, fontWeight: FontWeight.w800)),
-                        const SizedBox(height: 12),
-                        InkWell(
-                          onTap: () => context.go('/lawyers'),
-                          borderRadius: BorderRadius.circular(14),
-                          child: Container(
-                            height: 50,
-                            padding: const EdgeInsets.symmetric(horizontal: 14),
-                            decoration: BoxDecoration(color: Colors.white.withValues(alpha: .12), borderRadius: BorderRadius.circular(14), border: Border.all(color: Colors.white.withValues(alpha: .12))),
-                            child: const Row(children: [Icon(Icons.search_rounded, color: AppColors.gold), SizedBox(width: 10), Text('ابحث عن محامٍ أو تخصص...', style: TextStyle(color: Colors.white60))]),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ),
+          SliverToBoxAdapter(
+            child: _HomeHeader(name: name, dark: dark, onNotifications: () => context.push('/notifications')),
           ),
           SliverPadding(
-            padding: const EdgeInsets.fromLTRB(16, 20, 16, 110),
+            padding: const EdgeInsets.fromLTRB(24, 34, 24, 120),
             sliver: SliverList(
               delegate: SliverChildListDelegate([
-                Row(children: [const Expanded(child: Text('التخصصات القانونية', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.secondary))), TextButton(onPressed: () => context.go('/lawyers'), child: const Text('عرض الكل'))]),
-                const SizedBox(height: 8),
+                Text(
+                  dark ? 'مرحباً بك في استشارة' : 'كيف يمكننا مساعدتك اليوم؟',
+                  textAlign: TextAlign.right,
+                  style: TextStyle(color: scheme.onSurface, fontSize: dark ? 26 : 30, height: 1.25, fontWeight: FontWeight.w800),
+                ),
+                if (dark) ...[
+                  const SizedBox(height: 8),
+                  Text('بوابتك للوصول السريع إلى أفضل المحامين والمستشارين القانونيين.', textAlign: TextAlign.right, style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 13, height: 1.6)),
+                ],
+                const SizedBox(height: 20),
+                _SearchCard(onTap: () => context.go('/lawyers')),
+                const SizedBox(height: 38),
+                _SectionHeader(title: 'التخصصات القانونية', onAll: () => context.go('/lawyers')),
+                const SizedBox(height: 18),
                 GridView.builder(
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
                   itemCount: _categories.length,
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 2, crossAxisSpacing: 10, mainAxisSpacing: 10, childAspectRatio: 1.55),
-                  itemBuilder: (context, index) {
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 2, crossAxisSpacing: 14, mainAxisSpacing: 14, childAspectRatio: .94),
+                  itemBuilder: (_, index) {
                     final category = _categories[index];
-                    return InkWell(
+                    return _CategoryCard(
+                      category: category,
                       onTap: () {
                         ref.read(selectedCategoryProvider.notifier).setCategory(category.value);
                         context.go('/lawyers');
                       },
-                      borderRadius: BorderRadius.circular(16),
-                      child: Container(
-                        padding: const EdgeInsets.all(14),
-                        decoration: BoxDecoration(color: AppColors.surface, borderRadius: BorderRadius.circular(16), border: Border.all(color: AppColors.outline)),
-                        child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                          Container(width: 42, height: 42, decoration: BoxDecoration(color: AppColors.surfaceVariant, borderRadius: BorderRadius.circular(12)), child: Icon(category.icon, color: AppColors.primaryDark)),
-                          Text(category.title, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.secondary)),
-                        ]),
-                      ),
                     );
                   },
                 ),
-                const SizedBox(height: 26),
-                Row(children: [const Expanded(child: Text('محامون مقترحون', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.secondary))), TextButton(onPressed: () => context.go('/lawyers'), child: const Text('عرض الكل'))]),
-                const SizedBox(height: 8),
-                lawyersAsync.when(
-                  loading: () => const Padding(padding: EdgeInsets.all(28), child: Center(child: CircularProgressIndicator())),
-                  error: (_, __) => const Padding(padding: EdgeInsets.all(24), child: Center(child: Text('تعذر تحميل المحامين'))),
-                  data: (lawyers) {
-                    if (lawyers.isEmpty) return const Padding(padding: EdgeInsets.all(24), child: Center(child: Text('لا يوجد محامون موثقون حالياً')));
-                    return Column(children: lawyers.take(3).map((lawyer) => _SuggestedLawyerCard(lawyer: lawyer)).toList());
+                const SizedBox(height: 46),
+                _SectionHeader(title: 'محامون مقترحون', onAll: () => context.go('/lawyers')),
+                const SizedBox(height: 18),
+                lawyers.when(
+                  loading: () => const SizedBox(height: 220, child: Center(child: CircularProgressIndicator())),
+                  error: (_, __) => const _EmptyMessage(text: 'تعذر تحميل المحامين حالياً'),
+                  data: (items) {
+                    if (items.isEmpty) return const _EmptyMessage(text: 'لا يوجد محامون موثقون حالياً');
+                    final shown = items.take(3).toList();
+                    return SizedBox(
+                      height: dark ? 260 : 250,
+                      child: ListView.separated(
+                        reverse: true,
+                        scrollDirection: Axis.horizontal,
+                        itemCount: shown.length,
+                        separatorBuilder: (_, __) => const SizedBox(width: 14),
+                        itemBuilder: (_, index) => _SuggestedLawyerCard(lawyer: shown[index]),
+                      ),
+                    );
                   },
                 ),
               ]),
@@ -133,35 +95,184 @@ class HomePage extends ConsumerWidget {
   }
 }
 
+class _HomeHeader extends StatelessWidget {
+  final String name;
+  final bool dark;
+  final VoidCallback onNotifications;
+  const _HomeHeader({required this.name, required this.dark, required this.onNotifications});
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Container(
+      padding: EdgeInsets.fromLTRB(24, MediaQuery.paddingOf(context).top + 12, 24, 16),
+      decoration: BoxDecoration(
+        color: dark ? const Color(0xFF111415) : scheme.surface,
+        border: Border(bottom: BorderSide(color: scheme.outlineVariant.withValues(alpha: dark ? .18 : .55))),
+      ),
+      child: Row(
+        textDirection: TextDirection.rtl,
+        children: [
+          IconButton(onPressed: onNotifications, tooltip: 'التنبيهات', icon: Icon(Icons.notifications_none_rounded, color: scheme.onSurface, size: 27)),
+          const Spacer(),
+          Text('استشارة', style: TextStyle(color: dark ? AppColors.gold : scheme.onSurface, fontSize: 22, fontWeight: FontWeight.w800)),
+          const Spacer(),
+          Row(
+            textDirection: TextDirection.rtl,
+            children: [
+              CircleAvatar(radius: 25, backgroundColor: dark ? scheme.surfaceContainerHighest : const Color(0xFFE9EEF0), child: Icon(Icons.person_rounded, color: scheme.onSurfaceVariant, size: 27)),
+              const SizedBox(width: 10),
+              Column(crossAxisAlignment: CrossAxisAlignment.end, children: [Text('أهلاً،', style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 11)), Text(name, style: TextStyle(color: scheme.onSurface, fontSize: 17, fontWeight: FontWeight.w800))]),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SearchCard extends StatelessWidget {
+  final VoidCallback onTap;
+  const _SearchCard({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(14),
+        child: Ink(
+          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 17),
+          decoration: BoxDecoration(color: scheme.surfaceContainerHighest.withValues(alpha: .72), borderRadius: BorderRadius.circular(14), border: Border.all(color: scheme.outline.withValues(alpha: .55))),
+          child: Row(
+            textDirection: TextDirection.rtl,
+            children: [
+              Expanded(child: Text('ابحث عن تخصص، محامي، أو استشارة...', textAlign: TextAlign.right, style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 15))),
+              const SizedBox(width: 12),
+              Icon(Icons.search_rounded, color: scheme.onSurface, size: 29),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _SectionHeader extends StatelessWidget {
+  final String title;
+  final VoidCallback onAll;
+  const _SectionHeader({required this.title, required this.onAll});
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Row(
+      textDirection: TextDirection.rtl,
+      children: [
+        Expanded(child: Text(title, textAlign: TextAlign.right, style: TextStyle(color: scheme.onSurface, fontSize: 21, fontWeight: FontWeight.w800))),
+        TextButton.icon(onPressed: onAll, icon: const Icon(Icons.arrow_back_rounded, size: 19), label: const Text('عرض الكل'), style: TextButton.styleFrom(foregroundColor: AppColors.goldDark, padding: EdgeInsets.zero)),
+      ],
+    );
+  }
+}
+
+class _CategoryCard extends StatelessWidget {
+  final ({IconData icon, String title, String value}) category;
+  final VoidCallback onTap;
+  const _CategoryCard({required this.category, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final dark = Theme.of(context).brightness == Brightness.dark;
+    final goldIcon = category.title == 'مدني';
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: Ink(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 20),
+          decoration: BoxDecoration(
+            color: dark ? scheme.surfaceContainerHighest.withValues(alpha: .82) : scheme.surface,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: scheme.outline.withValues(alpha: .72)),
+            boxShadow: dark ? null : [BoxShadow(color: Colors.black.withValues(alpha: .035), blurRadius: 18, offset: const Offset(0, 6))],
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Container(width: 64, height: 64, decoration: BoxDecoration(shape: BoxShape.circle, color: goldIcon ? AppColors.gold.withValues(alpha: .2) : scheme.surfaceContainerHighest), child: Icon(category.icon, size: 31, color: goldIcon ? AppColors.goldDark : scheme.onSurface)),
+              Text(category.title, textAlign: TextAlign.center, style: TextStyle(color: scheme.onSurface, fontSize: 17, fontWeight: FontWeight.w600)),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _SuggestedLawyerCard extends StatelessWidget {
   final dynamic lawyer;
   const _SuggestedLawyerCard({required this.lawyer});
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final dark = Theme.of(context).brightness == Brightness.dark;
     final avatar = lawyer.avatarUrl;
     final hasAvatar = avatar != null && avatar.isNotEmpty;
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      decoration: BoxDecoration(color: AppColors.surface, borderRadius: BorderRadius.circular(16), border: Border.all(color: AppColors.outline)),
-      child: InkWell(
-        onTap: () => context.push('/lawyer-details/${lawyer.profileId}'),
-        borderRadius: BorderRadius.circular(16),
-        child: Padding(
-          padding: const EdgeInsets.all(12),
-          child: Row(children: [
-            Container(width: 54, height: 54, decoration: BoxDecoration(shape: BoxShape.circle, color: AppColors.surfaceVariant, border: Border.all(color: AppColors.gold, width: 2), image: hasAvatar ? DecorationImage(image: NetworkImage(avatar), fit: BoxFit.cover) : null), child: hasAvatar ? null : const Icon(Icons.person, color: AppColors.primaryDark)),
-            const SizedBox(width: 12),
-            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Row(children: [Expanded(child: Text(lawyer.fullName ?? 'محامي', maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.secondary))), if (lawyer.verified) const Icon(Icons.verified_rounded, color: AppColors.primaryDark, size: 17)]),
-              const SizedBox(height: 4),
-              Text(lawyer.specializations.isNotEmpty ? lawyer.specializations.take(2).join('، ') : 'قانون عام', maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 11, color: AppColors.textSecondary)),
-              const SizedBox(height: 6),
-              Row(children: [const Icon(Icons.star_rounded, color: AppColors.goldDark, size: 16), const SizedBox(width: 3), Text(lawyer.rating.toStringAsFixed(1), style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)), const Spacer(), Text('${lawyer.reviewCount} تقييم', style: const TextStyle(fontSize: 10, color: AppColors.textSecondary))]),
-            ])),
-          ]),
+    final specializations = lawyer.specializations.isNotEmpty ? lawyer.specializations.take(2).join('، ') : 'قانون عام';
+    return SizedBox(
+      width: dark ? 305 : 330,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () => context.push('/lawyer-details/${lawyer.profileId}'),
+          borderRadius: BorderRadius.circular(17),
+          child: Ink(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(color: dark ? scheme.surfaceContainerHighest.withValues(alpha: .78) : scheme.surface, borderRadius: BorderRadius.circular(17), border: Border.all(color: scheme.outline.withValues(alpha: .72)), boxShadow: dark ? null : [BoxShadow(color: Colors.black.withValues(alpha: .035), blurRadius: 18, offset: const Offset(0, 7))]),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Row(
+                  textDirection: TextDirection.rtl,
+                  children: [
+                    Container(width: 68, height: 68, decoration: BoxDecoration(shape: BoxShape.circle, color: scheme.surfaceContainerHighest, border: Border.all(color: AppColors.gold, width: 2), image: hasAvatar ? DecorationImage(image: NetworkImage(avatar), fit: BoxFit.cover) : null), child: hasAvatar ? null : Icon(Icons.person_rounded, color: scheme.onSurfaceVariant, size: 34)),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Row(textDirection: TextDirection.rtl, children: [Expanded(child: Text(lawyer.fullName ?? 'محامي', textAlign: TextAlign.right, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: scheme.onSurface, fontSize: 17, fontWeight: FontWeight.w800))), if (lawyer.verified) const Icon(Icons.verified_rounded, color: AppColors.goldDark, size: 18)]),
+                          const SizedBox(height: 4),
+                          Text(specializations, textAlign: TextAlign.right, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 12)),
+                          const SizedBox(height: 7),
+                          Row(mainAxisAlignment: MainAxisAlignment.end, children: [Text('(${lawyer.reviewCount} استشارة)', style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 11)), const SizedBox(width: 6), const Icon(Icons.star_rounded, color: AppColors.goldDark, size: 18), const SizedBox(width: 2), Text(lawyer.rating.toStringAsFixed(1), style: const TextStyle(color: AppColors.goldDark, fontSize: 13, fontWeight: FontWeight.bold))]),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const Spacer(),
+                Wrap(alignment: WrapAlignment.end, spacing: 7, runSpacing: 7, children: lawyer.specializations.take(2).map<Widget>((s) => Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6), decoration: BoxDecoration(color: scheme.surfaceContainerHighest, borderRadius: BorderRadius.circular(7)), child: Text(s.toString(), style: TextStyle(color: scheme.onSurface, fontSize: 10)))).toList()),
+                const SizedBox(height: 10),
+                Row(mainAxisAlignment: MainAxisAlignment.end, children: [Icon(Icons.location_on_outlined, color: scheme.onSurfaceVariant, size: 17), const SizedBox(width: 4), Text('العراق', style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 11))]),
+              ],
+            ),
+          ),
         ),
       ),
     );
   }
+}
+
+class _EmptyMessage extends StatelessWidget {
+  final String text;
+  const _EmptyMessage({required this.text});
+  @override
+  Widget build(BuildContext context) => Center(child: Padding(padding: const EdgeInsets.all(24), child: Text(text, textAlign: TextAlign.center, style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant))));
 }
