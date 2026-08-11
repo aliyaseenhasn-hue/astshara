@@ -21,9 +21,6 @@ class BookingsRepositoryImpl implements BookingsRepository {
     final user = _supabase.auth.currentUser;
     if (user == null) throw Exception('يجب تسجيل الدخول أولاً');
 
-    // The database function validates the profile value as the source of truth.
-    // Passing it here keeps the RPC contract explicit and preserves the contact
-    // that belongs to the booking without accepting arbitrary UI input.
     final profile = await _supabase
         .from('profiles')
         .select('whatsapp_number')
@@ -116,7 +113,7 @@ class BookingsRepositoryImpl implements BookingsRepository {
   }
 
   @override
-  Future<void> reportNoShow(String bookingId) async {
+  Future<void> reportNoShow(String bookingId, [bool? isLawyer]) async {
     await _supabase.rpc('report_booking_no_show', params: {'p_booking_id': bookingId});
   }
 }
