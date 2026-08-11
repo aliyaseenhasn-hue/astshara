@@ -18,17 +18,14 @@ class LawConnectApp extends ConsumerWidget {
     final router = ref.watch(routerProvider);
     final isLoading = ref.watch(globalLoadingProvider);
     final themeMode = ref.watch(themeModeProvider);
-    final unread = ref.watch(unreadNotificationsCountProvider).valueOrNull ?? 0;
+    // Keep the notification provider alive for the existing badge/realtime flow.
+    ref.watch(unreadNotificationsCountProvider);
 
     return MaterialApp.router(
       title: 'LawConnect',
       debugShowCheckedModeBanner: false,
       scrollBehavior: const MaterialScrollBehavior().copyWith(
-        dragDevices: {
-          PointerDeviceKind.touch,
-          PointerDeviceKind.mouse,
-          PointerDeviceKind.trackpad,
-        },
+        dragDevices: {PointerDeviceKind.touch, PointerDeviceKind.mouse, PointerDeviceKind.trackpad},
       ),
       locale: const Locale('ar', 'IQ'),
       supportedLocales: const [Locale('ar', 'IQ')],
@@ -54,40 +51,16 @@ class LawConnectApp extends ConsumerWidget {
         final isRestrictedRoute = location == '/lawyer-pending' ||
             location == '/manual-payment-required' ||
             location == '/manual-payment';
-        final canShowGlobalChrome = authUser != null &&
-            !isAuthRoute && !isAdminRoute && !isRestrictedRoute;
-        final showGlobalBell = canShowGlobalChrome && location != '/';
+        final canShowGlobalChrome = authUser != null && !isAuthRoute && !isAdminRoute && !isRestrictedRoute;
 
-        // شريط التنقل السفلي موجود حصراً داخل AppShell عبر ShellRoute.
-        // لا نضيفه هنا مرة ثانية حتى لا يظهر مرتين في الواجهة.
+        // التنبيهات وشريط التنقل ملك للصفحات/AppShell وفق Stitch.
+        // لا نضيف جرساً عاماً فوق الصفحة حتى لا يتكرر مع رؤوس الصفحات.
         final content = child ?? const SizedBox.shrink();
-
         return Stack(
           children: [
             content,
-            if (showGlobalBell)
-              Positioned(
-                top: MediaQuery.paddingOf(context).top + 8,
-                right: 12,
-                child: Material(
-                  color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.94),
-                  elevation: 3,
-                  shadowColor: Colors.black.withValues(alpha: 0.18),
-                  shape: const CircleBorder(),
-                  child: Badge.count(
-                    count: unread > 99 ? 99 : unread,
-                    isLabelVisible: unread > 0,
-                    backgroundColor: AppThemeNotificationColors.badge,
-                    textColor: Colors.white,
-                    child: IconButton(
-                      tooltip: 'الإشعارات',
-                      icon: const Icon(Icons.notifications_none_rounded),
-                      color: AppThemeNotificationColors.icon,
-                      onPressed: () => router.push('/notifications'),
-                    ),
-                  ),
-                ),
-              ),
+            if (isRestrictedRoute && canShowGlobalChrome)
+              const SizedBox.shrink(),
             if (isLoading)
               Positioned.fill(
                 child: Container(
@@ -100,9 +73,4 @@ class LawConnectApp extends ConsumerWidget {
       },
     );
   }
-}
-
-class AppThemeNotificationColors {
-  static const badge = Color(0xFFD9A441);
-  static const icon = Color(0xFF176B87);
 }
