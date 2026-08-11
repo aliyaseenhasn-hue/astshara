@@ -4,7 +4,6 @@ import 'package:go_router/go_router.dart';
 import '../../features/profile/presentation/providers/notifications_provider.dart';
 
 /// الشريط السفلي الرئيسي للتطبيق وفق بنية Stitch.
-/// يجب أن يوجد في AppShell فقط حتى لا تتكرر عناصر التنقل داخل الصفحات.
 class MainBottomNav extends ConsumerWidget {
   final int currentIndex;
 
@@ -28,30 +27,20 @@ class MainBottomNav extends ConsumerWidget {
     return Container(
       decoration: BoxDecoration(
         color: scheme.surface,
-        border: Border(
-          top: BorderSide(
-            color: scheme.outlineVariant.withValues(alpha: isDark ? .38 : .62),
-          ),
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: scheme.shadow.withValues(alpha: isDark ? .24 : .08),
-            blurRadius: 20,
-            offset: const Offset(0, -6),
-          ),
-        ],
+        border: Border(top: BorderSide(color: scheme.outlineVariant.withValues(alpha: isDark ? .38 : .62))),
+        boxShadow: [BoxShadow(color: scheme.shadow.withValues(alpha: isDark ? .24 : .08), blurRadius: 20, offset: const Offset(0, -6))],
       ),
       child: SafeArea(
         top: false,
         minimum: const EdgeInsets.fromLTRB(8, 7, 8, 6),
         child: Row(
+          textDirection: TextDirection.rtl,
           children: List.generate(_items.length, (index) {
             final item = _items[index];
-            final selected = index == selectedIndex;
             return Expanded(
               child: _NavDestination(
                 item: item,
-                selected: selected,
+                selected: index == selectedIndex,
                 unreadCount: index == 3 ? unread : 0,
                 onTap: () => _navigate(context, index),
               ),
@@ -71,9 +60,7 @@ class MainBottomNav extends ConsumerWidget {
       4 => '/app-settings',
       _ => '/',
     };
-    if (GoRouterState.of(context).uri.path != target) {
-      context.go(target);
-    }
+    if (GoRouterState.of(context).uri.path != target) context.go(target);
   }
 }
 
@@ -81,7 +68,6 @@ class _NavItem {
   final IconData icon;
   final IconData activeIcon;
   final String label;
-
   const _NavItem(this.icon, this.activeIcon, this.label);
 }
 
@@ -91,18 +77,12 @@ class _NavDestination extends StatelessWidget {
   final int unreadCount;
   final VoidCallback onTap;
 
-  const _NavDestination({
-    required this.item,
-    required this.selected,
-    required this.unreadCount,
-    required this.onTap,
-  });
+  const _NavDestination({required this.item, required this.selected, required this.unreadCount, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final iconColor = selected ? scheme.primary : scheme.onSurfaceVariant;
-
     return Semantics(
       button: true,
       selected: selected,
@@ -118,31 +98,17 @@ class _NavDestination extends StatelessWidget {
               AnimatedContainer(
                 duration: const Duration(milliseconds: 220),
                 curve: Curves.easeOutCubic,
-                padding: EdgeInsets.symmetric(
-                  horizontal: selected ? 16 : 12,
-                  vertical: 6,
-                ),
+                padding: EdgeInsets.symmetric(horizontal: selected ? 16 : 12, vertical: 6),
                 decoration: BoxDecoration(
-                  color: selected
-                      ? scheme.primary.withValues(alpha: .12)
-                      : Colors.transparent,
+                  color: selected ? scheme.primary.withValues(alpha: .12) : Colors.transparent,
                   borderRadius: BorderRadius.circular(16),
                 ),
-                child: _BadgeIcon(
-                  icon: selected ? item.activeIcon : item.icon,
-                  color: iconColor,
-                  count: unreadCount,
-                ),
+                child: _BadgeIcon(icon: selected ? item.activeIcon : item.icon, color: iconColor, count: unreadCount),
               ),
               const SizedBox(height: 2),
               AnimatedDefaultTextStyle(
                 duration: const Duration(milliseconds: 180),
-                style: TextStyle(
-                  color: iconColor,
-                  fontSize: selected ? 10.5 : 10,
-                  fontWeight: selected ? FontWeight.w800 : FontWeight.w500,
-                  height: 1.1,
-                ),
+                style: TextStyle(color: iconColor, fontSize: selected ? 10.5 : 10, fontWeight: selected ? FontWeight.w800 : FontWeight.w500, height: 1.1),
                 child: Text(item.label),
               ),
             ],
@@ -157,7 +123,6 @@ class _BadgeIcon extends StatelessWidget {
   final IconData icon;
   final Color color;
   final int count;
-
   const _BadgeIcon({required this.icon, required this.color, required this.count});
 
   @override
@@ -175,20 +140,8 @@ class _BadgeIcon extends StatelessWidget {
               constraints: const BoxConstraints(minWidth: 17, minHeight: 17),
               padding: const EdgeInsets.symmetric(horizontal: 4),
               alignment: Alignment.center,
-              decoration: BoxDecoration(
-                color: scheme.error,
-                borderRadius: BorderRadius.circular(99),
-                border: Border.all(color: scheme.surface, width: 1.5),
-              ),
-              child: Text(
-                count > 99 ? '99+' : '$count',
-                style: TextStyle(
-                  color: scheme.onError,
-                  fontSize: 8,
-                  fontWeight: FontWeight.w900,
-                  height: 1,
-                ),
-              ),
+              decoration: BoxDecoration(color: scheme.error, borderRadius: BorderRadius.circular(99), border: Border.all(color: scheme.surface, width: 1.5)),
+              child: Text(count > 99 ? '99+' : '$count', style: TextStyle(color: scheme.onError, fontSize: 8, fontWeight: FontWeight.w900, height: 1)),
             ),
           ),
       ],
