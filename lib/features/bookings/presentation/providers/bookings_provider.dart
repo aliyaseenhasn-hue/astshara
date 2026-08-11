@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:astshara/core/config/supabase_config.dart';
 import '../../../authentication/presentation/providers/auth_provider.dart';
