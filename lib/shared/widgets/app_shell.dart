@@ -32,8 +32,14 @@ class AppShell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+
     return Scaffold(
-      body: child,
+      backgroundColor: scheme.surface,
+      body: ColoredBox(
+        color: scheme.surface,
+        child: child,
+      ),
       bottomNavigationBar: MainBottomNav(currentIndex: currentIndex),
     );
   }
