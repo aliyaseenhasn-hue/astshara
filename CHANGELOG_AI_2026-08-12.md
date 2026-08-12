@@ -4,9 +4,10 @@
 قبل أي تعديل جديد تتم مراجعة الملفات والـcommits السابقة لتجنب تكرار التنفيذ. كل تعديل جديد يسجل في ملف Markdown مع الـcommit والسبب والنتيجة.
 
 ## آخر تعديل
-- `0bc5983d88b6ee1b703ffc27fdba592d562fe771` — تطبيق أسلوب Stitch Premium على `lawyer_pending_page.dart`: بطاقة حالة Premium، تسلسل مراحل المراجعة، رسالة إرشادية، وتحديث أزرار الحالة مع الحفاظ على منطق تسجيل الخروج.
+- `0b304b039ff0a58e3c1a2271561bd2cdf1efab23` — تطبيق أسلوب Stitch Premium على `lawyer_onboarding_page.dart`: مقدمة مهنية، خطوات مرئية، رفع صورة شخصية ووثيقة تحقق بواجهة موحدة، رسالة خصوصية، وحفظ ثابت، مع الحفاظ على منطق الإرسال والرفع الحالي.
 
 ## التعديلات السابقة
+- `0bc5983d88b6ee1b703ffc27fdba592d562fe771` — تطبيق أسلوب Stitch Premium على `lawyer_pending_page.dart`.
 - `35aa9f1cbe027563b6ad0eaf1665558493403461` — تطبيق أسلوب Stitch Premium على `lawyer_setup_page.dart`.
 - `e2d507d344da2e18fca446448dbfecb483e9016e` — تطبيق أسلوب Stitch Premium على `lawyer_profile_edit_page.dart`.
 - `77e16ba3f1a8c9a8db528dc7422dc83664fc9563` — Design Tokens في `app_sizes.dart`.
@@ -28,6 +29,9 @@
 - `e2d507d344da2e18fca446448dbfecb483e9016e` — استكمال `lawyer_profile_edit_page.dart`.
 - `35aa9f1cbe027563b6ad0eaf1665558493403461` — استكمال `lawyer_setup_page.dart`.
 - `0bc5983d88b6ee1b703ffc27fdba592d562fe771` — استكمال `lawyer_pending_page.dart`.
+
+## مطابقة Stitch — المصادقة والانضمام
+- `0b304b039ff0a58e3c1a2271561bd2cdf1efab23` — استكمال `lawyer_onboarding_page.dart`.
 
 ## إصلاحات CI
 - `263b6006c9232d2c317f9e95f50a98ffc74d570e` — إصلاح syntax في `bookings_list_page.dart`.
