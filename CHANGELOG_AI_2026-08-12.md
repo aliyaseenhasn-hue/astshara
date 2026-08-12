@@ -4,6 +4,8 @@
 قبل أي تعديل جديد تتم مراجعة الملفات والـcommits السابقة لتجنب تكرار التنفيذ. كل تعديل جديد يسجل في ملف Markdown مع الـcommit والسبب والنتيجة.
 
 ## آخر تعديل
+- `e8fdbde104a36bc762471ab2da1386ee727f14a4` — جعل `AppShell` واعيًا بدور المستخدم وربط فهارس شريط التنقل بالمحامي بشكل مستقل، بحيث لا يظهر تبويب المحامين للمحامي وتبقى فهارس العميل كما هي.
+- `dda6fed1a71b26dc9dd1745c14a02ccffb537f7b` — تعديل `main_bottom_nav.dart`: حذف زر «المحامون» من قائمة المحامي وإعادة ترتيب الشريط للمحامي إلى: الرئيسية → استشاراتي → التنبيهات → الإعدادات، مع إبقاء قائمة طالب الاستشارة كما هي.
 - `39035ebfaffef2ae6f24a5c978649ae0e86cdf03` — إصلاح `booking_details_page.dart` بالكامل بعد ظهور أخطاء CI: إزالة الصياغة المبتورة التي سببت أخطاء الأقواس، الحفاظ على RTL باستخدام Flutter APIs الصحيحة، وربط إجراءات المراجعة وتحديث الحالة وعدم الحضور بالـBookingsController.
 - `dbdc2454fff678e69437696f1c4f1c90311cfccc` — إصلاح مراجع RTL في `booking_details_page.dart` باستبدال الاعتماد المباشر على `TextDirection.rtl` بـ`Directionality.of(context)`.
 - `91f6911e30ac4ea5afca2241a4fe31a74a5beba9` — إصلاح طبقة `BookingsController` بعد تطبيق Stitch على `booking_details_page.dart`: إضافة `reviewBooking` و`updateBookingStatus` و`reportNoShow` كواجهات رسمية فوق الـrepository.
