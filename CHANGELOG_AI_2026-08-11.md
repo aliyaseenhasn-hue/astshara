@@ -3,12 +3,20 @@
 ## الهدف
 استكمال متطلبات إعادة تصميم تطبيق «استشارة» اعتماداً على تصميم Stitch، مع الحفاظ على منطق الحجز والدفع والأمان الحاليين.
 
+## قاعدة إلزامية قبل أي تعديل جديد
+- مراجعة آخر commits أولاً وعدم إعادة تنفيذ شاشة أو ملف سبق تعديله إلا إذا كان الإصلاح يستهدف خطأ مثبتاً.
+- مراجعة الملفات التي تم تعديلها سابقاً قبل إنشاء commit جديد.
+- تسجيل كل تغيير جوهري في هذا الملف مع: commit، الملف/الصفحة، نوع التعديل، والنتيجة.
+- لا يعتبر أي إصلاح ناجحاً قبل فحص CI المرتبط بالـcommit نفسه.
+- لا إنشاء نسخ مكررة من الملفات؛ التعديل يتم على الملف الأصلي فقط.
+
 ## آخر حالة تنفيذ
 - تم إصلاح أخطاء `flutter analyze` التي ظهرت في Workflow 380.
 - Workflow 382 على commit `b1f2f9f` اجتاز `flutter analyze` و`flutter test` بنجاح، والبناء كان جارياً عند آخر تحقق.
 - بعد ذلك تم تحديث Supabase إلى API `publishableKey` في commit `38db92676e976b03952d5802499248df3033aa11` لإزالة deprecated `anonKey`.
+- آخر commits الفعلية في السلسلة الحالية تمت مراجعتها من GitHub قبل متابعة التنفيذ لمنع التكرار.
 
-## التغييرات المنفذة
+## التغييرات المنفذة سابقاً
 ### 1. توثيق العمل
 - إنشاء `CHANGELOG_AI_2026-08-11.md` كسجل دائم للتعديلات الخاصة بهذه المرحلة.
 - تحديث `PROJECT_AI_CONTEXT.md` ليشير إلى السجل ويلخص قرارات الواجهة والحجز الحالية.
@@ -47,7 +55,7 @@
 - commit: `38db92676e976b03952d5802499248df3033aa11`.
 
 ### 7. استكمال بنية Stitch الرئيسية للعميل
-الملف الجديد: `lib/features/home/presentation/pages/home_page.dart`.
+الملف: `lib/features/home/presentation/pages/home_page.dart`.
 - إنشاء صفحة رئيسية مستقلة مستوحاة من شاشتي Stitch الرئيسية الفاتحة والداكنة.
 - إضافة الهوية، البحث، التخصصات، المحامين المقترحين وزر التنبيهات.
 - البيانات الحقيقية للمحامين تأتي من `lawyersListProvider`.
@@ -74,6 +82,31 @@
 - الحفاظ على وظائف الإعدادات، تغيير الصورة، تعديل البيانات، تسجيل الخروج والحذف.
 - الحفاظ على تحديث التنبيهات وقراءة الكل وإعادة المحاولة والتحديث بالسحب.
 
+## تدقيق السلسلة الأخيرة — 2026-08-12
+تمت مراجعة commits الفعلية الأخيرة من GitHub قبل تنفيذ أي دفعة جديدة. هذه السلسلة الحالية يجب اعتبارها مرجع عدم التكرار:
+
+- `4b73be5` — `lib/features/bookings/presentation/pages/create_booking_page.dart`: تحسينات تصميم الحجز؛ لا تعاد هذه الدفعة إلا لإصلاح مثبت.
+- `b794242` — `lib/features/home/presentation/pages/home_page.dart`: تحسين Hero والبحث في الرئيسية.
+- `7230dea` — `lib/features/lawyers/presentation/pages/lawyers_list_page.dart`: محاذاة سطح دليل المحامين في Dark Stitch.
+- `4af980a` — `lib/features/profile/presentation/pages/notifications_page.dart`: تحسين شاشة التنبيهات وفق Stitch.
+- `f3bb47c` — `lib/features/profile/presentation/pages/notifications_page.dart`: إصلاح `TextDirection` في التنبيهات.
+- `4992bf8` — `lib/features/profile/presentation/pages/notifications_page.dart`: استعادة الصياغة بعد أخطاء parser.
+- `297db74` — `lib/features/bookings/presentation/pages/manual_payment_page.dart`: صقل تخطيط الدفع اليدوي وRTL.
+- `a22192b` — `lib/features/authentication/presentation/pages/login_page.dart`: تطبيق دفعة Stitch على تسجيل الدخول.
+- `750769b` — `lib/features/authentication/presentation/pages/otp_page.dart`: تطبيق دفعة Stitch على OTP.
+- `b2c9cf8` — `lib/features/profile/presentation/pages/notifications_page.dart`: إزالة استخدام `TextDirection` غير الصحيح بعد فشل analyzer.
+- `647176b` — `lib/features/profile/presentation/pages/profile_page.dart`: تطبيق دفعة Stitch على صفحة الملف الشخصي.
+
+### الشاشات التي لا ينبغي إعادة تعديلها بشكل روتيني الآن
+تسجيل الدخول، OTP، الملف الشخصي، التنبيهات، الصفحة الرئيسية، دليل المحامين، والدفع اليدوي؛ هذه لها commits حديثة أعلاه. أي تعديل جديد عليها يجب أن يكون مبنياً على خطأ/نقص محدد ومثبت.
+
+### الشاشات/المراحل التالية ذات الأولوية
+- ملف المحامي / تفاصيل ملف المحامي ومطابقة Stitch الكاملة.
+- استشاراتي.
+- تفاصيل الاستشارة والحجز.
+- إنشاء الحجز والدفع ورفع إثبات الدفع.
+- الإعدادات وباقي الشاشات المرتبطة بالتدفق.
+
 ## مرجع Stitch الذي تم فحصه
 تم فحص أرشيف Stitch عبر Workflow `Inspect Stitch Design Archive`، وتأكد وجود 13 شاشة تصميم:
 - ملف المحامي — Quiet Luxury.
@@ -93,9 +126,10 @@
 كما تم استخراج `DESIGN.md` لنظامي `premium_legal_narrative` و`nocturne_counsel` ومراجعة الألوان والطباعة والمسافات والزوايا.
 
 ## حالة CI
-- Workflow 380: فشل بسبب خطأين نحويين، وتم إصلاحهما.
+- Workflow 380: فشل بسبب أخطاء نحوية وتم إصلاحها.
 - Workflow 382 على `b1f2f9f`: `flutter analyze` ناجح و`flutter test` ناجح؛ البناء كان قيد التنفيذ عند آخر تحقق.
-- Commit `38db9267` أحدث من Workflow 382 ويحتوي فقط على تحديث API الخاص بـSupabase، لذلك يجب اعتماد Workflow جديد لهذا الـcommit قبل اعتبار الإصدار النهائي متحققاً.
+- أحدث commits في 2026-08-12 تحتاج دائماً إلى الاعتماد على نتائج CI الخاصة بكل commit نفسه. عدم وجود Status checks على commit لا يساوي نجاحاً.
+- عند ظهور فشل Flutter Analyze، يعالج أولاً قبل مواصلة التصميم.
 
 ## متطلبات ما زالت ضمن التدقيق
 1. مطابقة كل شاشة من الشاشات الـ13 بصرياً مع الصفحة الفعلية المقابلة لها.
@@ -121,6 +155,17 @@
 - `c9407d042959ed06efa1d6d4bb118890dcb6b5a0` — إصلاح قوس إغلاق صفحة الحساب.
 - `b1f2f9f1faf934094c858aa733c6d1f7cc9f711a1` — إصلاح parser في تفاصيل الحجز.
 - `38db92676e976b03952d5802499248df3033aa11` — ترحيل Supabase إلى `publishableKey`.
+- `4b73be533dda01933790dd951ac42f7393e2f556` — تحسين زر/إجراء الدفع في إنشاء الحجز.
+- `b794242da197e5bfedae768c7e7289a976ec0f28` — تحسين Hero والبحث في الرئيسية.
+- `7230dea8cb9fbe277e86becf1d6c0f90832d920d` — محاذاة دليل المحامين في Dark Stitch.
+- `4af980a1fac78185a2693fa94210d8a9e6af0bf1` — تحسين شاشة التنبيهات.
+- `f3bb47c334c29facad3ac55f8da0e14281c5ef58` — إصلاح TextDirection في التنبيهات.
+- `4992bf865951ea0f9db90867ae5346b4fbd76c80` — استعادة صياغة التنبيهات بعد خطأ parser.
+- `297db74811f6bd77a0e4923558384966596a8bbb` — صقل تخطيط الدفع اليدوي.
+- `a22192b04eb48c29fa26f23755eeb1e3eaa21199` — تطبيق Stitch على تسجيل الدخول.
+- `750769b0d1b9da678e72e72bdbf6f103ea3a6a54` — تطبيق Stitch على OTP.
+- `b2c9cf809b14a53652195fca15269879e4f9e691` — إزالة استخدام TextDirection غير الصحيح في التنبيهات.
+- `647176b7811771849a7365b191f80f2708512fa1` — تطبيق Stitch على الملف الشخصي.
 
 ## قاعدة السجل
 يجب إضافة كل تغيير جوهري لاحقاً إلى هذا الملف أو إلى سجل أحدث، مع ذكر الملف والسبب والنتيجة، وعدم اعتبار المهمة مكتملة قبل التحقق من CI.
