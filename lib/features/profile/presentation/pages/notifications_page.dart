@@ -41,39 +41,24 @@ class NotificationsPage extends ConsumerWidget {
               },
               child: Text(
                 'قراءة الكل',
-                style: TextStyle(
-                  color: scheme.primary,
-                  fontWeight: FontWeight.bold,
-                ),
+                style: TextStyle(color: scheme.primary, fontWeight: FontWeight.bold),
               ),
             ),
         ],
       ),
       body: notifications.when(
-        loading: () => Center(
-          child: CircularProgressIndicator(color: scheme.primary),
-        ),
+        loading: () => Center(child: CircularProgressIndicator(color: scheme.primary)),
         error: (_, __) => Center(
           child: Padding(
             padding: const EdgeInsets.all(AppSizes.p20),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(
-                  Icons.notifications_off_rounded,
-                  size: 52,
-                  color: scheme.onSurfaceVariant,
-                ),
+                Icon(Icons.notifications_off_rounded, size: 52, color: scheme.onSurfaceVariant),
                 const SizedBox(height: 12),
-                Text(
-                  'تعذر تحميل التنبيهات',
-                  style: TextStyle(color: scheme.onSurface),
-                ),
+                Text('تعذر تحميل التنبيهات', style: TextStyle(color: scheme.onSurface)),
                 const SizedBox(height: 12),
-                OutlinedButton(
-                  onPressed: refresh,
-                  child: const Text('إعادة المحاولة'),
-                ),
+                OutlinedButton(onPressed: refresh, child: const Text('إعادة المحاولة')),
               ],
             ),
           ),
@@ -86,31 +71,11 @@ class NotificationsPage extends ConsumerWidget {
                 physics: const AlwaysScrollableScrollPhysics(),
                 children: [
                   const SizedBox(height: 150),
-                  Icon(
-                    Icons.notifications_none_rounded,
-                    size: 76,
-                    color: scheme.outline,
-                  ),
+                  Icon(Icons.notifications_none_rounded, size: 76, color: scheme.outline),
                   const SizedBox(height: 16),
-                  Center(
-                    child: Text(
-                      'لا توجد تنبيهات حالياً',
-                      style: TextStyle(
-                        color: scheme.onSurfaceVariant,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
+                  Center(child: Text('لا توجد تنبيهات حالياً', style: TextStyle(color: scheme.onSurfaceVariant, fontWeight: FontWeight.w600))),
                   const SizedBox(height: 6),
-                  Center(
-                    child: Text(
-                      'سنخبرك هنا عند وصول أي تحديث جديد.',
-                      style: TextStyle(
-                        color: scheme.outline,
-                        fontSize: 12,
-                      ),
-                    ),
-                  ),
+                  Center(child: Text('سنخبرك هنا عند وصول أي تحديث جديد.', style: TextStyle(color: scheme.outline, fontSize: 12))),
                 ],
               ),
             );
@@ -121,9 +86,7 @@ class NotificationsPage extends ConsumerWidget {
           final previous = <dynamic>[];
           for (final item in items) {
             final date = item.createdAt.toLocal();
-            if (date.year == now.year &&
-                date.month == now.month &&
-                date.day == now.day) {
+            if (date.year == now.year && date.month == now.month && date.day == now.day) {
               today.add(item);
             } else {
               previous.add(item);
@@ -136,25 +99,52 @@ class NotificationsPage extends ConsumerWidget {
               physics: const AlwaysScrollableScrollPhysics(),
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 28),
               children: [
+                Container(
+                  margin: const EdgeInsets.only(bottom: 4),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [scheme.primaryContainer, scheme.surfaceContainerHighest],
+                      begin: Alignment.centerRight,
+                      end: Alignment.centerLeft,
+                    ),
+                    borderRadius: BorderRadius.circular(18),
+                    border: Border.all(color: scheme.primary.withValues(alpha: .14)),
+                  ),
+                  child: Row(
+                    textDirection: TextDirection.rtl,
+                    children: [
+                      Container(
+                        width: 42,
+                        height: 42,
+                        decoration: BoxDecoration(color: scheme.surface.withValues(alpha: .72), shape: BoxShape.circle),
+                        child: Icon(Icons.notifications_active_rounded, color: scheme.primary),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            Text('مستجداتك', style: TextStyle(color: scheme.onPrimaryContainer, fontSize: 14, fontWeight: FontWeight.w800)),
+                            const SizedBox(height: 2),
+                            Text(
+                              unread > 0 ? 'لديك $unread تنبيه${unread == 1 ? '' : 'ات'} غير مقروء.' : 'لا توجد تنبيهات غير مقروءة.',
+                              textAlign: TextAlign.right,
+                              style: TextStyle(color: scheme.onPrimaryContainer.withValues(alpha: .76), fontSize: 11),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
                 if (today.isNotEmpty) ...[
                   _GroupTitle('اليوم', scheme: scheme),
-                  ...today.map(
-                    (item) => _NotificationCard(
-                      item: item,
-                      iconForType: _iconForType,
-                      onChanged: refresh,
-                    ),
-                  ),
+                  ...today.map((item) => _NotificationCard(item: item, iconForType: _iconForType, onChanged: refresh)),
                 ],
                 if (previous.isNotEmpty) ...[
                   _GroupTitle('سابقاً', scheme: scheme),
-                  ...previous.map(
-                    (item) => _NotificationCard(
-                      item: item,
-                      iconForType: _iconForType,
-                      onChanged: refresh,
-                    ),
-                  ),
+                  ...previous.map((item) => _NotificationCard(item: item, iconForType: _iconForType, onChanged: refresh)),
                 ],
               ],
             ),
@@ -168,21 +158,12 @@ class NotificationsPage extends ConsumerWidget {
 class _GroupTitle extends StatelessWidget {
   final String title;
   final ColorScheme scheme;
-
   const _GroupTitle(this.title, {required this.scheme});
 
   @override
   Widget build(BuildContext context) => Padding(
         padding: const EdgeInsets.fromLTRB(4, 18, 4, 10),
-        child: Text(
-          title,
-          textAlign: TextAlign.right,
-          style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.bold,
-            color: scheme.onSurfaceVariant,
-          ),
-        ),
+        child: Text(title, textAlign: TextAlign.right, style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: scheme.onSurfaceVariant)),
       );
 }
 
@@ -190,12 +171,7 @@ class _NotificationCard extends StatelessWidget {
   final dynamic item;
   final IconData Function(String) iconForType;
   final Future<void> Function() onChanged;
-
-  const _NotificationCard({
-    required this.item,
-    required this.iconForType,
-    required this.onChanged,
-  });
+  const _NotificationCard({required this.item, required this.iconForType, required this.onChanged});
 
   @override
   Widget build(BuildContext context) {
@@ -206,44 +182,27 @@ class _NotificationCard extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
       decoration: BoxDecoration(
-        color: unread
-            ? scheme.primaryContainer.withValues(alpha: .28)
-            : scheme.surfaceContainerLow,
+        color: unread ? scheme.primaryContainer.withValues(alpha: .28) : scheme.surfaceContainerLow,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(
-          color: unread
-              ? scheme.primary.withValues(alpha: .35)
-              : scheme.outlineVariant.withValues(alpha: .7),
-        ),
+        border: Border.all(color: unread ? scheme.primary.withValues(alpha: .35) : scheme.outlineVariant.withValues(alpha: .7)),
       ),
       child: InkWell(
         borderRadius: BorderRadius.circular(18),
-        onTap: unread
-            ? () async {
-                await markNotificationAsRead(item.id);
-                await onChanged();
-              }
-            : null,
+        onTap: unread ? () async { await markNotificationAsRead(item.id); await onChanged(); } : null,
         child: Padding(
           padding: const EdgeInsets.all(14),
           child: Row(
+            textDirection: TextDirection.rtl,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Container(
                 width: 46,
                 height: 46,
                 decoration: BoxDecoration(
-                  color: unread
-                      ? scheme.primaryContainer
-                      : scheme.surfaceContainerHighest,
+                  color: unread ? scheme.primaryContainer : scheme.surfaceContainerHighest,
                   borderRadius: BorderRadius.circular(14),
                 ),
-                child: Icon(
-                  iconForType(item.type),
-                  color: unread
-                      ? scheme.onPrimaryContainer
-                      : scheme.primary,
-                ),
+                child: Icon(iconForType(item.type), color: unread ? scheme.onPrimaryContainer : scheme.primary),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -251,56 +210,23 @@ class _NotificationCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
                     Row(
+                      textDirection: TextDirection.rtl,
                       children: [
                         Expanded(
-                          child: Text(
-                            item.title,
-                            textAlign: TextAlign.right,
-                            style: TextStyle(
-                              fontWeight: unread
-                                  ? FontWeight.w800
-                                  : FontWeight.w600,
-                              fontSize: 14,
-                              color: scheme.onSurface,
-                            ),
-                          ),
+                          child: Text(item.title, textAlign: TextAlign.right, style: TextStyle(fontWeight: unread ? FontWeight.w800 : FontWeight.w600, fontSize: 14, color: scheme.onSurface)),
                         ),
                         if (unread) ...[
                           const SizedBox(width: 8),
-                          Container(
-                            width: 8,
-                            height: 8,
-                            decoration: BoxDecoration(
-                              color: scheme.primary,
-                              shape: BoxShape.circle,
-                            ),
-                          ),
+                          Container(width: 8, height: 8, decoration: BoxDecoration(color: scheme.primary, shape: BoxShape.circle)),
                         ],
                       ],
                     ),
                     if (item.body.isNotEmpty) ...[
                       const SizedBox(height: 5),
-                      Text(
-                        item.body,
-                        textAlign: TextAlign.right,
-                        style: TextStyle(
-                          fontSize: 12,
-                          height: 1.5,
-                          color: scheme.onSurfaceVariant,
-                        ),
-                      ),
+                      Text(item.body, textAlign: TextAlign.right, style: TextStyle(fontSize: 12, height: 1.5, color: scheme.onSurfaceVariant)),
                     ],
                     const SizedBox(height: 7),
-                    Align(
-                      alignment: Alignment.centerRight,
-                      child: Text(
-                        date,
-                        style: TextStyle(
-                          fontSize: 10,
-                          color: scheme.outline,
-                        ),
-                      ),
-                    ),
+                    Align(alignment: Alignment.centerRight, child: Text(date, style: TextStyle(fontSize: 10, color: scheme.outline))),
                   ],
                 ),
               ),
