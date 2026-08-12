@@ -20,21 +20,19 @@ class LawyersListPage extends ConsumerWidget {
         : 'القانون ${selectedCategory == 'أحوال شخصية' ? 'للأحوال الشخصية' : selectedCategory}';
 
     return Scaffold(
-      backgroundColor: dark ? const Color(0xFF111415) : const Color(0xFFF8F9FA),
+      backgroundColor: scheme.surface,
       body: CustomScrollView(
         slivers: [
           SliverToBoxAdapter(
             child: _DirectoryHeader(dark: dark, onNotifications: () => context.push('/notifications')),
           ),
           SliverPadding(
-            padding: const EdgeInsets.fromLTRB(16, 28, 16, 110),
+            padding: const EdgeInsets.fromLTRB(16, 24, 16, 110),
             sliver: SliverList(
               delegate: SliverChildListDelegate([
                 Text(title, textAlign: TextAlign.right, style: TextStyle(color: scheme.onSurface, fontSize: 27, fontWeight: FontWeight.w800)),
-                if (dark) ...[
-                  const SizedBox(height: 5),
-                  Text('ابحث عن نخبة المحامين والمستشارين القانونيين المعتمدين.', textAlign: TextAlign.right, style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 12, height: 1.5)),
-                ],
+                const SizedBox(height: 5),
+                Text('ابحث عن نخبة المحامين والمستشارين القانونيين المعتمدين.', textAlign: TextAlign.right, style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 12, height: 1.5)),
                 const SizedBox(height: 14),
                 _SearchField(onChanged: (value) => ref.read(searchQueryProvider.notifier).state = value),
                 const SizedBox(height: 12),
@@ -68,7 +66,7 @@ class _DirectoryHeader extends StatelessWidget {
     return Container(
       padding: EdgeInsets.fromLTRB(20, MediaQuery.paddingOf(context).top + 8, 20, 14),
       decoration: BoxDecoration(
-        color: dark ? const Color(0xFF111415) : scheme.surface,
+        color: scheme.surface,
         border: Border(bottom: BorderSide(color: scheme.outlineVariant.withValues(alpha: dark ? .18 : .55))),
       ),
       child: Row(
@@ -102,8 +100,9 @@ class _SearchField extends StatelessWidget {
         suffixIcon: Icon(Icons.tune_rounded, color: scheme.onSurfaceVariant),
         fillColor: scheme.surfaceContainerHighest.withValues(alpha: .68),
         filled: true,
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: scheme.outline.withValues(alpha: .5))),
-        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: scheme.outline.withValues(alpha: .5))),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: scheme.outline.withValues(alpha: .5))),
+        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: scheme.outline.withValues(alpha: .5))),
+        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: scheme.primary, width: 1.8)),
       ),
     );
   }
@@ -117,6 +116,7 @@ class _FilterChips extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final dark = Theme.of(context).brightness == Brightness.dark;
+    final scheme = Theme.of(context).colorScheme;
     final values = <String?>[null, 'أحوال شخصية', 'تجاري', 'جنائي', 'مدني'];
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
@@ -131,9 +131,10 @@ class _FilterChips extends StatelessWidget {
               label: Text(value ?? 'الكل'),
               onSelected: (_) => onSelect(value),
               selectedColor: AppColors.gold,
-              backgroundColor: dark ? Colors.white.withValues(alpha: .06) : Colors.transparent,
-              side: BorderSide(color: selected ? AppColors.gold : Theme.of(context).colorScheme.outline.withValues(alpha: .7)),
-              labelStyle: TextStyle(color: selected ? AppColors.secondaryDark : Theme.of(context).colorScheme.onSurface, fontSize: 11, fontWeight: selected ? FontWeight.bold : FontWeight.normal),
+              backgroundColor: dark ? Colors.white.withValues(alpha: .06) : scheme.surface,
+              side: BorderSide(color: selected ? AppColors.gold : scheme.outline.withValues(alpha: .7)),
+              labelStyle: TextStyle(color: selected ? AppColors.secondaryDark : scheme.onSurface, fontSize: 11, fontWeight: selected ? FontWeight.bold : FontWeight.normal),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
             ),
           );
         }).toList(),
@@ -149,8 +150,8 @@ class _LawyerCard extends StatelessWidget {
   List<Widget> _specializationChips(BuildContext context, bool dark, ColorScheme scheme) {
     final specializations = lawyer.specializations.take(2).toList();
     return specializations.map<Widget>((specialization) => Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
-      decoration: BoxDecoration(color: dark ? Colors.white.withValues(alpha: .08) : scheme.surfaceContainerHighest, borderRadius: BorderRadius.circular(6)),
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
+      decoration: BoxDecoration(color: dark ? Colors.white.withValues(alpha: .08) : scheme.surfaceContainerHighest, borderRadius: BorderRadius.circular(8)),
       child: Text(specialization.toString(), style: TextStyle(color: scheme.onSurface, fontSize: 9)),
     )).toList();
   }
@@ -165,19 +166,19 @@ class _LawyerCard extends StatelessWidget {
 
     return Container(
       margin: const EdgeInsets.only(bottom: 14),
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: dark ? Colors.white.withValues(alpha: .055) : scheme.surface,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: dark ? Colors.white.withValues(alpha: .10) : scheme.outline),
-        boxShadow: dark ? null : [BoxShadow(color: Colors.black.withValues(alpha: .025), blurRadius: 12, offset: const Offset(0, 4))],
+        color: scheme.surfaceContainerLowest,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: scheme.outlineVariant.withValues(alpha: dark ? .7 : .9)),
+        boxShadow: dark ? null : [BoxShadow(color: scheme.shadow.withValues(alpha: .045), blurRadius: 18, offset: const Offset(0, 7))],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           InkWell(
             onTap: () => context.push('/lawyer-details/${lawyer.profileId}'),
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(14),
             child: Row(
               textDirection: TextDirection.rtl,
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -209,7 +210,7 @@ class _LawyerCard extends StatelessWidget {
           const SizedBox(height: 8),
           Row(textDirection: TextDirection.rtl, children: [Icon(Icons.location_on_outlined, color: scheme.onSurfaceVariant, size: 16), const SizedBox(width: 4), Text('العراق', style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 10)), const Spacer(), Icon(Icons.payments_outlined, color: scheme.onSurfaceVariant, size: 16), const SizedBox(width: 4), Text('${(lawyer.consultationPrice ?? 0).toStringAsFixed(0)} د.ع / للجلسة', style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 10))]),
           const SizedBox(height: 12),
-          SizedBox(height: 44, child: ElevatedButton(onPressed: () => context.push('/lawyer-details/${lawyer.profileId}'), style: ElevatedButton.styleFrom(backgroundColor: dark ? AppColors.gold : AppColors.goldDark, foregroundColor: AppColors.secondaryDark), child: const Text('عرض الملف الشخصي'))),
+          SizedBox(height: 46, child: ElevatedButton(onPressed: () => context.push('/lawyer-details/${lawyer.profileId}'), style: ElevatedButton.styleFrom(backgroundColor: dark ? AppColors.gold : AppColors.goldDark, foregroundColor: AppColors.secondaryDark, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14))), child: const Text('عرض الملف الشخصي'))),
         ],
       ),
     );
