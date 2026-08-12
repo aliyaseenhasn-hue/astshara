@@ -94,46 +94,48 @@ class _PaymentResultPageState extends ConsumerState<PaymentResultPage> {
             : _checking ? 'جاري التحقق من حالة العملية لدى كي كارد...' : 'لم نتمكن من تأكيد النتيجة بعد. سيستمر التحقق تلقائياً.';
     final icon = success ? Icons.check_circle_outline_rounded : failed ? Icons.cancel_outlined : Icons.info_outline_rounded;
     final iconColor = success ? scheme.primary : failed ? scheme.error : scheme.primary;
+    final statusColor = success ? scheme.primary : failed ? scheme.error : scheme.secondary;
 
     return Scaffold(
       backgroundColor: scheme.surface,
       appBar: AppBar(title: const Text('نتيجة الدفع'), centerTitle: true, automaticallyImplyLeading: false),
       body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(24, 32, 24, 40),
-            child: Column(
-              children: [
-                Container(
-                  width: 112,
-                  height: 112,
-                  decoration: BoxDecoration(color: scheme.primaryContainer, shape: BoxShape.circle),
-                  child: Icon(icon, size: 64, color: iconColor),
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(20, 18, 20, 36),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Container(
+                padding: const EdgeInsets.fromLTRB(22, 30, 22, 26),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(begin: Alignment.topRight, end: Alignment.bottomLeft, colors: [scheme.primaryContainer, scheme.secondaryContainer]),
+                  borderRadius: BorderRadius.circular(30),
                 ),
-                const SizedBox(height: 24),
-                Text(title, textAlign: TextAlign.center, style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold, color: scheme.onSurface)),
+                child: Column(children: [
+                  Container(width: 96, height: 96, decoration: BoxDecoration(color: scheme.surface.withValues(alpha: .82), shape: BoxShape.circle), child: Icon(icon, size: 54, color: iconColor)),
+                  const SizedBox(height: 18),
+                  Text(title, textAlign: TextAlign.center, style: TextStyle(fontSize: 25, fontWeight: FontWeight.w800, color: scheme.onPrimaryContainer)),
+                  const SizedBox(height: 8),
+                  Text(message, textAlign: TextAlign.center, style: TextStyle(height: 1.55, color: scheme.onPrimaryContainer.withValues(alpha: .82))),
+                ]),
+              ),
+              const SizedBox(height: 16),
+              if (widget.bookingId != null && widget.bookingId!.isNotEmpty)
+                Card(elevation: 0, color: scheme.surfaceContainerLowest, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20), side: BorderSide(color: scheme.outlineVariant)), child: Padding(padding: const EdgeInsets.all(16), child: Row(children: [Icon(Icons.receipt_long_outlined, color: scheme.primary), const SizedBox(width: 12), Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text('رقم الحجز', style: TextStyle(fontSize: 12, color: scheme.onSurfaceVariant)), const SizedBox(height: 3), Text(widget.bookingId!, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontWeight: FontWeight.w700, color: scheme.onSurface))]))])),
+              if (_error != null) ...[
                 const SizedBox(height: 12),
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(18),
-                  decoration: BoxDecoration(color: scheme.surfaceContainerHighest, borderRadius: BorderRadius.circular(18)),
-                  child: Text(message, textAlign: TextAlign.center, style: TextStyle(height: 1.6, color: scheme.onSurfaceVariant)),
-                ),
-                if (_error != null) ...[
-                  const SizedBox(height: 12),
-                  Text(_error!, textAlign: TextAlign.center, style: TextStyle(color: scheme.error)),
-                ],
-                if (widget.bookingId != null && widget.bookingId!.isNotEmpty) ...[
-                  const SizedBox(height: 16),
-                  Text('رقم الحجز: ${widget.bookingId}', textAlign: TextAlign.center, style: TextStyle(fontWeight: FontWeight.w600, color: scheme.onSurfaceVariant)),
-                ],
-                const SizedBox(height: 28),
-                if (!success && !failed && !_checking && widget.bookingId != null)
-                  SizedBox(width: double.infinity, child: OutlinedButton.icon(onPressed: _checkPaymentStatus, icon: const Icon(Icons.refresh_rounded), label: const Text('إعادة التحقق من الدفع'), style: OutlinedButton.styleFrom(minimumSize: const Size.fromHeight(50)))),
-                if (!success && !failed && !_checking && widget.bookingId != null) const SizedBox(height: 12),
-                SizedBox(width: double.infinity, child: ElevatedButton.icon(onPressed: () => context.go('/bookings'), icon: const Icon(Icons.calendar_month_outlined), label: const Text('الانتقال إلى حجوزاتي'), style: ElevatedButton.styleFrom(minimumSize: const Size.fromHeight(52)))),
+                Container(padding: const EdgeInsets.all(13), decoration: BoxDecoration(color: scheme.errorContainer, borderRadius: BorderRadius.circular(16)), child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [Icon(Icons.error_outline_rounded, color: scheme.error), const SizedBox(width: 10), Expanded(child: Text(_error!, style: TextStyle(color: scheme.onErrorContainer, height: 1.5)))])),
               ],
-            ),
+              const SizedBox(height: 18),
+              if (!success && !failed && !_checking && widget.bookingId != null)
+                OutlinedButton.icon(onPressed: _checkPaymentStatus, icon: const Icon(Icons.refresh_rounded), label: const Text('إعادة التحقق من الدفع'), style: OutlinedButton.styleFrom(minimumSize: const Size.fromHeight(50), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)))),
+              if (!success && !failed && !_checking && widget.bookingId != null) const SizedBox(height: 10),
+              ElevatedButton.icon(onPressed: () => context.go('/bookings'), icon: const Icon(Icons.calendar_month_outlined), label: const Text('الانتقال إلى حجوزاتي'), style: ElevatedButton.styleFrom(minimumSize: const Size.fromHeight(54), backgroundColor: statusColor, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)))),
+              if (_checking) ...[
+                const SizedBox(height: 14),
+                Center(child: Row(mainAxisSize: MainAxisSize.min, children: [SizedBox(width: 17, height: 17, child: CircularProgressIndicator(strokeWidth: 2)), const SizedBox(width: 9), Text('جاري التحقق من حالة الدفع...', style: TextStyle(fontSize: 12))])),
+              ],
+            ],
           ),
         ),
       ),
