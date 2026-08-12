@@ -4,8 +4,9 @@
 قبل أي تعديل جديد تتم مراجعة الملفات والـcommits السابقة لتجنب تكرار التنفيذ. كل تعديل جديد يسجل في ملف Markdown مع الـcommit والسبب والنتيجة.
 
 ## آخر تعديل
-- `5fc2166b5259d19d373a45a073fb23bab11471db` — تطبيق Stitch Premium على `specialization_change_page.dart`: Hero بصري، خطوات مرقمة، شرائح تخصصات واضحة، بطاقة رفع مستند موحدة، تنبيه خصوصية، وزر إرسال ثابت، مع الحفاظ على منطق الطلب والرفع الحالي.
-- `95e795405c3485257616a1a20db694b9a6423af3` — إصلاح أخطاء syntax في `lawyer_onboarding_page.dart` الناتجة عن دفعة Stitch السابقة، مع الحفاظ على التصميم والمنطق الحاليين.
+- `1babe059cf5fcb2fdd50c3882c27c95c490f8bf0` — تطبيق Stitch Premium على `booking_details_page.dart`: Hero للحجز، أقسام موحدة للمعلومات، RTL، إبراز الحالة والدفع والتواصل، وتحسين أزرار الإجراء، مع الحفاظ على منطق الحجز والدفع وعدم الحضور والتقييم وواتساب.
+- `5fc2166b5259d19d373a45a073fb23bab11471db` — تطبيق Stitch Premium على `specialization_change_page.dart`.
+- `95e795405c3485257616a1a20db694b9a6423af3` — إصلاح أخطاء syntax في `lawyer_onboarding_page.dart`.
 - `0b304b039ff0a58e3c1a2271561bd2cdf1efab23` — تطبيق أسلوب Stitch Premium على `payment_upload_page.dart`.
 
 ## التعديلات السابقة
@@ -41,4 +42,4 @@
 - `f1e9a6b16890d8ae08cb554e0f511e843688b502` — معالجة توافق RTL في `lawyer_availability_page.dart`.
 
 ## التحقق
-لا تعتبر الدفعة ناجحة حتى يمر `flutter analyze` وCI على commit الحالي. الخطأ الأخير كان في `lawyer_onboarding_page.dart` وتمت إعادة صياغة الملف بشكل منظم لتصحيح الأقواس والوسائط غير الصحيحة.
+لا تعتبر أي دفعة ناجحة حتى يمر `flutter analyze` وCI على commit الحالي.
