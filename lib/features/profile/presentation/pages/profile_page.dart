@@ -5,7 +5,6 @@ import 'package:image_picker/image_picker.dart';
 import 'package:storage_client/storage_client.dart';
 import '../../../../core/config/supabase_config.dart';
 import '../../../../core/constants/app_colors.dart';
-import '../../../../core/constants/app_sizes.dart';
 import '../../../../core/providers/theme_mode_provider.dart';
 import '../../../authentication/presentation/providers/auth_provider.dart';
 
@@ -31,7 +30,7 @@ class ProfilePage extends ConsumerWidget {
           foregroundColor: scheme.onSurface,
           title: const Text('الملف الشخصي', style: TextStyle(fontWeight: FontWeight.w800)),
           centerTitle: true,
-          flexibleSpace: FlexibleSpaceBar(background: _ProfileHero(user: user, isDark: isDark, onAvatar: () => _updateAvatar(context, ref), onEdit: () => _showEditProfileDialog(context, ref))),
+          flexibleSpace: FlexibleSpaceBar(background: _profileHero(user: user, isDark: isDark, onAvatar: () => _updateAvatar(context, ref), onEdit: () => _showEditProfileDialog(context, ref))),
         ),
         SliverPadding(padding: const EdgeInsets.fromLTRB(20, 22, 20, 50), sliver: SliverList(delegate: SliverChildListDelegate([
           _section(context, 'الاستشارات', [
@@ -58,8 +57,7 @@ class ProfilePage extends ConsumerWidget {
     );
   }
 
-  Widget _ProfileHero({required dynamic user, required bool isDark, required VoidCallback onAvatar, required VoidCallback onEdit}) => Builder(builder: (context) {
-    final scheme = Theme.of(context).colorScheme;
+  Widget _profileHero({required dynamic user, required bool isDark, required VoidCallback onAvatar, required VoidCallback onEdit}) => Builder(builder: (context) {
     return Container(decoration: BoxDecoration(gradient: LinearGradient(begin: Alignment.topRight, end: Alignment.bottomLeft, colors: isDark ? [const Color(0xFF1C2425), const Color(0xFF101314)] : [AppColors.secondary, AppColors.secondaryDark])), child: Center(child: Column(mainAxisAlignment: MainAxisAlignment.end, children: [
       Stack(children: [Container(padding: const EdgeInsets.all(3), decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle), child: CircleAvatar(radius: 49, backgroundColor: AppColors.surfaceVariant, backgroundImage: user.avatarUrl != null && user.avatarUrl!.isNotEmpty ? NetworkImage(user.avatarUrl!) : null, child: user.avatarUrl == null || user.avatarUrl!.isEmpty ? const Icon(Icons.person_rounded, size: 52, color: AppColors.primary) : null)), Positioned(bottom: 0, right: 0, child: Material(color: AppColors.gold, shape: const CircleBorder(), child: InkWell(onTap: onAvatar, customBorder: const CircleBorder(), child: const Padding(padding: EdgeInsets.all(9), child: Icon(Icons.camera_alt_rounded, size: 16, color: AppColors.secondaryDark)))))]),
       const SizedBox(height: 12),
