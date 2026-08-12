@@ -8,20 +8,23 @@
 - `409d4772da133b5a6ef866537512d05e7760bb15` — مطابقة `lawyers_list_page.dart` مع Stitch.
 - `aaf5a7456ec88f7d0f4c6fbdeb43448ece1fbb1d` — مطابقة `complete_profile_page.dart` مع Stitch.
 - `7b5fa9297471b6abfd1e94635fd45ec563639ab5` — مطابقة `bookings_list_page.dart` مع Stitch.
+- `99bebd36edd92e5daeb5165b4afed80bd627b590` — مطابقة `notification_settings_page.dart` مع Stitch.
 
-## دفعة المطابقة الحالية
-- **commit:** `99bebd36edd92e5daeb5165b4afed80bd627b590`
-- **الملف:** `lib/features/profile/presentation/pages/notification_settings_page.dart`
-- **النوع:** مطابقة بصرية Stitch.
-- إضافة اتجاه RTL صريح للصفحة.
-- إعادة تصميم رأس الصفحة إلى بطاقة Premium متكيفة مع Light/Dark.
-- تحسين بطاقات الأقسام وأنصاف الأقطار والحدود والأيقونات والمسافات.
-- تحسين RadioListTile وحالات الاختيار مع `ColorScheme`.
-- الحفاظ على منطق حفظ نغمة الإشعارات وخدمة الإشعارات كما هو.
-- تعديل الملف الأصلي فقط؛ لا توجد نسخة بديلة.
+## إصلاح CI الحالي
+- **commit:** `263b6006c9232d2c317f9e95f50a98ffc74d570e`
+- **الملف:** `lib/features/bookings/presentation/pages/bookings_list_page.dart`
+- **المشكلة:** أخطاء syntax ظهرت في نهاية `_action` بعد دفعة Stitch السابقة.
+- **الإجراء:** إعادة كتابة الملف بصياغة Dart سليمة مع الحفاظ على جميع حالات الحجز والدفع والتنقل والتقييم.
+- **النتيجة:** تمت إزالة الأقواس الزائدة التي كانت تمنع التحليل.
+
+- **commit:** `4c0c1532ac3530570011f176ae8e136766724688`
+- **الملف:** `lib/features/authentication/presentation/pages/complete_profile_page.dart`
+- **المشكلة:** أخطاء syntax في `build` و`_buildLawyerSection` ظهرت بعد دفعة Stitch السابقة.
+- **الإجراء:** إعادة تنظيم الصفحة إلى Widgets واضحة متعددة مع الحفاظ على Supabase، المصادقة، رفع الصور، التخصصات، التحقق والتوجيه.
+- **النتيجة:** إزالة الأقواس غير المتوازنة مع الحفاظ على التصميم Premium المطلوب.
 
 ## التحقق
-يجب تشغيل `flutter analyze` وCI على آخر commit قبل اعتباره ناجحاً نهائياً.
+يجب تشغيل `flutter analyze` وCI على آخر commit قبل اعتبار الإصلاح ناجحاً نهائياً.
 
 ## الخطوة التالية
-الاستمرار في تدقيق الشاشة التالية غير المطابقة، وعدم إعادة تنفيذ أي شاشة مثبت أنها مطابقة في سجل الـcommits.
+إعادة تشغيل CI، ثم معالجة أي أخطاء فعلية متبقية قبل مواصلة مطابقة Stitch.
