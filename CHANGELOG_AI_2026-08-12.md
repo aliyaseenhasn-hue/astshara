@@ -4,7 +4,7 @@
 قبل أي تعديل جديد تتم مراجعة الملفات والـcommits السابقة لتجنب تكرار التنفيذ. كل تعديل جديد يسجل في ملف Markdown مع الـcommit والسبب والنتيجة.
 
 ## التعديلات السابقة
-- `77e16ba3f1a8c9a8db528dc7422dc836fc64fc9563` — Design Tokens في `app_sizes.dart`.
+- `77e16ba3f1a8c9a8db528dc7422dc83664fc9563` — Design Tokens في `app_sizes.dart`.
 - `409d4772da133b5a6ef866537512d05e7760bb15` — مطابقة `lawyers_list_page.dart` مع Stitch.
 - `aaf5a7456ec88f7d0f4c6fbdeb43448ece1fbb1d` — مطابقة `complete_profile_page.dart` مع Stitch.
 - `7b5fa9297471b6abfd1e94635fd45ec563639ab5` — مطابقة `bookings_list_page.dart` مع Stitch.
@@ -20,8 +20,8 @@
 - `4b53685ae1b00922fca48f74e637b465a834fd24` — إصلاح syntax في `payment_result_page.dart` بعد تقرير `flutter analyze`، مع إعادة تنظيم بناء الواجهة دون تغيير منطق الدفع أو polling.
 
 ## مطابقة Stitch — الدفع
-- `7dff7e5d0d4f1db8e3271dd294ca4578d2964cbc` — مطابقة `payment_result_page.dart` مع Stitch Premium: بطاقة نتيجة رئيسية، حالات نجاح/فشل/انتظار واضحة، عرض رقم الحجز، تنبيهات خطأ متكيفة مع ColorScheme، أزرار موحدة ومسافات وحواف Premium، مع الحفاظ على polling والتحقق عبر Supabase.
-- **المنطق المحفوظ:** `qicard-check-payment-status`، polling كل 5 ثوانٍ، حالات الدفع العربية، والتنقل إلى الحجوزات.
+- `7dff7e5d0d4f1db8e3271dd294ca4578d2964cbc` — مطابقة `payment_result_page.dart` مع Stitch Premium.
+- `19967f1a6cbcd8baa06de833bcdbde5511130372` — مطابقة `payment_methods_page.dart` مع Stitch Premium: بطاقة محفظة رئيسية، حالة ربط واضحة، بطاقة Zain Cash محسنة، ملاحظة إرشادية، حواف ومسافات Premium وRTL مناسب، مع الحفاظ على `authStateChangesProvider` و`authRepositoryProvider.updateProfile`.
 
 ## التحقق
 يجب اعتبار النجاح فقط بعد ظهور `flutter analyze` وCI على commit الحالي بحالة نجاح.
