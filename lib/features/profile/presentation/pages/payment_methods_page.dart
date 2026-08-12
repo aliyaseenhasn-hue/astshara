@@ -9,105 +9,97 @@ class PaymentMethodsPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final scheme = Theme.of(context).colorScheme;
     final user = ref.watch(authStateChangesProvider).value;
     final walletNumber = user?.walletNumber ?? 'لم يتم الربط';
+    final connected = walletNumber != 'لم يتم الربط' && walletNumber.isNotEmpty;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('طرق الدفع')),
+      backgroundColor: scheme.surface,
+      appBar: AppBar(
+        title: const Text('طرق الدفع', style: TextStyle(fontWeight: FontWeight.w800)),
+        centerTitle: true,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+      ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(AppSizes.p20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            const Text(
-              'المحافظ الإلكترونية المتاحة',
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+        padding: const EdgeInsets.fromLTRB(AppSizes.p20, 10, AppSizes.p20, 32),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+          Container(
+            padding: const EdgeInsets.all(18),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(begin: Alignment.topRight, end: Alignment.bottomLeft, colors: [scheme.primaryContainer, scheme.secondaryContainer]),
+              borderRadius: BorderRadius.circular(24),
             ),
-            const SizedBox(height: 16),
-            _buildPaymentCard(
-              context,
-              ref,
-              'زين كاش (Zain Cash)',
-              walletNumber,
-              Colors.red,
-            ),
-            const SizedBox(height: 32),
-            const Text(
-              'ملاحظة: رقم المحفظة هذا سيستخدم لاستقبال الأرباح (للمحامين) أو لتسهيل عمليات الدفع.',
-              style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
-            ),
-          ],
-        ),
+            child: Row(children: [
+              Container(width: 52, height: 52, decoration: BoxDecoration(color: scheme.surface.withValues(alpha: .8), shape: BoxShape.circle), child: Icon(Icons.account_balance_wallet_rounded, color: scheme.primary, size: 27)),
+              const SizedBox(width: 14),
+              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text('محفظتك الإلكترونية', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800, color: scheme.onPrimaryContainer)),
+                const SizedBox(height: 4),
+                Text(connected ? 'جاهزة لاستقبال المدفوعات' : 'اربط محفظتك لتسهيل عمليات الدفع', style: TextStyle(fontSize: 12, color: scheme.onPrimaryContainer.withValues(alpha: .78))),
+              ])),
+            ]),
+          ),
+          const SizedBox(height: 24),
+          Text('المحافظ الإلكترونية', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: scheme.onSurface)),
+          const SizedBox(height: 12),
+          _buildPaymentCard(context, ref, 'زين كاش', walletNumber, connected, scheme),
+          const SizedBox(height: 18),
+          Container(
+            padding: const EdgeInsets.all(15),
+            decoration: BoxDecoration(color: scheme.surfaceContainerHighest.withValues(alpha: .7), borderRadius: BorderRadius.circular(18), border: Border.all(color: scheme.outlineVariant.withValues(alpha: .7))),
+            child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Icon(Icons.info_outline_rounded, size: 20, color: scheme.primary),
+              const SizedBox(width: 10),
+              Expanded(child: Text('رقم المحفظة يستخدم لاستقبال الأرباح للمحامين وتسهيل عمليات الدفع. احرص على إدخال رقم صحيح ومملوك لك.', style: TextStyle(fontSize: 12, height: 1.55, color: scheme.onSurfaceVariant))),
+            ]),
+          ),
+        ]),
       ),
     );
   }
 
-  Widget _buildPaymentCard(BuildContext context, WidgetRef ref, String title,
-      String wallet, Color color) {
+  Widget _buildPaymentCard(BuildContext context, WidgetRef ref, String title, String wallet, bool connected, ColorScheme scheme) {
     return Card(
-      margin: const EdgeInsets.only(bottom: 16),
-      child: ListTile(
-        leading: Container(
-          width: 48,
-          height: 48,
-          decoration: BoxDecoration(
-            color: color.withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(10),
-          ),
-          child: const Icon(Icons.account_balance_wallet_rounded,
-              color: AppColors.primary),
-        ),
-        title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
-        subtitle: Text('رقم المحفظة: $wallet'),
-        trailing: IconButton(
-          icon: const Icon(Icons.edit_rounded,
-              color: AppColors.primary, size: 20),
-          onPressed: () => _showEditWalletDialog(
-              context, ref, wallet == 'لم يتم الربط' ? '' : wallet),
-        ),
+      elevation: 0,
+      color: scheme.surfaceContainerLowest,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22), side: BorderSide(color: scheme.outlineVariant)),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(children: [
+          Container(width: 54, height: 54, decoration: BoxDecoration(color: AppColors.primary.withValues(alpha: .09), borderRadius: BorderRadius.circular(16)), child: const Icon(Icons.account_balance_wallet_rounded, color: AppColors.primary)),
+          const SizedBox(width: 14),
+          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(title, style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: scheme.onSurface)),
+            const SizedBox(height: 5),
+            Text(connected ? wallet : 'لم يتم الربط', style: TextStyle(fontSize: 13, color: connected ? scheme.onSurfaceVariant : scheme.error, fontWeight: connected ? FontWeight.w500 : FontWeight.w700)),
+            const SizedBox(height: 4),
+            Row(children: [Icon(connected ? Icons.check_circle_rounded : Icons.link_rounded, size: 14, color: connected ? scheme.primary : scheme.secondary), const SizedBox(width: 5), Text(connected ? 'مرتبطة' : 'ربط المحفظة', style: TextStyle(fontSize: 11, color: connected ? scheme.primary : scheme.secondary, fontWeight: FontWeight.w700))]),
+          ])),
+          IconButton(onPressed: () => _showEditWalletDialog(context, ref, connected ? wallet : ''), icon: Icon(connected ? Icons.edit_rounded : Icons.add_circle_outline_rounded, color: scheme.primary)),
+        ]),
       ),
     );
   }
 
-  void _showEditWalletDialog(
-      BuildContext context, WidgetRef ref, String currentWallet) {
+  void _showEditWalletDialog(BuildContext context, WidgetRef ref, String currentWallet) {
     final controller = TextEditingController(text: currentWallet);
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('تعديل رقم المحفظة'),
-        content: TextFormField(
-          controller: controller,
-          decoration: const InputDecoration(
-            labelText: 'رقم المحفظة (مثلاً: 077XXXXXXXX)',
-            hintText: 'أدخل 11 رقماً',
-          ),
-          keyboardType: TextInputType.phone,
-        ),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('إلغاء')),
-          ElevatedButton(
-            onPressed: () async {
-              final newWallet = controller.text.trim();
-              if (newWallet.length != 11) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                      content: Text('يرجى إدخال رقم هاتف صحيح (11 رقم)')),
-                );
-                return;
-              }
-              // سأستخدم updateProfile مباشرة من الـ Repository لتجنب تعديل الـ Controller حالياً
-              await ref.read(authRepositoryProvider).updateProfile(
-                    walletNumber: newWallet,
-                  );
-              if (context.mounted) Navigator.pop(context);
-            },
-            child: const Text('حفظ'),
-          ),
-        ],
-      ),
-    );
+    showDialog(context: context, builder: (dialogContext) => AlertDialog(
+      title: const Text('تعديل رقم المحفظة'),
+      content: TextFormField(controller: controller, decoration: const InputDecoration(labelText: 'رقم المحفظة', hintText: '077XXXXXXXX'), keyboardType: TextInputType.phone, textDirection: TextDirection.ltr),
+      actions: [
+        TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('إلغاء')),
+        ElevatedButton(onPressed: () async {
+          final newWallet = controller.text.trim();
+          if (newWallet.length != 11) {
+            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('يرجى إدخال رقم هاتف صحيح (11 رقم)')));
+            return;
+          }
+          await ref.read(authRepositoryProvider).updateProfile(walletNumber: newWallet);
+          if (dialogContext.mounted) Navigator.pop(dialogContext);
+        }, child: const Text('حفظ')),
+      ],
+    ));
   }
 }
