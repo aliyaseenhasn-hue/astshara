@@ -16,11 +16,8 @@
 - `4c0c1532ac3530570011f176ae8e136766724688` — إصلاح syntax في `complete_profile_page.dart`.
 
 ## مطابقة Stitch — دفعة المحادثة
-- **commit:** `a0bdedc02f0af703243004c191bf64bfc92e76b8`
-- **الملف:** `lib/features/chat/presentation/pages/chat_page.dart`
-- **التغيير:** مطابقة واجهة المحادثة مع لغة Stitch Premium: رأس محادثة أنظف، حالات Light/Dark عبر ColorScheme، فقاعات رسائل محسنة، RTL صريح للنص العربي، شريط إدخال عائم بصريًا، زر إرسال/تسجيل متكيف، وحدود ومسافات وظلال محسنة.
-- **المنطق المحفوظ:** providers، إرسال الرسائل، تحديد المرسل، التوقيت، وحالة التحميل/الخطأ.
-- **القاعدة:** تم تعديل الملف الأصلي فقط دون إنشاء نسخة بديلة.
+- `a0bdedc02f0af703243004c191bf64bfc92e76b8` — مطابقة واجهة `chat_page.dart` مع Stitch Premium.
+- `5bb71a20e62aff8f7fc7b0639cb8a39916494f32` — إصلاح syntax في `chat_page.dart` بعد CI؛ فصل `border` عن `BorderRadius` وإغلاق `Container`/`Column` بشكل صحيح، مع الحفاظ على تصميم الدفعة السابقة ومنطق المحادثة.
 
 ## التحقق
 يجب اعتبار النجاح فقط بعد ظهور `flutter analyze` وCI على commit الحالي بحالة نجاح.
