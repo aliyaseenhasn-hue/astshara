@@ -11,13 +11,15 @@
 - `99bebd36edd92e5daeb5165b4afed80bd627b590` — مطابقة `notification_settings_page.dart` مع Stitch.
 - `30b33d1cc1d8a6a5d20f2cab81c6cf36da515d7d` — مطابقة `help_center_page.dart` مع Stitch.
 
-## إصلاح CI الحالي
+## إصلاحات CI
 - `263b6006c9232d2c317f9e95f50a98ffc74d570e` — إصلاح syntax في `bookings_list_page.dart`.
 - `4c0c1532ac3530570011f176ae8e136766724688` — إصلاح syntax في `complete_profile_page.dart`.
+- `5bb71a20e62aff8f7fc7b0639cb8a39916494f32` — إصلاح syntax في `chat_page.dart`.
 
-## مطابقة Stitch — دفعة المحادثة
-- `a0bdedc02f0af703243004c191bf64bfc92e76b8` — مطابقة واجهة `chat_page.dart` مع Stitch Premium.
-- `5bb71a20e62aff8f7fc7b0639cb8a39916494f32` — إصلاح syntax في `chat_page.dart` بعد CI؛ فصل `border` عن `BorderRadius` وإغلاق `Container`/`Column` بشكل صحيح، مع الحفاظ على تصميم الدفعة السابقة ومنطق المحادثة.
+## مطابقة Stitch — المحادثات
+- `a0bdedc02f0af703243004c191bf64bfc92e76b8` — مطابقة `chat_page.dart` مع Stitch Premium.
+- `15428aac8b8b4d1510cd368e3010784048f535b4` — مطابقة `conversations_page.dart` مع Stitch Premium: رأس أوضح، بطاقة محادثة Premium، حالة الاتصال، حدود وظلال متكيفة مع ColorScheme، وحالات فارغة/خطأ محسنة.
+- **المنطق المحفوظ:** Supabase query، providers، فتح المحادثة، التحديث بالسحب، وحالات التحميل/الخطأ.
 
 ## التحقق
 يجب اعتبار النجاح فقط بعد ظهور `flutter analyze` وCI على commit الحالي بحالة نجاح.
