@@ -18,105 +18,63 @@ class ProfilePage extends ConsumerWidget {
     final themeMode = ref.watch(themeModeProvider);
     final isDark = themeMode == ThemeMode.dark;
     final scheme = Theme.of(context).colorScheme;
+    if (user == null) return Scaffold(backgroundColor: scheme.surface, body: Center(child: Text('يرجى تسجيل الدخول', style: TextStyle(color: scheme.onSurface))));
+
     return Scaffold(
-      backgroundColor: scheme.surface,
-      body: user == null
-          ? Center(child: Text('يرجى تسجيل الدخول', style: TextStyle(color: scheme.onSurface)))
-          : CustomScrollView(
-              slivers: [
-                SliverAppBar(
-                  expandedHeight: 220,
-                  pinned: true,
-                  backgroundColor: AppColors.secondary,
-                  foregroundColor: Colors.white,
-                  flexibleSpace: FlexibleSpaceBar(
-                    background: Container(
-                      decoration: const BoxDecoration(gradient: LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [AppColors.secondary, AppColors.secondaryDark])),
-                      child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-                        const SizedBox(height: 40),
-                        Stack(children: [
-                          Container(padding: const EdgeInsets.all(3), decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle), child: CircleAvatar(radius: 45, backgroundColor: AppColors.surfaceVariant, backgroundImage: user.avatarUrl != null && user.avatarUrl!.isNotEmpty ? NetworkImage(user.avatarUrl!) : null, child: user.avatarUrl == null || user.avatarUrl!.isEmpty ? const Icon(Icons.person, size: 50, color: AppColors.primary) : null)),
-                          Positioned(bottom: 0, right: 0, child: CircleAvatar(radius: 15, backgroundColor: AppColors.gold, child: IconButton(icon: const Icon(Icons.camera_alt, size: 14, color: AppColors.secondaryDark), onPressed: () => _updateAvatar(context, ref)))),
-                        ]),
-                        const SizedBox(height: 12),
-                        GestureDetector(onTap: () => _showEditProfileDialog(context, ref), child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [Text(user.fullName ?? 'مستخدم', style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)), const SizedBox(width: 8), const Icon(Icons.edit, size: 14, color: AppColors.gold)])),
-                      ]),
-                    ),
-                  ),
-                ),
-                SliverPadding(
-                  padding: const EdgeInsets.symmetric(horizontal: AppSizes.p20, vertical: 20),
-                  sliver: SliverList(delegate: SliverChildListDelegate([
-                    _buildProfileSectionTitle(context, 'المعاملات'),
-                    _buildProfileTile(context, Icons.history, 'سجل الاستشارات', () => context.push('/bookings')),
-                    _buildProfileTile(context, Icons.payment_rounded, 'طرق الدفع', () => context.push('/payment-methods')),
-                    const SizedBox(height: AppSizes.p20),
-                    _buildProfileSectionTitle(context, 'الملف الشخصي'),
-                    _buildProfileTile(context, Icons.person_outline, 'المعلومات الشخصية والتواصل', () => _showEditProfileDialog(context, ref)),
-                    const SizedBox(height: AppSizes.p20),
-                    _buildProfileSectionTitle(context, 'الإعدادات'),
-                    Card(margin: const EdgeInsets.only(bottom: 12), child: SwitchListTile(secondary: Icon(isDark ? Icons.dark_mode_rounded : Icons.light_mode_rounded, color: isDark ? AppColors.gold : AppColors.primary), title: const Text('مظهر التطبيق'), subtitle: Text(isDark ? 'الوضع الداكن' : 'الوضع الفاتح'), value: isDark, activeThumbColor: AppColors.gold, onChanged: (value) => ref.read(themeModeProvider.notifier).setMode(value ? ThemeMode.dark : ThemeMode.light))),
-                    _buildProfileTile(context, Icons.notifications_active_outlined, 'إعدادات الإشعارات', () => context.push('/notification-settings')),
-                    _buildProfileTile(context, Icons.help_outline_rounded, 'مركز المساعدة', () => context.push('/help-center')),
-                    const SizedBox(height: AppSizes.p20),
-                    _buildProfileSectionTitle(context, 'الدعم'),
-                    _buildProfileTile(context, Icons.privacy_tip_outlined, 'سياسة الخصوصية', () {}),
-                    const Padding(padding: EdgeInsets.symmetric(vertical: AppSizes.p24), child: Divider()),
-                    ListTile(leading: Container(padding: const EdgeInsets.all(10), decoration: BoxDecoration(color: AppColors.error.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(12)), child: const Icon(Icons.logout_rounded, color: AppColors.error, size: 22)), title: const Text('تسجيل الخروج', style: TextStyle(color: AppColors.error, fontWeight: FontWeight.bold)), onTap: () => _logout(context, ref)),
-                    const SizedBox(height: 12),
-                    Center(child: TextButton.icon(onPressed: () => _showDeleteConfirmation(context, ref), icon: Icon(Icons.delete_forever_outlined, color: scheme.onSurfaceVariant, size: 18), label: Text('حذف الحساب نهائياً', style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 13)))),
-                    const SizedBox(height: AppSizes.p48),
-                  ])),
-                ),
-              ],
-            ),
+      backgroundColor: isDark ? const Color(0xFF101314) : const Color(0xFFF7F8F8),
+      body: CustomScrollView(slivers: [
+        SliverAppBar(
+          expandedHeight: 275,
+          pinned: true,
+          elevation: 0,
+          backgroundColor: isDark ? const Color(0xFF101314) : scheme.surface,
+          foregroundColor: scheme.onSurface,
+          title: const Text('الملف الشخصي', style: TextStyle(fontWeight: FontWeight.w800)),
+          centerTitle: true,
+          flexibleSpace: FlexibleSpaceBar(background: _ProfileHero(user: user, isDark: isDark, onAvatar: () => _updateAvatar(context, ref), onEdit: () => _showEditProfileDialog(context, ref))),
+        ),
+        SliverPadding(padding: const EdgeInsets.fromLTRB(20, 22, 20, 50), sliver: SliverList(delegate: SliverChildListDelegate([
+          _section(context, 'الاستشارات', [
+            _tile(context, Icons.history_rounded, 'سجل الاستشارات', 'الحجوزات والاستشارات السابقة', () => context.push('/bookings')),
+            _tile(context, Icons.payments_outlined, 'طرق الدفع', 'إدارة وسائل الدفع', () => context.push('/payment-methods')),
+          ]),
+          const SizedBox(height: 22),
+          _section(context, 'الحساب والإعدادات', [
+            _tile(context, Icons.person_outline_rounded, 'المعلومات الشخصية', 'الاسم وبيانات التواصل', () => _showEditProfileDialog(context, ref)),
+            Card(elevation: 0, margin: const EdgeInsets.only(bottom: 10), color: scheme.surface, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(17), side: BorderSide(color: scheme.outlineVariant)), child: SwitchListTile(contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2), secondary: _iconBox(context, isDark ? Icons.dark_mode_rounded : Icons.light_mode_rounded), title: Text('مظهر التطبيق', style: TextStyle(color: scheme.onSurface, fontWeight: FontWeight.w700)), subtitle: Text(isDark ? 'الوضع الداكن' : 'الوضع الفاتح', style: TextStyle(color: scheme.onSurfaceVariant)), value: isDark, activeThumbColor: AppColors.gold, onChanged: (v) => ref.read(themeModeProvider.notifier).setMode(v ? ThemeMode.dark : ThemeMode.light))),
+            _tile(context, Icons.notifications_none_rounded, 'الإشعارات', 'إدارة تفضيلات التنبيهات', () => context.push('/notification-settings')),
+            _tile(context, Icons.help_outline_rounded, 'مركز المساعدة', 'الأسئلة والدعم', () => context.push('/help-center')),
+          ]),
+          const SizedBox(height: 22),
+          _section(context, 'الدعم والحساب', [
+            _tile(context, Icons.privacy_tip_outlined, 'سياسة الخصوصية', 'شروط حماية بياناتك', () {}),
+            Card(elevation: 0, margin: const EdgeInsets.only(bottom: 10), color: scheme.surface, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(17), side: BorderSide(color: scheme.outlineVariant)), child: ListTile(contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 3), leading: _iconBox(context, Icons.logout_rounded, danger: true), title: const Text('تسجيل الخروج', style: TextStyle(color: AppColors.error, fontWeight: FontWeight.w800)), onTap: () => _logout(context, ref))),
+            Center(child: TextButton.icon(onPressed: () => _showDeleteConfirmation(context, ref), icon: Icon(Icons.delete_outline_rounded, color: scheme.onSurfaceVariant, size: 18), label: Text('حذف الحساب نهائياً', style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 12)))),
+          ]),
+          const SizedBox(height: 25),
+          Center(child: Text('استشارة • منصتك القانونية', style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 11))),
+        ]))),
+      ]),
     );
   }
 
-  Future<void> _updateAvatar(BuildContext context, WidgetRef ref) async {
-    try {
-      final picker = ImagePicker();
-      final image = await picker.pickImage(source: ImageSource.gallery, imageQuality: 80, maxWidth: 1200);
-      if (image == null) return;
-      final bytes = await image.readAsBytes();
-      final user = ref.read(authStateChangesProvider).value;
-      if (user == null) return;
-      final ext = image.name.split('.').last.toLowerCase();
-      final contentType = switch (ext) {'png' => 'image/png', 'webp' => 'image/webp', _ => 'image/jpeg'};
-      final path = '${user.id}/profile_${DateTime.now().millisecondsSinceEpoch}.$ext';
-      await SupabaseConfig.client.storage.from('avatars').uploadBinary(path, bytes, fileOptions: FileOptions(upsert: true, contentType: contentType));
-      final url = SupabaseConfig.client.storage.from('avatars').getPublicUrl(path);
-      await SupabaseConfig.client.from('profiles').update({'avatar_url': url}).eq('auth_id', user.id);
-      await ref.read(authRepositoryProvider).refreshUser();
-      if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تم تحديث الصورة الشخصية')));
-    } catch (e) {
-      if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('تعذر تحديث الصورة: ${e.toString().replaceFirst('Exception: ', '')}'), backgroundColor: AppColors.error));
-    }
-  }
+  Widget _ProfileHero({required dynamic user, required bool isDark, required VoidCallback onAvatar, required VoidCallback onEdit}) => Builder(builder: (context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Container(decoration: BoxDecoration(gradient: LinearGradient(begin: Alignment.topRight, end: Alignment.bottomLeft, colors: isDark ? [const Color(0xFF1C2425), const Color(0xFF101314)] : [AppColors.secondary, AppColors.secondaryDark])), child: Center(child: Column(mainAxisAlignment: MainAxisAlignment.end, children: [
+      Stack(children: [Container(padding: const EdgeInsets.all(3), decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle), child: CircleAvatar(radius: 49, backgroundColor: AppColors.surfaceVariant, backgroundImage: user.avatarUrl != null && user.avatarUrl!.isNotEmpty ? NetworkImage(user.avatarUrl!) : null, child: user.avatarUrl == null || user.avatarUrl!.isEmpty ? const Icon(Icons.person_rounded, size: 52, color: AppColors.primary) : null)), Positioned(bottom: 0, right: 0, child: Material(color: AppColors.gold, shape: const CircleBorder(), child: InkWell(onTap: onAvatar, customBorder: const CircleBorder(), child: const Padding(padding: EdgeInsets.all(9), child: Icon(Icons.camera_alt_rounded, size: 16, color: AppColors.secondaryDark)))))]),
+      const SizedBox(height: 12),
+      InkWell(onTap: onEdit, borderRadius: BorderRadius.circular(12), child: Padding(padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4), child: Row(mainAxisSize: MainAxisSize.min, children: [Text(user.fullName ?? 'مستخدم', style: const TextStyle(color: Colors.white, fontSize: 21, fontWeight: FontWeight.w900)), const SizedBox(width: 8), const Icon(Icons.edit_rounded, size: 15, color: AppColors.gold)]))),
+      const SizedBox(height: 20),
+    ])));
+  });
 
-  Future<void> _showEditProfileDialog(BuildContext context, WidgetRef ref) async {
-    final user = ref.read(authStateChangesProvider).value;
-    if (user == null) return;
-    try {
-      final row = await SupabaseConfig.client.from('profiles').select('full_name,phone,whatsapp_number,city').eq('auth_id', user.id).maybeSingle();
-      if (!context.mounted) return;
-      final nameController = TextEditingController(text: row?['full_name']?.toString() ?? user.fullName ?? '');
-      final whatsappController = TextEditingController(text: row?['whatsapp_number']?.toString() ?? row?['phone']?.toString() ?? user.phone ?? '');
-      final governorateController = TextEditingController(text: row?['city']?.toString() ?? '');
-      var saving = false;
-      await showDialog<void>(context: context, builder: (dialogContext) => StatefulBuilder(builder: (context, setState) => AlertDialog(title: const Text('المعلومات الشخصية والتواصل'), content: SingleChildScrollView(child: Column(mainAxisSize: MainAxisSize.min, children: [TextField(controller: nameController, decoration: const InputDecoration(labelText: 'الاسم الكامل', prefixIcon: Icon(Icons.person_outline))), const SizedBox(height: 10), TextField(controller: whatsappController, keyboardType: TextInputType.phone, decoration: const InputDecoration(labelText: 'رقم واتساب للتواصل *', hintText: '+9647xxxxxxxxx', prefixIcon: Icon(Icons.chat_outlined))), const SizedBox(height: 10), TextField(controller: governorateController, decoration: const InputDecoration(labelText: 'المحافظة', prefixIcon: Icon(Icons.location_on_outlined))), const SizedBox(height: 10), const Align(alignment: Alignment.centerRight, child: Text('رقم واتساب مطلوب لطلب الاستشارات عن بُعد.', style: TextStyle(fontSize: 12)))])), actions: [TextButton(onPressed: saving ? null : () => Navigator.pop(dialogContext), child: const Text('إلغاء')), ElevatedButton(onPressed: saving ? null : () async { final name = nameController.text.trim(); final whatsapp = whatsappController.text.trim(); if (name.isEmpty || whatsapp.isEmpty) { ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('الاسم الكامل ورقم واتساب مطلوبان'))); return; } setState(() => saving = true); try { await SupabaseConfig.client.rpc('update_own_profile_contact', params: {'p_full_name': name, 'p_phone': whatsapp, 'p_whatsapp_number': whatsapp, 'p_city': governorateController.text.trim().isEmpty ? null : governorateController.text.trim()}); await ref.read(authRepositoryProvider).refreshUser(); if (dialogContext.mounted) Navigator.pop(dialogContext); if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تم حفظ المعلومات بنجاح'))); } catch (e) { if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('تعذر حفظ المعلومات: ${e.toString().replaceFirst('Exception: ', '')}'), backgroundColor: AppColors.error)); setState(() => saving = false); } }, child: Text(saving ? 'جاري الحفظ...' : 'حفظ التغييرات'))])));
-      nameController.dispose(); whatsappController.dispose(); governorateController.dispose();
-    } catch (e) {
-      if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('تعذر تحميل المعلومات: ${e.toString().replaceFirst('Exception: ', '')}'), backgroundColor: AppColors.error));
-    }
-  }
+  Widget _section(BuildContext context, String title, List<Widget> children) { final scheme = Theme.of(context).colorScheme; return Column(crossAxisAlignment: CrossAxisAlignment.end, children: [Padding(padding: const EdgeInsetsDirectional.only(end: 6, bottom: 9), child: Text(title, textAlign: TextAlign.right, style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 13, fontWeight: FontWeight.w800))), ...children]); }
+  Widget _iconBox(BuildContext context, IconData icon, {bool danger = false}) { final scheme = Theme.of(context).colorScheme; return Container(width: 42, height: 42, alignment: Alignment.center, decoration: BoxDecoration(color: danger ? AppColors.error.withValues(alpha: .10) : scheme.surfaceContainerHighest, borderRadius: BorderRadius.circular(13)), child: Icon(icon, color: danger ? AppColors.error : scheme.primary, size: 21)); }
+  Widget _tile(BuildContext context, IconData icon, String title, String subtitle, VoidCallback onTap) { final scheme = Theme.of(context).colorScheme; return Card(elevation: 0, margin: const EdgeInsets.only(bottom: 10), color: scheme.surface, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(17), side: BorderSide(color: scheme.outlineVariant)), child: ListTile(contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 3), leading: _iconBox(context, icon), title: Text(title, textAlign: TextAlign.right, style: TextStyle(color: scheme.onSurface, fontWeight: FontWeight.w700)), subtitle: Text(subtitle, textAlign: TextAlign.right, style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 11)), trailing: Icon(Icons.chevron_left_rounded, color: scheme.onSurfaceVariant), onTap: onTap)); }
 
+  Future<void> _updateAvatar(BuildContext context, WidgetRef ref) async { try { final picker = ImagePicker(); final image = await picker.pickImage(source: ImageSource.gallery, imageQuality: 80, maxWidth: 1200); if (image == null) return; final bytes = await image.readAsBytes(); final user = ref.read(authStateChangesProvider).value; if (user == null) return; final ext = image.name.split('.').last.toLowerCase(); final contentType = switch (ext) {'png' => 'image/png', 'webp' => 'image/webp', _ => 'image/jpeg'}; final path = '${user.id}/profile_${DateTime.now().millisecondsSinceEpoch}.$ext'; await SupabaseConfig.client.storage.from('avatars').uploadBinary(path, bytes, fileOptions: FileOptions(upsert: true, contentType: contentType)); final url = SupabaseConfig.client.storage.from('avatars').getPublicUrl(path); await SupabaseConfig.client.from('profiles').update({'avatar_url': url}).eq('auth_id', user.id); await ref.read(authRepositoryProvider).refreshUser(); if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تم تحديث الصورة الشخصية'))); } catch (e) { if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('تعذر تحديث الصورة: ${e.toString().replaceFirst('Exception: ', '')}'), backgroundColor: AppColors.error)); } }
+
+  Future<void> _showEditProfileDialog(BuildContext context, WidgetRef ref) async { final user = ref.read(authStateChangesProvider).value; if (user == null) return; try { final row = await SupabaseConfig.client.from('profiles').select('full_name,phone,whatsapp_number,city').eq('auth_id', user.id).maybeSingle(); if (!context.mounted) return; final nameController = TextEditingController(text: row?['full_name']?.toString() ?? user.fullName ?? ''); final whatsappController = TextEditingController(text: row?['whatsapp_number']?.toString() ?? row?['phone']?.toString() ?? user.phone ?? ''); final governorateController = TextEditingController(text: row?['city']?.toString() ?? ''); var saving = false; await showDialog<void>(context: context, builder: (dialogContext) => StatefulBuilder(builder: (context, setState) => AlertDialog(title: const Text('المعلومات الشخصية والتواصل'), content: SingleChildScrollView(child: Column(mainAxisSize: MainAxisSize.min, children: [TextField(controller: nameController, decoration: const InputDecoration(labelText: 'الاسم الكامل', prefixIcon: Icon(Icons.person_outline))), const SizedBox(height: 10), TextField(controller: whatsappController, keyboardType: TextInputType.phone, decoration: const InputDecoration(labelText: 'رقم واتساب للتواصل *', hintText: '+9647xxxxxxxxx', prefixIcon: Icon(Icons.chat_outlined))), const SizedBox(height: 10), TextField(controller: governorateController, decoration: const InputDecoration(labelText: 'المحافظة', prefixIcon: Icon(Icons.location_on_outlined))), const SizedBox(height: 10), const Align(alignment: Alignment.centerRight, child: Text('رقم واتساب مطلوب لطلب الاستشارات عن بُعد.', style: TextStyle(fontSize: 12)))])), actions: [TextButton(onPressed: saving ? null : () => Navigator.pop(dialogContext), child: const Text('إلغاء')), ElevatedButton(onPressed: saving ? null : () async { final name = nameController.text.trim(); final whatsapp = whatsappController.text.trim(); if (name.isEmpty || whatsapp.isEmpty) { ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('الاسم الكامل ورقم واتساب مطلوبان'))); return; } setState(() => saving = true); try { await SupabaseConfig.client.rpc('update_own_profile_contact', params: {'p_full_name': name, 'p_phone': whatsapp, 'p_whatsapp_number': whatsapp, 'p_city': governorateController.text.trim().isEmpty ? null : governorateController.text.trim()}); await ref.read(authRepositoryProvider).refreshUser(); if (dialogContext.mounted) Navigator.pop(dialogContext); if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تم حفظ المعلومات بنجاح'))); } catch (e) { if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('تعذر حفظ المعلومات: ${e.toString().replaceFirst('Exception: ', '')}'), backgroundColor: AppColors.error)); setState(() => saving = false); } }, child: Text(saving ? 'جاري الحفظ...' : 'حفظ التغييرات'))]))); nameController.dispose(); whatsappController.dispose(); governorateController.dispose(); } catch (e) { if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('تعذر تحميل المعلومات: ${e.toString().replaceFirst('Exception: ', '')}'), backgroundColor: AppColors.error)); } }
   Future<void> _logout(BuildContext context, WidgetRef ref) async { await ref.read(authControllerProvider.notifier).logout(); if (context.mounted) context.go('/login'); }
-
-  void _showDeleteConfirmation(BuildContext context, WidgetRef ref) {
-    showDialog(context: context, builder: (context) => AlertDialog(title: const Text('حذف الحساب؟'), content: const Text('هل أنت متأكد من حذف حسابك نهائياً؟ لا يمكن التراجع عن هذا الإجراء وسيتم حذف كافة بياناتك وحجوزاتك.'), actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('إلغاء')), ElevatedButton(onPressed: () { Navigator.pop(context); ref.read(authControllerProvider.notifier).deleteAccount(); }, style: ElevatedButton.styleFrom(backgroundColor: AppColors.error, foregroundColor: Colors.white, elevation: 0), child: const Text('نعم، احذف الحساب', style: TextStyle(fontWeight: FontWeight.bold)))],));
-  }
-
-  Widget _buildProfileSectionTitle(BuildContext context, String title) { final scheme = Theme.of(context).colorScheme; return Padding(padding: const EdgeInsets.only(left: 8, bottom: 8, right: 8), child: Text(title, style: TextStyle(color: scheme.onSurfaceVariant, fontWeight: FontWeight.bold, fontSize: 13, letterSpacing: 1))); }
-  Widget _buildProfileTile(BuildContext context, IconData icon, String title, VoidCallback onTap) { final scheme = Theme.of(context).colorScheme; return Card(margin: const EdgeInsets.only(bottom: 12), child: ListTile(leading: Container(padding: const EdgeInsets.all(8), decoration: BoxDecoration(color: scheme.surfaceContainerHighest, borderRadius: BorderRadius.circular(10)), child: Icon(icon, color: scheme.primary, size: 20)), title: Text(title, style: TextStyle(color: scheme.onSurface)), trailing: Icon(Icons.arrow_forward_ios_rounded, size: 14, color: scheme.onSurfaceVariant), onTap: onTap)); }
+  void _showDeleteConfirmation(BuildContext context, WidgetRef ref) { showDialog(context: context, builder: (context) => AlertDialog(title: const Text('حذف الحساب؟'), content: const Text('هل أنت متأكد من حذف حسابك نهائياً؟ لا يمكن التراجع عن هذا الإجراء وسيتم حذف كافة بياناتك وحجوزاتك.'), actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('إلغاء')), ElevatedButton(onPressed: () { Navigator.pop(context); ref.read(authControllerProvider.notifier).deleteAccount(); }, style: ElevatedButton.styleFrom(backgroundColor: AppColors.error, foregroundColor: Colors.white, elevation: 0), child: const Text('نعم، احذف الحساب', style: TextStyle(fontWeight: FontWeight.bold)))],)); }
 }
