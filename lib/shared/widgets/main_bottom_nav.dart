@@ -25,27 +25,32 @@ class MainBottomNav extends ConsumerWidget {
     final selectedIndex = currentIndex.clamp(0, _items.length - 1).toInt();
 
     return Container(
-      decoration: BoxDecoration(
-        color: scheme.surface,
-        border: Border(top: BorderSide(color: scheme.outlineVariant.withValues(alpha: isDark ? .38 : .62))),
-        boxShadow: [BoxShadow(color: scheme.shadow.withValues(alpha: isDark ? .24 : .08), blurRadius: 20, offset: const Offset(0, -6))],
-      ),
+      color: Colors.transparent,
+      padding: const EdgeInsets.fromLTRB(12, 5, 12, 7),
       child: SafeArea(
         top: false,
-        minimum: const EdgeInsets.fromLTRB(8, 7, 8, 6),
-        child: Row(
-          textDirection: TextDirection.rtl,
-          children: List.generate(_items.length, (index) {
-            final item = _items[index];
-            return Expanded(
-              child: _NavDestination(
-                item: item,
-                selected: index == selectedIndex,
-                unreadCount: index == 3 ? unread : 0,
-                onTap: () => _navigate(context, index),
-              ),
-            );
-          }),
+        child: Container(
+          decoration: BoxDecoration(
+            color: scheme.surfaceContainerLowest,
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(color: scheme.outlineVariant.withValues(alpha: isDark ? .55 : .8)),
+            boxShadow: [BoxShadow(color: scheme.shadow.withValues(alpha: isDark ? .28 : .07), blurRadius: 24, offset: const Offset(0, 8))],
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 5),
+          child: Row(
+            textDirection: TextDirection.rtl,
+            children: List.generate(_items.length, (index) {
+              final item = _items[index];
+              return Expanded(
+                child: _NavDestination(
+                  item: item,
+                  selected: index == selectedIndex,
+                  unreadCount: index == 3 ? unread : 0,
+                  onTap: () => _navigate(context, index),
+                ),
+              );
+            }),
+          ),
         ),
       ),
     );
@@ -89,7 +94,7 @@ class _NavDestination extends StatelessWidget {
       label: item.label,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(19),
         child: Padding(
           padding: const EdgeInsets.symmetric(vertical: 2),
           child: Column(
@@ -98,10 +103,11 @@ class _NavDestination extends StatelessWidget {
               AnimatedContainer(
                 duration: const Duration(milliseconds: 220),
                 curve: Curves.easeOutCubic,
-                padding: EdgeInsets.symmetric(horizontal: selected ? 16 : 12, vertical: 6),
+                constraints: const BoxConstraints(minHeight: 34),
+                padding: EdgeInsets.symmetric(horizontal: selected ? 15 : 12, vertical: 5),
                 decoration: BoxDecoration(
                   color: selected ? scheme.primary.withValues(alpha: .12) : Colors.transparent,
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(15),
                 ),
                 child: _BadgeIcon(icon: selected ? item.activeIcon : item.icon, color: iconColor, count: unreadCount),
               ),
@@ -134,13 +140,13 @@ class _BadgeIcon extends StatelessWidget {
         Icon(icon, color: color, size: 23),
         if (count > 0)
           Positioned(
-            top: -8,
-            right: -11,
+            top: -7,
+            right: -10,
             child: Container(
               constraints: const BoxConstraints(minWidth: 17, minHeight: 17),
               padding: const EdgeInsets.symmetric(horizontal: 4),
               alignment: Alignment.center,
-              decoration: BoxDecoration(color: scheme.error, borderRadius: BorderRadius.circular(99), border: Border.all(color: scheme.surface, width: 1.5)),
+              decoration: BoxDecoration(color: scheme.error, borderRadius: BorderRadius.circular(99), border: Border.all(color: scheme.surfaceContainerLowest, width: 1.5)),
               child: Text(count > 99 ? '99+' : '$count', style: TextStyle(color: scheme.onError, fontSize: 8, fontWeight: FontWeight.w900, height: 1)),
             ),
           ),
