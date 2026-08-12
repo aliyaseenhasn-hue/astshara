@@ -9,6 +9,7 @@
 - `aaf5a7456ec88f7d0f4c6fbdeb43448ece1fbb1d` — مطابقة `complete_profile_page.dart` مع Stitch.
 - `7b5fa9297471b6abfd1e94635fd45ec563639ab5` — مطابقة `bookings_list_page.dart` مع Stitch.
 - `99bebd36edd92e5daeb5165b4afed80bd627b590` — مطابقة `notification_settings_page.dart` مع Stitch.
+- `30b33d1cc1d8a6a5d20f2cab81c6cf36da515d7d` — مطابقة `help_center_page.dart` مع Stitch: Hero header، بطاقات التواصل، FAQ موسعة، Light/Dark، ومسافات وحواف Premium مع الحفاظ على روابط الدعم الحالية.
 
 ## إصلاح CI الحالي
 - **commit:** `263b6006c9232d2c317f9e95f50a98ffc74d570e`
@@ -31,5 +32,5 @@
 ## التحقق
 يجب اعتبار النجاح فقط بعد ظهور `flutter analyze` وCI على commit الحالي بحالة نجاح.
 
-## الخطوة التالية
-بعد نجاح التحقق، الاستمرار في مطابقة Stitch ومعالجة أي Error جديد مباشرة.
+## الخطوة الحالية
+تمت مطابقة مركز المساعدة مع لغة Stitch. يجب التحقق من CI على آخر commit قبل اعتماد الدفعة، ثم الانتقال إلى الشاشة التالية غير المطابقة.
