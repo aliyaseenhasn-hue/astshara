@@ -19,20 +19,13 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
 
   Future<void> _loadSettings() async {
     final prefs = await SharedPreferences.getInstance();
-    if (mounted) {
-      setState(() {
-        _selectedSound = prefs.getString('notification_sound') ?? 'default';
-      });
-    }
+    if (mounted) setState(() => _selectedSound = prefs.getString('notification_sound') ?? 'default');
   }
 
   void _saveSound(String sound) {
     NotificationService.setNotificationSound(sound);
     setState(() => _selectedSound = sound);
-    NotificationService.showNotification(
-      title: 'تم تغيير النغمة',
-      body: 'تم تطبيق نغمة الإشعارات الجديدة',
-    );
+    NotificationService.showNotification(title: 'تم تغيير النغمة', body: 'تم تطبيق نغمة الإشعارات الجديدة');
   }
 
   @override
@@ -44,44 +37,37 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
       (label: 'نغمة هادئة', value: 'calm'),
       (label: 'تنبيه عاجل', value: 'urgent'),
     ];
-    return Scaffold(
-      backgroundColor: scheme.surface,
-      appBar: AppBar(title: const Text('إعدادات الإشعارات')),
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
-        children: [
-          Text('التنبيهات', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: scheme.onSurface)),
-          const SizedBox(height: 6),
-          Text('خصص طريقة وصول التنبيهات إليك.', style: TextStyle(color: scheme.onSurfaceVariant)),
-          const SizedBox(height: 24),
-          _SectionCard(
-            title: 'نغمة التنبيه',
-            child: RadioGroup<String>(
-              groupValue: _selectedSound,
-              onChanged: (value) {
-                if (value != null) _saveSound(value);
-              },
-              child: Column(
-                children: sounds.map((sound) => RadioListTile<String>(
-                  contentPadding: EdgeInsets.zero,
-                  title: Text(sound.label),
-                  value: sound.value,
-                )).toList(),
+    return Directionality(
+      textDirection: TextDirection.rtl,
+      child: Scaffold(
+        backgroundColor: scheme.surface,
+        appBar: AppBar(title: const Text('إعدادات الإشعارات')),
+        body: ListView(
+          padding: const EdgeInsets.fromLTRB(20, 18, 20, 36),
+          children: [
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(begin: Alignment.topRight, end: Alignment.bottomLeft, colors: [scheme.primaryContainer, scheme.surfaceContainerHighest]),
+                borderRadius: BorderRadius.circular(24),
+                border: Border.all(color: scheme.outlineVariant),
               ),
+              child: Row(children: [
+                Container(width: 52, height: 52, decoration: BoxDecoration(color: scheme.primary.withValues(alpha: .12), borderRadius: BorderRadius.circular(17)), child: Icon(Icons.notifications_active_rounded, color: scheme.primary, size: 28)),
+                const SizedBox(width: 14),
+                Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Text('التنبيهات', style: TextStyle(fontSize: 23, fontWeight: FontWeight.w900, color: scheme.onPrimaryContainer)),
+                  const SizedBox(height: 5),
+                  Text('خصص طريقة وصول التنبيهات إليك.', style: TextStyle(color: scheme.onPrimaryContainer.withValues(alpha: .78), height: 1.45)),
+                ])),
+              ]),
             ),
-          ),
-          const SizedBox(height: 16),
-          _SectionCard(
-            title: 'خيارات الجهاز',
-            child: ListTile(
-              contentPadding: EdgeInsets.zero,
-              leading: Icon(Icons.vibration_rounded, color: scheme.primary),
-              title: const Text('الاهتزاز'),
-              subtitle: Text('يتحكم به إعدادات الجهاز', style: TextStyle(color: scheme.onSurfaceVariant)),
-              trailing: const Icon(Icons.check_circle_outline_rounded),
-            ),
-          ),
-        ],
+            const SizedBox(height: 18),
+            _SectionCard(title: 'نغمة التنبيه', icon: Icons.music_note_rounded, child: RadioGroup<String>(groupValue: _selectedSound, onChanged: (value) { if (value != null) _saveSound(value); }, child: Column(children: sounds.map((sound) => RadioListTile<String>(contentPadding: EdgeInsets.zero, activeColor: scheme.primary, title: Text(sound.label, style: TextStyle(fontWeight: FontWeight.w600, color: scheme.onSurface)), value: sound.value)).toList()))),
+            const SizedBox(height: 14),
+            _SectionCard(title: 'خيارات الجهاز', icon: Icons.phone_android_rounded, child: ListTile(contentPadding: EdgeInsets.zero, leading: Icon(Icons.vibration_rounded, color: scheme.primary), title: Text('الاهتزاز', style: TextStyle(fontWeight: FontWeight.w700, color: scheme.onSurface)), subtitle: Text('يتحكم به إعدادات الجهاز', style: TextStyle(color: scheme.onSurfaceVariant)), trailing: Icon(Icons.check_circle_rounded, color: scheme.primary))),
+          ],
+        ),
       ),
     );
   }
@@ -89,8 +75,9 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
 
 class _SectionCard extends StatelessWidget {
   final String title;
+  final IconData icon;
   final Widget child;
-  const _SectionCard({required this.title, required this.child});
+  const _SectionCard({required this.title, required this.icon, required this.child});
 
   @override
   Widget build(BuildContext context) {
@@ -98,15 +85,12 @@ class _SectionCard extends StatelessWidget {
     return Card(
       elevation: 0,
       color: scheme.surfaceContainerLowest,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20), side: BorderSide(color: scheme.outlineVariant)),
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 14, 16, 8),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(title, style: TextStyle(fontWeight: FontWeight.bold, color: scheme.onSurface)),
-          const SizedBox(height: 6),
-          child,
-        ]),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22), side: BorderSide(color: scheme.outlineVariant)),
+      child: Padding(padding: const EdgeInsets.fromLTRB(18, 16, 18, 10), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Row(children: [Container(width: 36, height: 36, decoration: BoxDecoration(color: scheme.primary.withValues(alpha: .10), borderRadius: BorderRadius.circular(11)), child: Icon(icon, size: 20, color: scheme.primary)), const SizedBox(width: 10), Text(title, style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: scheme.onSurface))]),
+        const SizedBox(height: 8),
+        child,
+      ])),
     );
   }
 }
