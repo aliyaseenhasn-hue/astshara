@@ -1,13 +1,40 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../features/authentication/presentation/providers/auth_provider.dart';
 import 'main_bottom_nav.dart';
 
-class AppShell extends StatelessWidget {
+class AppShell extends ConsumerWidget {
   final Widget child;
   final String location;
 
   const AppShell({super.key, required this.child, required this.location});
 
-  int get currentIndex {
+  int _currentIndex(bool isLawyer) {
+    if (isLawyer) {
+      if (location == '/app-settings' ||
+          location == '/profile' ||
+          location == '/notification-settings' ||
+          location == '/payment-methods' ||
+          location == '/help-center' ||
+          location == '/lawyer-profile-edit' ||
+          location == '/lawyer-availability' ||
+          location == '/lawyer-specialization-change') {
+        return 3;
+      }
+      if (location == '/notifications') return 2;
+      if (location == '/bookings' ||
+          location == '/booking-details' ||
+          location == '/manual-payment' ||
+          location == '/manual-payment-required' ||
+          location == '/upload-payment' ||
+          location == '/payment-result' ||
+          location == '/chats' ||
+          location.startsWith('/chat/')) {
+        return 1;
+      }
+      return 0;
+    }
+
     if (location == '/app-settings' ||
         location == '/profile' ||
         location == '/notification-settings' ||
@@ -31,8 +58,10 @@ class AppShell extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final scheme = Theme.of(context).colorScheme;
+    final user = ref.watch(authStateChangesProvider).valueOrNull;
+    final isLawyer = user?.role == 'lawyer';
 
     return Scaffold(
       backgroundColor: scheme.surface,
@@ -40,7 +69,10 @@ class AppShell extends StatelessWidget {
         color: scheme.surface,
         child: child,
       ),
-      bottomNavigationBar: MainBottomNav(currentIndex: currentIndex),
+      bottomNavigationBar: MainBottomNav(
+        currentIndex: _currentIndex(isLawyer),
+        isLawyer: isLawyer,
+      ),
     );
   }
 }
