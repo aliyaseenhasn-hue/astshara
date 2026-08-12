@@ -38,11 +38,34 @@ class ConversationsPage extends ConsumerWidget {
     return Scaffold(
       backgroundColor: scheme.surface,
       appBar: AppBar(
-        title: const Text('المحادثات'),
-        centerTitle: false,
         backgroundColor: scheme.surface,
         foregroundColor: scheme.onSurface,
         elevation: 0,
+        scrolledUnderElevation: 0,
+        titleSpacing: 20,
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('المحادثات', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: scheme.onSurface)),
+            const SizedBox(height: 3),
+            Text('تواصل مع محاميك بأمان', style: TextStyle(fontSize: 12, color: scheme.onSurfaceVariant)),
+          ],
+        ),
+        actions: [
+          Padding(
+            padding: const EdgeInsetsDirectional.only(end: 12),
+            child: Container(
+              width: 42,
+              height: 42,
+              decoration: BoxDecoration(
+                color: scheme.surfaceContainerHighest,
+                shape: BoxShape.circle,
+                border: Border.all(color: scheme.outlineVariant.withValues(alpha: .65)),
+              ),
+              child: Icon(Icons.search_rounded, color: scheme.onSurfaceVariant),
+            ),
+          ),
+        ],
       ),
       body: conversations.when(
         loading: () => Center(child: CircularProgressIndicator(color: scheme.primary)),
@@ -59,9 +82,9 @@ class ConversationsPage extends ConsumerWidget {
         data: (items) {
           if (items.isEmpty) {
             return const _StateView(
-              icon: Icons.chat_bubble_outline_rounded,
+              icon: Icons.forum_outlined,
               title: 'لا توجد محادثات حالياً',
-              message: 'ستظهر هنا المحادثات بعد بدء الاستشارة.',
+              message: 'ستظهر محادثاتك هنا بعد بدء الاستشارة والتواصل مع المحامي.',
             );
           }
 
@@ -70,7 +93,7 @@ class ConversationsPage extends ConsumerWidget {
             onRefresh: () async => ref.invalidate(conversationsListProvider),
             child: ListView.separated(
               physics: const AlwaysScrollableScrollPhysics(),
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 28),
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 28),
               itemCount: items.length,
               separatorBuilder: (_, __) => const SizedBox(height: 10),
               itemBuilder: (context, index) {
@@ -88,21 +111,46 @@ class ConversationsPage extends ConsumerWidget {
                     );
 
                     return Material(
-                      color: scheme.surfaceContainerHighest.withValues(alpha: .45),
-                      borderRadius: BorderRadius.circular(18),
+                      color: scheme.surface,
+                      borderRadius: BorderRadius.circular(20),
                       child: InkWell(
-                        borderRadius: BorderRadius.circular(18),
+                        borderRadius: BorderRadius.circular(20),
                         onTap: () => context.push('/chat/$id'),
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(color: scheme.outlineVariant.withValues(alpha: .62)),
+                            boxShadow: [
+                              BoxShadow(color: scheme.shadow.withValues(alpha: .05), blurRadius: 16, offset: const Offset(0, 6)),
+                            ],
+                          ),
                           child: Row(
                             children: [
-                              CircleAvatar(
-                                radius: 26,
-                                backgroundColor: scheme.primaryContainer,
-                                child: Icon(Icons.person_outline_rounded, color: scheme.primary),
+                              Stack(
+                                clipBehavior: Clip.none,
+                                children: [
+                                  CircleAvatar(
+                                    radius: 27,
+                                    backgroundColor: scheme.primaryContainer,
+                                    child: Icon(Icons.person_outline_rounded, color: scheme.primary, size: 27),
+                                  ),
+                                  Positioned(
+                                    bottom: 0,
+                                    right: -1,
+                                    child: Container(
+                                      width: 12,
+                                      height: 12,
+                                      decoration: BoxDecoration(
+                                        color: Colors.green,
+                                        shape: BoxShape.circle,
+                                        border: Border.all(color: scheme.surface, width: 2),
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ),
-                              const SizedBox(width: 12),
+                              const SizedBox(width: 13),
                               Expanded(
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -111,18 +159,14 @@ class ConversationsPage extends ConsumerWidget {
                                       displayName,
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
-                                      style: TextStyle(
-                                        color: scheme.onSurface,
-                                        fontSize: 15,
-                                        fontWeight: FontWeight.w700,
-                                      ),
+                                      style: TextStyle(color: scheme.onSurface, fontSize: 15.5, fontWeight: FontWeight.w800),
                                     ),
-                                    const SizedBox(height: 5),
+                                    const SizedBox(height: 6),
                                     Text(
                                       lastMessage?.isNotEmpty == true ? lastMessage! : 'لا توجد رسائل بعد',
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
-                                      style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 13),
+                                      style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 12.5, height: 1.3),
                                     ),
                                   ],
                                 ),
@@ -151,12 +195,7 @@ class _StateView extends StatelessWidget {
   final String message;
   final Widget? action;
 
-  const _StateView({
-    required this.icon,
-    required this.title,
-    required this.message,
-    this.action,
-  });
+  const _StateView({required this.icon, required this.title, required this.message, this.action});
 
   @override
   Widget build(BuildContext context) {
@@ -168,31 +207,16 @@ class _StateView extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             Container(
-              width: 72,
-              height: 72,
-              decoration: BoxDecoration(
-                color: scheme.primaryContainer,
-                shape: BoxShape.circle,
-              ),
-              child: Icon(icon, size: 34, color: scheme.primary),
+              width: 78,
+              height: 78,
+              decoration: BoxDecoration(color: scheme.primaryContainer, shape: BoxShape.circle),
+              child: Icon(icon, size: 35, color: scheme.primary),
             ),
-            const SizedBox(height: 16),
-            Text(
-              title,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                color: scheme.onSurface,
-                fontSize: 17,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-            const SizedBox(height: 7),
-            Text(
-              message,
-              textAlign: TextAlign.center,
-              style: TextStyle(color: scheme.onSurfaceVariant, height: 1.5),
-            ),
-            if (action != null) ...[const SizedBox(height: 12), action!],
+            const SizedBox(height: 18),
+            Text(title, textAlign: TextAlign.center, style: TextStyle(color: scheme.onSurface, fontSize: 18, fontWeight: FontWeight.w800)),
+            const SizedBox(height: 8),
+            Text(message, textAlign: TextAlign.center, style: TextStyle(color: scheme.onSurfaceVariant, height: 1.55)),
+            if (action != null) ...[const SizedBox(height: 14), action!],
           ],
         ),
       ),
