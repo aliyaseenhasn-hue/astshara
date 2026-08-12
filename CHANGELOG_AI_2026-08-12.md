@@ -23,5 +23,8 @@
 - `7dff7e5d0d4f1db8e3271dd294ca4578d2964cbc` — مطابقة `payment_result_page.dart` مع Stitch Premium.
 - `19967f1a6cbcd8baa06de833bcdbde5511130372` — مطابقة `payment_methods_page.dart` مع Stitch Premium: بطاقة محفظة رئيسية، حالة ربط واضحة، بطاقة Zain Cash محسنة، ملاحظة إرشادية، حواف ومسافات Premium وRTL مناسب، مع الحفاظ على `authStateChangesProvider` و`authRepositoryProvider.updateProfile`.
 
+## مطابقة Stitch — إدارة المحامي
+- `096899d95e86eb2fc35acdf89165f8f98d1db366` — إعادة تصميم `lawyer_availability_page.dart` بأسلوب Stitch Premium: Hero علوي، عداد المواعيد، بطاقات حالات متاحة/محجوزة/سابقة، RTL عربي، RefreshIndicator، FAB واضح، وتحسين الحالات الفارغة مع الحفاظ على Supabase CRUD ومنطق المواعيد.
+
 ## التحقق
 يجب اعتبار النجاح فقط بعد ظهور `flutter analyze` وCI على commit الحالي بحالة نجاح.
