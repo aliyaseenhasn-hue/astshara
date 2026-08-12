@@ -94,7 +94,7 @@ class _HomeHeader extends StatelessWidget {
     return Container(
       padding: EdgeInsets.fromLTRB(24, MediaQuery.paddingOf(context).top + 12, 24, 16),
       decoration: BoxDecoration(
-        color: dark ? const Color(0xFF111415) : scheme.surface,
+        color: scheme.surface,
         border: Border(bottom: BorderSide(color: scheme.outlineVariant.withValues(alpha: dark ? .18 : .55))),
       ),
       child: Row(
@@ -105,7 +105,7 @@ class _HomeHeader extends StatelessWidget {
           Text('استشارة', style: TextStyle(color: dark ? AppColors.gold : scheme.onSurface, fontSize: 22, fontWeight: FontWeight.w800)),
           const Spacer(),
           Row(textDirection: TextDirection.rtl, children: [
-            CircleAvatar(radius: 25, backgroundColor: dark ? scheme.surfaceContainerHighest : const Color(0xFFE9EEF0), child: Icon(Icons.person_rounded, color: scheme.onSurfaceVariant, size: 27)),
+            CircleAvatar(radius: 25, backgroundColor: scheme.surfaceContainerHighest, child: Icon(Icons.person_rounded, color: scheme.onSurfaceVariant, size: 27)),
             const SizedBox(width: 10),
             Column(crossAxisAlignment: CrossAxisAlignment.end, children: [Text('أهلاً،', style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 11)), Text(name, style: TextStyle(color: scheme.onSurface, fontSize: 17, fontWeight: FontWeight.w800))]),
           ]),
