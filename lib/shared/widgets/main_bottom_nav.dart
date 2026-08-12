@@ -4,14 +4,25 @@ import 'package:go_router/go_router.dart';
 import '../../features/profile/presentation/providers/notifications_provider.dart';
 
 /// الشريط السفلي الرئيسي للتطبيق وفق بنية Stitch.
+///
+/// طالب الاستشارة: الرئيسية → المحامون → استشاراتي → التنبيهات → الإعدادات.
+/// المحامي: الرئيسية → استشاراتي → التنبيهات → الإعدادات.
 class MainBottomNav extends ConsumerWidget {
   final int currentIndex;
+  final bool isLawyer;
 
-  const MainBottomNav({super.key, required this.currentIndex});
+  const MainBottomNav({super.key, required this.currentIndex, this.isLawyer = false});
 
-  static const _items = <_NavItem>[
+  static const _clientItems = <_NavItem>[
     _NavItem(Icons.home_outlined, Icons.home_rounded, 'الرئيسية'),
     _NavItem(Icons.people_outline_rounded, Icons.people_rounded, 'المحامون'),
+    _NavItem(Icons.calendar_month_outlined, Icons.calendar_month_rounded, 'استشاراتي'),
+    _NavItem(Icons.notifications_none_rounded, Icons.notifications_rounded, 'التنبيهات'),
+    _NavItem(Icons.settings_outlined, Icons.settings_rounded, 'الإعدادات'),
+  ];
+
+  static const _lawyerItems = <_NavItem>[
+    _NavItem(Icons.home_outlined, Icons.home_rounded, 'الرئيسية'),
     _NavItem(Icons.calendar_month_outlined, Icons.calendar_month_rounded, 'استشاراتي'),
     _NavItem(Icons.notifications_none_rounded, Icons.notifications_rounded, 'التنبيهات'),
     _NavItem(Icons.settings_outlined, Icons.settings_rounded, 'الإعدادات'),
@@ -22,7 +33,8 @@ class MainBottomNav extends ConsumerWidget {
     final scheme = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final unread = ref.watch(unreadNotificationsCountProvider).valueOrNull ?? 0;
-    final selectedIndex = currentIndex.clamp(0, _items.length - 1).toInt();
+    final items = isLawyer ? _lawyerItems : _clientItems;
+    final selectedIndex = currentIndex.clamp(0, items.length - 1).toInt();
 
     return Container(
       color: Colors.transparent,
@@ -34,18 +46,25 @@ class MainBottomNav extends ConsumerWidget {
             color: scheme.surfaceContainerLowest,
             borderRadius: BorderRadius.circular(24),
             border: Border.all(color: scheme.outlineVariant.withValues(alpha: isDark ? .55 : .8)),
-            boxShadow: [BoxShadow(color: scheme.shadow.withValues(alpha: isDark ? .28 : .07), blurRadius: 24, offset: const Offset(0, 8))],
+            boxShadow: [
+              BoxShadow(
+                color: scheme.shadow.withValues(alpha: isDark ? .28 : .07),
+                blurRadius: 24,
+                offset: const Offset(0, 8),
+              ),
+            ],
           ),
           padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 5),
           child: Row(
             textDirection: TextDirection.rtl,
-            children: List.generate(_items.length, (index) {
-              final item = _items[index];
+            children: List.generate(items.length, (index) {
+              final item = items[index];
+              final notificationIndex = isLawyer ? 2 : 3;
               return Expanded(
                 child: _NavDestination(
                   item: item,
                   selected: index == selectedIndex,
-                  unreadCount: index == 3 ? unread : 0,
+                  unreadCount: index == notificationIndex ? unread : 0,
                   onTap: () => _navigate(context, index),
                 ),
               );
@@ -57,15 +76,26 @@ class MainBottomNav extends ConsumerWidget {
   }
 
   void _navigate(BuildContext context, int index) {
-    final target = switch (index) {
-      0 => '/',
-      1 => '/lawyers',
-      2 => '/bookings',
-      3 => '/notifications',
-      4 => '/app-settings',
-      _ => '/',
-    };
-    if (GoRouterState.of(context).uri.path != target) context.go(target);
+    final target = isLawyer
+        ? switch (index) {
+            0 => '/lawyer-home',
+            1 => '/bookings',
+            2 => '/notifications',
+            3 => '/app-settings',
+            _ => '/lawyer-home',
+          }
+        : switch (index) {
+            0 => '/',
+            1 => '/lawyers',
+            2 => '/bookings',
+            3 => '/notifications',
+            4 => '/app-settings',
+            _ => '/',
+          };
+
+    if (GoRouterState.of(context).uri.path != target) {
+      context.go(target);
+    }
   }
 }
 
@@ -82,7 +112,12 @@ class _NavDestination extends StatelessWidget {
   final int unreadCount;
   final VoidCallback onTap;
 
-  const _NavDestination({required this.item, required this.selected, required this.unreadCount, required this.onTap});
+  const _NavDestination({
+    required this.item,
+    required this.selected,
+    required this.unreadCount,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -104,17 +139,31 @@ class _NavDestination extends StatelessWidget {
                 duration: const Duration(milliseconds: 220),
                 curve: Curves.easeOutCubic,
                 constraints: const BoxConstraints(minHeight: 34),
-                padding: EdgeInsets.symmetric(horizontal: selected ? 15 : 12, vertical: 5),
+                padding: EdgeInsets.symmetric(
+                  horizontal: selected ? 15 : 12,
+                  vertical: 5,
+                ),
                 decoration: BoxDecoration(
-                  color: selected ? scheme.primary.withValues(alpha: .12) : Colors.transparent,
+                  color: selected
+                      ? scheme.primary.withValues(alpha: .12)
+                      : Colors.transparent,
                   borderRadius: BorderRadius.circular(15),
                 ),
-                child: _BadgeIcon(icon: selected ? item.activeIcon : item.icon, color: iconColor, count: unreadCount),
+                child: _BadgeIcon(
+                  icon: selected ? item.activeIcon : item.icon,
+                  color: iconColor,
+                  count: unreadCount,
+                ),
               ),
               const SizedBox(height: 2),
               AnimatedDefaultTextStyle(
                 duration: const Duration(milliseconds: 180),
-                style: TextStyle(color: iconColor, fontSize: selected ? 10.5 : 10, fontWeight: selected ? FontWeight.w800 : FontWeight.w500, height: 1.1),
+                style: TextStyle(
+                  color: iconColor,
+                  fontSize: selected ? 10.5 : 10,
+                  fontWeight: selected ? FontWeight.w800 : FontWeight.w500,
+                  height: 1.1,
+                ),
                 child: Text(item.label),
               ),
             ],
@@ -129,6 +178,7 @@ class _BadgeIcon extends StatelessWidget {
   final IconData icon;
   final Color color;
   final int count;
+
   const _BadgeIcon({required this.icon, required this.color, required this.count});
 
   @override
@@ -146,8 +196,23 @@ class _BadgeIcon extends StatelessWidget {
               constraints: const BoxConstraints(minWidth: 17, minHeight: 17),
               padding: const EdgeInsets.symmetric(horizontal: 4),
               alignment: Alignment.center,
-              decoration: BoxDecoration(color: scheme.error, borderRadius: BorderRadius.circular(99), border: Border.all(color: scheme.surfaceContainerLowest, width: 1.5)),
-              child: Text(count > 99 ? '99+' : '$count', style: TextStyle(color: scheme.onError, fontSize: 8, fontWeight: FontWeight.w900, height: 1)),
+              decoration: BoxDecoration(
+                color: scheme.error,
+                borderRadius: BorderRadius.circular(99),
+                border: Border.all(
+                  color: scheme.surfaceContainerLowest,
+                  width: 1.5,
+                ),
+              ),
+              child: Text(
+                count > 99 ? '99+' : '$count',
+                style: TextStyle(
+                  color: scheme.onError,
+                  fontSize: 8,
+                  fontWeight: FontWeight.w900,
+                  height: 1,
+                ),
+              ),
             ),
           ),
       ],
