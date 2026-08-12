@@ -4,9 +4,10 @@
 قبل أي تعديل جديد تتم مراجعة الملفات والـcommits السابقة لتجنب تكرار التنفيذ. كل تعديل جديد يسجل في ملف Markdown مع الـcommit والسبب والنتيجة.
 
 ## آخر تعديل
-- `dbdc2454fff678e69437696f1c4f1c90311cfccc` — إصلاح مراجع RTL في `booking_details_page.dart` باستبدال الاعتماد المباشر على `TextDirection.rtl` بـ`Directionality.of(context)` لتجنب تعارض الاسم الذي ظهر في CI، مع الحفاظ على RTL وسلوك الصفحة.
-- `91f6911e30ac4ea5afca2241a4fe31a74a5beba9` — إصلاح طبقة `BookingsController` بعد تطبيق Stitch على `booking_details_page.dart`: إضافة `reviewBooking` و`updateBookingStatus` و`reportNoShow` كواجهات رسمية فوق الـrepository حتى تعمل أزرار تفاصيل الاستشارة دون تغيير منطق المستودع.
-- `1babe059cf5fcb2fdd50c3882c27c95c490f8bf0` — تطبيق Stitch Premium على `booking_details_page.dart`: Hero للحجز، أقسام موحدة للمعلومات، RTL، إبراز الحالة والدفع والتواصل، وتحسين أزرار الإجراء.
+- `39035ebfaffef2ae6f24a5c978649ae0e86cdf03` — إصلاح `booking_details_page.dart` بالكامل بعد ظهور أخطاء CI: إزالة الصياغة المبتورة التي سببت أخطاء الأقواس، الحفاظ على RTL باستخدام Flutter APIs الصحيحة، وربط إجراءات المراجعة وتحديث الحالة وعدم الحضور بالـBookingsController.
+- `dbdc2454fff678e69437696f1c4f1c90311cfccc` — إصلاح مراجع RTL في `booking_details_page.dart` باستبدال الاعتماد المباشر على `TextDirection.rtl` بـ`Directionality.of(context)`.
+- `91f6911e30ac4ea5afca2241a4fe31a74a5beba9` — إصلاح طبقة `BookingsController` بعد تطبيق Stitch على `booking_details_page.dart`: إضافة `reviewBooking` و`updateBookingStatus` و`reportNoShow` كواجهات رسمية فوق الـrepository.
+- `1babe059cf5fcb2fdd50c3882c27c95c490f8bf0` — تطبيق Stitch Premium على `booking_details_page.dart`.
 - `5fc2166b5259d19d373a45a073fb23bab11471db` — تطبيق Stitch Premium على `specialization_change_page.dart`.
 - `95e795405c3485257616a1a20db694b9a6423af3` — إصلاح أخطاء syntax في `lawyer_onboarding_page.dart`.
 - `0b304b039ff0a58e3c1a2271561bd2cdf1efab23` — تطبيق أسلوب Stitch Premium على `payment_upload_page.dart`.
