@@ -2,6 +2,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/config/supabase_config.dart';
+import '../../../../core/constants/app_colors.dart';
 import '../../data/repositories/lawyers_repository_impl.dart';
 
 class SpecializationChangePage extends ConsumerStatefulWidget {
@@ -79,62 +80,252 @@ class _SpecializationChangePageState extends ConsumerState<SpecializationChangeP
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('طلب تغيير التخصص')),
-      body: ListView(
-        padding: const EdgeInsets.all(20),
-        children: [
-          const Text(
-            'التخصصات المطلوبة',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 10),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: _options.map((specialization) {
-              return FilterChip(
-                label: Text(specialization),
-                selected: _selected.contains(specialization),
-                onSelected: (selected) {
-                  setState(() {
-                    if (selected) {
-                      _selected.add(specialization);
-                    } else {
-                      _selected.remove(specialization);
-                    }
-                  });
-                },
-              );
-            }).toList(growable: false),
-          ),
-          const SizedBox(height: 24),
-          const Text(
-            'هوية النقابة',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 8),
-          const Text(
-            'يجب إرفاق صورة واضحة لهوية النقابة حتى يتمكن الأدمن من مراجعة الطلب.',
-          ),
-          const SizedBox(height: 12),
-          OutlinedButton.icon(
-            onPressed: _saving ? null : _pick,
-            icon: const Icon(Icons.badge_outlined),
-            label: Text(_idCard?.name ?? 'إرفاق هوية النقابة'),
-          ),
-          const SizedBox(height: 24),
-          ElevatedButton(
-            onPressed: _saving ? null : _submit,
-            child: _saving
-                ? const SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : const Text('إرسال الطلب للمراجعة'),
-          ),
-        ],
+      appBar: AppBar(
+        title: const Text('طلب تغيير التخصص'),
+        leading: IconButton(
+          tooltip: 'رجوع',
+          onPressed: () => Navigator.of(context).maybePop(),
+          icon: const Icon(Icons.arrow_back_rounded),
+        ),
       ),
+      body: Directionality(
+        textDirection: TextDirection.rtl,
+        child: SafeArea(
+          child: ListView(
+            padding: const EdgeInsets.fromLTRB(20, 8, 20, 32),
+            children: [
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: AppColors.brandGradient,
+                    begin: Alignment.topRight,
+                    end: Alignment.bottomLeft,
+                  ),
+                  borderRadius: BorderRadius.circular(24),
+                ),
+                child: const Row(
+                  children: [
+                    CircleAvatar(
+                      radius: 27,
+                      backgroundColor: Color(0x33FFFFFF),
+                      child: Icon(Icons.gavel_rounded, color: Colors.white, size: 28),
+                    ),
+                    SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'حدّث تخصصك المهني',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 19,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                          SizedBox(height: 5),
+                          Text(
+                            'اختر المجالات التي ترغب بممارستها وأرسل المستندات للمراجعة.',
+                            style: TextStyle(color: Color(0xE6FFFFFF), height: 1.45),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 24),
+              _SectionTitle(
+                number: '01',
+                title: 'التخصصات المطلوبة',
+                subtitle: 'يمكنك اختيار أكثر من تخصص.',
+              ),
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: AppColors.surface,
+                  borderRadius: BorderRadius.circular(18),
+                  border: Border.all(color: AppColors.outline),
+                ),
+                child: Wrap(
+                  spacing: 9,
+                  runSpacing: 9,
+                  children: _options.map((specialization) {
+                    final selected = _selected.contains(specialization);
+                    return FilterChip(
+                      label: Text(specialization),
+                      selected: selected,
+                      showCheckmark: true,
+                      checkmarkColor: AppColors.textOnPrimary,
+                      selectedColor: AppColors.primaryLight,
+                      backgroundColor: AppColors.background,
+                      side: BorderSide(
+                        color: selected ? AppColors.primary : AppColors.outline,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      onSelected: (value) {
+                        setState(() {
+                          if (value) {
+                            _selected.add(specialization);
+                          } else {
+                            _selected.remove(specialization);
+                          }
+                        });
+                      },
+                    );
+                  }).toList(growable: false),
+                ),
+              ),
+              const SizedBox(height: 24),
+              _SectionTitle(
+                number: '02',
+                title: 'وثيقة التحقق',
+                subtitle: 'مطلوبة للتأكد من صلاحية التخصص الجديد.',
+              ),
+              const SizedBox(height: 12),
+              InkWell(
+                borderRadius: BorderRadius.circular(18),
+                onTap: _saving ? null : _pick,
+                child: Container(
+                  padding: const EdgeInsets.all(18),
+                  decoration: BoxDecoration(
+                    color: AppColors.surface,
+                    borderRadius: BorderRadius.circular(18),
+                    border: Border.all(
+                      color: _idCard == null ? AppColors.outline : AppColors.primary,
+                      width: _idCard == null ? 1 : 1.5,
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 48,
+                        height: 48,
+                        decoration: BoxDecoration(
+                          color: AppColors.surfaceVariant,
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        child: Icon(
+                          _idCard == null ? Icons.badge_outlined : Icons.check_circle_rounded,
+                          color: _idCard == null ? AppColors.primaryDark : AppColors.success,
+                        ),
+                      ),
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              _idCard?.name ?? 'إرفاق هوية النقابة',
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(fontWeight: FontWeight.w800),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              _idCard == null ? 'JPG أو PNG أو PDF' : 'تم اختيار المستند بنجاح',
+                              style: const TextStyle(color: AppColors.textSecondary, fontSize: 12),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const Icon(Icons.chevron_left_rounded, color: AppColors.textSecondary),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 14),
+              Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: AppColors.surfaceVariant,
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: const Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Icon(Icons.verified_user_outlined, size: 20, color: AppColors.primaryDark),
+                    SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        'تستخدم الوثيقة لغرض التحقق والمراجعة فقط، ولا تظهر لطالبي الاستشارة.',
+                        style: TextStyle(color: AppColors.textSecondary, fontSize: 12, height: 1.5),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 28),
+              ElevatedButton.icon(
+                onPressed: _saving ? null : _submit,
+                icon: _saving
+                    ? const SizedBox(
+                        width: 19,
+                        height: 19,
+                        child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.textOnPrimary),
+                      )
+                    : const Icon(Icons.send_rounded),
+                label: Text(_saving ? 'جارٍ إرسال الطلب...' : 'إرسال الطلب للمراجعة'),
+              ),
+              const SizedBox(height: 10),
+              const Center(
+                child: Text(
+                  'ستراجع الإدارة طلبك قبل اعتماد التخصص الجديد.',
+                  style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _SectionTitle extends StatelessWidget {
+  const _SectionTitle({required this.number, required this.title, required this.subtitle});
+
+  final String number;
+  final String title;
+  final String subtitle;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Container(
+          width: 34,
+          height: 34,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: AppColors.primaryLight,
+            borderRadius: BorderRadius.circular(11),
+          ),
+          child: Text(
+            number,
+            style: const TextStyle(
+              color: AppColors.primaryDark,
+              fontWeight: FontWeight.w900,
+              fontSize: 12,
+            ),
+          ),
+        ),
+        const SizedBox(width: 11),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(title, style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w800)),
+              const SizedBox(height: 2),
+              Text(subtitle, style: const TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }
