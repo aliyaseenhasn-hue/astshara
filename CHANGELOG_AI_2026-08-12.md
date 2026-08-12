@@ -4,9 +4,10 @@
 قبل أي تعديل جديد تتم مراجعة الملفات والـcommits السابقة لتجنب تكرار التنفيذ. كل تعديل جديد يسجل في ملف Markdown مع الـcommit والسبب والنتيجة.
 
 ## آخر تعديل
-- `e2d507d344da2e18fca446448dbfecb483e9016e` — تطبيق أسلوب Stitch Premium على `lawyer_profile_edit_page.dart`: Hero مهني، حقول RTL-friendly ذات حواف ومسافات موحدة، قسم إنجازات، تسعير واضح، بطاقات باقات محسنة، وأزرار حفظ واضحة، مع الحفاظ على Supabase/Riverpod ومنطق التحديث الحالي.
+- `35aa9f1cbe027563b6ad0eaf1665558493403461` — تطبيق أسلوب Stitch Premium على `lawyer_setup_page.dart`: Hero مهني، حقول موحدة، صورة شخصية، رفع هوية نقابة واضح، حالات تحقق أفضل، وأزرار حفظ Premium، مع الحفاظ على منطق الإعداد والرفع الحالي.
 
 ## التعديلات السابقة
+- `e2d507d344da2e18fca446448dbfecb483e9016e` — تطبيق أسلوب Stitch Premium على `lawyer_profile_edit_page.dart`.
 - `77e16ba3f1a8c9a8db528dc7422dc83664fc9563` — Design Tokens في `app_sizes.dart`.
 - `409d4772da133b5a6d20f2cab81c6cf36da515d7d` — مطابقة `lawyers_list_page.dart` مع Stitch.
 - `aaf5a7456ec88f7d0f4c6fbdeb43448ece1fbb1d` — مطابقة `complete_profile_page.dart` مع Stitch.
@@ -32,6 +33,7 @@
 - `096899d95e86eb2fc35acdf89165f8f98d1db366` — إعادة تصميم `lawyer_availability_page.dart` بأسلوب Stitch Premium.
 - `9e6daf61fc8830bd7db97ff605f0d99fdc912ea2` — استكمال `lawyer_dashboard_page.dart`.
 - `e2d507d344da2e18fca446448dbfecb483e9016e` — استكمال `lawyer_profile_edit_page.dart`.
+- `35aa9f1cbe027563b6ad0eaf1665558493403461` — استكمال `lawyer_setup_page.dart`.
 
 ## التحقق
 يجب اعتبار النجاح فقط بعد ظهور `flutter analyze` وCI على commit الحالي بحالة نجاح.
