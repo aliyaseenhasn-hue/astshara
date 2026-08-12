@@ -25,6 +25,7 @@
 
 ## مطابقة Stitch — إدارة المحامي
 - `096899d95e86eb2fc35acdf89165f8f98d1db366` — إعادة تصميم `lawyer_availability_page.dart` بأسلوب Stitch Premium: Hero علوي، عداد المواعيد، بطاقات حالات متاحة/محجوزة/سابقة، RTL عربي، RefreshIndicator، FAB واضح، وتحسين الحالات الفارغة مع الحفاظ على Supabase CRUD ومنطق المواعيد.
+- `9e6daf61fc8830bd7db97ff605f0d99fdc912ea2` — استكمال `lawyer_dashboard_page.dart`: Hero Premium داكن، ملخص أداء موحد، بطاقات طلبات الاستشارة، حالات عربية واضحة، وصول سريع للمواعيد والحجوزات والدفع والتخصص والملف، مع الحفاظ على providers والتنقل ومنطق الحجوزات.
 
 ## التحقق
 يجب اعتبار النجاح فقط بعد ظهور `flutter analyze` وCI على commit الحالي بحالة نجاح.
