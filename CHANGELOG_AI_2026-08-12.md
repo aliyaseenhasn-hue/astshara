@@ -18,6 +18,8 @@
 - `4c0c1532ac3530570011f176ae8e136766724688` — إصلاح syntax في `complete_profile_page.dart`.
 - `5bb71a20e62aff8f7fc7b0639cb8a39916494f32` — إصلاح syntax في `chat_page.dart`.
 - `4b53685ae1b00922fca48f74e637b465a834fd24` — إصلاح syntax في `payment_result_page.dart` بعد تقرير `flutter analyze`، مع إعادة تنظيم بناء الواجهة دون تغيير منطق الدفع أو polling.
+- `fbdda7ccfed4bd98c7742d048d2d8ad2019f8802` — إصلاح syntax في `lawyer_dashboard_page.dart` الذي ظهر في CI بعد تطبيق تصميم لوحة المحامي.
+- `f1e9a6b16890d8ae08cb554e0f511e843688b502` — معالجة توافق RTL في `lawyer_availability_page.dart` باستخدام اتجاه السياق بدل الاعتماد المباشر على getter في المواضع التي كان CI يبلغ عنها.
 
 ## مطابقة Stitch — الدفع
 - `7dff7e5d0d4f1db8e3271dd294ca4578d2964cbc` — مطابقة `payment_result_page.dart` مع Stitch Premium.
