@@ -4,6 +4,7 @@
 قبل أي تعديل جديد تتم مراجعة الملفات والـcommits السابقة لتجنب تكرار التنفيذ. كل تعديل جديد يسجل في ملف Markdown مع الـcommit والسبب والنتيجة.
 
 ## آخر تعديل
+- `dbdc2454fff678e69437696f1c4f1c90311cfccc` — إصلاح مراجع RTL في `booking_details_page.dart` باستبدال الاعتماد المباشر على `TextDirection.rtl` بـ`Directionality.of(context)` لتجنب تعارض الاسم الذي ظهر في CI، مع الحفاظ على RTL وسلوك الصفحة.
 - `91f6911e30ac4ea5afca2241a4fe31a74a5beba9` — إصلاح طبقة `BookingsController` بعد تطبيق Stitch على `booking_details_page.dart`: إضافة `reviewBooking` و`updateBookingStatus` و`reportNoShow` كواجهات رسمية فوق الـrepository حتى تعمل أزرار تفاصيل الاستشارة دون تغيير منطق المستودع.
 - `1babe059cf5fcb2fdd50c3882c27c95c490f8bf0` — تطبيق Stitch Premium على `booking_details_page.dart`: Hero للحجز، أقسام موحدة للمعلومات، RTL، إبراز الحالة والدفع والتواصل، وتحسين أزرار الإجراء.
 - `5fc2166b5259d19d373a45a073fb23bab11471db` — تطبيق Stitch Premium على `specialization_change_page.dart`.
@@ -39,7 +40,7 @@
 - `4c0c1532ac3530570011f176ae8e136766724688` — إصلاح syntax في `complete_profile_page.dart`.
 - `5bb71a20e62aff8f7fc7b0639cb8a39916494f32` — إصلاح syntax في `chat_page.dart`.
 - `4b53685ae1b00922fca48f74e637b465a834fd24` — إصلاح syntax في `payment_result_page.dart`.
-- `fbdda7ccfed4bd98c7742d048e0f511e843688b502` — إصلاح syntax في `lawyer_dashboard_page.dart`.
+- `fbdda7ccfed4bd98c7742d048d2d8ad2019f8802` — إصلاح syntax في `lawyer_dashboard_page.dart`.
 - `f1e9a6b16890d8ae08cb554e0f511e843688b502` — معالجة توافق RTL في `lawyer_availability_page.dart`.
 
 ## التحقق
