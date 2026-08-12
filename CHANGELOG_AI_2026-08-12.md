@@ -4,7 +4,8 @@
 قبل أي تعديل جديد تتم مراجعة الملفات والـcommits السابقة لتجنب تكرار التنفيذ. كل تعديل جديد يسجل في ملف Markdown مع الـcommit والسبب والنتيجة.
 
 ## آخر تعديل
-- `0b304b039ff0a58e3c1a2271561bd2cdf1efab23` — تطبيق أسلوب Stitch Premium على `lawyer_onboarding_page.dart`: مقدمة مهنية، خطوات مرئية، رفع صورة شخصية ووثيقة تحقق بواجهة موحدة، رسالة خصوصية، وحفظ ثابت، مع الحفاظ على منطق الإرسال والرفع الحالي.
+- `95e795405c3485257616a1a20db694b9a6423af3` — إصلاح أخطاء syntax في `lawyer_onboarding_page.dart` الناتجة عن دفعة Stitch السابقة، مع الحفاظ على التصميم والمنطق الحاليين.
+- `0b304b039ff0a58e3c1a2271561bd2cdf1efab23` — تطبيق أسلوب Stitch Premium على `payment_upload_page.dart`.
 
 ## التعديلات السابقة
 - `0bc5983d88b6ee1b703ffc27fdba592d562fe771` — تطبيق أسلوب Stitch Premium على `lawyer_pending_page.dart`.
@@ -30,10 +31,7 @@
 - `35aa9f1cbe027563b6ad0eaf1665558493403461` — استكمال `lawyer_setup_page.dart`.
 - `0bc5983d88b6ee1b703ffc27fdba592d562fe771` — استكمال `lawyer_pending_page.dart`.
 
-## مطابقة Stitch — المصادقة والانضمام
-- `0b304b039ff0a58e3c1a2271561bd2cdf1efab23` — استكمال `lawyer_onboarding_page.dart`.
-
-## إصلاحات CI
+## إصلاحات CI السابقة
 - `263b6006c9232d2c317f9e95f50a98ffc74d570e` — إصلاح syntax في `bookings_list_page.dart`.
 - `4c0c1532ac3530570011f176ae8e136766724688` — إصلاح syntax في `complete_profile_page.dart`.
 - `5bb71a20e62aff8f7fc7b0639cb8a39916494f32` — إصلاح syntax في `chat_page.dart`.
@@ -42,4 +40,4 @@
 - `f1e9a6b16890d8ae08cb554e0f511e843688b502` — معالجة توافق RTL في `lawyer_availability_page.dart`.
 
 ## التحقق
-يجب اعتبار النجاح فقط بعد ظهور `flutter analyze` وCI على commit الحالي بحالة نجاح.
+لا تعتبر الدفعة ناجحة حتى يمر `flutter analyze` وCI على commit الحالي. الخطأ الأخير كان في `lawyer_onboarding_page.dart` وتمت إعادة صياغة الملف بشكل منظم لتصحيح الأقواس والوسائط غير الصحيحة.
