@@ -72,18 +72,32 @@ class BookingsController extends _$BookingsController {
     return state.hasError ? null : updated;
   }
 
-  Future<void> reviewBooking(String bookingId, bool approved) async {
+  Future<void> reviewBooking(String bookingId, bool approved) async { state = const AsyncLoading(); state = await AsyncValue.guard(() async { await ref.read(bookingsRepositoryProvider).reviewBooking(bookingId, approved); ref.invalidate(userBookingsProvider); ref.invalidate(lawyerBookingsProvider); ref.invalidate(bookingDetailsProvider(bookingId)); }); }
+  Future<void> updateBookingStatus(String bookingId, String status) async { state = const AsyncLoading(); state = await AsyncValue.guard(() async { await ref.read(bookingsRepositoryProvider).updateBookingStatus(bookingId, status); ref.invalidate(userBookingsProvider); ref.invalidate(lawyerBookingsProvider); ref.invalidate(bookingDetailsProvider(bookingId)); }); }
+  Future<void> reportNoShow(String bookingId, {required bool isLawyer}) async { state = const AsyncLoading(); state = await AsyncValue.guard(() async { await ref.read(bookingsRepositoryProvider).reportNoShow(bookingId, isLawyer); ref.invalidate(userBookingsProvider); ref.invalidate(lawyerBookingsProvider); ref.invalidate(bookingDetailsProvider(bookingId)); }); }
+
+  Future<void> archiveBooking(String bookingId, {required bool isLawyer}) async {
     state = const AsyncLoading();
-    state = await AsyncValue.guard(() async { await ref.read(bookingsRepositoryProvider).reviewBooking(bookingId, approved); ref.invalidate(userBookingsProvider); ref.invalidate(lawyerBookingsProvider); ref.invalidate(bookingDetailsProvider(bookingId)); });
+    state = await AsyncValue.guard(() async {
+      final repo = ref.read(bookingsRepositoryProvider);
+      if (isLawyer) {
+        await repo.archiveBookingForLawyer(bookingId);
+      } else {
+        await repo.archiveBookingForUser(bookingId);
+      }
+      ref.invalidate(userBookingsProvider);
+      ref.invalidate(lawyerBookingsProvider);
+      ref.invalidate(bookingDetailsProvider(bookingId));
+    });
   }
 
-  Future<void> updateBookingStatus(String bookingId, String status) async {
+  Future<void> restoreBooking(String bookingId) async {
     state = const AsyncLoading();
-    state = await AsyncValue.guard(() async { await ref.read(bookingsRepositoryProvider).updateBookingStatus(bookingId, status); ref.invalidate(userBookingsProvider); ref.invalidate(lawyerBookingsProvider); ref.invalidate(bookingDetailsProvider(bookingId)); });
-  }
-
-  Future<void> reportNoShow(String bookingId, {required bool isLawyer}) async {
-    state = const AsyncLoading();
-    state = await AsyncValue.guard(() async { await ref.read(bookingsRepositoryProvider).reportNoShow(bookingId, isLawyer); ref.invalidate(userBookingsProvider); ref.invalidate(lawyerBookingsProvider); ref.invalidate(bookingDetailsProvider(bookingId)); });
+    state = await AsyncValue.guard(() async {
+      await ref.read(bookingsRepositoryProvider).restoreBookingFromArchive(bookingId);
+      ref.invalidate(userBookingsProvider);
+      ref.invalidate(lawyerBookingsProvider);
+      ref.invalidate(bookingDetailsProvider(bookingId));
+    });
   }
 }
