@@ -1,12 +1,21 @@
+import 'dart:async';
+import 'dart:convert';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:audioplayers/audioplayers.dart';
+import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:astshara/core/config/supabase_config.dart';
+import 'package:astshara/core/navigation/app_navigation.dart';
+import '../../features/bookings/data/models/booking_model.dart';
 
 class NotificationService {
   static final FlutterLocalNotificationsPlugin _notificationsPlugin =
       FlutterLocalNotificationsPlugin();
   static final AudioPlayer _audioPlayer = AudioPlayer();
+  static String? _pendingPayload;
+  static Timer? _pendingNavigationTimer;
 
   static Future<void> initialize() async {
     const android = AndroidInitializationSettings('@mipmap/ic_launcher');
@@ -20,6 +29,13 @@ class NotificationService {
       const InitializationSettings(android: android, iOS: ios),
       onDidReceiveNotificationResponse: _onNotificationResponse,
     );
+
+    final launchDetails =
+        await _notificationsPlugin.getNotificationAppLaunchDetails();
+    if (launchDetails?.didNotificationLaunchApp == true) {
+      _pendingPayload = launchDetails?.notificationResponse?.payload;
+      _schedulePendingNavigation();
+    }
 
     final androidPlugin = _notificationsPlugin
         .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
@@ -40,7 +56,101 @@ class NotificationService {
   }
 
   static void _onNotificationResponse(NotificationResponse response) {
-    debugPrint('Notification tapped: ${response.payload}');
+    final payload = response.payload;
+    if (payload == null || payload.isEmpty) return;
+    _pendingPayload = payload;
+    _schedulePendingNavigation();
+  }
+
+  static void _schedulePendingNavigation() {
+    _pendingNavigationTimer?.cancel();
+    _pendingNavigationTimer = Timer.periodic(const Duration(milliseconds: 350),
+        (timer) async {
+      if (_pendingPayload == null) {
+        timer.cancel();
+        return;
+      }
+      final context = AppNavigation.navigatorKey.currentContext;
+      if (context == null) return;
+      final payload = _pendingPayload;
+      _pendingPayload = null;
+      timer.cancel();
+      try {
+        await _navigateFromNotification(context, payload!);
+      } catch (e, stack) {
+        debugPrint('Notification navigation error: $e');
+        debugPrintStack(stackTrace: stack);
+      }
+    });
+  }
+
+  static Future<void> _navigateFromNotification(
+      BuildContext context, String payload) async {
+    final notificationId = _decodeNotificationId(payload);
+    if (notificationId == null) {
+      if (context.mounted) GoRouter.of(context).push('/notifications');
+      return;
+    }
+
+    final notification = await SupabaseConfig.client
+        .from('notifications')
+        .select('type,reference_id,reference_type')
+        .eq('id', notificationId)
+        .maybeSingle();
+
+    if (notification == null) {
+      if (context.mounted) GoRouter.of(context).push('/notifications');
+      return;
+    }
+
+    final type = notification['type']?.toString();
+    final referenceId = notification['reference_id']?.toString();
+    final referenceType = notification['reference_type']?.toString();
+
+    if (referenceId != null &&
+        (referenceType == 'booking' || type == 'booking' || type == 'payment')) {
+      final row = await SupabaseConfig.client
+          .from('bookings')
+          .select()
+          .eq('id', referenceId)
+          .maybeSingle();
+      if (row != null && context.mounted) {
+        final booking =
+            BookingModel.fromJson(Map<String, dynamic>.from(row)).toEntity();
+        GoRouter.of(context).push('/booking-details', extra: booking);
+        return;
+      }
+    }
+
+    if (referenceId != null &&
+        (referenceType == 'conversation' || referenceType == 'chat' || type == 'chat')) {
+      if (context.mounted) {
+        GoRouter.of(context).push('/chat/$referenceId');
+        return;
+      }
+    }
+
+    if (referenceId != null &&
+        (referenceType == 'lawyer' || referenceType == 'lawyer_profile')) {
+      if (context.mounted) {
+        GoRouter.of(context).push('/lawyer-details/$referenceId');
+        return;
+      }
+    }
+
+    if (context.mounted) GoRouter.of(context).push('/notifications');
+  }
+
+  static String? _decodeNotificationId(String payload) {
+    try {
+      final decoded = jsonDecode(payload);
+      if (decoded is Map && decoded['notification_id'] != null) {
+        return decoded['notification_id'].toString();
+      }
+    } catch (_) {
+      // Existing notifications use the notification UUID directly as payload.
+    }
+    return payload.trim().isEmpty ? null : payload.trim();
   }
 
   static Future<void> showNotification({
@@ -96,6 +206,7 @@ class NotificationService {
   }
 
   static Future<void> dispose() async {
+    _pendingNavigationTimer?.cancel();
     await _audioPlayer.dispose();
   }
 
