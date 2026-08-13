@@ -20,14 +20,8 @@ class BookingsRepositoryImpl implements BookingsRepository {
   }) async {
     final user = _supabase.auth.currentUser;
     if (user == null) throw Exception('يجب تسجيل الدخول أولاً');
-
-    final profile = await _supabase
-        .from('profiles')
-        .select('whatsapp_number')
-        .eq('auth_id', user.id)
-        .maybeSingle();
+    final profile = await _supabase.from('profiles').select('whatsapp_number').eq('auth_id', user.id).maybeSingle();
     final whatsapp = profile?['whatsapp_number']?.toString().trim();
-
     final response = await _supabase.rpc('create_booking', params: {
       'p_lawyer_id': lawyerId,
       'p_scheduled_at': scheduledAt.toIso8601String(),
@@ -48,68 +42,52 @@ class BookingsRepositoryImpl implements BookingsRepository {
     if (user == null) throw Exception('المستخدم غير مسجل دخول');
     final safeFileName = fileName.replaceAll(RegExp(r'[^A-Za-z0-9._-]'), '_');
     final filePath = '${user.id}/docs/${DateTime.now().microsecondsSinceEpoch}_$safeFileName';
-    await _supabase.storage.from('lawyer_documents').uploadBinary(
-      filePath,
-      fileBytes,
-      fileOptions: const FileOptions(upsert: false),
-    );
+    await _supabase.storage.from('lawyer_documents').uploadBinary(filePath, fileBytes, fileOptions: const FileOptions(upsert: false));
     return _supabase.storage.from('lawyer_documents').createSignedUrl(filePath, 31536000);
   }
 
   @override
   Future<List<Booking>> getUserBookings(String userId) async {
-    final response = await _supabase
-        .from('bookings')
-        .select()
-        .eq('user_id', userId)
-        .order('created_at', ascending: false);
-    return (response as List)
-        .map((json) => BookingModel.fromJson(Map<String, dynamic>.from(json as Map)).toEntity())
-        .toList();
+    final response = await _supabase.from('bookings').select().eq('user_id', userId).order('created_at', ascending: false);
+    return (response as List).map((json) => BookingModel.fromJson(Map<String, dynamic>.from(json as Map)).toEntity()).toList();
   }
 
   @override
   Future<List<Booking>> getLawyerBookings(String lawyerId) async {
-    final response = await _supabase
-        .from('bookings')
-        .select()
-        .eq('lawyer_id', lawyerId)
-        .isFilter('deleted_by_lawyer_at', null)
-        .order('created_at', ascending: false);
-    return (response as List)
-        .map((json) => BookingModel.fromJson(Map<String, dynamic>.from(json as Map)).toEntity())
-        .toList();
+    final response = await _supabase.from('bookings').select().eq('lawyer_id', lawyerId).isFilter('deleted_by_lawyer_at', null).order('created_at', ascending: false);
+    return (response as List).map((json) => BookingModel.fromJson(Map<String, dynamic>.from(json as Map)).toEntity()).toList();
   }
 
   @override
   Future<void> updateBookingStatus(String bookingId, String status) async {
-    await _supabase.rpc('change_booking_status', params: {
-      'p_booking_id': bookingId,
-      'p_new_status': status,
-    });
+    await _supabase.rpc('change_booking_status', params: {'p_booking_id': bookingId, 'p_new_status': status});
   }
 
   @override
   Future<Booking> reviewBooking(String bookingId, bool approved) async {
-    final response = await _supabase.rpc('review_booking', params: {
-      'p_booking_id': bookingId,
-      'p_approved': approved,
-    });
+    final response = await _supabase.rpc('review_booking', params: {'p_booking_id': bookingId, 'p_approved': approved});
     return BookingModel.fromJson(Map<String, dynamic>.from(response as Map)).toEntity();
   }
 
   @override
   Future<Booking> recordManualPayment(String bookingId, double amount) async {
-    final response = await _supabase.rpc('record_manual_payment', params: {
-      'p_booking_id': bookingId,
-      'p_received_amount': amount,
-    });
+    final response = await _supabase.rpc('record_manual_payment', params: {'p_booking_id': bookingId, 'p_received_amount': amount});
     return BookingModel.fromJson(Map<String, dynamic>.from(response as Map)).toEntity();
+  }
+
+  @override
+  Future<void> archiveBookingForUser(String bookingId) async {
+    await _supabase.rpc('archive_booking_for_user', params: {'p_booking_id': bookingId});
   }
 
   @override
   Future<void> archiveBookingForLawyer(String bookingId) async {
     await _supabase.rpc('archive_booking_for_lawyer', params: {'p_booking_id': bookingId});
+  }
+
+  @override
+  Future<void> restoreBookingFromArchive(String bookingId) async {
+    await _supabase.rpc('restore_booking_from_archive', params: {'p_booking_id': bookingId});
   }
 
   @override
