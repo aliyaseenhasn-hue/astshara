@@ -1,5 +1,4 @@
 import 'package:astshara/features/authentication/presentation/providers/auth_provider.dart';
-import 'package:astshara/features/lawyers/presentation/providers/lawyers_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -45,8 +44,12 @@ class BookingsListPage extends ConsumerWidget {
             itemBuilder: (context, index) {
               final booking = bookings[index];
               return Consumer(builder: (context, ref, child) {
-                final nameAsync = isLawyer ? ref.watch(bookingClientNameProvider(booking.id)) : ref.watch(userNameProvider(booking.lawyerId));
-                final displayName = nameAsync.maybeWhen(data: (name) => name != null && name.trim().isNotEmpty ? name.trim() : (isLawyer ? 'اسم العميل غير متوفر' : 'المحامي غير متوفر'), loading: () => 'جاري تحميل الاسم...', orElse: () => isLawyer ? 'اسم العميل غير متوفر' : 'المحامي غير متوفر');
+                final clientNameAsync = isLawyer ? ref.watch(bookingClientNameProvider(booking.id)) : null;
+                final lawyerInfoAsync = isLawyer ? null : ref.watch(bookingLawyerInfoProvider(booking.lawyerId));
+                final displayName = isLawyer
+                    ? clientNameAsync!.maybeWhen(data: (name) => name != null && name.trim().isNotEmpty ? name.trim() : 'اسم العميل غير متوفر', loading: () => 'جاري تحميل الاسم...', orElse: () => 'اسم العميل غير متوفر')
+                    : lawyerInfoAsync!.maybeWhen(data: (info) => (info?['full_name']?.toString().trim().isNotEmpty ?? false) ? info!['full_name'].toString().trim() : 'اسم المحامي غير متوفر', loading: () => 'جاري تحميل اسم المحامي...', orElse: () => 'اسم المحامي غير متوفر');
+                final lawyerAvatar = !isLawyer ? lawyerInfoAsync!.valueOrNull?['avatar_url']?.toString() : null;
                 return Card(
                   margin: const EdgeInsets.only(bottom: 12),
                   elevation: dark ? 0 : 1,
@@ -59,7 +62,15 @@ class BookingsListPage extends ConsumerWidget {
                     child: Padding(
                       padding: const EdgeInsets.all(16),
                       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                        Row(children: [Container(width: 46, height: 46, decoration: BoxDecoration(color: dark ? scheme.surfaceContainerHighest : AppColors.goldLight.withValues(alpha: .38), borderRadius: BorderRadius.circular(14)), child: Icon(isLawyer ? Icons.person_outline_rounded : Icons.balance_rounded, color: dark ? AppColors.gold : AppColors.goldDark)), const SizedBox(width: 12), Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(displayName, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontWeight: FontWeight.bold, color: scheme.onSurface)), const SizedBox(height: 4), Text('رقم الحجز: #${booking.id.length >= 8 ? booking.id.substring(0, 8) : booking.id}', style: TextStyle(fontSize: 10, color: scheme.onSurfaceVariant))])), _StatusBadge(status: booking.status, lawyerApproved: booking.lawyerApproved)]),
+                        Row(children: [
+                          if (!isLawyer && lawyerAvatar != null && lawyerAvatar.isNotEmpty)
+                            CircleAvatar(radius: 23, backgroundImage: NetworkImage(lawyerAvatar), backgroundColor: dark ? scheme.surfaceContainerHighest : AppColors.goldLight)
+                          else
+                            Container(width: 46, height: 46, decoration: BoxDecoration(color: dark ? scheme.surfaceContainerHighest : AppColors.goldLight.withValues(alpha: .38), borderRadius: BorderRadius.circular(14)), child: Icon(isLawyer ? Icons.person_outline_rounded : Icons.balance_rounded, color: dark ? AppColors.gold : AppColors.goldDark)),
+                          const SizedBox(width: 12),
+                          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(displayName, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontWeight: FontWeight.bold, color: scheme.onSurface)), const SizedBox(height: 4), if (!isLawyer) Text('المحامي', style: TextStyle(fontSize: 11, color: scheme.onSurfaceVariant)), const SizedBox(height: 2), Text('رقم الحجز: #${booking.id.length >= 8 ? booking.id.substring(0, 8) : booking.id}', style: TextStyle(fontSize: 10, color: scheme.onSurfaceVariant))])),
+                          _StatusBadge(status: booking.status, lawyerApproved: booking.lawyerApproved)
+                        ]),
                         const SizedBox(height: 14),
                         Container(padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11), decoration: BoxDecoration(color: dark ? scheme.surface : AppColors.surfaceVariant, borderRadius: BorderRadius.circular(13), border: Border.all(color: dark ? scheme.outlineVariant : AppColors.divider)), child: Row(children: [Icon(Icons.schedule_rounded, size: 18, color: dark ? AppColors.gold : AppColors.primaryDark), const SizedBox(width: 8), Expanded(child: Text(DateFormat('yyyy/MM/dd - HH:mm').format(booking.scheduledAt), style: TextStyle(fontSize: 12, color: scheme.onSurface))), Text('${booking.price} د.ع', style: TextStyle(fontWeight: FontWeight.bold, color: dark ? AppColors.gold : AppColors.secondary))])),
                         const SizedBox(height: 12),
