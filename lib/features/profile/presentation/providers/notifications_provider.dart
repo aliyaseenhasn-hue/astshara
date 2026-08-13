@@ -8,6 +8,8 @@ class AppNotification {
   final String type;
   final bool isRead;
   final DateTime createdAt;
+  final String? referenceId;
+  final String? referenceType;
 
   const AppNotification({
     required this.id,
@@ -16,6 +18,8 @@ class AppNotification {
     required this.type,
     required this.isRead,
     required this.createdAt,
+    this.referenceId,
+    this.referenceType,
   });
 
   factory AppNotification.fromMap(Map<String, dynamic> map) {
@@ -26,6 +30,8 @@ class AppNotification {
       type: (map['type'] ?? 'system').toString(),
       isRead: map['is_read'] == true,
       createdAt: DateTime.tryParse((map['created_at'] ?? '').toString()) ?? DateTime.now(),
+      referenceId: map['reference_id']?.toString(),
+      referenceType: map['reference_type']?.toString(),
     );
   }
 }
@@ -47,7 +53,7 @@ final notificationsProvider = FutureProvider.autoDispose<List<AppNotification>>(
 
   final rows = await SupabaseConfig.client
       .from('notifications')
-      .select('id,title,body,type,is_read,created_at')
+      .select('id,title,body,type,is_read,created_at,reference_id,reference_type')
       .eq('user_id', profileId)
       .order('created_at', ascending: false)
       .limit(100);
