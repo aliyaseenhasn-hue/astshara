@@ -4,9 +4,9 @@ import 'package:go_router/go_router.dart';
 import '../../../../app/theme.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/legal_specializations.dart';
-import '../../../lawyers/data/models/lawyer_model.dart';
+import '../../../lawyers/domain/entities/lawyer_profile.dart';
 import '../../../lawyers/presentation/providers/lawyers_provider.dart';
-import '../../../profile/presentation/providers/profile_provider.dart';
+import '../../../lawyers/presentation/pages/legal_categories_page.dart';
 
 class HomePage extends ConsumerWidget {
   const HomePage({super.key});
@@ -14,7 +14,7 @@ class HomePage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final scheme = Theme.of(context).colorScheme;
-    final lawyers = ref.watch(featuredLawyersProvider);
+    final lawyers = ref.watch(lawyersListProvider);
     final categories = LegalSpecializations.all.take(8).toList();
 
     return Scaffold(
@@ -51,16 +51,16 @@ class HomePage extends ConsumerWidget {
               itemCount: categories.length,
               gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 2, crossAxisSpacing: 12, mainAxisSpacing: 12, childAspectRatio: 1.05),
               itemBuilder: (_, i) {
-                final c = categories[i];
+                final category = categories[i];
                 return InkWell(
-                  onTap: () { ref.read(selectedCategoryProvider.notifier).setCategory(c['value'] as String); context.go('/lawyers'); },
+                  onTap: () { ref.read(selectedCategoryProvider.notifier).setCategory(category); context.go('/lawyers'); },
                   borderRadius: BorderRadius.circular(16),
                   child: Container(
                     padding: const EdgeInsets.all(14),
                     decoration: BoxDecoration(color: scheme.surface, borderRadius: BorderRadius.circular(16), border: Border.all(color: scheme.outlineVariant)),
                     child: Column(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                      Container(width: 58, height: 58, decoration: BoxDecoration(color: scheme.surfaceContainerHighest, shape: BoxShape.circle), child: Icon(c['icon'] as IconData, color: AppColors.goldDark)),
-                      Text(c['title'] as String, textAlign: TextAlign.center, style: TextStyle(color: scheme.onSurface, fontWeight: FontWeight.w700)),
+                      Container(width: 58, height: 58, decoration: BoxDecoration(color: scheme.surfaceContainerHighest, shape: BoxShape.circle), child: const Icon(Icons.balance_rounded, color: AppColors.goldDark)),
+                      Text(category, textAlign: TextAlign.center, maxLines: 2, overflow: TextOverflow.ellipsis, style: TextStyle(color: scheme.onSurface, fontWeight: FontWeight.w700)),
                     ]),
                   ),
                 );
@@ -78,8 +78,8 @@ class HomePage extends ConsumerWidget {
               loading: () => const SizedBox(height: 180, child: Center(child: CircularProgressIndicator())),
               error: (_, __) => const Center(child: Text('تعذر تحميل المحامين حالياً')),
               data: (items) {
-                if (items.isEmpty) return const Center(child: Text('لا يوجد محامون موثقون حالياً'));
                 final visible = items.take(3).toList();
+                if (visible.isEmpty) return const Center(child: Text('لا يوجد محامون موثقون حالياً'));
                 return SizedBox(
                   height: 240,
                   child: ListView.separated(
@@ -88,24 +88,24 @@ class HomePage extends ConsumerWidget {
                     itemCount: visible.length,
                     separatorBuilder: (_, __) => const SizedBox(width: 12),
                     itemBuilder: (_, i) {
-                      final Lawyer l = visible[i];
-                      final a = l.avatarUrl;
+                      final LawyerProfile lawyer = visible[i];
+                      final avatar = lawyer.avatarUrl;
                       return SizedBox(
                         width: 285,
                         child: InkWell(
-                          onTap: () => context.push('/lawyer-details/${l.profileId}'),
+                          onTap: () => context.push('/lawyer-details/${lawyer.profileId}'),
                           borderRadius: BorderRadius.circular(18),
                           child: Container(
                             padding: const EdgeInsets.all(16),
                             decoration: BoxDecoration(color: scheme.surface, borderRadius: BorderRadius.circular(18), border: Border.all(color: scheme.outlineVariant)),
                             child: Column(children: [
-                              CircleAvatar(radius: 34, backgroundColor: scheme.surfaceContainerHighest, backgroundImage: a != null && a.isNotEmpty ? NetworkImage(a) : null, child: a == null || a.isEmpty ? const Icon(Icons.person_rounded, size: 32) : null),
+                              CircleAvatar(radius: 34, backgroundColor: scheme.surfaceContainerHighest, backgroundImage: avatar != null && avatar.isNotEmpty ? NetworkImage(avatar) : null, child: avatar == null || avatar.isEmpty ? const Icon(Icons.person_rounded, size: 32) : null),
                               const SizedBox(height: 10),
-                              Text(l.fullName ?? 'محامي', maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: scheme.onSurface, fontSize: 17, fontWeight: FontWeight.w800)),
+                              Text(lawyer.fullName ?? 'محامي', maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: scheme.onSurface, fontSize: 17, fontWeight: FontWeight.w800)),
                               const SizedBox(height: 6),
-                              Text(l.specializations.isEmpty ? 'قانون عام' : l.specializations.take(2).join('، '), textAlign: TextAlign.center, maxLines: 2, style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 12)),
+                              Text(lawyer.specializations.isEmpty ? 'قانون عام' : lawyer.specializations.take(2).join('، '), textAlign: TextAlign.center, maxLines: 2, style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 12)),
                               const Spacer(),
-                              Text('${l.rating.toStringAsFixed(1)} ★  •  ${l.reviewCount} استشارة', style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 11)),
+                              Text('${lawyer.rating.toStringAsFixed(1)} ★  •  ${lawyer.reviewCount} استشارة', style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 11)),
                             ]),
                           ),
                         ),
