@@ -76,7 +76,7 @@ class BookingsListPage extends ConsumerWidget {
                 builder: (context, ref, child) {
                   final nameAsync = isLawyer ? ref.watch(bookingClientNameProvider(booking.id)) : ref.watch(userNameProvider(booking.lawyerId));
                   final displayName = nameAsync.maybeWhen(
-                    data: (name) => name != null && name.trim().isNotEmpty ? (isLawyer ? name : 'المحامي $name') : (isLawyer ? 'اسم العميل غير متوفر' : 'المحامي غير متوفر'),
+                    data: (name) => name != null && name.trim().isNotEmpty ? name.trim() : (isLawyer ? 'اسم العميل غير متوفر' : 'المحامي غير متوفر'),
                     loading: () => 'جاري تحميل الاسم...',
                     orElse: () => isLawyer ? 'اسم العميل غير متوفر' : 'المحامي غير متوفر',
                   );
