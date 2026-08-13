@@ -94,7 +94,7 @@ GoRouter router(RouterRef ref) {
       if (clientOnlyBooking && !isClient) return user.role == 'lawyer' ? '/lawyer-home' : '/';
       if (user.role == 'lawyer') {
         if (!user.isVerified) return location == '/lawyer-setup' || pending ? null : '/lawyer-pending';
-        if (location == '/lawyers' || location.startsWith('/lawyer-details/')) return '/lawyer-home';
+        if (location == '/lawyers' || location.startsWith('/lawyer-details/') || location.startsWith('/lawyers/')) return '/lawyer-home';
         if (!manualPaymentGate && !manualPayment && await _lawyerHasPendingManualPayment()) return '/manual-payment-required';
       }
       if (login || signup || otp || (complete && user.isOnboardingComplete)) return user.role == 'lawyer' && user.isVerified ? '/lawyer-home' : '/';
@@ -113,6 +113,7 @@ GoRouter router(RouterRef ref) {
         routes: [
           GoRoute(path: '/', builder: (c, s) => const HomePage()),
           GoRoute(path: '/lawyers', builder: (c, s) => const LawyersListPage()),
+          GoRoute(path: '/lawyers/:id', builder: (c, s) => LawyerDetailsPage(profileId: s.pathParameters['id']!)),
           GoRoute(path: '/legal-categories', builder: (c, s) => const LegalCategoriesPage()),
           GoRoute(path: '/lawyer-home', builder: (c, s) => const LawyerDashboardPage()),
           GoRoute(path: '/lawyer-profile-edit', builder: (c, s) => const LawyerProfileEditPage()),
