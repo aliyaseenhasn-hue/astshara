@@ -31,6 +31,9 @@ class NotificationsPage extends ConsumerWidget {
       appBar: AppBar(
         title: const Text('التنبيهات'),
         centerTitle: true,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        surfaceTintColor: Colors.transparent,
         leading: const BackButton(),
         actions: [
           if (unread > 0)
@@ -123,37 +126,40 @@ class NotificationsPage extends ConsumerWidget {
                     borderRadius: BorderRadius.circular(18),
                     border: Border.all(color: scheme.primary.withValues(alpha: .14)),
                   ),
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 42,
-                        height: 42,
-                        decoration: BoxDecoration(
-                          color: scheme.surface.withValues(alpha: .72),
-                          shape: BoxShape.circle,
+                  child: Directionality(
+                    textDirection: TextDirection.rtl,
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 42,
+                          height: 42,
+                          decoration: BoxDecoration(
+                            color: scheme.surface.withValues(alpha: .72),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(Icons.notifications_active_rounded, color: scheme.primary),
                         ),
-                        child: Icon(Icons.notifications_active_rounded, color: scheme.primary),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.end,
-                          children: [
-                            Text(
-                              'مستجداتك',
-                              textAlign: TextAlign.right,
-                              style: TextStyle(color: scheme.onPrimaryContainer, fontSize: 14, fontWeight: FontWeight.w800),
-                            ),
-                            const SizedBox(height: 2),
-                            Text(
-                              unread > 0 ? 'لديك $unread تنبيه غير مقروء.' : 'لا توجد تنبيهات غير مقروءة.',
-                              textAlign: TextAlign.right,
-                              style: TextStyle(color: scheme.onPrimaryContainer.withValues(alpha: .76), fontSize: 11),
-                            ),
-                          ],
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: [
+                              Text(
+                                'مستجداتك',
+                                textAlign: TextAlign.right,
+                                style: TextStyle(color: scheme.onPrimaryContainer, fontSize: 14, fontWeight: FontWeight.w800),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                unread > 0 ? 'لديك $unread تنبيه غير مقروء.' : 'لا توجد تنبيهات غير مقروءة.',
+                                textAlign: TextAlign.right,
+                                style: TextStyle(color: scheme.onPrimaryContainer.withValues(alpha: .76), fontSize: 11),
+                              ),
+                            ],
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
                 if (today.isNotEmpty) ...[
@@ -220,63 +226,66 @@ class _NotificationCard extends StatelessWidget {
             : null,
         child: Padding(
           padding: const EdgeInsets.all(14),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                width: 46,
-                height: 46,
-                decoration: BoxDecoration(
-                  color: unread ? scheme.primaryContainer : scheme.surfaceContainerHighest,
-                  borderRadius: BorderRadius.circular(14),
+          child: Directionality(
+            textDirection: TextDirection.rtl,
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  width: 46,
+                  height: 46,
+                  decoration: BoxDecoration(
+                    color: unread ? scheme.primaryContainer : scheme.surfaceContainerHighest,
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: Icon(iconForType(item.type), color: unread ? scheme.onPrimaryContainer : scheme.primary),
                 ),
-                child: Icon(iconForType(item.type), color: unread ? scheme.onPrimaryContainer : scheme.primary),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            item.title,
-                            textAlign: TextAlign.right,
-                            style: TextStyle(
-                              fontWeight: unread ? FontWeight.w800 : FontWeight.w600,
-                              fontSize: 14,
-                              color: scheme.onSurface,
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              item.title,
+                              textAlign: TextAlign.right,
+                              style: TextStyle(
+                                fontWeight: unread ? FontWeight.w800 : FontWeight.w600,
+                                fontSize: 14,
+                                color: scheme.onSurface,
+                              ),
                             ),
                           ),
-                        ),
-                        if (unread) ...[
-                          const SizedBox(width: 8),
-                          Container(
-                            width: 8,
-                            height: 8,
-                            decoration: BoxDecoration(color: scheme.primary, shape: BoxShape.circle),
-                          ),
+                          if (unread) ...[
+                            const SizedBox(width: 8),
+                            Container(
+                              width: 8,
+                              height: 8,
+                              decoration: BoxDecoration(color: scheme.primary, shape: BoxShape.circle),
+                            ),
+                          ],
                         ],
+                      ),
+                      if (item.body.isNotEmpty) ...[
+                        const SizedBox(height: 5),
+                        Text(
+                          item.body,
+                          textAlign: TextAlign.right,
+                          style: TextStyle(fontSize: 12, height: 1.5, color: scheme.onSurfaceVariant),
+                        ),
                       ],
-                    ),
-                    if (item.body.isNotEmpty) ...[
-                      const SizedBox(height: 5),
-                      Text(
-                        item.body,
-                        textAlign: TextAlign.right,
-                        style: TextStyle(fontSize: 12, height: 1.5, color: scheme.onSurfaceVariant),
+                      const SizedBox(height: 7),
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: Text(date, style: TextStyle(fontSize: 10, color: scheme.outline)),
                       ),
                     ],
-                    const SizedBox(height: 7),
-                    Align(
-                      alignment: Alignment.centerRight,
-                      child: Text(date, style: TextStyle(fontSize: 10, color: scheme.outline)),
-                    ),
-                  ],
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
