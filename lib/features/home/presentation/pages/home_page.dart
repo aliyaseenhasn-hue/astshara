@@ -1,12 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import '../../../../app/theme.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/legal_specializations.dart';
 import '../../../lawyers/domain/entities/lawyer_profile.dart';
 import '../../../lawyers/presentation/providers/lawyers_provider.dart';
-import '../../../lawyers/presentation/pages/legal_categories_page.dart';
 
 class HomePage extends ConsumerWidget {
   const HomePage({super.key});
@@ -20,101 +18,93 @@ class HomePage extends ConsumerWidget {
     return Scaffold(
       backgroundColor: scheme.surface,
       body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.fromLTRB(16, 18, 16, 100),
-          children: [
-            Row(children: [
-              Expanded(child: Text('استشارة', style: TextStyle(color: scheme.onSurface, fontSize: 28, fontWeight: FontWeight.w900))),
-              IconButton(onPressed: () => context.push('/notifications'), icon: const Icon(Icons.notifications_none_rounded)),
-            ]),
-            const SizedBox(height: 24),
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(color: scheme.primaryContainer.withValues(alpha: .42), borderRadius: BorderRadius.circular(24)),
-              child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-                Text('استشر محامياً متخصصاً', textAlign: TextAlign.right, style: TextStyle(color: scheme.onSurface, fontSize: 22, fontWeight: FontWeight.w900)),
-                const SizedBox(height: 8),
-                Text('اختر المجال القانوني المناسب واحجز موعد استشارة بسهولة.', textAlign: TextAlign.right, style: TextStyle(color: scheme.onSurfaceVariant)),
-                const SizedBox(height: 16),
-                FilledButton.icon(onPressed: () => context.push('/legal-categories'), icon: const Icon(Icons.arrow_back_rounded), label: const Text('اختر التخصص')),
-              ]),
+        child: CustomScrollView(
+          slivers: [
+            SliverPadding(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+              sliver: SliverToBoxAdapter(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    const Text('استشر محامياً بثقة', style: TextStyle(fontSize: 24, fontWeight: FontWeight.w800)),
+                    const SizedBox(height: 8),
+                    Text('اختر تخصصك وابحث عن المحامي المناسب', style: TextStyle(color: scheme.onSurfaceVariant)),
+                  ],
+                ),
+              ),
             ),
-            const SizedBox(height: 30),
-            Row(children: [
-              Expanded(child: Text('التخصصات القانونية', textAlign: TextAlign.right, style: TextStyle(color: scheme.onSurface, fontSize: 20, fontWeight: FontWeight.w800))),
-              TextButton(onPressed: () => context.push('/legal-categories'), child: const Text('عرض الكل')),
-            ]),
-            const SizedBox(height: 12),
-            GridView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: categories.length,
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 2, crossAxisSpacing: 12, mainAxisSpacing: 12, childAspectRatio: 1.05),
-              itemBuilder: (_, i) {
-                final category = categories[i];
-                return InkWell(
-                  onTap: () { ref.read(selectedCategoryProvider.notifier).setCategory(category); context.go('/lawyers'); },
-                  borderRadius: BorderRadius.circular(16),
-                  child: Container(
-                    padding: const EdgeInsets.all(14),
-                    decoration: BoxDecoration(color: scheme.surface, borderRadius: BorderRadius.circular(16), border: Border.all(color: scheme.outlineVariant)),
-                    child: Column(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                      Container(width: 58, height: 58, decoration: BoxDecoration(color: scheme.surfaceContainerHighest, shape: BoxShape.circle), child: const Icon(Icons.balance_rounded, color: AppColors.goldDark)),
-                      Text(category, textAlign: TextAlign.center, maxLines: 2, overflow: TextOverflow.ellipsis, style: TextStyle(color: scheme.onSurface, fontWeight: FontWeight.w700)),
-                    ]),
-                  ),
-                );
-              },
+            SliverPadding(
+              padding: const EdgeInsets.fromLTRB(16, 20, 16, 8),
+              sliver: SliverToBoxAdapter(
+                child: Text('التخصصات', textAlign: TextAlign.right, style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: scheme.onSurface)),
+              ),
             ),
-            const SizedBox(height: 12),
-            OutlinedButton.icon(onPressed: () => context.push('/legal-categories'), icon: const Icon(Icons.grid_view_rounded), label: Text('عرض جميع الفئات (${LegalSpecializations.all.length})')),
-            const SizedBox(height: 30),
-            Row(children: [
-              Expanded(child: Text('محامون مقترحون', textAlign: TextAlign.right, style: TextStyle(color: scheme.onSurface, fontSize: 20, fontWeight: FontWeight.w800))),
-              TextButton(onPressed: () => context.go('/lawyers'), child: const Text('عرض الكل')),
-            ]),
-            const SizedBox(height: 12),
-            lawyers.when(
-              loading: () => const SizedBox(height: 180, child: Center(child: CircularProgressIndicator())),
-              error: (_, __) => const Center(child: Text('تعذر تحميل المحامين حالياً')),
-              data: (items) {
-                final visible = items.take(3).toList();
-                if (visible.isEmpty) return const Center(child: Text('لا يوجد محامون موثقون حالياً'));
-                return SizedBox(
-                  height: 240,
-                  child: ListView.separated(
-                    scrollDirection: Axis.horizontal,
-                    reverse: true,
-                    itemCount: visible.length,
-                    separatorBuilder: (_, __) => const SizedBox(width: 12),
-                    itemBuilder: (_, i) {
-                      final LawyerProfile lawyer = visible[i];
-                      final avatar = lawyer.avatarUrl;
-                      return SizedBox(
-                        width: 285,
-                        child: InkWell(
-                          onTap: () => context.push('/lawyer-details/${lawyer.profileId}'),
+            SliverPadding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              sliver: SliverGrid(
+                delegate: SliverChildBuilderDelegate(
+                  (context, index) {
+                    final category = categories[index];
+                    return InkWell(
+                      borderRadius: BorderRadius.circular(18),
+                      onTap: () {
+                        ref.read(selectedCategoryProvider.notifier).state = category;
+                        context.push('/lawyers');
+                      },
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: scheme.surfaceContainerHighest,
                           borderRadius: BorderRadius.circular(18),
-                          child: Container(
-                            padding: const EdgeInsets.all(16),
-                            decoration: BoxDecoration(color: scheme.surface, borderRadius: BorderRadius.circular(18), border: Border.all(color: scheme.outlineVariant)),
-                            child: Column(children: [
-                              CircleAvatar(radius: 34, backgroundColor: scheme.surfaceContainerHighest, backgroundImage: avatar != null && avatar.isNotEmpty ? NetworkImage(avatar) : null, child: avatar == null || avatar.isEmpty ? const Icon(Icons.person_rounded, size: 32) : null),
-                              const SizedBox(height: 10),
-                              Text(lawyer.fullName ?? 'محامي', maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: scheme.onSurface, fontSize: 17, fontWeight: FontWeight.w800)),
-                              const SizedBox(height: 6),
-                              Text(lawyer.specializations.isEmpty ? 'قانون عام' : lawyer.specializations.take(2).join('، '), textAlign: TextAlign.center, maxLines: 2, style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 12)),
-                              const Spacer(),
-                              Text('${lawyer.rating.toStringAsFixed(1)} ★  •  ${lawyer.reviewCount} استشارة', style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 11)),
-                            ]),
-                          ),
+                          border: Border.all(color: scheme.outlineVariant),
                         ),
-                      );
-                    },
-                  ),
-                );
-              },
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.gavel_rounded, color: AppColors.gold, size: 28),
+                            const SizedBox(height: 8),
+                            Text(category, textAlign: TextAlign.center, style: TextStyle(fontWeight: FontWeight.w700, color: scheme.onSurface)),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                  childCount: categories.length,
+                ),
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 2, crossAxisSpacing: 12, mainAxisSpacing: 12, childAspectRatio: 1.65),
+              ),
             ),
+            SliverPadding(
+              padding: const EdgeInsets.fromLTRB(16, 24, 16, 12),
+              sliver: SliverToBoxAdapter(
+                child: Text('محامون مقترحون', textAlign: TextAlign.right, style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: scheme.onSurface)),
+              ),
+            ),
+            lawyers.when(
+              loading: () => const SliverToBoxAdapter(child: Center(child: Padding(padding: EdgeInsets.all(24), child: CircularProgressIndicator()))),
+              error: (_, __) => const SliverToBoxAdapter(child: SizedBox.shrink()),
+              data: (items) => SliverList(
+                delegate: SliverChildBuilderDelegate(
+                  (context, index) {
+                    final lawyer = items[index] as LawyerProfile;
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                      child: Card(
+                        color: scheme.surfaceContainerHighest,
+                        child: ListTile(
+                          leading: CircleAvatar(backgroundImage: lawyer.avatarUrl != null ? NetworkImage(lawyer.avatarUrl!) : null, child: lawyer.avatarUrl == null ? const Icon(Icons.person) : null),
+                          title: Text(lawyer.fullName, textAlign: TextAlign.right),
+                          subtitle: Text(lawyer.specialization, textAlign: TextAlign.right),
+                          trailing: const Icon(Icons.chevron_left_rounded),
+                          onTap: () => context.push('/lawyers/${lawyer.id}'),
+                        ),
+                      ),
+                    );
+                  },
+                  childCount: items.length > 6 ? 6 : items.length,
+                ),
+              ),
+            ),
+            const SliverToBoxAdapter(child: SizedBox(height: 100)),
           ],
         ),
       ),
