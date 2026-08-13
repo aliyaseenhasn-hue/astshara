@@ -21,23 +21,25 @@ Future<List<Booking>> userBookings(UserBookingsRef ref) async { final user = ref
 @riverpod
 Future<List<Booking>> lawyerBookings(LawyerBookingsRef ref) async { final user = ref.watch(authStateChangesProvider).value; if (user == null) return []; final id = await _getProfileId(user.id); if (id == null) return []; return ref.read(bookingsRepositoryProvider).getLawyerBookings(id); }
 
-final bookingLawyerInfoProvider = FutureProvider.family<Map<String, dynamic>?, String>((ref, lawyerId) async {
-  Map<String, dynamic>? profile;
-  Map<String, dynamic>? lawyerProfile;
-  profile = await SupabaseConfig.client.from('profiles').select('id,full_name,avatar_url').eq('id', lawyerId).maybeSingle();
-  lawyerProfile = await SupabaseConfig.client.from('lawyer_profiles').select('profile_id,full_name').eq('profile_id', lawyerId).maybeSingle();
-  if (profile == null && lawyerProfile == null) {
-    final legacyLawyer = await SupabaseConfig.client.from('lawyer_profiles').select('id,profile_id,full_name').eq('id', lawyerId).maybeSingle();
-    if (legacyLawyer != null) {
-      final profileId = legacyLawyer['profile_id']?.toString();
-      if (profileId != null && profileId.isNotEmpty) profile = await SupabaseConfig.client.from('profiles').select('id,full_name,avatar_url').eq('id', profileId).maybeSingle();
-      lawyerProfile = legacyLawyer;
-    }
+final bookingLawyerInfoProvider = FutureProvider.family<Map<String, dynamic>?, String>((ref, bookingId) async {
+  final response = await SupabaseConfig.client.rpc('get_booking_lawyer_info', params: {'p_booking_id': bookingId});
+  if (response is List && response.isNotEmpty) {
+    final row = Map<String, dynamic>.from(response.first as Map);
+    final name = row['full_name']?.toString().trim();
+    return {
+      'full_name': name == null || name.isEmpty ? 'اسم المحامي غير متوفر' : name,
+      'avatar_url': row['avatar_url']?.toString(),
+    };
   }
-  final profileName = profile?['full_name']?.toString().trim() ?? '';
-  final professionalName = lawyerProfile?['full_name']?.toString().trim() ?? '';
-  final name = professionalName.isNotEmpty ? professionalName : profileName;
-  return {'id': profile?['id']?.toString() ?? lawyerId, 'full_name': name.isNotEmpty ? name : 'اسم المحامي غير متوفر', 'avatar_url': profile?['avatar_url']};
+  if (response is Map) {
+    final row = Map<String, dynamic>.from(response);
+    final name = row['full_name']?.toString().trim();
+    return {
+      'full_name': name == null || name.isEmpty ? 'اسم المحامي غير متوفر' : name,
+      'avatar_url': row['avatar_url']?.toString(),
+    };
+  }
+  return {'full_name': 'اسم المحامي غير متوفر', 'avatar_url': null};
 });
 
 final availableSlotsProvider = FutureProvider.family<List<AvailableBookingSlot>, String>((ref, lawyerId) async {
@@ -50,9 +52,9 @@ final bookingDetailsProvider = FutureProvider.family<Map<String, dynamic>?, Stri
   if (booking == null) return null;
   final result = Map<String, dynamic>.from(booking);
   final client = await SupabaseConfig.client.from('profiles').select('full_name').eq('id', booking['user_id']).maybeSingle();
-  final lawyerInfo = await ref.read(bookingLawyerInfoProvider(booking['lawyer_id'].toString()).future);
+  final lawyerInfo = await ref.read(bookingLawyerInfoProvider(bookingId).future);
   result['client_name'] = (client?['full_name'] ?? 'غير متوفر').toString();
-  result['lawyer_name'] = lawyerInfo?['full_name']?.toString() ?? 'غير متوفر';
+  result['lawyer_name'] = lawyerInfo?['full_name']?.toString() ?? 'اسم المحامي غير متوفر';
   result['lawyer_avatar_url'] = lawyerInfo?['avatar_url'];
   return result;
 });
