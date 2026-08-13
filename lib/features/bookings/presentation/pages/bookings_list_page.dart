@@ -4,7 +4,6 @@ import 'package:go_router/go_router.dart';
 import '../../../authentication/presentation/providers/auth_provider.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../providers/bookings_provider.dart';
-import '../../../lawyers/presentation/providers/lawyers_provider.dart';
 
 class BookingsListPage extends ConsumerWidget {
   const BookingsListPage({super.key});
@@ -39,11 +38,21 @@ class BookingsListPage extends ConsumerWidget {
               final booking = bookings[index];
               return Consumer(builder: (context, ref, child) {
                 final clientNameAsync = isLawyer ? ref.watch(bookingClientNameProvider(booking.id)) : null;
-                final lawyerNameAsync = !isLawyer ? ref.watch(userNameProvider(booking.lawyerId)) : null;
                 final lawyerInfoAsync = !isLawyer ? ref.watch(bookingLawyerInfoProvider(booking.id)) : null;
                 final displayName = isLawyer
-                    ? clientNameAsync!.maybeWhen(data: (name) => name != null && name.trim().isNotEmpty ? name.trim() : 'اسم العميل غير متوفر', loading: () => 'جاري تحميل الاسم...', orElse: () => 'اسم العميل غير متوفر')
-                    : lawyerNameAsync!.maybeWhen(data: (name) => name != null && name.trim().isNotEmpty ? name.trim() : 'اسم المحامي غير متوفر', loading: () => 'جاري تحميل اسم المحامي...', orElse: () => 'اسم المحامي غير متوفر');
+                    ? clientNameAsync!.maybeWhen(
+                        data: (name) => name != null && name.trim().isNotEmpty ? name.trim() : 'اسم العميل غير متوفر',
+                        loading: () => 'جاري تحميل الاسم...',
+                        orElse: () => 'اسم العميل غير متوفر',
+                      )
+                    : lawyerInfoAsync!.maybeWhen(
+                        data: (info) {
+                          final name = info?['full_name']?.toString().trim();
+                          return name != null && name.isNotEmpty ? name : 'اسم المحامي غير متوفر';
+                        },
+                        loading: () => 'جاري تحميل اسم المحامي...',
+                        orElse: () => 'اسم المحامي غير متوفر',
+                      );
                 final lawyerAvatar = !isLawyer ? lawyerInfoAsync?.valueOrNull?['avatar_url']?.toString() : null;
                 return Card(
                   margin: const EdgeInsets.only(bottom: 12), elevation: dark ? 0 : 1, shadowColor: Colors.black.withValues(alpha: .05),
