@@ -20,6 +20,33 @@ Future<List<Booking>> userBookings(UserBookingsRef ref) async { final user = ref
 @riverpod
 Future<List<Booking>> lawyerBookings(LawyerBookingsRef ref) async { final user = ref.watch(authStateChangesProvider).value; if (user == null) return []; final id = await _getProfileId(user.id); if (id == null) return []; return ref.read(bookingsRepositoryProvider).getLawyerBookings(id); }
 
+/// Canonical lawyer identity used by the client booking UI.
+/// We resolve the name from profiles first and fall back to lawyer_profiles,
+/// because older accounts may have the professional name stored there only.
+final bookingLawyerInfoProvider = FutureProvider.family<Map<String, dynamic>?, String>((ref, lawyerId) async {
+  final profile = await SupabaseConfig.client
+      .from('profiles')
+      .select('id,full_name,avatar_url')
+      .eq('id', lawyerId)
+      .maybeSingle();
+
+  final lawyerProfile = await SupabaseConfig.client
+      .from('lawyer_profiles')
+      .select('profile_id,full_name')
+      .eq('profile_id', lawyerId)
+      .maybeSingle();
+
+  final profileName = profile?['full_name']?.toString().trim() ?? '';
+  final professionalName = lawyerProfile?['full_name']?.toString().trim() ?? '';
+  final name = profileName.isNotEmpty ? profileName : professionalName;
+
+  return {
+    'id': lawyerId,
+    'full_name': name.isNotEmpty ? name : 'اسم المحامي غير متوفر',
+    'avatar_url': profile?['avatar_url'],
+  };
+});
+
 final availableSlotsProvider = FutureProvider.family<List<AvailableBookingSlot>, String>((ref, lawyerId) async {
   final rows = await SupabaseConfig.client.from('lawyer_availability_slots').select('id, starts_at').eq('lawyer_id', lawyerId).eq('is_available', true).gt('starts_at', DateTime.now().toUtc().toIso8601String()).order('starts_at');
   return (rows as List).map((row) { final m = Map<String, dynamic>.from(row as Map); return AvailableBookingSlot(id: m['id'] as String, startsAt: DateTime.parse(m['starts_at'] as String).toLocal()); }).toList();
@@ -69,39 +96,10 @@ class BookingsController extends _$BookingsController {
     return state.hasError ? null : createdBooking;
   }
 
-  Future<Booking?> recordManualPayment({required String bookingId, required double amount}) async {
-    state = const AsyncLoading();
-    Booking? updated;
-    state = await AsyncValue.guard(() async { updated = await ref.read(bookingsRepositoryProvider).recordManualPayment(bookingId, amount); ref.invalidate(lawyerBookingsProvider); ref.invalidate(userBookingsProvider); ref.invalidate(bookingDetailsProvider(bookingId)); });
-    return state.hasError ? null : updated;
-  }
-
+  Future<Booking?> recordManualPayment({required String bookingId, required double amount}) async { state = const AsyncLoading(); Booking? updated; state = await AsyncValue.guard(() async { updated = await ref.read(bookingsRepositoryProvider).recordManualPayment(bookingId, amount); ref.invalidate(lawyerBookingsProvider); ref.invalidate(userBookingsProvider); ref.invalidate(bookingDetailsProvider(bookingId)); }); return state.hasError ? null : updated; }
   Future<void> reviewBooking(String bookingId, bool approved) async { state = const AsyncLoading(); state = await AsyncValue.guard(() async { await ref.read(bookingsRepositoryProvider).reviewBooking(bookingId, approved); ref.invalidate(userBookingsProvider); ref.invalidate(lawyerBookingsProvider); ref.invalidate(bookingDetailsProvider(bookingId)); }); }
   Future<void> updateBookingStatus(String bookingId, String status) async { state = const AsyncLoading(); state = await AsyncValue.guard(() async { await ref.read(bookingsRepositoryProvider).updateBookingStatus(bookingId, status); ref.invalidate(userBookingsProvider); ref.invalidate(lawyerBookingsProvider); ref.invalidate(bookingDetailsProvider(bookingId)); }); }
   Future<void> reportNoShow(String bookingId, {required bool isLawyer}) async { state = const AsyncLoading(); state = await AsyncValue.guard(() async { await ref.read(bookingsRepositoryProvider).reportNoShow(bookingId, isLawyer); ref.invalidate(userBookingsProvider); ref.invalidate(lawyerBookingsProvider); ref.invalidate(bookingDetailsProvider(bookingId)); }); }
-
-  Future<void> archiveBooking(String bookingId, {required bool isLawyer}) async {
-    state = const AsyncLoading();
-    state = await AsyncValue.guard(() async {
-      final repo = ref.read(bookingsRepositoryProvider);
-      if (isLawyer) {
-        await repo.archiveBookingForLawyer(bookingId);
-      } else {
-        await repo.archiveBookingForUser(bookingId);
-      }
-      ref.invalidate(userBookingsProvider);
-      ref.invalidate(lawyerBookingsProvider);
-      ref.invalidate(bookingDetailsProvider(bookingId));
-    });
-  }
-
-  Future<void> restoreBooking(String bookingId) async {
-    state = const AsyncLoading();
-    state = await AsyncValue.guard(() async {
-      await ref.read(bookingsRepositoryProvider).restoreBookingFromArchive(bookingId);
-      ref.invalidate(userBookingsProvider);
-      ref.invalidate(lawyerBookingsProvider);
-      ref.invalidate(bookingDetailsProvider(bookingId));
-    });
-  }
+  Future<void> archiveBooking(String bookingId, {required bool isLawyer}) async { state = const AsyncLoading(); state = await AsyncValue.guard(() async { final repo = ref.read(bookingsRepositoryProvider); if (isLawyer) { await repo.archiveBookingForLawyer(bookingId); } else { await repo.archiveBookingForUser(bookingId); } ref.invalidate(userBookingsProvider); ref.invalidate(lawyerBookingsProvider); ref.invalidate(bookingDetailsProvider(bookingId)); }); }
+  Future<void> restoreBooking(String bookingId) async { state = const AsyncLoading(); state = await AsyncValue.guard(() async { await ref.read(bookingsRepositoryProvider).restoreBookingFromArchive(bookingId); ref.invalidate(userBookingsProvider); ref.invalidate(lawyerBookingsProvider); ref.invalidate(bookingDetailsProvider(bookingId)); }); }
 }
