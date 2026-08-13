@@ -4,7 +4,6 @@ import 'package:go_router/go_router.dart';
 import '../../features/profile/presentation/providers/notifications_provider.dart';
 
 /// الشريط السفلي الرئيسي للتطبيق وفق بنية Stitch.
-///
 /// طالب الاستشارة: الرئيسية → المحامون → استشاراتي → التنبيهات → الإعدادات.
 /// المحامي: الرئيسية → استشاراتي → التنبيهات → الإعدادات.
 class MainBottomNav extends ConsumerWidget {
@@ -39,21 +38,15 @@ class MainBottomNav extends ConsumerWidget {
 
     return Container(
       color: Colors.transparent,
-      padding: const EdgeInsets.fromLTRB(12, 5, 12, 7),
+      padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
       child: SafeArea(
         top: false,
         child: Container(
           decoration: BoxDecoration(
             color: scheme.surfaceContainerLowest,
-            borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: scheme.outlineVariant.withValues(alpha: isDark ? .55 : .8)),
-            boxShadow: [
-              BoxShadow(
-                color: scheme.shadow.withValues(alpha: isDark ? .28 : .07),
-                blurRadius: 24,
-                offset: const Offset(0, 8),
-              ),
-            ],
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: scheme.outlineVariant.withValues(alpha: isDark ? .6 : .9)),
+            boxShadow: [BoxShadow(color: scheme.shadow.withValues(alpha: isDark ? .25 : .06), blurRadius: 22, offset: const Offset(0, 7))],
           ),
           padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 5),
           child: Row(
@@ -61,14 +54,7 @@ class MainBottomNav extends ConsumerWidget {
             children: List.generate(items.length, (index) {
               final item = items[index];
               final notificationIndex = isLawyer ? 2 : 3;
-              return Expanded(
-                child: _NavDestination(
-                  item: item,
-                  selected: index == selectedIndex,
-                  unreadCount: index == notificationIndex ? unread : 0,
-                  onTap: () => _navigate(context, index),
-                ),
-              );
+              return Expanded(child: _NavDestination(item: item, selected: index == selectedIndex, unreadCount: index == notificationIndex ? unread : 0, onTap: () => _navigate(context, index)));
             }),
           ),
         ),
@@ -94,9 +80,7 @@ class MainBottomNav extends ConsumerWidget {
             _ => '/',
           };
 
-    if (GoRouterState.of(context).uri.path != target) {
-      context.go(target);
-    }
+    if (GoRouterState.of(context).uri.path != target) context.go(target);
   }
 }
 
@@ -113,12 +97,7 @@ class _NavDestination extends StatelessWidget {
   final int unreadCount;
   final VoidCallback onTap;
 
-  const _NavDestination({
-    required this.item,
-    required this.selected,
-    required this.unreadCount,
-    required this.onTap,
-  });
+  const _NavDestination({required this.item, required this.selected, required this.unreadCount, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -130,7 +109,7 @@ class _NavDestination extends StatelessWidget {
       label: item.label,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(19),
+        borderRadius: BorderRadius.circular(16),
         child: Padding(
           padding: const EdgeInsets.symmetric(vertical: 2),
           child: Column(
@@ -140,31 +119,17 @@ class _NavDestination extends StatelessWidget {
                 duration: const Duration(milliseconds: 220),
                 curve: Curves.easeOutCubic,
                 constraints: const BoxConstraints(minHeight: 34),
-                padding: EdgeInsets.symmetric(
-                  horizontal: selected ? 15 : 12,
-                  vertical: 5,
-                ),
+                padding: EdgeInsets.symmetric(horizontal: selected ? 16 : 12, vertical: 5),
                 decoration: BoxDecoration(
-                  color: selected
-                      ? scheme.primary.withValues(alpha: .12)
-                      : Colors.transparent,
-                  borderRadius: BorderRadius.circular(15),
+                  color: selected ? scheme.primary.withValues(alpha: Theme.of(context).brightness == Brightness.dark ? .18 : .16) : Colors.transparent,
+                  borderRadius: BorderRadius.circular(14),
                 ),
-                child: _BadgeIcon(
-                  icon: selected ? item.activeIcon : item.icon,
-                  color: iconColor,
-                  count: unreadCount,
-                ),
+                child: _BadgeIcon(icon: selected ? item.activeIcon : item.icon, color: iconColor, count: unreadCount),
               ),
               const SizedBox(height: 2),
               AnimatedDefaultTextStyle(
                 duration: const Duration(milliseconds: 180),
-                style: TextStyle(
-                  color: iconColor,
-                  fontSize: selected ? 10.5 : 10,
-                  fontWeight: selected ? FontWeight.w800 : FontWeight.w500,
-                  height: 1.1,
-                ),
+                style: TextStyle(color: iconColor, fontSize: selected ? 10.5 : 10, fontWeight: selected ? FontWeight.w800 : FontWeight.w500, height: 1.1),
                 child: Text(item.label),
               ),
             ],
@@ -179,7 +144,6 @@ class _BadgeIcon extends StatelessWidget {
   final IconData icon;
   final Color color;
   final int count;
-
   const _BadgeIcon({required this.icon, required this.color, required this.count});
 
   @override
@@ -197,23 +161,8 @@ class _BadgeIcon extends StatelessWidget {
               constraints: const BoxConstraints(minWidth: 17, minHeight: 17),
               padding: const EdgeInsets.symmetric(horizontal: 4),
               alignment: Alignment.center,
-              decoration: BoxDecoration(
-                color: scheme.error,
-                borderRadius: BorderRadius.circular(99),
-                border: Border.all(
-                  color: scheme.surfaceContainerLowest,
-                  width: 1.5,
-                ),
-              ),
-              child: Text(
-                count > 99 ? '99+' : '$count',
-                style: TextStyle(
-                  color: scheme.onError,
-                  fontSize: 8,
-                  fontWeight: FontWeight.w900,
-                  height: 1,
-                ),
-              ),
+              decoration: BoxDecoration(color: scheme.error, borderRadius: BorderRadius.circular(99), border: Border.all(color: scheme.surfaceContainerLowest, width: 1.5)),
+              child: Text(count > 99 ? '99+' : '$count', style: TextStyle(color: scheme.onError, fontSize: 8, fontWeight: FontWeight.w900, height: 1)),
             ),
           ),
       ],
