@@ -15,6 +15,7 @@ import '../features/admin/presentation/pages/specialization_change_requests_page
 import '../features/home/presentation/pages/home_page.dart';
 import '../features/lawyers/presentation/pages/lawyers_list_page.dart';
 import '../features/lawyers/presentation/pages/lawyer_details_page.dart';
+import '../features/lawyers/presentation/pages/legal_categories_page.dart';
 import '../features/lawyers/presentation/pages/lawyer_setup_page.dart';
 import '../features/lawyers/presentation/pages/lawyer_pending_page.dart';
 import '../features/lawyers/presentation/pages/lawyer_dashboard_page.dart';
@@ -127,6 +128,7 @@ GoRouter router(RouterRef ref) {
         routes: [
           GoRoute(path: '/', builder: (c, s) => const HomePage()),
           GoRoute(path: '/lawyers', builder: (c, s) => const LawyersListPage()),
+          GoRoute(path: '/legal-categories', builder: (c, s) => const LegalCategoriesPage()),
           GoRoute(path: '/lawyer-home', builder: (c, s) => const LawyerDashboardPage()),
           GoRoute(path: '/lawyer-profile-edit', builder: (c, s) => const LawyerProfileEditPage()),
           GoRoute(path: '/lawyer-availability', builder: (c, s) => const LawyerAvailabilityPage()),
