@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import '../../../../core/constants/app_colors.dart';
 import '../../../authentication/presentation/providers/auth_provider.dart';
+import '../../../../core/constants/app_colors.dart';
 import '../providers/bookings_provider.dart';
 
 class BookingsListPage extends ConsumerWidget {
@@ -11,8 +11,13 @@ class BookingsListPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final auth = ref.watch(authStateChangesProvider);
-    final isLawyer = auth.maybeWhen(data: (user) => user?.role == 'lawyer', orElse: () => false);
-    final bookingsAsync = isLawyer ? ref.watch(lawyerBookingsProvider) : ref.watch(userBookingsProvider);
+    final isLawyer = auth.maybeWhen(
+      data: (user) => user?.role == 'lawyer',
+      orElse: () => false,
+    );
+    final bookingsAsync = isLawyer
+        ? ref.watch(lawyerBookingsProvider)
+        : ref.watch(userBookingsProvider);
     final scheme = Theme.of(context).colorScheme;
     final dark = Theme.of(context).brightness == Brightness.dark;
 
@@ -25,7 +30,12 @@ class BookingsListPage extends ConsumerWidget {
       ),
       body: bookingsAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (_, __) => Center(child: Text('تعذر تحميل الاستشارات', style: TextStyle(color: scheme.onSurface))),
+        error: (_, __) => Center(
+          child: Text(
+            'تعذر تحميل الاستشارات',
+            style: TextStyle(color: scheme.onSurface),
+          ),
+        ),
         data: (bookings) {
           if (bookings.isEmpty) {
             return Center(
@@ -38,15 +48,32 @@ class BookingsListPage extends ConsumerWidget {
                       width: 82,
                       height: 82,
                       decoration: BoxDecoration(
-                        color: dark ? scheme.surfaceContainerHighest : AppColors.goldLight.withValues(alpha: .42),
+                        color: dark
+                            ? scheme.surfaceContainerHighest
+                            : AppColors.goldLight.withValues(alpha: .42),
                         borderRadius: BorderRadius.circular(24),
                       ),
-                      child: Icon(Icons.calendar_month_outlined, size: 42, color: dark ? AppColors.gold : AppColors.goldDark),
+                      child: Icon(
+                        Icons.calendar_month_outlined,
+                        size: 42,
+                        color: dark ? AppColors.gold : AppColors.goldDark,
+                      ),
                     ),
                     const SizedBox(height: 18),
-                    Text(isLawyer ? 'لا توجد طلبات واردة حالياً' : 'ليس لديك أي حجوزات حالياً', style: TextStyle(fontWeight: FontWeight.bold, color: scheme.onSurface)),
+                    Text(
+                      isLawyer
+                          ? 'لا توجد طلبات واردة حالياً'
+                          : 'ليس لديك أي حجوزات حالياً',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: scheme.onSurface,
+                      ),
+                    ),
                     const SizedBox(height: 8),
-                    Text('ستظهر هنا الاستشارات عند توفرها.', style: TextStyle(color: scheme.onSurfaceVariant)),
+                    Text(
+                      'ستظهر هنا الاستشارات عند توفرها.',
+                      style: TextStyle(color: scheme.onSurfaceVariant),
+                    ),
                   ],
                 ),
               ),
@@ -60,19 +87,27 @@ class BookingsListPage extends ConsumerWidget {
               final booking = bookings[index];
               return Consumer(
                 builder: (context, ref, child) {
-                  final clientNameAsync = isLawyer ? ref.watch(bookingClientNameProvider(booking.id)) : null;
-                  final lawyerInfoAsync = !isLawyer ? ref.watch(bookingLawyerInfoProvider(booking.id)) : null;
+                  final clientNameAsync = isLawyer
+                      ? ref.watch(bookingClientNameProvider(booking.id))
+                      : null;
+                  final lawyerInfoAsync = !isLawyer
+                      ? ref.watch(bookingLawyerInfoProvider(booking.id))
+                      : null;
 
                   final displayName = isLawyer
                       ? clientNameAsync!.maybeWhen(
-                          data: (name) => name != null && name.trim().isNotEmpty ? name.trim() : 'اسم العميل غير متوفر',
+                          data: (name) => name != null && name.trim().isNotEmpty
+                              ? name.trim()
+                              : 'اسم العميل غير متوفر',
                           loading: () => 'جاري تحميل الاسم...',
                           orElse: () => 'اسم العميل غير متوفر',
                         )
                       : lawyerInfoAsync!.maybeWhen(
                           data: (info) {
                             final name = info?['full_name']?.toString().trim();
-                            return name != null && name.isNotEmpty ? name : 'اسم المحامي غير متوفر';
+                            return name != null && name.isNotEmpty
+                                ? name
+                                : 'اسم المحامي غير متوفر';
                           },
                           loading: () => 'جاري تحميل اسم المحامي...',
                           orElse: () => 'اسم المحامي غير متوفر',
@@ -88,14 +123,12 @@ class BookingsListPage extends ConsumerWidget {
                     margin: const EdgeInsets.only(bottom: 12),
                     elevation: dark ? 0 : 1,
                     shadowColor: Colors.black.withValues(alpha: .05),
-                    color: dark ? scheme.surfaceContainerHighest.withValues(alpha: .82) : AppColors.surface,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(20),
-                      side: BorderSide(color: dark ? scheme.outlineVariant : AppColors.outline),
-                    ),
                     child: InkWell(
                       borderRadius: BorderRadius.circular(20),
-                      onTap: () => context.push('/booking-details', extra: booking),
+                      onTap: () => context.push(
+                        '/booking-details',
+                        extra: booking,
+                      ),
                       child: Padding(
                         padding: const EdgeInsets.all(16),
                         child: Row(
@@ -103,9 +136,21 @@ class BookingsListPage extends ConsumerWidget {
                             if (!isLawyer) ...[
                               CircleAvatar(
                                 radius: 28,
-                                backgroundColor: dark ? scheme.surfaceContainerHighest : AppColors.goldLight,
-                                backgroundImage: lawyerAvatar != null && lawyerAvatar!.isNotEmpty ? NetworkImage(lawyerAvatar!) : null,
-                                child: lawyerAvatar == null || lawyerAvatar!.isEmpty ? Icon(Icons.person_outline, color: dark ? AppColors.gold : AppColors.goldDark) : null,
+                                backgroundColor: dark
+                                    ? scheme.surfaceContainerHighest
+                                    : AppColors.goldLight,
+                                backgroundImage: lawyerAvatar != null &&
+                                        lawyerAvatar.isNotEmpty
+                                    ? NetworkImage(lawyerAvatar)
+                                    : null,
+                                child: lawyerAvatar == null || lawyerAvatar.isEmpty
+                                    ? Icon(
+                                        Icons.person_outline,
+                                        color: dark
+                                            ? AppColors.gold
+                                            : AppColors.goldDark,
+                                      )
+                                    : null,
                               ),
                               const SizedBox(width: 14),
                             ],
@@ -113,15 +158,35 @@ class BookingsListPage extends ConsumerWidget {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text(displayName, style: TextStyle(fontWeight: FontWeight.w700, color: scheme.onSurface)),
+                                  Text(
+                                    displayName,
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.w700,
+                                      color: scheme.onSurface,
+                                    ),
+                                  ),
                                   const SizedBox(height: 6),
-                                  Text(booking.packageName, style: TextStyle(color: scheme.onSurfaceVariant)),
+                                  Text(
+                                    booking.consultationType ?? 'استشارة قانونية',
+                                    style: TextStyle(
+                                      color: scheme.onSurfaceVariant,
+                                    ),
+                                  ),
                                   const SizedBox(height: 4),
-                                  Text(_formatDate(booking.scheduledAt), style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 12)),
+                                  Text(
+                                    _formatDate(booking.scheduledAt),
+                                    style: TextStyle(
+                                      color: scheme.onSurfaceVariant,
+                                      fontSize: 12,
+                                    ),
+                                  ),
                                 ],
                               ),
                             ),
-                            Icon(Icons.chevron_left_rounded, color: scheme.onSurfaceVariant),
+                            Icon(
+                              Icons.chevron_left_rounded,
+                              color: scheme.onSurfaceVariant,
+                            ),
                           ],
                         ),
                       ),
@@ -136,5 +201,13 @@ class BookingsListPage extends ConsumerWidget {
     );
   }
 
-  String _formatDate(DateTime date) => '${date.day}/${date.month}/${date.year}';
+  String _formatDate(DateTime date) {
+    final local = date.toLocal();
+    final day = local.day.toString().padLeft(2, '0');
+    final month = local.month.toString().padLeft(2, '0');
+    final year = local.year.toString();
+    final hour = local.hour.toString().padLeft(2, '0');
+    final minute = local.minute.toString().padLeft(2, '0');
+    return '$year/$month/$day - $hour:$minute';
+  }
 }
