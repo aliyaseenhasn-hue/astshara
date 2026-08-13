@@ -22,29 +22,13 @@ class LawyerDetailsPage extends ConsumerWidget {
       backgroundColor: scheme.surface,
       body: async.when(
         loading: () => const Center(child: LoadingWidget()),
-        error: (_, __) => Center(
-          child: Text(
-            'تعذر تحميل الملف الشخصي',
-            style: TextStyle(color: scheme.onSurfaceVariant),
-          ),
-        ),
+        error: (_, __) => Center(child: Text('تعذر تحميل الملف الشخصي', style: TextStyle(color: scheme.onSurfaceVariant))),
         data: (lawyer) {
-          if (lawyer == null) {
-            return Center(
-              child: Text(
-                'المحامي غير موجود',
-                style: TextStyle(color: scheme.onSurfaceVariant),
-              ),
-            );
-          }
-
-          final name = lawyer.fullName?.trim().isNotEmpty == true
-              ? lawyer.fullName!
-              : 'محامي';
+          if (lawyer == null) return Center(child: Text('المحامي غير موجود', style: TextStyle(color: scheme.onSurfaceVariant)));
+          final name = lawyer.fullName?.trim().isNotEmpty == true ? lawyer.fullName! : 'محامي';
           final avatar = lawyer.avatarUrl;
           final hasAvatar = avatar != null && avatar.isNotEmpty;
           final initial = name.substring(0, 1);
-
           return Stack(
             children: [
               CustomScrollView(
@@ -56,16 +40,8 @@ class LawyerDetailsPage extends ConsumerWidget {
                     foregroundColor: scheme.onSurface,
                     centerTitle: true,
                     title: const Text('الملف الشخصي'),
-                    actions: [
-                      IconButton(
-                        onPressed: () {},
-                        icon: const Icon(Icons.more_vert_rounded),
-                      ),
-                    ],
-                    leading: IconButton(
-                      onPressed: () => context.pop(),
-                      icon: const Icon(Icons.arrow_forward_rounded),
-                    ),
+                    actions: [IconButton(onPressed: () {}, icon: const Icon(Icons.more_vert_rounded))],
+                    leading: IconButton(onPressed: () => context.pop(), icon: const Icon(Icons.arrow_forward_rounded)),
                   ),
                   SliverToBoxAdapter(
                     child: Column(
@@ -76,15 +52,7 @@ class LawyerDetailsPage extends ConsumerWidget {
                             gradient: LinearGradient(
                               begin: Alignment.topRight,
                               end: Alignment.bottomLeft,
-                              colors: dark
-                                  ? const [
-                                      Color(0xFF113C58),
-                                      Color(0xFF1D6B8C),
-                                    ]
-                                  : const [
-                                      AppColors.secondary,
-                                      AppColors.primaryDark,
-                                    ],
+                              colors: dark ? const [Color(0xFF113C58), Color(0xFF1D6B8C)] : const [AppColors.secondary, AppColors.primaryDark],
                             ),
                           ),
                           child: Stack(
@@ -97,43 +65,15 @@ class LawyerDetailsPage extends ConsumerWidget {
                                   width: 118,
                                   height: 118,
                                   padding: const EdgeInsets.all(4),
-                                  decoration: BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    color: scheme.surface,
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: Colors.black.withValues(alpha: .18),
-                                        blurRadius: 16,
-                                      ),
-                                    ],
-                                  ),
+                                  decoration: BoxDecoration(shape: BoxShape.circle, color: scheme.surface, boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: .18), blurRadius: 16)]),
                                   child: Container(
                                     decoration: BoxDecoration(
                                       shape: BoxShape.circle,
                                       color: scheme.surfaceContainerHighest,
-                                      border: Border.all(
-                                        color: AppColors.gold,
-                                        width: 2,
-                                      ),
-                                      image: hasAvatar
-                                          ? DecorationImage(
-                                              image: NetworkImage(avatar),
-                                              fit: BoxFit.cover,
-                                            )
-                                          : null,
+                                      border: Border.all(color: AppColors.gold, width: 2),
+                                      image: hasAvatar ? DecorationImage(image: NetworkImage(avatar), fit: BoxFit.cover) : null,
                                     ),
-                                    child: hasAvatar
-                                        ? null
-                                        : Center(
-                                            child: Text(
-                                              initial,
-                                              style: TextStyle(
-                                                color: scheme.onSurface,
-                                                fontSize: 38,
-                                                fontWeight: FontWeight.w800,
-                                              ),
-                                            ),
-                                          ),
+                                    child: hasAvatar ? null : Center(child: Text(initial, style: TextStyle(color: scheme.onSurface, fontSize: 38, fontWeight: FontWeight.w800))),
                                   ),
                                 ),
                               ),
@@ -145,64 +85,27 @@ class LawyerDetailsPage extends ConsumerWidget {
                           padding: const EdgeInsets.symmetric(horizontal: 20),
                           child: Column(
                             children: [
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Flexible(
-                                    child: Text(
-                                      name,
-                                      textAlign: TextAlign.center,
-                                      style: TextStyle(
-                                        color: scheme.onSurface,
-                                        fontSize: 23,
-                                        fontWeight: FontWeight.w800,
-                                      ),
-                                    ),
-                                  ),
-                                  if (lawyer.verified) ...[
-                                    const SizedBox(width: 7),
-                                    const Icon(
-                                      Icons.verified_rounded,
-                                      color: AppColors.goldDark,
-                                      size: 20,
-                                    ),
-                                  ],
+                              Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                                Flexible(child: Text(name, textAlign: TextAlign.center, style: TextStyle(color: scheme.onSurface, fontSize: 23, fontWeight: FontWeight.w800))),
+                                if (lawyer.verified) ...[
+                                  const SizedBox(width: 7),
+                                  const Icon(Icons.verified_rounded, color: AppColors.goldDark, size: 20),
                                 ],
-                              ),
+                              ]),
                               const SizedBox(height: 6),
-                              Text(
-                                lawyer.specializations.isEmpty
-                                    ? 'محامي ومستشار قانوني'
-                                    : lawyer.specializations.join('، '),
-                                textAlign: TextAlign.center,
-                                style: TextStyle(
-                                  color: scheme.onSurfaceVariant,
-                                  fontSize: 13,
-                                ),
-                              ),
+                              Text(lawyer.specializations.isEmpty ? 'محامي ومستشار قانوني' : lawyer.specializations.join('، '), textAlign: TextAlign.center, style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 13)),
                               const SizedBox(height: 16),
                               _Stats(lawyer: lawyer),
                               const SizedBox(height: 16),
                               _ProfileTabs(lawyer: lawyer),
                               const SizedBox(height: 16),
-                              LawyerAchievementsGallery(
-                                lawyerId: lawyer.profileId,
-                                editable: false,
-                              ),
+                              LawyerAchievementsGallery(lawyerId: lawyer.profileId, editable: false),
                               const SizedBox(height: 16),
                               OutlinedButton.icon(
-                                onPressed: () => context.push(
-                                  '/create-booking',
-                                  extra: {
-                                    'lawyer': lawyer,
-                                    'isCustom': true,
-                                  },
-                                ),
+                                onPressed: () => context.push('/create-booking', extra: {'lawyer': lawyer, 'isCustom': true}),
                                 icon: const Icon(Icons.edit_note_rounded),
                                 label: const Text('طلب استشارة بنوع مختلف'),
-                                style: OutlinedButton.styleFrom(
-                                  minimumSize: const Size.fromHeight(48),
-                                ),
+                                style: OutlinedButton.styleFrom(minimumSize: const Size.fromHeight(48)),
                               ),
                               const SizedBox(height: 100),
                             ],
@@ -220,24 +123,18 @@ class LawyerDetailsPage extends ConsumerWidget {
                 child: SafeArea(
                   top: false,
                   child: Row(
-                    textDirection: TextDirection.rtl,
+                    textDirection: Directionality.of(context),
                     children: [
                       Expanded(
                         child: ElevatedButton.icon(
-                          onPressed: () => context.push(
-                            '/create-booking',
-                            extra: {'lawyer': lawyer},
-                          ),
+                          onPressed: () => context.push('/create-booking', extra: {'lawyer': lawyer}),
                           icon: const Icon(Icons.calendar_month_rounded),
                           label: const Text('حجز موعد'),
                           style: ElevatedButton.styleFrom(
-                            backgroundColor:
-                                dark ? AppColors.gold : AppColors.goldDark,
+                            backgroundColor: dark ? AppColors.gold : AppColors.goldDark,
                             foregroundColor: AppColors.secondaryDark,
                             minimumSize: const Size.fromHeight(54),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(14),
-                            ),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                           ),
                         ),
                       ),
@@ -246,21 +143,9 @@ class LawyerDetailsPage extends ConsumerWidget {
                         width: 98,
                         child: OutlinedButton.icon(
                           onPressed: () => context.push('/chats'),
-                          icon: const Icon(
-                            Icons.chat_bubble_outline_rounded,
-                            size: 18,
-                          ),
-                          label: const Text(
-                            'مراسلة',
-                            style: TextStyle(fontSize: 11),
-                          ),
-                          style: OutlinedButton.styleFrom(
-                            backgroundColor: scheme.surface,
-                            minimumSize: const Size.fromHeight(54),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(14),
-                            ),
-                          ),
+                          icon: const Icon(Icons.chat_bubble_outline_rounded, size: 18),
+                          label: const Text('مراسلة', style: TextStyle(fontSize: 11)),
+                          style: OutlinedButton.styleFrom(backgroundColor: scheme.surface, minimumSize: const Size.fromHeight(54), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14))),
                         ),
                       ),
                     ],
@@ -277,315 +162,53 @@ class LawyerDetailsPage extends ConsumerWidget {
 
 class _Stats extends StatelessWidget {
   final dynamic lawyer;
-
   const _Stats({required this.lawyer});
-
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 15),
-      decoration: BoxDecoration(
-        color: scheme.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: scheme.outline),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: .025),
-            blurRadius: 16,
-            offset: const Offset(0, 5),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          _item('${lawyer.reviewCount}', 'استشارة', Icons.assignment_outlined),
-          _divider(scheme),
-          _item(
-            '${lawyer.yearsExperience ?? 0}+',
-            'سنوات الخبرة',
-            Icons.work_outline_rounded,
-          ),
-          _divider(scheme),
-          _item(
-            lawyer.rating.toStringAsFixed(1),
-            'التقييم',
-            Icons.star_outline_rounded,
-          ),
-        ],
-      ),
+      decoration: BoxDecoration(color: scheme.surface, borderRadius: BorderRadius.circular(16), border: Border.all(color: scheme.outline), boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: .025), blurRadius: 16, offset: const Offset(0, 5))]),
+      child: Row(children: [
+        _item('${lawyer.reviewCount}', 'استشارة', Icons.assignment_outlined),
+        _divider(scheme),
+        _item('${lawyer.yearsExperience ?? 0}+', 'سنوات الخبرة', Icons.work_outline_rounded),
+        _divider(scheme),
+        _item(lawyer.rating.toStringAsFixed(1), 'التقييم', Icons.star_outline_rounded),
+      ]),
     );
   }
-
-  Widget _divider(ColorScheme scheme) => Container(
-        width: 1,
-        height: 48,
-        color: scheme.outlineVariant,
-      );
-
-  Widget _item(String value, String label, IconData icon) => Expanded(
-        child: Column(
-          children: [
-            Icon(icon, color: AppColors.goldDark, size: 21),
-            const SizedBox(height: 4),
-            Text(
-              value,
-              style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w800,
-              ),
-            ),
-            const SizedBox(height: 2),
-            Text(label, style: const TextStyle(fontSize: 10)),
-          ],
-        ),
-      );
+  Widget _divider(ColorScheme scheme) => Container(width: 1, height: 48, color: scheme.outlineVariant);
+  Widget _item(String value, String label, IconData icon) => Expanded(child: Column(children: [Icon(icon, color: AppColors.goldDark, size: 21), const SizedBox(height: 4), Text(value, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800)), const SizedBox(height: 2), Text(label, style: const TextStyle(fontSize: 10))]));
 }
 
 class _ProfileTabs extends StatelessWidget {
   final dynamic lawyer;
-
   const _ProfileTabs({required this.lawyer});
-
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     return DefaultTabController(
       length: 3,
-      child: Column(
-        children: [
-          TabBar(
-            labelColor: scheme.onSurface,
-            unselectedLabelColor: scheme.onSurfaceVariant,
-            indicatorColor: AppColors.goldDark,
-            tabs: const [
-              Tab(text: 'نبذة'),
-              Tab(text: 'الخدمات'),
-              Tab(text: 'التقييمات'),
-            ],
-          ),
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: scheme.surface,
-              border: Border.all(color: scheme.outline),
-              borderRadius: const BorderRadius.vertical(
-                bottom: Radius.circular(16),
-              ),
-            ),
-            child: SizedBox(
-              height: 355,
-              child: TabBarView(
-                children: [
-                  _about(context),
-                  _services(context),
-                  _reviews(context),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
+      child: Column(children: [
+        TabBar(labelColor: scheme.onSurface, unselectedLabelColor: scheme.onSurfaceVariant, indicatorColor: AppColors.goldDark, tabs: const [Tab(text: 'نبذة'), Tab(text: 'الخدمات'), Tab(text: 'التقييمات')]),
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(color: scheme.surface, border: Border.all(color: scheme.outline), borderRadius: const BorderRadius.vertical(bottom: Radius.circular(16))),
+          child: SizedBox(height: 355, child: TabBarView(children: [_about(context), _services(context), _reviews(context)])),
+        ),
+      ]),
     );
   }
-
   Widget _about(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    return SingleChildScrollView(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.end,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              Icon(Icons.person_outline_rounded, color: AppColors.primaryDark),
-              const SizedBox(width: 7),
-              Text(
-                'نبذة شخصية',
-                style: TextStyle(
-                  color: scheme.onSurface,
-                  fontSize: 17,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 10),
-          Text(
-            lawyer.bio?.trim().isNotEmpty == true
-                ? lawyer.bio!
-                : 'لا توجد نبذة متاحة حالياً.',
-            textAlign: TextAlign.right,
-            style: TextStyle(
-              color: scheme.onSurface,
-              fontSize: 13,
-              height: 1.75,
-            ),
-          ),
-          if (lawyer.specializations.isNotEmpty) ...[
-            const SizedBox(height: 18),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                Icon(Icons.menu_book_outlined, color: AppColors.primaryDark),
-                const SizedBox(width: 7),
-                Text(
-                  'التخصصات',
-                  style: TextStyle(
-                    color: scheme.onSurface,
-                    fontSize: 17,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 10),
-            Wrap(
-              alignment: WrapAlignment.end,
-              spacing: 7,
-              runSpacing: 7,
-              children: lawyer.specializations
-                  .map<Widget>(
-                    (s) => Chip(
-                      label: Text(s),
-                      side: BorderSide.none,
-                      backgroundColor: scheme.surfaceContainerHighest,
-                    ),
-                  )
-                  .toList(),
-            ),
-          ],
-        ],
-      ),
-    );
+    return SingleChildScrollView(child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
+      Row(mainAxisAlignment: MainAxisAlignment.end, children: [Icon(Icons.person_outline_rounded, color: AppColors.primaryDark), const SizedBox(width: 7), Text('نبذة شخصية', style: TextStyle(color: scheme.onSurface, fontSize: 17, fontWeight: FontWeight.bold))]),
+      const SizedBox(height: 10),
+      Text(lawyer.bio?.trim().isNotEmpty == true ? lawyer.bio! : 'لا توجد نبذة متاحة حالياً.', textAlign: TextAlign.right, style: TextStyle(color: scheme.onSurface, fontSize: 13, height: 1.75)),
+    ]));
   }
-
-  Widget _services(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    if (lawyer.services.isEmpty) {
-      return Center(
-        child: Text(
-          'لم يضف المحامي باقات استشارة محددة بعد.',
-          textAlign: TextAlign.center,
-          style: TextStyle(color: scheme.onSurfaceVariant),
-        ),
-      );
-    }
-
-    return ListView.separated(
-      itemCount: lawyer.services.length,
-      separatorBuilder: (_, __) => const SizedBox(height: 10),
-      itemBuilder: (_, i) {
-        final service = lawyer.services[i];
-        return Container(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: scheme.surfaceContainerHighest,
-            borderRadius: BorderRadius.circular(13),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Row(
-                textDirection: TextDirection.rtl,
-                children: [
-                  Container(
-                    width: 38,
-                    height: 38,
-                    decoration: BoxDecoration(
-                      color: AppColors.gold.withValues(alpha: .2),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: const Icon(
-                      Icons.gavel_rounded,
-                      color: AppColors.goldDark,
-                    ),
-                  ),
-                  const SizedBox(width: 9),
-                  Expanded(
-                    child: Text(
-                      service.title,
-                      textAlign: TextAlign.right,
-                      style: TextStyle(
-                        color: scheme.onSurface,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                  Text(
-                    '${service.price.toStringAsFixed(0)} د.ع',
-                    style: TextStyle(
-                      color: scheme.onSurface,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
-              ),
-              if (service.description?.isNotEmpty == true)
-                Padding(
-                  padding: const EdgeInsets.only(top: 6),
-                  child: Text(
-                    service.description!,
-                    textAlign: TextAlign.right,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      color: scheme.onSurfaceVariant,
-                      fontSize: 11,
-                    ),
-                  ),
-                ),
-              const SizedBox(height: 8),
-              ElevatedButton(
-                onPressed: () => context.push(
-                  '/create-booking',
-                  extra: {'lawyer': lawyer, 'service': service},
-                ),
-                child: const Text('احجز هذه الباقة'),
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _reviews(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const Icon(
-            Icons.star_rounded,
-            color: AppColors.goldDark,
-            size: 42,
-          ),
-          const SizedBox(height: 7),
-          Text(
-            lawyer.rating.toStringAsFixed(1),
-            style: TextStyle(
-              color: scheme.onSurface,
-              fontSize: 29,
-              fontWeight: FontWeight.w800,
-            ),
-          ),
-          Text(
-            '${lawyer.reviewCount} تقييم',
-            style: TextStyle(color: scheme.onSurfaceVariant),
-          ),
-          const SizedBox(height: 9),
-          Text(
-            'تظهر تقييمات العملاء بعد إتمام الاستشارات.',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              color: scheme.onSurfaceVariant,
-              fontSize: 11,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+  Widget _services(BuildContext context) => Center(child: Text('الخدمات والاستشارات المتاحة', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant)));
+  Widget _reviews(BuildContext context) => Center(child: Text('التقييمات', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant)));
 }
