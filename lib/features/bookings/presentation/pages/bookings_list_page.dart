@@ -3,6 +3,7 @@ import 'package:astshara/features/lawyers/presentation/providers/lawyers_provide
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../../core/constants/app_colors.dart';
 import '../../../../shared/widgets/loading_widget.dart';
 import '../providers/bookings_provider.dart';
 import 'package:intl/intl.dart';
@@ -14,20 +15,24 @@ class BookingsListPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final scheme = Theme.of(context).colorScheme;
+    final dark = Theme.of(context).brightness == Brightness.dark;
     final user = ref.watch(authStateChangesProvider).value;
     final isLawyer = user?.role == 'lawyer';
     final bookingsAsync = ref.watch(isLawyer ? lawyerBookingsProvider : userBookingsProvider);
     final title = isLawyer ? 'طلبات الاستشارة' : 'استشاراتي';
 
     return Scaffold(
-      backgroundColor: scheme.surface,
+      backgroundColor: dark ? scheme.surface : AppColors.background,
       appBar: AppBar(
-        title: Text(title),
+        backgroundColor: dark ? scheme.surface : AppColors.background,
+        surfaceTintColor: Colors.transparent,
+        elevation: 0,
+        title: Text(title, style: TextStyle(color: scheme.onSurface, fontWeight: FontWeight.w800)),
         centerTitle: false,
         actions: [
           IconButton(
             onPressed: () => ref.invalidate(isLawyer ? lawyerBookingsProvider : userBookingsProvider),
-            icon: const Icon(Icons.refresh_rounded),
+            icon: Icon(Icons.refresh_rounded, color: scheme.onSurface),
             tooltip: 'تحديث',
           ),
         ],
@@ -46,8 +51,11 @@ class BookingsListPage extends ConsumerWidget {
                     Container(
                       width: 82,
                       height: 82,
-                      decoration: BoxDecoration(color: scheme.surfaceContainerHighest, borderRadius: BorderRadius.circular(24)),
-                      child: Icon(Icons.calendar_month_outlined, size: 42, color: scheme.primary),
+                      decoration: BoxDecoration(
+                        color: dark ? scheme.surfaceContainerHighest : AppColors.goldLight.withValues(alpha: .42),
+                        borderRadius: BorderRadius.circular(24),
+                      ),
+                      child: Icon(Icons.calendar_month_outlined, size: 42, color: dark ? AppColors.gold : AppColors.goldDark),
                     ),
                     const SizedBox(height: 18),
                     Text(isLawyer ? 'لا توجد طلبات واردة حالياً' : 'ليس لديك أي حجوزات حالياً', style: TextStyle(fontWeight: FontWeight.bold, color: scheme.onSurface)),
@@ -75,9 +83,13 @@ class BookingsListPage extends ConsumerWidget {
 
                   return Card(
                     margin: const EdgeInsets.only(bottom: 12),
-                    elevation: 0,
-                    color: scheme.surfaceContainerLowest,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20), side: BorderSide(color: scheme.outlineVariant)),
+                    elevation: dark ? 0 : 1,
+                    shadowColor: Colors.black.withValues(alpha: .05),
+                    color: dark ? scheme.surfaceContainerHighest.withValues(alpha: .82) : AppColors.surface,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
+                      side: BorderSide(color: dark ? scheme.outlineVariant : AppColors.outline),
+                    ),
                     child: InkWell(
                       borderRadius: BorderRadius.circular(20),
                       onTap: () => context.push('/booking-details', extra: booking),
@@ -91,8 +103,11 @@ class BookingsListPage extends ConsumerWidget {
                                 Container(
                                   width: 46,
                                   height: 46,
-                                  decoration: BoxDecoration(color: scheme.primaryContainer, borderRadius: BorderRadius.circular(14)),
-                                  child: Icon(isLawyer ? Icons.person_outline_rounded : Icons.balance_rounded, color: scheme.primary),
+                                  decoration: BoxDecoration(
+                                    color: dark ? scheme.surfaceContainerHighest : AppColors.goldLight.withValues(alpha: .38),
+                                    borderRadius: BorderRadius.circular(14),
+                                  ),
+                                  child: Icon(isLawyer ? Icons.person_outline_rounded : Icons.balance_rounded, color: dark ? AppColors.gold : AppColors.goldDark),
                                 ),
                                 const SizedBox(width: 12),
                                 Expanded(
@@ -111,13 +126,17 @@ class BookingsListPage extends ConsumerWidget {
                             const SizedBox(height: 14),
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
-                              decoration: BoxDecoration(color: scheme.surfaceContainerHighest, borderRadius: BorderRadius.circular(13)),
+                              decoration: BoxDecoration(
+                                color: dark ? scheme.surface : AppColors.surfaceVariant,
+                                borderRadius: BorderRadius.circular(13),
+                                border: Border.all(color: dark ? scheme.outlineVariant : AppColors.divider),
+                              ),
                               child: Row(
                                 children: [
-                                  Icon(Icons.schedule_rounded, size: 18, color: scheme.primary),
+                                  Icon(Icons.schedule_rounded, size: 18, color: dark ? AppColors.gold : AppColors.primaryDark),
                                   const SizedBox(width: 8),
                                   Expanded(child: Text(DateFormat('yyyy/MM/dd - HH:mm').format(booking.scheduledAt), style: TextStyle(fontSize: 12, color: scheme.onSurface))),
-                                  Text('${booking.price} د.ع', style: TextStyle(fontWeight: FontWeight.bold, color: scheme.onSurface)),
+                                  Text('${booking.price} د.ع', style: TextStyle(fontWeight: FontWeight.bold, color: dark ? AppColors.gold : AppColors.secondary)),
                                 ],
                               ),
                             ),
@@ -154,8 +173,8 @@ class BookingsListPage extends ConsumerWidget {
     return SizedBox(
       width: double.infinity,
       child: outlined
-          ? OutlinedButton.icon(onPressed: onPressed, icon: Icon(icon, size: 19), label: Text(label), style: OutlinedButton.styleFrom(minimumSize: const Size.fromHeight(46)))
-          : ElevatedButton.icon(onPressed: onPressed, icon: Icon(icon, size: 19), label: Text(label), style: ElevatedButton.styleFrom(minimumSize: const Size.fromHeight(46), backgroundColor: scheme.primary, foregroundColor: scheme.onPrimary)),
+          ? OutlinedButton.icon(onPressed: onPressed, icon: Icon(icon, size: 19), label: Text(label), style: OutlinedButton.styleFrom(minimumSize: const Size.fromHeight(46), foregroundColor: dark ? AppColors.gold : AppColors.primaryDark, side: BorderSide(color: dark ? AppColors.gold : AppColors.primaryDark)))
+          : ElevatedButton.icon(onPressed: onPressed, icon: Icon(icon, size: 19), label: Text(label), style: ElevatedButton.styleFrom(minimumSize: const Size.fromHeight(46), backgroundColor: dark ? AppColors.gold : AppColors.primary, foregroundColor: dark ? AppColors.secondaryDark : scheme.onPrimary)),
     );
   }
 }
@@ -168,11 +187,16 @@ class _StatusBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final dark = Theme.of(context).brightness == Brightness.dark;
     final label = status.trim().isEmpty ? 'غير محدد' : status;
+    final pending = label.contains('انتظار') || label.contains('مراجعة') || label.contains('معالجة');
+    final success = label == 'مؤكد' || label == 'مكتمل' || label == 'قيد التنفيذ';
+    final background = pending ? AppColors.pendingBg : success ? AppColors.acceptedBg : dark ? scheme.surfaceContainerHighest : AppColors.surfaceVariant;
+    final foreground = pending ? AppColors.pendingText : success ? AppColors.acceptedText : scheme.onSurfaceVariant;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
-      decoration: BoxDecoration(color: scheme.primaryContainer, borderRadius: BorderRadius.circular(20)),
-      child: Text(label, style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: scheme.onPrimaryContainer)),
+      decoration: BoxDecoration(color: background, borderRadius: BorderRadius.circular(20)),
+      child: Text(label, style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: foreground)),
     );
   }
 }
