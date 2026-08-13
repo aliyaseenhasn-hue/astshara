@@ -10,37 +10,41 @@ class NotificationsPage extends ConsumerWidget {
   const NotificationsPage({super.key});
 
   Future<void> _open(BuildContext context, AppNotification item) async {
-    final referenceId = item.referenceId;
-    final bookingType = item.referenceType == 'booking' || item.referenceType == 'payment' || item.type == 'booking' || item.type == 'payment';
+    final referenceId = item.referenceId?.trim();
+    final isBookingTarget = item.referenceType == 'booking' ||
+        item.referenceType == 'payment' ||
+        item.type == 'booking' ||
+        item.type == 'payment';
 
-    if (bookingType && referenceId != null && referenceId.isNotEmpty) {
+    if (isBookingTarget && referenceId != null && referenceId.isNotEmpty) {
       try {
-        Map<String, dynamic>? row;
-        row = await SupabaseConfig.client.from('bookings').select().eq('id', referenceId).maybeSingle();
+        final response = await SupabaseConfig.client.rpc(
+          'get_booking_for_notification',
+          params: {'p_booking_id': referenceId},
+        );
 
-        // Payment notifications may reference a payment row rather than the booking.
-        if (row == null && item.referenceType == 'payment') {
-          final payment = await SupabaseConfig.client.from('payments').select('booking_id').eq('id', referenceId).maybeSingle();
-          final bookingId = payment?['booking_id']?.toString();
-          if (bookingId != null && bookingId.isNotEmpty) {
-            row = await SupabaseConfig.client.from('bookings').select().eq('id', bookingId).maybeSingle();
-          }
+        Map<String, dynamic>? row;
+        if (response is List && response.isNotEmpty) {
+          row = Map<String, dynamic>.from(response.first as Map);
+        } else if (response is Map && response.isNotEmpty) {
+          row = Map<String, dynamic>.from(response);
         }
 
         if (row != null && context.mounted) {
-          final booking = BookingModel.fromJson(Map<String, dynamic>.from(row)).toEntity();
+          final booking = BookingModel.fromJson(row).toEntity();
           context.push('/booking-details', extra: booking);
           return;
         }
       } catch (_) {
-        // Fall through to the relevant list if the referenced record cannot be loaded.
+        // Keep the user in the relevant list only when the exact target
+        // cannot be resolved by the authorized notification RPC.
       }
     }
 
     if (!context.mounted) return;
-    if (item.type == 'chat' || item.referenceType == 'chat') {
+    if (item.type == 'chat' || item.referenceType == 'conversation') {
       context.push('/chats');
-    } else if (bookingType) {
+    } else if (isBookingTarget) {
       context.push('/bookings');
     } else if (item.type == 'profile') {
       context.push('/profile');
