@@ -35,6 +35,7 @@ class MainBottomNav extends ConsumerWidget {
     final unread = ref.watch(unreadNotificationsCountProvider).valueOrNull ?? 0;
     final items = isLawyer ? _lawyerItems : _clientItems;
     final selectedIndex = currentIndex.clamp(0, items.length - 1).toInt();
+    final direction = Directionality.of(context);
 
     return Container(
       color: Colors.transparent,
@@ -56,7 +57,7 @@ class MainBottomNav extends ConsumerWidget {
           ),
           padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 5),
           child: Row(
-            textDirection: TextDirection.rtl,
+            textDirection: direction,
             children: List.generate(items.length, (index) {
               final item = items[index];
               final notificationIndex = isLawyer ? 2 : 3;
