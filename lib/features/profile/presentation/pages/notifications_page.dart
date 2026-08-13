@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import '../../../../core/constants/app_sizes.dart';
+import '../../../../core/config/supabase_config.dart';
+import '../../../bookings/data/models/booking_model.dart';
 import '../providers/notifications_provider.dart';
 
 class NotificationsPage extends ConsumerWidget {
@@ -14,6 +17,30 @@ class NotificationsPage extends ConsumerWidget {
         'admin' => Icons.verified_user_rounded,
         _ => Icons.notifications_rounded,
       };
+
+  Future<void> _openTarget(BuildContext context, AppNotification item) async {
+    if (item.referenceType == 'booking' && item.referenceId != null) {
+      try {
+        final row = await SupabaseConfig.client
+            .from('bookings')
+            .select()
+            .eq('id', item.referenceId!)
+            .maybeSingle();
+        if (row != null && context.mounted) {
+          final booking = BookingModel.fromJson(Map<String, dynamic>.from(row)).toEntity();
+          context.push('/booking-details', extra: booking);
+          return;
+        }
+      } catch (_) {}
+    }
+    if (context.mounted) {
+      if (item.type == 'chat') {
+        context.push('/chats');
+      } else if (item.type == 'booking' || item.type == 'payment') {
+        context.push('/bookings');
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -42,10 +69,7 @@ class NotificationsPage extends ConsumerWidget {
                 await markAllNotificationsAsRead();
                 await refresh();
               },
-              child: Text(
-                'قراءة الكل',
-                style: TextStyle(color: scheme.primary, fontWeight: FontWeight.bold),
-              ),
+              child: Text('قراءة الكل', style: TextStyle(color: scheme.primary, fontWeight: FontWeight.bold)),
             ),
         ],
       ),
@@ -76,29 +100,17 @@ class NotificationsPage extends ConsumerWidget {
                   const SizedBox(height: 150),
                   Icon(Icons.notifications_none_rounded, size: 76, color: scheme.outline),
                   const SizedBox(height: 16),
-                  Center(
-                    child: Text(
-                      'لا توجد تنبيهات حالياً',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(color: scheme.onSurfaceVariant, fontWeight: FontWeight.w600),
-                    ),
-                  ),
+                  Center(child: Text('لا توجد تنبيهات حالياً', textAlign: TextAlign.center, style: TextStyle(color: scheme.onSurfaceVariant, fontWeight: FontWeight.w600))),
                   const SizedBox(height: 6),
-                  Center(
-                    child: Text(
-                      'سنخبرك هنا عند وصول أي تحديث جديد.',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(color: scheme.outline, fontSize: 12),
-                    ),
-                  ),
+                  Center(child: Text('سنخبرك هنا عند وصول أي تحديث جديد.', textAlign: TextAlign.center, style: TextStyle(color: scheme.outline, fontSize: 12))),
                 ],
               ),
             );
           }
 
           final now = DateTime.now();
-          final today = <dynamic>[];
-          final previous = <dynamic>[];
+          final today = <AppNotification>[];
+          final previous = <AppNotification>[];
           for (final item in items) {
             final date = item.createdAt.toLocal();
             if (date.year == now.year && date.month == now.month && date.day == now.day) {
@@ -118,11 +130,7 @@ class NotificationsPage extends ConsumerWidget {
                   margin: const EdgeInsets.only(bottom: 4),
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                   decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [scheme.primaryContainer, scheme.surfaceContainerHighest],
-                      begin: Alignment.centerRight,
-                      end: Alignment.centerLeft,
-                    ),
+                    gradient: LinearGradient(colors: [scheme.primaryContainer, scheme.surfaceContainerHighest], begin: Alignment.centerRight, end: Alignment.centerLeft),
                     borderRadius: BorderRadius.circular(18),
                     border: Border.all(color: scheme.primary.withValues(alpha: .14)),
                   ),
@@ -130,31 +138,15 @@ class NotificationsPage extends ConsumerWidget {
                     textDirection: TextDirection.rtl,
                     child: Row(
                       children: [
-                        Container(
-                          width: 42,
-                          height: 42,
-                          decoration: BoxDecoration(
-                            color: scheme.surface.withValues(alpha: .72),
-                            shape: BoxShape.circle,
-                          ),
-                          child: Icon(Icons.notifications_active_rounded, color: scheme.primary),
-                        ),
+                        Container(width: 42, height: 42, decoration: BoxDecoration(color: scheme.surface.withValues(alpha: .72), shape: BoxShape.circle), child: Icon(Icons.notifications_active_rounded, color: scheme.primary)),
                         const SizedBox(width: 12),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.end,
                             children: [
-                              Text(
-                                'مستجداتك',
-                                textAlign: TextAlign.right,
-                                style: TextStyle(color: scheme.onPrimaryContainer, fontSize: 14, fontWeight: FontWeight.w800),
-                              ),
+                              Text('مستجداتك', textAlign: TextAlign.right, style: TextStyle(color: scheme.onPrimaryContainer, fontSize: 14, fontWeight: FontWeight.w800)),
                               const SizedBox(height: 2),
-                              Text(
-                                unread > 0 ? 'لديك $unread تنبيه غير مقروء.' : 'لا توجد تنبيهات غير مقروءة.',
-                                textAlign: TextAlign.right,
-                                style: TextStyle(color: scheme.onPrimaryContainer.withValues(alpha: .76), fontSize: 11),
-                              ),
+                              Text(unread > 0 ? 'لديك $unread تنبيه غير مقروء.' : 'لا توجد تنبيهات غير مقروءة.', textAlign: TextAlign.right, style: TextStyle(color: scheme.onPrimaryContainer.withValues(alpha: .76), fontSize: 11)),
                             ],
                           ),
                         ),
@@ -164,11 +156,11 @@ class NotificationsPage extends ConsumerWidget {
                 ),
                 if (today.isNotEmpty) ...[
                   _GroupTitle('اليوم', scheme: scheme),
-                  ...today.map((item) => _NotificationCard(item: item, iconForType: _iconForType, onChanged: refresh)),
+                  ...today.map((item) => _NotificationCard(item: item, iconForType: _iconForType, onChanged: refresh, onOpen: () => _openTarget(context, item))),
                 ],
                 if (previous.isNotEmpty) ...[
                   _GroupTitle('سابقاً', scheme: scheme),
-                  ...previous.map((item) => _NotificationCard(item: item, iconForType: _iconForType, onChanged: refresh)),
+                  ...previous.map((item) => _NotificationCard(item: item, iconForType: _iconForType, onChanged: refresh, onOpen: () => _openTarget(context, item))),
                 ],
               ],
             ),
@@ -183,23 +175,19 @@ class _GroupTitle extends StatelessWidget {
   final String title;
   final ColorScheme scheme;
   const _GroupTitle(this.title, {required this.scheme});
-
   @override
   Widget build(BuildContext context) => Padding(
         padding: const EdgeInsets.fromLTRB(4, 18, 4, 10),
-        child: Text(
-          title,
-          textAlign: TextAlign.right,
-          style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: scheme.onSurfaceVariant),
-        ),
+        child: Text(title, textAlign: TextAlign.right, style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: scheme.onSurfaceVariant)),
       );
 }
 
 class _NotificationCard extends StatelessWidget {
-  final dynamic item;
+  final AppNotification item;
   final IconData Function(String) iconForType;
   final Future<void> Function() onChanged;
-  const _NotificationCard({required this.item, required this.iconForType, required this.onChanged});
+  final Future<void> Function() onOpen;
+  const _NotificationCard({required this.item, required this.iconForType, required this.onChanged, required this.onOpen});
 
   @override
   Widget build(BuildContext context) {
@@ -212,18 +200,15 @@ class _NotificationCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: unread ? scheme.primaryContainer.withValues(alpha: .28) : scheme.surfaceContainerLow,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(
-          color: unread ? scheme.primary.withValues(alpha: .35) : scheme.outlineVariant.withValues(alpha: .7),
-        ),
+        border: Border.all(color: unread ? scheme.primary.withValues(alpha: .35) : scheme.outlineVariant.withValues(alpha: .7)),
       ),
       child: InkWell(
         borderRadius: BorderRadius.circular(18),
-        onTap: unread
-            ? () async {
-                await markNotificationAsRead(item.id);
-                await onChanged();
-              }
-            : null,
+        onTap: () async {
+          if (unread) await markNotificationAsRead(item.id);
+          await onChanged();
+          await onOpen();
+        },
         child: Padding(
           padding: const EdgeInsets.all(14),
           child: Directionality(
@@ -231,15 +216,7 @@ class _NotificationCard extends StatelessWidget {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Container(
-                  width: 46,
-                  height: 46,
-                  decoration: BoxDecoration(
-                    color: unread ? scheme.primaryContainer : scheme.surfaceContainerHighest,
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                  child: Icon(iconForType(item.type), color: unread ? scheme.onPrimaryContainer : scheme.primary),
-                ),
+                Container(width: 46, height: 46, decoration: BoxDecoration(color: unread ? scheme.primaryContainer : scheme.surfaceContainerHighest, borderRadius: BorderRadius.circular(14)), child: Icon(iconForType(item.type), color: unread ? scheme.onPrimaryContainer : scheme.primary)),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Column(
@@ -247,40 +224,16 @@ class _NotificationCard extends StatelessWidget {
                     children: [
                       Row(
                         children: [
-                          Expanded(
-                            child: Text(
-                              item.title,
-                              textAlign: TextAlign.right,
-                              style: TextStyle(
-                                fontWeight: unread ? FontWeight.w800 : FontWeight.w600,
-                                fontSize: 14,
-                                color: scheme.onSurface,
-                              ),
-                            ),
-                          ),
-                          if (unread) ...[
-                            const SizedBox(width: 8),
-                            Container(
-                              width: 8,
-                              height: 8,
-                              decoration: BoxDecoration(color: scheme.primary, shape: BoxShape.circle),
-                            ),
-                          ],
+                          Expanded(child: Text(item.title, textAlign: TextAlign.right, style: TextStyle(fontWeight: unread ? FontWeight.w800 : FontWeight.w600, fontSize: 14, color: scheme.onSurface))),
+                          if (unread) ...[const SizedBox(width: 8), Container(width: 8, height: 8, decoration: BoxDecoration(color: scheme.primary, shape: BoxShape.circle))],
                         ],
                       ),
                       if (item.body.isNotEmpty) ...[
                         const SizedBox(height: 5),
-                        Text(
-                          item.body,
-                          textAlign: TextAlign.right,
-                          style: TextStyle(fontSize: 12, height: 1.5, color: scheme.onSurfaceVariant),
-                        ),
+                        Text(item.body, textAlign: TextAlign.right, style: TextStyle(fontSize: 12, height: 1.5, color: scheme.onSurfaceVariant)),
                       ],
                       const SizedBox(height: 7),
-                      Align(
-                        alignment: Alignment.centerRight,
-                        child: Text(date, style: TextStyle(fontSize: 10, color: scheme.outline)),
-                      ),
+                      Align(alignment: Alignment.centerRight, child: Text(date, style: TextStyle(fontSize: 10, color: scheme.outline))),
                     ],
                   ),
                 ),
