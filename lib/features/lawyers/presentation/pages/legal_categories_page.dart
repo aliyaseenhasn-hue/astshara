@@ -7,57 +7,85 @@ import '../providers/lawyers_provider.dart';
 class LegalCategoriesPage extends ConsumerWidget {
   const LegalCategoriesPage({super.key});
 
+  IconData _iconFor(String category) {
+    final value = category.toLowerCase();
+    if (value.contains('شركات')) return Icons.business_center_rounded;
+    if (value.contains('عقاري') || value.contains('عقار')) return Icons.home_work_rounded;
+    if (value.contains('جنائي')) return Icons.gavel_rounded;
+    if (value.contains('أحوال') || value.contains('اسرة')) return Icons.family_restroom_rounded;
+    if (value.contains('عمال')) return Icons.engineering_rounded;
+    if (value.contains('إداري') || value.contains('اداري')) return Icons.account_balance_rounded;
+    if (value.contains('مرور')) return Icons.directions_car_rounded;
+    return Icons.balance_rounded;
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final scheme = Theme.of(context).colorScheme;
+    final dark = Theme.of(context).brightness == Brightness.dark;
     return Scaffold(
       backgroundColor: scheme.surface,
       appBar: AppBar(
         title: const Text('الفئات'),
         centerTitle: true,
+        backgroundColor: scheme.surface,
+        surfaceTintColor: Colors.transparent,
+        elevation: 0,
         leading: IconButton(onPressed: () => context.pop(), icon: const Icon(Icons.arrow_forward_rounded)),
       ),
-      body: GridView.builder(
-        padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 2,
-          crossAxisSpacing: 12,
-          mainAxisSpacing: 12,
-          childAspectRatio: 1.65,
-        ),
-        itemCount: LegalSpecializations.all.length,
-        itemBuilder: (context, index) {
-          final category = LegalSpecializations.all[index];
-          return Material(
-            color: Colors.transparent,
-            child: InkWell(
-              borderRadius: BorderRadius.circular(18),
-              onTap: () {
-                ref.read(selectedCategoryProvider.notifier).setCategory(category);
-                context.push('/lawyers');
-              },
-              child: Ink(
-                decoration: BoxDecoration(
-                  color: scheme.surfaceContainerHighest.withValues(alpha: .55),
-                  borderRadius: BorderRadius.circular(18),
-                  border: Border.all(color: scheme.outlineVariant),
-                ),
-                padding: const EdgeInsets.all(14),
-                child: Directionality(
-                  textDirection: TextDirection.rtl,
+      body: Directionality(
+        textDirection: TextDirection.rtl,
+        child: GridView.builder(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 2,
+            crossAxisSpacing: 12,
+            mainAxisSpacing: 12,
+            childAspectRatio: 1.22,
+          ),
+          itemCount: LegalSpecializations.all.length,
+          itemBuilder: (context, index) {
+            final category = LegalSpecializations.all[index];
+            final icon = _iconFor(category);
+            return Material(
+              color: Colors.transparent,
+              child: InkWell(
+                borderRadius: BorderRadius.circular(22),
+                onTap: () {
+                  ref.read(selectedCategoryProvider.notifier).setCategory(category);
+                  context.push('/lawyers');
+                },
+                child: Ink(
+                  decoration: BoxDecoration(
+                    color: dark ? scheme.surfaceContainerHighest.withValues(alpha: .72) : scheme.surfaceContainerLow,
+                    borderRadius: BorderRadius.circular(22),
+                    border: Border.all(color: scheme.outlineVariant.withValues(alpha: .75)),
+                    boxShadow: dark ? null : [BoxShadow(color: scheme.shadow.withValues(alpha: .045), blurRadius: 16, offset: const Offset(0, 6))],
+                  ),
+                  padding: const EdgeInsets.fromLTRB(12, 14, 12, 11),
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.gavel_rounded, color: scheme.primary, size: 27),
-                      const SizedBox(height: 8),
+                      Container(
+                        width: 52,
+                        height: 52,
+                        decoration: BoxDecoration(
+                          color: dark ? scheme.primary.withValues(alpha: .14) : scheme.primaryContainer.withValues(alpha: .65),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(icon, color: scheme.primary, size: 26),
+                      ),
+                      const SizedBox(height: 11),
                       Text(category, textAlign: TextAlign.center, maxLines: 2, overflow: TextOverflow.ellipsis, style: TextStyle(color: scheme.onSurface, fontWeight: FontWeight.w800, fontSize: 13)),
+                      const SizedBox(height: 7),
+                      Icon(Icons.arrow_back_rounded, size: 16, color: scheme.onSurfaceVariant),
                     ],
                   ),
                 ),
               ),
-            ),
-          );
-        },
+            );
+          },
+        ),
       ),
     );
   }
