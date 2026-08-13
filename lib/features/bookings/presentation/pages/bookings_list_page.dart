@@ -31,7 +31,7 @@ class BookingsListPage extends ConsumerWidget {
                 final displayName = isLawyer
                     ? clientNameAsync!.maybeWhen(data: (name) => name != null && name.trim().isNotEmpty ? name.trim() : 'اسم العميل غير متوفر', loading: () => 'جاري تحميل الاسم...', orElse: () => 'اسم العميل غير متوفر')
                     : lawyerInfoAsync!.maybeWhen(data: (info) { final name = info?['full_name']?.toString().trim(); return name != null && name.isNotEmpty ? name : 'اسم المحامي غير متوفر'; }, loading: () => 'جاري تحميل اسم المحامي...', orElse: () => 'اسم المحامي غير متوفر');
-                final lawyerAvatar = !isLawyer ? lawyerInfoAsync!.valueOrNull?['avatar_url']?.toString() : null;
+                final lawyerAvatar = !isLawyer ? (lawyerInfoAsync!.valueOrNull?['avatar_url']?.toString()) : null;
                 return Card(
                   margin: const EdgeInsets.only(bottom: 12),
                   elevation: dark ? 0 : 1,
