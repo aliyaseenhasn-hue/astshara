@@ -35,9 +35,7 @@ class HomePage extends ConsumerWidget {
             ),
             SliverPadding(
               padding: const EdgeInsets.fromLTRB(16, 20, 16, 8),
-              sliver: SliverToBoxAdapter(
-                child: Text('التخصصات', textAlign: TextAlign.right, style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: scheme.onSurface)),
-              ),
+              sliver: SliverToBoxAdapter(child: Text('التخصصات', textAlign: TextAlign.right, style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: scheme.onSurface))),
             ),
             SliverPadding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -48,23 +46,16 @@ class HomePage extends ConsumerWidget {
                     return InkWell(
                       borderRadius: BorderRadius.circular(18),
                       onTap: () {
-                        ref.read(selectedCategoryProvider.notifier).state = category;
+                        ref.read(selectedCategoryProvider.notifier).setCategory(category);
                         context.push('/lawyers');
                       },
                       child: Container(
-                        decoration: BoxDecoration(
-                          color: scheme.surfaceContainerHighest,
-                          borderRadius: BorderRadius.circular(18),
-                          border: Border.all(color: scheme.outlineVariant),
-                        ),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(Icons.gavel_rounded, color: AppColors.gold, size: 28),
-                            const SizedBox(height: 8),
-                            Text(category, textAlign: TextAlign.center, style: TextStyle(fontWeight: FontWeight.w700, color: scheme.onSurface)),
-                          ],
-                        ),
+                        decoration: BoxDecoration(color: scheme.surfaceContainerHighest, borderRadius: BorderRadius.circular(18), border: Border.all(color: scheme.outlineVariant)),
+                        child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+                          Icon(Icons.gavel_rounded, color: AppColors.gold, size: 28),
+                          const SizedBox(height: 8),
+                          Text(category, textAlign: TextAlign.center, style: TextStyle(fontWeight: FontWeight.w700, color: scheme.onSurface)),
+                        ]),
                       ),
                     );
                   },
@@ -75,9 +66,7 @@ class HomePage extends ConsumerWidget {
             ),
             SliverPadding(
               padding: const EdgeInsets.fromLTRB(16, 24, 16, 12),
-              sliver: SliverToBoxAdapter(
-                child: Text('محامون مقترحون', textAlign: TextAlign.right, style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: scheme.onSurface)),
-              ),
+              sliver: SliverToBoxAdapter(child: Text('محامون مقترحون', textAlign: TextAlign.right, style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: scheme.onSurface))),
             ),
             lawyers.when(
               loading: () => const SliverToBoxAdapter(child: Center(child: Padding(padding: EdgeInsets.all(24), child: CircularProgressIndicator()))),
@@ -86,14 +75,16 @@ class HomePage extends ConsumerWidget {
                 delegate: SliverChildBuilderDelegate(
                   (context, index) {
                     final lawyer = items[index] as LawyerProfile;
+                    final name = lawyer.fullName?.trim().isNotEmpty == true ? lawyer.fullName!.trim() : 'محامٍ';
+                    final specialization = lawyer.specializations.isNotEmpty ? lawyer.specializations.join('، ') : 'استشارات قانونية';
                     return Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
                       child: Card(
                         color: scheme.surfaceContainerHighest,
                         child: ListTile(
-                          leading: CircleAvatar(backgroundImage: lawyer.avatarUrl != null ? NetworkImage(lawyer.avatarUrl!) : null, child: lawyer.avatarUrl == null ? const Icon(Icons.person) : null),
-                          title: Text(lawyer.fullName, textAlign: TextAlign.right),
-                          subtitle: Text(lawyer.specialization, textAlign: TextAlign.right),
+                          leading: CircleAvatar(backgroundImage: lawyer.avatarUrl != null && lawyer.avatarUrl!.isNotEmpty ? NetworkImage(lawyer.avatarUrl!) : null, child: lawyer.avatarUrl == null || lawyer.avatarUrl!.isEmpty ? const Icon(Icons.person) : null),
+                          title: Text(name, textAlign: TextAlign.right),
+                          subtitle: Text(specialization, textAlign: TextAlign.right),
                           trailing: const Icon(Icons.chevron_left_rounded),
                           onTap: () => context.push('/lawyers/${lawyer.id}'),
                         ),
