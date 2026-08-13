@@ -25,17 +25,21 @@ final availableSlotsProvider = FutureProvider.family<List<AvailableBookingSlot>,
   return (rows as List).map((row) { final m = Map<String, dynamic>.from(row as Map); return AvailableBookingSlot(id: m['id'] as String, startsAt: DateTime.parse(m['starts_at'] as String).toLocal()); }).toList();
 });
 
-final bookingDetailsProvider = FutureProvider.family<Map<String, dynamic>?, String>((ref, bookingId) async {
+@riverpod
+Future<Map<String, dynamic>?> bookingDetails(BookingDetailsRef ref, String bookingId) async {
   final booking = await SupabaseConfig.client.from('bookings').select('user_id,lawyer_id, consultation_type, consultation_mode, manual_payment_required, manual_received_amount, description, document_url, package_name, package_description, package_duration_minutes').eq('id', bookingId).maybeSingle();
   if (booking == null) return null;
   final result = Map<String, dynamic>.from(booking);
   final client = await SupabaseConfig.client.from('profiles').select('full_name').eq('id', booking['user_id']).maybeSingle();
-  final lawyer = await SupabaseConfig.client.from('profiles').select('full_name,avatar_url').eq('id', booking['lawyer_id']).maybeSingle();
-  result['client_name'] = client?['full_name'] ?? 'غير متوفر';
-  result['lawyer_name'] = lawyer?['full_name'] ?? 'غير متوفر';
-  result['lawyer_avatar_url'] = lawyer?['avatar_url'];
+  final lawyerProfile = await SupabaseConfig.client.from('profiles').select('full_name,avatar_url').eq('id', booking['lawyer_id']).maybeSingle();
+  final lawyerFallback = await SupabaseConfig.client.from('lawyer_profiles').select('full_name').eq('profile_id', booking['lawyer_id']).maybeSingle();
+  final lawyerName = (lawyerProfile?['full_name'] ?? '').toString().trim();
+  final fallbackName = (lawyerFallback?['full_name'] ?? '').toString().trim();
+  result['client_name'] = (client?['full_name'] ?? 'غير متوفر').toString();
+  result['lawyer_name'] = lawyerName.isNotEmpty ? lawyerName : (fallbackName.isNotEmpty ? fallbackName : 'غير متوفر');
+  result['lawyer_avatar_url'] = lawyerProfile?['avatar_url'];
   return result;
-});
+}
 
 final bookingClientNameProvider = FutureProvider.family<String?, String>((ref, bookingId) async { final result = await SupabaseConfig.client.rpc('get_booking_client_name', params: {'p_booking_id': bookingId}); if (result is List && result.isNotEmpty) { final row = Map<String, dynamic>.from(result.first as Map); final name = row['full_name']?.toString().trim(); return name == null || name.isEmpty ? null : name; } if (result is Map) { final name = result['full_name']?.toString().trim(); return name == null || name.isEmpty ? null : name; } return null; });
 final bookingContactProvider = FutureProvider.family<Map<String, dynamic>?, String>((ref, bookingId) async { final response = await SupabaseConfig.client.rpc('get_booking_contact_info', params: {'p_booking_id': bookingId}); if (response is List && response.isNotEmpty) return Map<String, dynamic>.from(response.first as Map); return null; });
