@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import '../../../../app/theme.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../authentication/presentation/providers/auth_provider.dart';
 import '../providers/bookings_provider.dart';
@@ -79,7 +78,11 @@ class BookingsListPage extends ConsumerWidget {
                           orElse: () => 'اسم المحامي غير متوفر',
                         );
 
-                  final lawyerAvatar = !isLawyer ? lawyerInfoAsync!.valueOrNull?['avatar_url']?.toString() : null;
+                  String? lawyerAvatar;
+                  if (!isLawyer && lawyerInfoAsync != null) {
+                    final info = lawyerInfoAsync.valueOrNull;
+                    lawyerAvatar = info?['avatar_url']?.toString();
+                  }
 
                   return Card(
                     margin: const EdgeInsets.only(bottom: 12),
@@ -99,26 +102,25 @@ class BookingsListPage extends ConsumerWidget {
                           children: [
                             if (!isLawyer) ...[
                               CircleAvatar(
-                                radius: 27,
-                                backgroundColor: scheme.surfaceContainerHighest,
-                                backgroundImage: lawyerAvatar != null && lawyerAvatar.isNotEmpty ? NetworkImage(lawyerAvatar) : null,
-                                child: lawyerAvatar == null || lawyerAvatar.isEmpty ? Icon(Icons.person_rounded, color: scheme.onSurfaceVariant) : null,
+                                radius: 28,
+                                backgroundColor: dark ? scheme.surfaceContainerHighest : AppColors.goldLight,
+                                backgroundImage: lawyerAvatar != null && lawyerAvatar!.isNotEmpty ? NetworkImage(lawyerAvatar!) : null,
+                                child: lawyerAvatar == null || lawyerAvatar!.isEmpty ? Icon(Icons.person_outline, color: dark ? AppColors.gold : AppColors.goldDark) : null,
                               ),
-                              const SizedBox(width: 12),
+                              const SizedBox(width: 14),
                             ],
                             Expanded(
                               child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.end,
+                                crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text(displayName, textAlign: TextAlign.right, style: TextStyle(fontWeight: FontWeight.w800, color: scheme.onSurface)),
+                                  Text(displayName, style: TextStyle(fontWeight: FontWeight.w700, color: scheme.onSurface)),
                                   const SizedBox(height: 6),
-                                  Text(booking.consultationMode?.trim().isNotEmpty == true ? booking.consultationMode! : 'استشارة قانونية', style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 12)),
-                                  const SizedBox(height: 8),
-                                  Text(booking.status, style: TextStyle(color: scheme.primary, fontWeight: FontWeight.w700, fontSize: 12)),
+                                  Text(booking.packageName, style: TextStyle(color: scheme.onSurfaceVariant)),
+                                  const SizedBox(height: 4),
+                                  Text(_formatDate(booking.scheduledAt), style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 12)),
                                 ],
                               ),
                             ),
-                            const SizedBox(width: 8),
                             Icon(Icons.chevron_left_rounded, color: scheme.onSurfaceVariant),
                           ],
                         ),
@@ -133,4 +135,6 @@ class BookingsListPage extends ConsumerWidget {
       ),
     );
   }
+
+  String _formatDate(DateTime date) => '${date.day}/${date.month}/${date.year}';
 }
