@@ -4,22 +4,23 @@
 قبل أي تعديل جديد تتم مراجعة الملفات والـcommits السابقة لتجنب تكرار التنفيذ. كل تعديل جديد يسجل في ملف Markdown مع الـcommit والسبب والنتيجة.
 
 ## آخر تعديل
-- `21fd42cf2c0adcbe65c8c6ae2a87a8c5738da161` — تحسين `main_bottom_nav.dart` ليأخذ اتجاه RTL/LTR من `Directionality.of(context)` بدل فرض اتجاه ثابت داخل الشريط، مع الإبقاء على ترتيب المحامي: الرئيسية → استشاراتي → التنبيهات → الإعدادات وترتيب طالب الاستشارة كما هو. الهدف مطابقة Stitch بشكل أكثر أمانًا عبر الثيمات واتجاه الواجهة وتجنب مشاكل RTL المتكررة.
+- `67f5392ea076094ebbf6131426c276d34423c2ee` — صقل `lawyer_details_page.dart`: جعل اتجاه شريط الإجراءات السفلي يعتمد على `Directionality.of(context)` بدل فرض RTL، مع الحفاظ على أولوية زر «حجز موعد» وترتيب زر «مراسلة» بصورة منطقية، وتنظيف بنية تبويبات الملف لتفادي الصياغات المبتورة.
+- `21fd42cf2c0adcbe65c8c6ae2a87a8c5738da161` — تحسين `main_bottom_nav.dart` ليأخذ اتجاه RTL/LTR من `Directionality.of(context)` بدل فرض اتجاه ثابت داخل الشريط، مع الإبقاء على ترتيب المحامي: الرئيسية → استشاراتي → التنبيهات → الإعدادات وترتيب طالب الاستشارة كما هو.
 - `e8fdbde104a36bc762471ab2da1386ee727f14a4` — جعل `AppShell` واعيًا بدور المستخدم وربط فهارس شريط التنقل بالمحامي بشكل مستقل، بحيث لا يظهر تبويب المحامين للمحامي وتبقى فهارس العميل كما هي.
-- `dda6fed1a71b26dc9dd1745c14a02ccffb537f7b` — تعديل `main_bottom_nav.dart`: حذف زر «المحامون» من قائمة المحامي وإعادة ترتيب الشريط للمحامي إلى: الرئيسية → استشاراتي → التنبيهات → الإعدادات، مع إبقاء قائمة طالب الاستشارة كما هي.
-- `39035ebfaffef2ae6f24a5c978649ae0e86cdf03` — إصلاح `booking_details_page.dart` بالكامل بعد ظهور أخطاء CI: إزالة الصياغة المبتورة التي سببت أخطاء الأقواس، الحفاظ على RTL باستخدام Flutter APIs الصحيحة، وربط إجراءات المراجعة وتحديث الحالة وعدم الحضور بالـBookingsController.
-- `dbdc2454fff678e69437696f1c4f1c90311cfccc` — إصلاح مراجع RTL في `booking_details_page.dart` باستبدال الاعتماد المباشر على `TextDirection.rtl` بـ`Directionality.of(context)`.
-- `91f6911e30ac4ea5afca2241a4fe31a74a5beba9` — إصلاح طبقة `BookingsController` بعد تطبيق Stitch على `booking_details_page.dart`: إضافة `reviewBooking` و`updateBookingStatus` و`reportNoShow` كواجهات رسمية فوق الـrepository.
+
+## سجل التنفيذ السابق
+- `dda6fed1a71b26dc9dd1745c14a02ccffb537f7b` — تعديل `main_bottom_nav.dart`: حذف زر «المحامون» من قائمة المحامي وإعادة ترتيب الشريط للمحامي إلى: الرئيسية → استشاراتي → التنبيهات → الإعدادات.
+- `39035ebfaffef2ae6f24a5c978649ae0e86cdf03` — إصلاح `booking_details_page.dart` بالكامل بعد ظهور أخطاء CI.
+- `dbdc2454fff678e69437696f1c4f1c90311cfccc` — إصلاح مراجع RTL في `booking_details_page.dart`.
+- `91f6911e30ac4ea5afca2241a4fe31a74a5beba9` — إضافة واجهات `BookingsController` الخاصة بالمراجعة وتحديث الحالة وعدم الحضور.
 - `1babe059cf5fcb2fdd50c3882c27c95c490f8bf0` — تطبيق Stitch Premium على `booking_details_page.dart`.
 - `5fc2166b5259d19d373a45a073fb23bab11471db` — تطبيق Stitch Premium على `specialization_change_page.dart`.
 - `95e795405c3485257616a1a20db694b9a6423af3` — إصلاح أخطاء syntax في `lawyer_onboarding_page.dart`.
 - `0b304b039ff0a58e3c1a2271561bd2cdf1efab23` — تطبيق أسلوب Stitch Premium على `payment_upload_page.dart`.
-
-## التعديلات السابقة
 - `0bc5983d88b6ee1b703ffc27fdba592d562fe771` — تطبيق أسلوب Stitch Premium على `lawyer_pending_page.dart`.
 - `35aa9f1cbe027563b6ad0eaf1665558493403461` — تطبيق أسلوب Stitch Premium على `lawyer_setup_page.dart`.
 - `e2d507d344da2e18fca446448dbfecb483e9016e` — تطبيق أسلوب Stitch Premium على `lawyer_profile_edit_page.dart`.
-- `77e16ba3f1a8c9a8db528dc7422dc83664fc9563` — Design Tokens في `app_sizes.dart`.
+- `77e16ba3f1a8c9a8db528dc7422dc83664fc9563` — إضافة Design Tokens في `app_sizes.dart`.
 - `409d4772da133b5a6ef866537512d05e7760bb15` — مطابقة `lawyers_list_page.dart` مع Stitch.
 - `aaf5a7456ec88f7d0f4c6fbdeb43448ece1fbb1d` — مطابقة `complete_profile_page.dart` مع Stitch.
 - `7b5fa9297471b6abfd1e94635fd45ec563639ab5` — مطابقة `bookings_list_page.dart` مع Stitch.
@@ -27,25 +28,6 @@
 - `30b33d1cc1d8a6a5d20f2cab81c6cf36da515d7d` — مطابقة `help_center_page.dart` مع Stitch.
 - `15428aac8b8b4d1510cd368e3010784048f535b4` — مطابقة `conversations_page.dart` مع Stitch.
 - `50ba0847414535c9034dc6939c0d94b21c084bda` — صقل `profile_page.dart`.
-
-## مطابقة Stitch — الدفع
-- `7dff7e5d0d4f1db8e3271dd294ca4578d2964cbc` — مطابقة `payment_result_page.dart`.
-- `19967f1a6cbcd8baa06de833bcdbde5511130372` — مطابقة `payment_methods_page.dart`.
-
-## مطابقة Stitch — إدارة المحامي
-- `096899d95e86eb2fc35acdf89165f8f98d1db366` — إعادة تصميم `lawyer_availability_page.dart`.
-- `9e6daf61fc8830bd7db97ff605f0d99fdc912ea2` — استكمال `lawyer_dashboard_page.dart`.
-- `e2d507d344da2e18fca446448dbfecb483e9016e` — استكمال `lawyer_profile_edit_page.dart`.
-- `35aa9f1cbe027563b6ad0eaf1665558493403461` — استكمال `lawyer_setup_page.dart`.
-- `0bc5983d88b6ee1b703ffc27fdba592d562fe771` — استكمال `lawyer_pending_page.dart`.
-
-## إصلاحات CI السابقة
-- `263b6006c9232d2c317f9e95f50a98ffc74d570e` — إصلاح syntax في `bookings_list_page.dart`.
-- `4c0c1532ac3530570011f176ae8e136766724688` — إصلاح syntax في `complete_profile_page.dart`.
-- `5bb71a20e62aff8f7fc7b0639cb8a39916494f32` — إصلاح syntax في `chat_page.dart`.
-- `4b53685ae1b00922fca48f74e637b465a834fd24` — إصلاح syntax في `payment_result_page.dart`.
-- `fbdda7ccfed4bd98c7742d048d2d8ad2019f8802` — إصلاح syntax في `lawyer_dashboard_page.dart`.
-- `f1e9a6b16890d8ae08cb554e0f511e843688b502` — معالجة توافق RTL في `lawyer_availability_page.dart`.
 
 ## التحقق
 لا تعتبر أي دفعة ناجحة حتى يمر `flutter analyze` وCI على commit الحالي.
