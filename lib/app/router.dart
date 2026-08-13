@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:astshara/core/config/supabase_config.dart';
+import '../core/navigation/app_navigation.dart';
 import '../features/authentication/presentation/pages/login_page.dart';
 import '../features/authentication/presentation/pages/signup_page.dart';
 import '../features/authentication/presentation/pages/otp_page.dart';
@@ -67,6 +68,7 @@ Future<bool> _lawyerHasPendingManualPayment() async {
 GoRouter router(RouterRef ref) {
   final authState = ref.watch(authStateChangesProvider);
   return GoRouter(
+    navigatorKey: AppNavigation.navigatorKey,
     initialLocation: '/',
     refreshListenable: GoRouterRefreshStream(ref.watch(authRepositoryProvider).authStateChanges()),
     redirect: (context, state) async {
