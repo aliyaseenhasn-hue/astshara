@@ -17,7 +17,7 @@ class BookingsListPage extends ConsumerWidget {
     final dark = Theme.of(context).brightness == Brightness.dark;
     final user = ref.watch(authStateChangesProvider).value;
     final isLawyer = user?.role == 'lawyer';
-    final bookingsAsync = ref.watch(isLawyer ? lawyerBookingsProvider : userBookingsProvider);
+    final bookingsAsync = isLawyer ? ref.watch(lawyerBookingsProvider) : ref.watch(userBookingsProvider);
     final title = isLawyer ? 'طلبات الاستشارة' : 'استشاراتي';
 
     return Scaffold(
@@ -30,7 +30,7 @@ class BookingsListPage extends ConsumerWidget {
         centerTitle: false,
         actions: [
           IconButton(onPressed: () => context.push('/archived-bookings'), icon: Icon(Icons.archive_outlined, color: scheme.onSurface), tooltip: 'أرشيف الاستشارات'),
-          IconButton(onPressed: () => ref.invalidate(isLawyer ? lawyerBookingsProvider : userBookingsProvider), icon: Icon(Icons.refresh_rounded, color: scheme.onSurface), tooltip: 'تحديث'),
+          IconButton(onPressed: () => isLawyer ? ref.invalidate(lawyerBookingsProvider) : ref.invalidate(userBookingsProvider), icon: Icon(Icons.refresh_rounded, color: scheme.onSurface), tooltip: 'تحديث'),
         ],
       ),
       body: bookingsAsync.when(
