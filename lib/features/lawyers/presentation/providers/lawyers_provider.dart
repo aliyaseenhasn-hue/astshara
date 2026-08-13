@@ -12,14 +12,35 @@ LawyersRepository lawyersRepository(LawyersRepositoryRef ref) => LawyersReposito
 final searchQueryProvider = StateProvider<String>((ref) => '');
 
 String _normalizeSpecialization(String value) {
-  return value.trim().toLowerCase().replaceAll(RegExp(r'[إأآ]'), 'ا').replaceAll('ة', 'ه');
+  return value
+      .trim()
+      .toLowerCase()
+      .replaceAll(RegExp(r'[إأآ]'), 'ا')
+      .replaceAll('ة', 'ه')
+      .replaceAll(RegExp(r'[\u064B-\u065F]'), '')
+      .replaceAll(RegExp(r'\s+'), ' ');
 }
 
 bool _matchesCategory(LawyerProfile lawyer, String category) {
   final wanted = _normalizeSpecialization(category);
+  if (wanted.isEmpty) return true;
   return lawyer.specializations.any((specialization) {
     final actual = _normalizeSpecialization(specialization);
-    return actual == wanted || actual.contains(wanted) || wanted.contains(actual);
+    if (actual == wanted) return true;
+    final wantedTokens = wanted.split(' ').where((e) => e.isNotEmpty).toSet();
+    final actualTokens = actual.split(' ').where((e) => e.isNotEmpty).toSet();
+    return wantedTokens.isNotEmpty && wantedTokens.every(actualTokens.contains);
+  });
+}
+
+bool _matchesSearch(LawyerProfile lawyer, String query) {
+  final q = _normalizeSpecialization(query);
+  if (q.isEmpty) return true;
+  final name = _normalizeSpecialization(lawyer.fullName ?? '');
+  if (name == q || name.split(' ').contains(q)) return true;
+  return lawyer.specializations.any((specialization) {
+    final value = _normalizeSpecialization(specialization);
+    return value == q || value.split(' ').contains(q);
   });
 }
 
@@ -30,14 +51,11 @@ Future<List<LawyerProfile>> lawyersList(LawyersListRef ref) {
   final repository = ref.watch(lawyersRepositoryProvider);
   return repository.getLawyers().then((lawyers) {
     Iterable<LawyerProfile> filtered = lawyers;
-    if (searchQuery.isNotEmpty) {
-      final q = searchQuery.toLowerCase().trim();
-      filtered = filtered.where((l) =>
-          (l.fullName?.toLowerCase().contains(q) ?? false) ||
-          l.specializations.any((s) => s.toLowerCase().contains(q)));
+    if (searchQuery.trim().isNotEmpty) {
+      filtered = filtered.where((lawyer) => _matchesSearch(lawyer, searchQuery));
     }
     if (category != null && category.isNotEmpty) {
-      filtered = filtered.where((l) => _matchesCategory(l, category));
+      filtered = filtered.where((lawyer) => _matchesCategory(lawyer, category));
     }
     final list = filtered.toList()
       ..sort((a, b) {
