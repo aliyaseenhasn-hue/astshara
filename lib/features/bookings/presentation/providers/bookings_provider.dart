@@ -24,31 +24,20 @@ Future<List<Booking>> lawyerBookings(LawyerBookingsRef ref) async { final user =
 final bookingLawyerInfoProvider = FutureProvider.family<Map<String, dynamic>?, String>((ref, lawyerId) async {
   Map<String, dynamic>? profile;
   Map<String, dynamic>? lawyerProfile;
-
   profile = await SupabaseConfig.client.from('profiles').select('id,full_name,avatar_url').eq('id', lawyerId).maybeSingle();
   lawyerProfile = await SupabaseConfig.client.from('lawyer_profiles').select('profile_id,full_name').eq('profile_id', lawyerId).maybeSingle();
-
-  // Some legacy bookings can contain lawyer_profiles.id instead of profiles.id.
-  // Resolve that identifier back to the owning profile before displaying the lawyer.
   if (profile == null && lawyerProfile == null) {
     final legacyLawyer = await SupabaseConfig.client.from('lawyer_profiles').select('id,profile_id,full_name').eq('id', lawyerId).maybeSingle();
     if (legacyLawyer != null) {
       final profileId = legacyLawyer['profile_id']?.toString();
-      if (profileId != null && profileId.isNotEmpty) {
-        profile = await SupabaseConfig.client.from('profiles').select('id,full_name,avatar_url').eq('id', profileId).maybeSingle();
-      }
+      if (profileId != null && profileId.isNotEmpty) profile = await SupabaseConfig.client.from('profiles').select('id,full_name,avatar_url').eq('id', profileId).maybeSingle();
       lawyerProfile = legacyLawyer;
     }
   }
-
   final profileName = profile?['full_name']?.toString().trim() ?? '';
   final professionalName = lawyerProfile?['full_name']?.toString().trim() ?? '';
   final name = professionalName.isNotEmpty ? professionalName : profileName;
-  return {
-    'id': profile?['id']?.toString() ?? lawyerId,
-    'full_name': name.isNotEmpty ? name : 'اسم المحامي غير متوفر',
-    'avatar_url': profile?['avatar_url'],
-  };
+  return {'id': profile?['id']?.toString() ?? lawyerId, 'full_name': name.isNotEmpty ? name : 'اسم المحامي غير متوفر', 'avatar_url': profile?['avatar_url']};
 });
 
 final availableSlotsProvider = FutureProvider.family<List<AvailableBookingSlot>, String>((ref, lawyerId) async {
@@ -84,5 +73,4 @@ class BookingsController extends _$BookingsController {
   Future<void> reportNoShow(String bookingId, {required bool isLawyer}) async { state = const AsyncLoading(); state = await AsyncValue.guard(() async { await ref.read(bookingsRepositoryProvider).reportNoShow(bookingId, isLawyer); ref.invalidate(userBookingsProvider); ref.invalidate(lawyerBookingsProvider); ref.invalidate(bookingDetailsProvider(bookingId)); }); }
   Future<void> archiveBooking(String bookingId, {required bool isLawyer}) async { state = const AsyncLoading(); state = await AsyncValue.guard(() async { final repo = ref.read(bookingsRepositoryProvider); if (isLawyer) { await repo.archiveBookingForLawyer(bookingId); } else { await repo.archiveBookingForUser(bookingId); } ref.invalidate(userBookingsProvider); ref.invalidate(lawyerBookingsProvider); ref.invalidate(bookingDetailsProvider(bookingId)); }); }
   Future<void> restoreBooking(String bookingId) async { state = const AsyncLoading(); state = await AsyncValue.guard(() async { await ref.read(bookingsRepositoryProvider).restoreBookingFromArchive(bookingId); ref.invalidate(userBookingsProvider); ref.invalidate(lawyerBookingsProvider); ref.invalidate(bookingDetailsProvider(bookingId)); }); }
-  Future<void> reportNoShow(String bookingId, [bool? isLawyer]) async { state = const AsyncLoading(); state = await AsyncValue.guard(() async { await ref.read(bookingsRepositoryProvider).reportNoShow(bookingId); ref.invalidate(userBookingsProvider); ref.invalidate(lawyerBookingsProvider); ref.invalidate(bookingDetailsProvider(bookingId)); }); }
 }
