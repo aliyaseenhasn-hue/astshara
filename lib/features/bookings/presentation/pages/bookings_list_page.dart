@@ -30,125 +30,49 @@ class BookingsListPage extends ConsumerWidget {
         title: Text(title, style: TextStyle(color: scheme.onSurface, fontWeight: FontWeight.w800)),
         centerTitle: false,
         actions: [
-          IconButton(
-            onPressed: () => ref.invalidate(isLawyer ? lawyerBookingsProvider : userBookingsProvider),
-            icon: Icon(Icons.refresh_rounded, color: scheme.onSurface),
-            tooltip: 'تحديث',
-          ),
+          IconButton(onPressed: () => context.push('/archived-bookings'), icon: Icon(Icons.archive_outlined, color: scheme.onSurface), tooltip: 'أرشيف الاستشارات'),
+          IconButton(onPressed: () => ref.invalidate(isLawyer ? lawyerBookingsProvider : userBookingsProvider), icon: Icon(Icons.refresh_rounded, color: scheme.onSurface), tooltip: 'تحديث'),
         ],
       ),
       body: bookingsAsync.when(
         loading: () => const LoadingWidget(),
         error: (_, __) => Center(child: Text('تعذر تحميل الاستشارات', style: TextStyle(color: scheme.onSurface))),
         data: (bookings) {
-          if (bookings.isEmpty) {
-            return Center(
-              child: Padding(
-                padding: const EdgeInsets.all(24),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Container(
-                      width: 82,
-                      height: 82,
-                      decoration: BoxDecoration(
-                        color: dark ? scheme.surfaceContainerHighest : AppColors.goldLight.withValues(alpha: .42),
-                        borderRadius: BorderRadius.circular(24),
-                      ),
-                      child: Icon(Icons.calendar_month_outlined, size: 42, color: dark ? AppColors.gold : AppColors.goldDark),
-                    ),
-                    const SizedBox(height: 18),
-                    Text(isLawyer ? 'لا توجد طلبات واردة حالياً' : 'ليس لديك أي حجوزات حالياً', style: TextStyle(fontWeight: FontWeight.bold, color: scheme.onSurface)),
-                    const SizedBox(height: 8),
-                    Text('ستظهر هنا الاستشارات عند توفرها.', style: TextStyle(color: scheme.onSurfaceVariant)),
-                  ],
-                ),
-              ),
-            );
-          }
-
+          if (bookings.isEmpty) return Center(child: Padding(padding: const EdgeInsets.all(24), child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [Container(width: 82, height: 82, decoration: BoxDecoration(color: dark ? scheme.surfaceContainerHighest : AppColors.goldLight.withValues(alpha: .42), borderRadius: BorderRadius.circular(24)), child: Icon(Icons.calendar_month_outlined, size: 42, color: dark ? AppColors.gold : AppColors.goldDark)), const SizedBox(height: 18), Text(isLawyer ? 'لا توجد طلبات واردة حالياً' : 'ليس لديك أي حجوزات حالياً', style: TextStyle(fontWeight: FontWeight.bold, color: scheme.onSurface)), const SizedBox(height: 8), Text('ستظهر هنا الاستشارات عند توفرها.', style: TextStyle(color: scheme.onSurfaceVariant))])));
           return ListView.builder(
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 110),
             itemCount: bookings.length,
             itemBuilder: (context, index) {
               final booking = bookings[index];
-              return Consumer(
-                builder: (context, ref, child) {
-                  final nameAsync = isLawyer ? ref.watch(bookingClientNameProvider(booking.id)) : ref.watch(userNameProvider(booking.lawyerId));
-                  final displayName = nameAsync.maybeWhen(
-                    data: (name) => name != null && name.trim().isNotEmpty ? name.trim() : (isLawyer ? 'اسم العميل غير متوفر' : 'المحامي غير متوفر'),
-                    loading: () => 'جاري تحميل الاسم...',
-                    orElse: () => isLawyer ? 'اسم العميل غير متوفر' : 'المحامي غير متوفر',
-                  );
-
-                  return Card(
-                    margin: const EdgeInsets.only(bottom: 12),
-                    elevation: dark ? 0 : 1,
-                    shadowColor: Colors.black.withValues(alpha: .05),
-                    color: dark ? scheme.surfaceContainerHighest.withValues(alpha: .82) : AppColors.surface,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(20),
-                      side: BorderSide(color: dark ? scheme.outlineVariant : AppColors.outline),
+              return Consumer(builder: (context, ref, child) {
+                final nameAsync = isLawyer ? ref.watch(bookingClientNameProvider(booking.id)) : ref.watch(userNameProvider(booking.lawyerId));
+                final displayName = nameAsync.maybeWhen(data: (name) => name != null && name.trim().isNotEmpty ? name.trim() : (isLawyer ? 'اسم العميل غير متوفر' : 'المحامي غير متوفر'), loading: () => 'جاري تحميل الاسم...', orElse: () => isLawyer ? 'اسم العميل غير متوفر' : 'المحامي غير متوفر');
+                return Card(
+                  margin: const EdgeInsets.only(bottom: 12),
+                  elevation: dark ? 0 : 1,
+                  shadowColor: Colors.black.withValues(alpha: .05),
+                  color: dark ? scheme.surfaceContainerHighest.withValues(alpha: .82) : AppColors.surface,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20), side: BorderSide(color: dark ? scheme.outlineVariant : AppColors.outline)),
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(20),
+                    onTap: () => context.push('/booking-details', extra: booking),
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                        Row(children: [Container(width: 46, height: 46, decoration: BoxDecoration(color: dark ? scheme.surfaceContainerHighest : AppColors.goldLight.withValues(alpha: .38), borderRadius: BorderRadius.circular(14)), child: Icon(isLawyer ? Icons.person_outline_rounded : Icons.balance_rounded, color: dark ? AppColors.gold : AppColors.goldDark)), const SizedBox(width: 12), Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(displayName, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontWeight: FontWeight.bold, color: scheme.onSurface)), const SizedBox(height: 4), Text('رقم الحجز: #${booking.id.length >= 8 ? booking.id.substring(0, 8) : booking.id}', style: TextStyle(fontSize: 10, color: scheme.onSurfaceVariant))])), _StatusBadge(status: booking.status, lawyerApproved: booking.lawyerApproved)]),
+                        const SizedBox(height: 14),
+                        Container(padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11), decoration: BoxDecoration(color: dark ? scheme.surface : AppColors.surfaceVariant, borderRadius: BorderRadius.circular(13), border: Border.all(color: dark ? scheme.outlineVariant : AppColors.divider)), child: Row(children: [Icon(Icons.schedule_rounded, size: 18, color: dark ? AppColors.gold : AppColors.primaryDark), const SizedBox(width: 8), Expanded(child: Text(DateFormat('yyyy/MM/dd - HH:mm').format(booking.scheduledAt), style: TextStyle(fontSize: 12, color: scheme.onSurface))), Text('${booking.price} د.ع', style: TextStyle(fontWeight: FontWeight.bold, color: dark ? AppColors.gold : AppColors.secondary))])),
+                        const SizedBox(height: 12),
+                        _buildActions(context, ref, booking, isLawyer),
+                        if (['مكتمل', 'ملغي', 'مسترد', 'بانتظار الاسترداد'].contains(booking.status)) ...[
+                          const SizedBox(height: 8),
+                          SizedBox(width: double.infinity, child: OutlinedButton.icon(onPressed: () async { await ref.read(bookingsControllerProvider.notifier).archiveBooking(booking.id, isLawyer: isLawyer); }, icon: const Icon(Icons.archive_outlined, size: 18), label: const Text('أرشفة الاستشارة'))),
+                        ],
+                      ]),
                     ),
-                    child: InkWell(
-                      borderRadius: BorderRadius.circular(20),
-                      onTap: () => context.push('/booking-details', extra: booking),
-                      child: Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                Container(
-                                  width: 46,
-                                  height: 46,
-                                  decoration: BoxDecoration(
-                                    color: dark ? scheme.surfaceContainerHighest : AppColors.goldLight.withValues(alpha: .38),
-                                    borderRadius: BorderRadius.circular(14),
-                                  ),
-                                  child: Icon(isLawyer ? Icons.person_outline_rounded : Icons.balance_rounded, color: dark ? AppColors.gold : AppColors.goldDark),
-                                ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text(displayName, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontWeight: FontWeight.bold, color: scheme.onSurface)),
-                                      const SizedBox(height: 4),
-                                      Text('رقم الحجز: #${booking.id.length >= 8 ? booking.id.substring(0, 8) : booking.id}', style: TextStyle(fontSize: 10, color: scheme.onSurfaceVariant)),
-                                    ],
-                                  ),
-                                ),
-                                _StatusBadge(status: booking.status, lawyerApproved: booking.lawyerApproved),
-                              ],
-                            ),
-                            const SizedBox(height: 14),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
-                              decoration: BoxDecoration(
-                                color: dark ? scheme.surface : AppColors.surfaceVariant,
-                                borderRadius: BorderRadius.circular(13),
-                                border: Border.all(color: dark ? scheme.outlineVariant : AppColors.divider),
-                              ),
-                              child: Row(
-                                children: [
-                                  Icon(Icons.schedule_rounded, size: 18, color: dark ? AppColors.gold : AppColors.primaryDark),
-                                  const SizedBox(width: 8),
-                                  Expanded(child: Text(DateFormat('yyyy/MM/dd - HH:mm').format(booking.scheduledAt), style: TextStyle(fontSize: 12, color: scheme.onSurface))),
-                                  Text('${booking.price} د.ع', style: TextStyle(fontWeight: FontWeight.bold, color: dark ? AppColors.gold : AppColors.secondary)),
-                                ],
-                              ),
-                            ),
-                            const SizedBox(height: 12),
-                            _buildActions(context, ref, booking, isLawyer),
-                          ],
-                        ),
-                      ),
-                    ),
-                  );
-                },
-              );
+                  ),
+                );
+              });
             },
           );
         },
@@ -170,12 +94,7 @@ class BookingsListPage extends ConsumerWidget {
 
   Widget _action(BuildContext context, IconData icon, String label, VoidCallback onPressed, {bool outlined = false, bool dark = false}) {
     final scheme = Theme.of(context).colorScheme;
-    return SizedBox(
-      width: double.infinity,
-      child: outlined
-          ? OutlinedButton.icon(onPressed: onPressed, icon: Icon(icon, size: 19), label: Text(label), style: OutlinedButton.styleFrom(minimumSize: const Size.fromHeight(46), foregroundColor: dark ? AppColors.gold : AppColors.primaryDark, side: BorderSide(color: dark ? AppColors.gold : AppColors.primaryDark)))
-          : ElevatedButton.icon(onPressed: onPressed, icon: Icon(icon, size: 19), label: Text(label), style: ElevatedButton.styleFrom(minimumSize: const Size.fromHeight(46), backgroundColor: dark ? AppColors.gold : AppColors.primary, foregroundColor: dark ? AppColors.secondaryDark : scheme.onPrimary)),
-    );
+    return SizedBox(width: double.infinity, child: outlined ? OutlinedButton.icon(onPressed: onPressed, icon: Icon(icon, size: 19), label: Text(label), style: OutlinedButton.styleFrom(minimumSize: const Size.fromHeight(46), foregroundColor: dark ? AppColors.gold : AppColors.primaryDark, side: BorderSide(color: dark ? AppColors.gold : AppColors.primaryDark))) : ElevatedButton.icon(onPressed: onPressed, icon: Icon(icon, size: 19), label: Text(label), style: ElevatedButton.styleFrom(minimumSize: const Size.fromHeight(46), backgroundColor: dark ? AppColors.gold : AppColors.primary, foregroundColor: dark ? AppColors.secondaryDark : scheme.onPrimary)));
   }
 }
 
@@ -183,7 +102,6 @@ class _StatusBadge extends StatelessWidget {
   final String status;
   final bool lawyerApproved;
   const _StatusBadge({required this.status, required this.lawyerApproved});
-
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
@@ -193,10 +111,6 @@ class _StatusBadge extends StatelessWidget {
     final success = label == 'مؤكد' || label == 'مكتمل' || label == 'قيد التنفيذ';
     final background = pending ? AppColors.pendingBg : success ? AppColors.acceptedBg : dark ? scheme.surfaceContainerHighest : AppColors.surfaceVariant;
     final foreground = pending ? AppColors.pendingText : success ? AppColors.acceptedText : scheme.onSurfaceVariant;
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
-      decoration: BoxDecoration(color: background, borderRadius: BorderRadius.circular(20)),
-      child: Text(label, style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: foreground)),
-    );
+    return Container(padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6), decoration: BoxDecoration(color: background, borderRadius: BorderRadius.circular(20)), child: Text(label, style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: foreground)));
   }
 }
