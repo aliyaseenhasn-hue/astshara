@@ -45,7 +45,7 @@ class BookingsListPage extends ConsumerWidget {
               final booking = bookings[index];
               return Consumer(builder: (context, ref, child) {
                 final clientNameAsync = isLawyer ? ref.watch(bookingClientNameProvider(booking.id)) : null;
-                final lawyerInfoAsync = isLawyer ? null : ref.watch(bookingLawyerInfoProvider(booking.lawyerId));
+                final lawyerInfoAsync = isLawyer ? null : ref.watch(bookingLawyerInfoProvider(booking.id));
                 final displayName = isLawyer
                     ? clientNameAsync!.maybeWhen(data: (name) => name != null && name.trim().isNotEmpty ? name.trim() : 'اسم العميل غير متوفر', loading: () => 'جاري تحميل الاسم...', orElse: () => 'اسم العميل غير متوفر')
                     : lawyerInfoAsync!.maybeWhen(data: (info) => (info?['full_name']?.toString().trim().isNotEmpty ?? false) ? info!['full_name'].toString().trim() : 'اسم المحامي غير متوفر', loading: () => 'جاري تحميل اسم المحامي...', orElse: () => 'اسم المحامي غير متوفر');
