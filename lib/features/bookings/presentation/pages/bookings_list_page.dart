@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../../app/theme.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../authentication/presentation/providers/auth_provider.dart';
 import '../providers/bookings_provider.dart';
@@ -11,13 +12,8 @@ class BookingsListPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final auth = ref.watch(authStateChangesProvider);
-    final isLawyer = auth.maybeWhen(
-      data: (user) => user?.role == 'lawyer',
-      orElse: () => false,
-    );
-    final bookingsAsync = isLawyer
-        ? ref.watch(lawyerBookingsProvider)
-        : ref.watch(userBookingsProvider);
+    final isLawyer = auth.maybeWhen(data: (user) => user?.role == 'lawyer', orElse: () => false);
+    final bookingsAsync = isLawyer ? ref.watch(lawyerBookingsProvider) : ref.watch(userBookingsProvider);
     final scheme = Theme.of(context).colorScheme;
     final dark = Theme.of(context).brightness == Brightness.dark;
 
@@ -66,7 +62,8 @@ class BookingsListPage extends ConsumerWidget {
               return Consumer(
                 builder: (context, ref, child) {
                   final clientNameAsync = isLawyer ? ref.watch(bookingClientNameProvider(booking.id)) : null;
-                  final lawyerInfoAsync = isLawyer ? null : ref.watch(bookingLawyerInfoProvider(booking.id));
+                  final lawyerInfoAsync = !isLawyer ? ref.watch(bookingLawyerInfoProvider(booking.id)) : null;
+
                   final displayName = isLawyer
                       ? clientNameAsync!.maybeWhen(
                           data: (name) => name != null && name.trim().isNotEmpty ? name.trim() : 'اسم العميل غير متوفر',
@@ -81,6 +78,7 @@ class BookingsListPage extends ConsumerWidget {
                           loading: () => 'جاري تحميل اسم المحامي...',
                           orElse: () => 'اسم المحامي غير متوفر',
                         );
+
                   final lawyerAvatar = !isLawyer ? lawyerInfoAsync!.valueOrNull?['avatar_url']?.toString() : null;
 
                   return Card(
@@ -114,7 +112,7 @@ class BookingsListPage extends ConsumerWidget {
                                 children: [
                                   Text(displayName, textAlign: TextAlign.right, style: TextStyle(fontWeight: FontWeight.w800, color: scheme.onSurface)),
                                   const SizedBox(height: 6),
-                                  Text(booking.serviceType.isNotEmpty ? booking.serviceType : 'استشارة قانونية', style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 12)),
+                                  Text(booking.consultationMode?.trim().isNotEmpty == true ? booking.consultationMode! : 'استشارة قانونية', style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 12)),
                                   const SizedBox(height: 8),
                                   Text(booking.status, style: TextStyle(color: scheme.primary, fontWeight: FontWeight.w700, fontSize: 12)),
                                 ],
