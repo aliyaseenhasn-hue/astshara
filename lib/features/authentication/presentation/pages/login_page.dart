@@ -38,9 +38,8 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final dark = Theme.of(context).brightness == Brightness.dark;
     final state = ref.watch(authControllerProvider);
-    final accent = dark ? AppColors.gold : scheme.primary;
+    final accent = AppColors.primary;
 
     ref.listen<AsyncValue<void>>(authControllerProvider, (previous, next) {
       next.whenOrNull(error: (error, _) {
@@ -54,7 +53,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
       body: SafeArea(
         child: Stack(
           children: [
-            Positioned(top: -100, right: -90, child: Container(width: 230, height: 230, decoration: BoxDecoration(shape: BoxShape.circle, color: accent.withValues(alpha: .07)))),
+            Positioned(top: -100, right: -90, child: Container(width: 230, height: 230, decoration: BoxDecoration(shape: BoxShape.circle, color: AppColors.secondaryContainer.withValues(alpha: .35)))),
             Positioned(bottom: -120, left: -100, child: Container(width: 260, height: 260, decoration: BoxDecoration(shape: BoxShape.circle, color: scheme.primary.withValues(alpha: .05)))),
             Center(
               child: SingleChildScrollView(
@@ -68,8 +67,8 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                         width: 78,
                         height: 78,
                         alignment: Alignment.center,
-                        decoration: BoxDecoration(color: dark ? scheme.surfaceContainerHighest : scheme.primaryContainer, borderRadius: BorderRadius.circular(26), border: Border.all(color: accent.withValues(alpha: .35))),
-                        child: Icon(Icons.balance_rounded, size: 42, color: accent),
+                        decoration: BoxDecoration(color: AppColors.primaryContainer, borderRadius: BorderRadius.circular(26), border: Border.all(color: AppColors.secondaryLight.withValues(alpha: .45))),
+                        child: const Icon(Icons.balance_rounded, size: 42, color: AppColors.goldLight),
                       ),
                       const SizedBox(height: 24),
                       Text(widget.isAdminLogin ? 'دخول الإدارة' : 'مرحباً بك في استشارة', textAlign: TextAlign.center, style: TextStyle(fontSize: 28, fontWeight: FontWeight.w900, letterSpacing: -.3, color: scheme.onSurface)),
@@ -78,7 +77,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                       const SizedBox(height: 30),
                       Container(
                         padding: const EdgeInsets.all(20),
-                        decoration: BoxDecoration(color: dark ? scheme.surfaceContainerHighest.withValues(alpha: .72) : scheme.surfaceContainerLowest, borderRadius: BorderRadius.circular(24), border: Border.all(color: scheme.outlineVariant.withValues(alpha: .8)), boxShadow: dark ? null : [BoxShadow(color: Colors.black.withValues(alpha: .035), blurRadius: 26, offset: const Offset(0, 10))]),
+                        decoration: BoxDecoration(color: scheme.surfaceContainerLowest, borderRadius: BorderRadius.circular(24), border: Border.all(color: scheme.outlineVariant.withValues(alpha: .8)), boxShadow: [BoxShadow(color: AppColors.primary.withValues(alpha: .035), blurRadius: 26, offset: const Offset(0, 10))]),
                         child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
                           Text('رقم الهاتف', textAlign: TextAlign.right, style: TextStyle(fontWeight: FontWeight.w800, color: scheme.onSurface)),
                           const SizedBox(height: 9),
@@ -87,17 +86,17 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                             keyboardType: TextInputType.phone,
                             textDirection: TextDirection.ltr,
                             style: TextStyle(color: scheme.onSurface, fontSize: 17, fontWeight: FontWeight.w600),
-                            decoration: InputDecoration(hintText: '07xxxxxxxx', prefixIcon: Icon(Icons.phone_android_rounded, color: accent), filled: true, fillColor: scheme.surfaceContainerHighest, border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: scheme.outlineVariant)), enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: scheme.outlineVariant)), focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: accent, width: 2))),
+                            decoration: InputDecoration(hintText: '07xxxxxxxx', prefixIcon: Icon(Icons.phone_android_rounded, color: accent), filled: true, fillColor: scheme.surfaceContainerLow, border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: scheme.outlineVariant)), enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: scheme.outlineVariant)), focusedBorder: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(12)), borderSide: BorderSide(color: AppColors.primary, width: 2))),
                             validator: (value) => value == null || value.trim().isEmpty ? 'رقم الهاتف مطلوب' : null,
                           ),
                           const SizedBox(height: 16),
-                          if (state.isLoading) const LoadingWidget() else SizedBox(width: double.infinity, child: ElevatedButton.icon(onPressed: _submit, icon: const Icon(Icons.sms_outlined), label: const Text('إرسال رمز التحقق'), style: ElevatedButton.styleFrom(minimumSize: const Size.fromHeight(55), backgroundColor: dark ? accent : scheme.primary, foregroundColor: dark ? Colors.black : scheme.onPrimary, elevation: 0, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))))),
+                          if (state.isLoading) const LoadingWidget() else SizedBox(width: double.infinity, child: ElevatedButton.icon(onPressed: _submit, icon: const Icon(Icons.sms_outlined), label: const Text('إرسال رمز التحقق'))),
                         ]),
                       ),
                       const SizedBox(height: 20),
                       Row(children: [Expanded(child: Divider(color: scheme.outlineVariant)), Padding(padding: const EdgeInsets.symmetric(horizontal: 14), child: Text('أو', style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 12))), Expanded(child: Divider(color: scheme.outlineVariant))]),
                       const SizedBox(height: 18),
-                      OutlinedButton.icon(onPressed: state.isLoading ? null : () => ref.read(authControllerProvider.notifier).signInWithGoogle(), icon: Icon(Icons.g_mobiledata_rounded, size: 30, color: accent), label: const Text('المتابعة باستخدام Google'), style: OutlinedButton.styleFrom(minimumSize: const Size.fromHeight(52), foregroundColor: scheme.onSurface, side: BorderSide(color: scheme.outlineVariant), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)))),
+                      OutlinedButton.icon(onPressed: state.isLoading ? null : () => ref.read(authControllerProvider.notifier).signInWithGoogle(), icon: const Icon(Icons.g_mobiledata_rounded, size: 30, color: AppColors.primary), label: const Text('المتابعة باستخدام Google')),
                       const SizedBox(height: 22),
                       Text('باستمرارك، أنت توافق على شروط الاستخدام وسياسة الخصوصية.', textAlign: TextAlign.center, style: TextStyle(fontSize: 10.5, color: scheme.onSurfaceVariant, height: 1.55)),
                     ]),
