@@ -23,19 +23,19 @@ class AppTheme {
     const scheme = ColorScheme.light(
       primary: AppColors.primary,
       onPrimary: AppColors.textOnPrimary,
-      primaryContainer: Color(0xFF0F2942),
-      onPrimaryContainer: Color(0xFF7991AF),
-      secondary: AppColors.gold,
-      onSecondary: Color(0xFF241A00),
-      secondaryContainer: Color(0xFFFED65B),
-      onSecondaryContainer: Color(0xFF745C00),
+      primaryContainer: AppColors.primaryContainer,
+      onPrimaryContainer: AppColors.onPrimaryContainer,
+      secondary: AppColors.secondary,
+      onSecondary: AppColors.onSecondary,
+      secondaryContainer: AppColors.secondaryContainer,
+      onSecondaryContainer: AppColors.onSecondaryContainer,
       tertiary: AppColors.tertiary,
-      onTertiary: Colors.white,
-      tertiaryContainer: Color(0xFF002D31),
-      onTertiaryContainer: Color(0xFF4F9AA2),
+      onTertiary: AppColors.onTertiary,
+      tertiaryContainer: AppColors.tertiary,
+      onTertiaryContainer: AppColors.tertiaryLight,
       surface: AppColors.background,
       surfaceDim: AppColors.surfaceDim,
-      surfaceBright: AppColors.surface,
+      surfaceBright: AppColors.surfaceBright,
       surfaceContainerLowest: AppColors.surfaceContainerLowest,
       surfaceContainerLow: AppColors.surfaceContainerLow,
       surfaceContainer: AppColors.surfaceContainer,
@@ -48,7 +48,7 @@ class AppTheme {
       error: AppColors.error,
       onError: Colors.white,
       errorContainer: AppColors.errorContainer,
-      onErrorContainer: Color(0xFF93000A),
+      onErrorContainer: AppColors.cancelledText,
     );
 
     final base = ThemeData(
@@ -81,8 +81,8 @@ class AppTheme {
         style: ButtonStyle(
           backgroundColor: WidgetStateProperty.resolveWith((states) {
             if (states.contains(WidgetState.disabled)) return AppColors.surfaceDim;
-            if (states.contains(WidgetState.pressed)) return AppColors.secondaryDark;
-            return AppColors.gold;
+            if (states.contains(WidgetState.pressed)) return AppColors.secondaryLight;
+            return AppColors.ctaGold;
           }),
           foregroundColor: const WidgetStatePropertyAll(AppColors.primary),
           minimumSize: const WidgetStatePropertyAll(Size.fromHeight(52)),
@@ -130,19 +130,19 @@ class AppTheme {
         titleTextStyle: GoogleFonts.ibmPlexSansArabic(fontSize: 16, height: 24 / 16, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
         subtitleTextStyle: GoogleFonts.ibmPlexSansArabic(fontSize: 14, height: 20 / 14, color: AppColors.textSecondary),
       ),
-      progressIndicatorTheme: const ProgressIndicatorThemeData(color: AppColors.gold, linearTrackColor: Color(0x33E9C349)),
+      progressIndicatorTheme: const ProgressIndicatorThemeData(color: AppColors.secondaryLight, linearTrackColor: Color(0x33E9C349)),
       checkboxTheme: CheckboxThemeData(
         fillColor: WidgetStateProperty.resolveWith((states) => states.contains(WidgetState.selected) ? AppColors.primary : Colors.transparent),
         checkColor: const WidgetStatePropertyAll(Colors.white),
       ),
       radioTheme: const RadioThemeData(fillColor: WidgetStatePropertyAll(AppColors.primary)),
       switchTheme: SwitchThemeData(
-        thumbColor: WidgetStateProperty.resolveWith((states) => states.contains(WidgetState.selected) ? AppColors.gold : AppColors.outline),
+        thumbColor: WidgetStateProperty.resolveWith((states) => states.contains(WidgetState.selected) ? AppColors.secondaryLight : AppColors.outline),
         trackColor: WidgetStateProperty.resolveWith((states) => states.contains(WidgetState.selected) ? AppColors.goldLight : AppColors.surfaceContainerHigh),
       ),
       iconTheme: const IconThemeData(color: AppColors.primary),
       dividerTheme: const DividerThemeData(color: AppColors.divider, thickness: 1),
-      floatingActionButtonTheme: const FloatingActionButtonThemeData(backgroundColor: AppColors.gold, foregroundColor: AppColors.primary),
+      floatingActionButtonTheme: const FloatingActionButtonThemeData(backgroundColor: AppColors.ctaGold, foregroundColor: AppColors.primary),
       navigationBarTheme: NavigationBarThemeData(
         backgroundColor: AppColors.surface,
         indicatorColor: AppColors.secondaryContainer,
@@ -193,7 +193,7 @@ class AppTheme {
       scaffoldBackgroundColor: darkBackground,
       appBarTheme: AppBarTheme(backgroundColor: darkBackground, foregroundColor: darkText, elevation: 0, centerTitle: false, scrolledUnderElevation: 0, surfaceTintColor: Colors.transparent, titleTextStyle: GoogleFonts.ibmPlexSansArabic(fontSize: 20, fontWeight: FontWeight.w600, color: darkText)),
       cardTheme: CardThemeData(color: darkSurface, elevation: 0, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(_cardRadius), side: const BorderSide(color: Color(0xFF42474D)))),
-      elevatedButtonTheme: ElevatedButtonThemeData(style: ButtonStyle(backgroundColor: const WidgetStatePropertyAll(Color(0xFFE9C349)), foregroundColor: const WidgetStatePropertyAll(Color(0xFF241A00)), minimumSize: const WidgetStatePropertyAll(Size.fromHeight(52)), shape: WidgetStatePropertyAll(RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))), elevation: const WidgetStatePropertyAll(0))),
+      elevatedButtonTheme: ElevatedButtonThemeData(style: ButtonStyle(backgroundColor: const WidgetStatePropertyAll(AppColors.ctaGold), foregroundColor: const WidgetStatePropertyAll(AppColors.primary), minimumSize: const WidgetStatePropertyAll(Size.fromHeight(52)), shape: WidgetStatePropertyAll(RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))), elevation: const WidgetStatePropertyAll(0))),
       outlinedButtonTheme: OutlinedButtonThemeData(style: ButtonStyle(foregroundColor: const WidgetStatePropertyAll(cyan), side: const WidgetStatePropertyAll(BorderSide(color: cyan)), minimumSize: const WidgetStatePropertyAll(Size.fromHeight(48)), shape: WidgetStatePropertyAll(RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))))),
       inputDecorationTheme: InputDecorationTheme(filled: true, fillColor: darkSurface, contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15), border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFF42474D))), enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFF42474D))), focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: cyan, width: 2))),
       dividerTheme: const DividerThemeData(color: Color(0xFF42474D)),
