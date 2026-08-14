@@ -24,7 +24,6 @@ class _OtpPageState extends ConsumerState<OtpPage> {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
     final state = ref.watch(authControllerProvider);
     ref.listen<AsyncValue<void>>(authControllerProvider, (prev, next) {
       next.whenOrNull(error: (_, __) => ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('رمز التحقق غير صحيح'))));
