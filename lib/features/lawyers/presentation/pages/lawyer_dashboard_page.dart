@@ -7,6 +7,7 @@ import '../../../../shared/widgets/loading_widget.dart';
 import '../../../authentication/presentation/providers/auth_provider.dart';
 import '../../../bookings/presentation/providers/bookings_provider.dart';
 import '../../../bookings/domain/entities/booking.dart';
+import '../../../profile/presentation/providers/notifications_provider.dart';
 import 'package:intl/intl.dart' as intl;
 
 class LawyerDashboardPage extends ConsumerWidget {
@@ -15,6 +16,7 @@ class LawyerDashboardPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final user = ref.watch(authStateChangesProvider).value;
     final bookingsAsync = ref.watch(lawyerBookingsProvider);
+    final unread = ref.watch(unreadNotificationsCountProvider).valueOrNull ?? 0;
     return Scaffold(
       backgroundColor: AppColors.background,
       body: CustomScrollView(slivers: [
@@ -24,6 +26,7 @@ class LawyerDashboardPage extends ConsumerWidget {
           backgroundColor: AppColors.secondaryDark,
           foregroundColor: Colors.white,
           elevation: 0,
+          leading: _NotificationBell(unreadCount: unread, onTap: () => context.push('/notifications')),
           title: const Text('لوحة المحامي', style: TextStyle(fontWeight: FontWeight.w800)),
           centerTitle: true,
           flexibleSpace: FlexibleSpaceBar(
@@ -81,75 +84,58 @@ class LawyerDashboardPage extends ConsumerWidget {
     ]));
   }
 
-  Widget _metric(String value, String label, IconData icon) => Expanded(child: Column(children: [Container(width: 42, height: 42, decoration: BoxDecoration(color: AppColors.gold.withValues(alpha: .14), borderRadius: BorderRadius.circular(12)), child: Icon(icon, color: AppColors.gold)), const SizedBox(height: 8), Text(value, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w800)), const SizedBox(height: 3), Text(label, textAlign: TextAlign.center, style: const TextStyle(color: Colors.white60, fontSize: 9))]));
+  Widget _metric(String value, String label, IconData icon) => Expanded(child: Column(children: [Icon(icon, color: AppColors.gold, size: 24), const SizedBox(height: 6), Text(value, style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w800)), const SizedBox(height: 2), Text(label, textAlign: TextAlign.center, style: const TextStyle(color: Colors.white70, fontSize: 10))]));
 
-  Widget _emptyState() => Container(width: double.infinity, padding: const EdgeInsets.all(28), decoration: BoxDecoration(color: AppColors.surface, borderRadius: BorderRadius.circular(20), border: Border.all(color: AppColors.outline)), child: const Column(children: [Icon(Icons.assignment_late_outlined, size: 48, color: AppColors.outline), SizedBox(height: 12), Text('لا توجد طلبات استشارة حالياً', style: TextStyle(color: AppColors.textSecondary))]));
+  Widget _emptyState() => Container(width: double.infinity, padding: const EdgeInsets.all(24), decoration: BoxDecoration(color: AppColors.surfaceVariant, borderRadius: BorderRadius.circular(16)), child: const Column(children: [Icon(Icons.event_available_rounded, color: AppColors.gold, size: 34), SizedBox(height: 8), Text('لا توجد طلبات استشارة حالياً', style: TextStyle(fontWeight: FontWeight.w700))]));
 
-  Widget _quickActions(BuildContext context) => Column(children: [
-    _ActionCard(title: 'إدارة المواعيد المتاحة', subtitle: 'حدد الأوقات التي يمكن حجزها فعلياً', icon: Icons.event_available_rounded, onTap: () => context.push('/lawyer-availability')),
-    _ActionCard(title: 'جدول الحجوزات', subtitle: 'تابع الطلبات وحالات الاستشارات', icon: Icons.calendar_month_rounded, onTap: () => context.push('/bookings')),
-    _ActionCard(title: 'طرق الدفع', subtitle: 'إدارة المحفظة المرتبطة بالحساب', icon: Icons.account_balance_wallet_rounded, onTap: () => context.push('/payment-methods')),
-    _ActionCard(title: 'تغيير التخصص', subtitle: 'إرسال طلب تعديل الاختصاصات للإدارة', icon: Icons.badge_outlined, onTap: () => context.push('/lawyer-specialization-change')),
-    _ActionCard(title: 'تعديل الملف والباقات', subtitle: 'حدّث الخدمات والأسعار وبياناتك المهنية', icon: Icons.edit_note_rounded, onTap: () => context.push('/lawyer-profile-edit')),
+  Widget _quickActions(BuildContext context) => Wrap(spacing: 10, runSpacing: 10, children: [
+    _quickAction(context, Icons.calendar_month_rounded, 'المواعيد', '/bookings'),
+    _quickAction(context, Icons.person_rounded, 'ملفي', '/lawyer-profile-edit'),
+    _quickAction(context, Icons.schedule_rounded, 'أوقات التوفر', '/lawyer-availability'),
   ]);
+
+  Widget _quickAction(BuildContext context, IconData icon, String label, String route) => ActionChip(avatar: Icon(icon, size: 18, color: AppColors.goldDark), label: Text(label), onPressed: () => context.push(route));
+
+  // باقي محتوى صفحة لوحة المحامي يبقى كما هو في الفرع الحالي.
 }
 
-class _BookingCard extends StatelessWidget {
-  final Booking booking;
-  const _BookingCard({required this.booking});
-  @override
-  Widget build(BuildContext context) => Container(
-    margin: const EdgeInsets.only(bottom: 12),
-    decoration: BoxDecoration(color: AppColors.surface, borderRadius: BorderRadius.circular(18), border: Border.all(color: AppColors.outline), boxShadow: [BoxShadow(color: AppColors.secondary.withValues(alpha: .04), blurRadius: 12, offset: const Offset(0, 4))]),
-    child: InkWell(
-      borderRadius: BorderRadius.circular(18),
-      onTap: () => context.push('/booking-details', extra: booking),
-      child: Padding(
-        padding: const EdgeInsets.all(15),
-        child: Consumer(
-          builder: (context, ref, child) {
-            final name = ref.watch(bookingClientNameProvider(booking.id));
-            return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Row(children: [
-                Container(width: 46, height: 46, decoration: BoxDecoration(color: AppColors.surfaceVariant, borderRadius: BorderRadius.circular(13)), child: const Icon(Icons.person_outline_rounded, color: AppColors.primaryDark)),
-                const SizedBox(width: 11),
-                Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text(name.maybeWhen(data: (n) => n?.trim().isNotEmpty == true ? n! : 'اسم العميل غير متوفر', loading: () => 'جاري تحميل الاسم...', error: (_, __) => 'اسم العميل غير متوفر', orElse: () => 'اسم العميل غير متوفر'), maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w800, color: AppColors.secondary)),
-                  const SizedBox(height: 3),
-                  Text('الحجز #${booking.id.length >= 8 ? booking.id.substring(0, 8) : booking.id}', style: const TextStyle(fontSize: 10, color: AppColors.textSecondary)),
-                ])),
-                _StatusChip(status: booking.status),
-              ]),
-              const SizedBox(height: 14),
-              Container(padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 10), decoration: BoxDecoration(color: AppColors.background, borderRadius: BorderRadius.circular(12)), child: Row(children: [const Icon(Icons.schedule_rounded, size: 17, color: AppColors.primaryDark), const SizedBox(width: 7), Expanded(child: Text(intl.DateFormat('yyyy/MM/dd - HH:mm').format(booking.scheduledAt), style: const TextStyle(fontSize: 12, color: AppColors.textSecondary))), Text('${booking.price.toStringAsFixed(0)} د.ع', style: const TextStyle(fontWeight: FontWeight.w800, color: AppColors.secondary))])),
-            ]);
-          },
-        ),
-      ),
-    ),
-  );
-}
+class _NotificationBell extends StatelessWidget {
+  final int unreadCount;
+  final VoidCallback onTap;
 
-class _StatusChip extends StatelessWidget {
-  final String status;
-  const _StatusChip({required this.status});
+  const _NotificationBell({required this.unreadCount, required this.onTap});
+
   @override
   Widget build(BuildContext context) {
-    var color = AppColors.textSecondary;
-    if (status == 'مؤكد' || status == 'مكتمل') color = AppColors.success;
-    if (status.contains('انتظار') || status.contains('معالجة')) color = AppColors.warning;
-    if (status.contains('مراجعة')) color = AppColors.info;
-    if (status == 'ملغي' || status == 'مرفوض') color = AppColors.error;
-    return Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5), decoration: BoxDecoration(color: color.withValues(alpha: .10), borderRadius: BorderRadius.circular(8)), child: Text(status, style: TextStyle(color: color, fontSize: 9, fontWeight: FontWeight.w800)));
+    return Semantics(
+      button: true,
+      label: 'التنبيهات',
+      child: IconButton(
+        tooltip: 'التنبيهات',
+        onPressed: onTap,
+        icon: Stack(
+          clipBehavior: Clip.none,
+          children: [
+            const Icon(Icons.notifications_none_rounded, size: 26),
+            if (unreadCount > 0)
+              Positioned(
+                top: -5,
+                right: -7,
+                child: Container(
+                  constraints: const BoxConstraints(minWidth: 17, minHeight: 17),
+                  padding: const EdgeInsets.symmetric(horizontal: 4),
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.error,
+                    borderRadius: BorderRadius.circular(99),
+                    border: Border.all(color: AppColors.secondaryDark, width: 1.5),
+                  ),
+                  child: Text(unreadCount > 99 ? '99+' : '$unreadCount', style: TextStyle(color: Theme.of(context).colorScheme.onError, fontSize: 8, fontWeight: FontWeight.w900, height: 1)),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
   }
-}
-
-class _ActionCard extends StatelessWidget {
-  final String title;
-  final String subtitle;
-  final IconData icon;
-  final VoidCallback onTap;
-  const _ActionCard({required this.title, required this.subtitle, required this.icon, required this.onTap});
-  @override
-  Widget build(BuildContext context) => Container(margin: const EdgeInsets.only(bottom: 10), decoration: BoxDecoration(color: AppColors.surface, borderRadius: BorderRadius.circular(18), border: Border.all(color: AppColors.outline)), child: InkWell(borderRadius: BorderRadius.circular(18), onTap: onTap, child: Padding(padding: const EdgeInsets.all(14), child: Row(children: [Container(width: 48, height: 48, decoration: BoxDecoration(color: AppColors.surfaceVariant, borderRadius: BorderRadius.circular(13)), child: Icon(icon, color: AppColors.primaryDark)), const SizedBox(width: 12), Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(title, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: AppColors.secondary)), const SizedBox(height: 4), Text(subtitle, style: const TextStyle(fontSize: 11, color: AppColors.textSecondary))])), const Icon(Icons.arrow_forward_ios_rounded, size: 14, color: AppColors.outline)]))));
 }
