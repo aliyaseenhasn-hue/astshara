@@ -5,6 +5,7 @@ import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/legal_specializations.dart';
 import '../../../lawyers/domain/entities/lawyer_profile.dart';
 import '../../../lawyers/presentation/providers/lawyers_provider.dart';
+import '../../../profile/presentation/providers/notifications_provider.dart';
 
 class HomePage extends ConsumerWidget {
   const HomePage({super.key});
@@ -13,6 +14,7 @@ class HomePage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final scheme = Theme.of(context).colorScheme;
     final lawyers = ref.watch(lawyersListProvider);
+    final unread = ref.watch(unreadNotificationsCountProvider).valueOrNull ?? 0;
     final categories = LegalSpecializations.all.take(8).toList();
 
     return Scaffold(
@@ -21,7 +23,22 @@ class HomePage extends ConsumerWidget {
         child: CustomScrollView(
           slivers: [
             SliverPadding(
-              padding: const EdgeInsets.fromLTRB(24, 18, 24, 0),
+              padding: const EdgeInsets.fromLTRB(24, 10, 24, 0),
+              sliver: SliverToBoxAdapter(
+                child: Row(
+                  textDirection: TextDirection.rtl,
+                  children: [
+                    _NotificationBell(
+                      unreadCount: unread,
+                      onTap: () => context.push('/notifications'),
+                    ),
+                    const Spacer(),
+                  ],
+                ),
+              ),
+            ),
+            SliverPadding(
+              padding: const EdgeInsets.fromLTRB(24, 12, 24, 0),
               sliver: SliverToBoxAdapter(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.end,
@@ -197,6 +214,60 @@ class HomePage extends ConsumerWidget {
             ),
             const SliverToBoxAdapter(child: SizedBox(height: 112)),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _NotificationBell extends StatelessWidget {
+  final int unreadCount;
+  final VoidCallback onTap;
+
+  const _NotificationBell({required this.unreadCount, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Semantics(
+      button: true,
+      label: 'التنبيهات',
+      child: Material(
+        color: scheme.surfaceContainerLowest,
+        shape: const CircleBorder(),
+        child: InkWell(
+          customBorder: const CircleBorder(),
+          onTap: onTap,
+          child: SizedBox(
+            width: 48,
+            height: 48,
+            child: Stack(
+              clipBehavior: Clip.none,
+              alignment: Alignment.center,
+              children: [
+                Icon(Icons.notifications_none_rounded, color: scheme.onSurface, size: 26),
+                if (unreadCount > 0)
+                  Positioned(
+                    top: 4,
+                    right: 4,
+                    child: Container(
+                      constraints: const BoxConstraints(minWidth: 18, minHeight: 18),
+                      padding: const EdgeInsets.symmetric(horizontal: 4),
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        color: scheme.error,
+                        borderRadius: BorderRadius.circular(99),
+                        border: Border.all(color: scheme.surfaceContainerLowest, width: 1.5),
+                      ),
+                      child: Text(
+                        unreadCount > 99 ? '99+' : '$unreadCount',
+                        style: TextStyle(color: scheme.onError, fontSize: 8, fontWeight: FontWeight.w900, height: 1),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
         ),
       ),
     );
