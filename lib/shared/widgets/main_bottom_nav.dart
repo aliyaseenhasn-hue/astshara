@@ -3,9 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 /// الشريط السفلي الرئيسي للتطبيق.
-/// الإشعارات أصبحت في أعلى التطبيق عبر زر الجرس، لذلك يبقى الشريط مخصصاً للتنقل الأساسي فقط.
-/// طالب الاستشارة: الرئيسية → المحامون → استشاراتي → الإعدادات.
-/// المحامي: الرئيسية → استشاراتي → الإعدادات.
+/// الإشعارات في أعلى التطبيق عبر زر الجرس، بينما تبقى الإجراءات السريعة للمحامي ثابتة هنا.
 class MainBottomNav extends ConsumerWidget {
   final int currentIndex;
   final bool isLawyer;
@@ -23,6 +21,12 @@ class MainBottomNav extends ConsumerWidget {
     _NavItem(Icons.home_outlined, Icons.home_rounded, 'الرئيسية'),
     _NavItem(Icons.calendar_month_outlined, Icons.calendar_month_rounded, 'استشاراتي'),
     _NavItem(Icons.settings_outlined, Icons.settings_rounded, 'الإعدادات'),
+  ];
+
+  static const _lawyerQuickActions = <_QuickAction>[
+    _QuickAction(Icons.calendar_month_rounded, 'المواعيد', '/bookings'),
+    _QuickAction(Icons.person_rounded, 'ملفي', '/lawyer-profile-edit'),
+    _QuickAction(Icons.schedule_rounded, 'أوقات التوفر', '/lawyer-availability'),
   ];
 
   @override
@@ -45,18 +49,29 @@ class MainBottomNav extends ConsumerWidget {
             border: Border.all(color: scheme.outlineVariant.withValues(alpha: isDark ? .6 : .9)),
             boxShadow: [BoxShadow(color: scheme.shadow.withValues(alpha: isDark ? .25 : .06), blurRadius: 22, offset: const Offset(0, 7))],
           ),
-          padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 5),
-          child: Row(
-            textDirection: direction,
-            children: List.generate(items.length, (index) {
-              return Expanded(
-                child: _NavDestination(
-                  item: items[index],
-                  selected: index == selectedIndex,
-                  onTap: () => _navigate(context, index),
-                ),
-              );
-            }),
+          padding: const EdgeInsets.fromLTRB(6, 7, 6, 6),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (isLawyer) ...[
+                _QuickActionsRow(actions: _lawyerQuickActions, direction: direction),
+                const SizedBox(height: 6),
+                Divider(height: 1, thickness: 1, color: scheme.outlineVariant.withValues(alpha: .45)),
+                const SizedBox(height: 3),
+              ],
+              Row(
+                textDirection: direction,
+                children: List.generate(items.length, (index) {
+                  return Expanded(
+                    child: _NavDestination(
+                      item: items[index],
+                      selected: index == selectedIndex,
+                      onTap: () => _navigate(context, index),
+                    ),
+                  );
+                }),
+              ),
+            ],
           ),
         ),
       ),
@@ -83,11 +98,61 @@ class MainBottomNav extends ConsumerWidget {
   }
 }
 
+class _QuickActionsRow extends StatelessWidget {
+  final List<_QuickAction> actions;
+  final TextDirection direction;
+
+  const _QuickActionsRow({required this.actions, required this.direction});
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Row(
+      textDirection: direction,
+      children: actions
+          .map(
+            (action) => Expanded(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 3),
+                child: Material(
+                  color: scheme.surface,
+                  borderRadius: BorderRadius.circular(12),
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(12),
+                    onTap: () => context.go(action.route),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 7),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(action.icon, size: 19, color: scheme.primary),
+                          const SizedBox(height: 3),
+                          Text(action.label, maxLines: 1, overflow: TextOverflow.ellipsis, textAlign: TextAlign.center, style: TextStyle(color: scheme.onSurface, fontSize: 10.5, fontWeight: FontWeight.w700, height: 1.1)),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          )
+          .toList(growable: false),
+    );
+  }
+}
+
 class _NavItem {
   final IconData icon;
   final IconData activeIcon;
   final String label;
   const _NavItem(this.icon, this.activeIcon, this.label);
+}
+
+class _QuickAction {
+  final IconData icon;
+  final String label;
+  final String route;
+  const _QuickAction(this.icon, this.label, this.route);
 }
 
 class _NavDestination extends StatelessWidget {
