@@ -6,6 +6,8 @@ class AppColors {
   static const Color primary = Color(0xFF001428);
   static const Color primaryContainer = Color(0xFF0F2942);
   static const Color onPrimaryContainer = Color(0xFF7991AF);
+  static const Color primaryFixed = Color(0xFFD1E4FF);
+  static const Color primaryFixedDim = Color(0xFFB0C9E8);
   static const Color primaryDark = primaryContainer;
   static const Color primaryLight = onPrimaryContainer;
 
@@ -16,7 +18,6 @@ class AppColors {
   static const Color secondaryDark = Color(0xFF574500);
   static const Color secondaryLight = Color(0xFFE9C349);
 
-  // Primary CTA token specified in the component brief.
   static const Color ctaGold = Color(0xFFD4AF37);
   static const Color gold = secondaryLight;
   static const Color goldLight = Color(0xFFFFE088);
@@ -43,8 +44,11 @@ class AppColors {
   static const Color textSecondary = Color(0xFF43474D);
   static const Color textOnPrimary = Color(0xFFFFFFFF);
   static const Color textOnDark = Color(0xFFF0F1F2);
+  static const Color onSurface = textPrimary;
+  static const Color onSurfaceVariant = textSecondary;
   static const Color outline = Color(0xFF74777E);
-  static const Color divider = Color(0xFFC3C6CE);
+  static const Color outlineVariant = Color(0xFFC3C6CE);
+  static const Color divider = outlineVariant;
 
   static const Color error = Color(0xFFBA1A1A);
   static const Color errorContainer = Color(0xFFFFDAD6);
