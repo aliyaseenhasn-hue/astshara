@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import '../../features/profile/presentation/providers/notifications_provider.dart';
 
-/// الشريط السفلي الرئيسي للتطبيق وفق بنية Stitch.
-/// طالب الاستشارة: الرئيسية → المحامون → استشاراتي → التنبيهات → الإعدادات.
-/// المحامي: الرئيسية → استشاراتي → التنبيهات → الإعدادات.
+/// الشريط السفلي الرئيسي للتطبيق.
+/// الإشعارات أصبحت في أعلى التطبيق عبر زر الجرس، لذلك يبقى الشريط مخصصاً للتنقل الأساسي فقط.
+/// طالب الاستشارة: الرئيسية → المحامون → استشاراتي → الإعدادات.
+/// المحامي: الرئيسية → استشاراتي → الإعدادات.
 class MainBottomNav extends ConsumerWidget {
   final int currentIndex;
   final bool isLawyer;
@@ -16,14 +16,12 @@ class MainBottomNav extends ConsumerWidget {
     _NavItem(Icons.home_outlined, Icons.home_rounded, 'الرئيسية'),
     _NavItem(Icons.people_outline_rounded, Icons.people_rounded, 'المحامون'),
     _NavItem(Icons.calendar_month_outlined, Icons.calendar_month_rounded, 'استشاراتي'),
-    _NavItem(Icons.notifications_none_rounded, Icons.notifications_rounded, 'التنبيهات'),
     _NavItem(Icons.settings_outlined, Icons.settings_rounded, 'الإعدادات'),
   ];
 
   static const _lawyerItems = <_NavItem>[
     _NavItem(Icons.home_outlined, Icons.home_rounded, 'الرئيسية'),
     _NavItem(Icons.calendar_month_outlined, Icons.calendar_month_rounded, 'استشاراتي'),
-    _NavItem(Icons.notifications_none_rounded, Icons.notifications_rounded, 'التنبيهات'),
     _NavItem(Icons.settings_outlined, Icons.settings_rounded, 'الإعدادات'),
   ];
 
@@ -31,7 +29,6 @@ class MainBottomNav extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final scheme = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final unread = ref.watch(unreadNotificationsCountProvider).valueOrNull ?? 0;
     final items = isLawyer ? _lawyerItems : _clientItems;
     final selectedIndex = currentIndex.clamp(0, items.length - 1).toInt();
     final direction = Directionality.of(context);
@@ -52,9 +49,13 @@ class MainBottomNav extends ConsumerWidget {
           child: Row(
             textDirection: direction,
             children: List.generate(items.length, (index) {
-              final item = items[index];
-              final notificationIndex = isLawyer ? 2 : 3;
-              return Expanded(child: _NavDestination(item: item, selected: index == selectedIndex, unreadCount: index == notificationIndex ? unread : 0, onTap: () => _navigate(context, index)));
+              return Expanded(
+                child: _NavDestination(
+                  item: items[index],
+                  selected: index == selectedIndex,
+                  onTap: () => _navigate(context, index),
+                ),
+              );
             }),
           ),
         ),
@@ -67,16 +68,14 @@ class MainBottomNav extends ConsumerWidget {
         ? switch (index) {
             0 => '/lawyer-home',
             1 => '/bookings',
-            2 => '/notifications',
-            3 => '/app-settings',
+            2 => '/app-settings',
             _ => '/lawyer-home',
           }
         : switch (index) {
             0 => '/',
             1 => '/lawyers',
             2 => '/bookings',
-            3 => '/notifications',
-            4 => '/app-settings',
+            3 => '/app-settings',
             _ => '/',
           };
 
@@ -94,10 +93,9 @@ class _NavItem {
 class _NavDestination extends StatelessWidget {
   final _NavItem item;
   final bool selected;
-  final int unreadCount;
   final VoidCallback onTap;
 
-  const _NavDestination({required this.item, required this.selected, required this.unreadCount, required this.onTap});
+  const _NavDestination({required this.item, required this.selected, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -124,7 +122,7 @@ class _NavDestination extends StatelessWidget {
                   color: selected ? scheme.primary.withValues(alpha: Theme.of(context).brightness == Brightness.dark ? .18 : .16) : Colors.transparent,
                   borderRadius: BorderRadius.circular(14),
                 ),
-                child: _BadgeIcon(icon: selected ? item.activeIcon : item.icon, color: iconColor, count: unreadCount),
+                child: Icon(selected ? item.activeIcon : item.icon, color: iconColor, size: 23),
               ),
               const SizedBox(height: 2),
               AnimatedDefaultTextStyle(
@@ -136,36 +134,6 @@ class _NavDestination extends StatelessWidget {
           ),
         ),
       ),
-    );
-  }
-}
-
-class _BadgeIcon extends StatelessWidget {
-  final IconData icon;
-  final Color color;
-  final int count;
-  const _BadgeIcon({required this.icon, required this.color, required this.count});
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return Stack(
-      clipBehavior: Clip.none,
-      children: [
-        Icon(icon, color: color, size: 23),
-        if (count > 0)
-          Positioned(
-            top: -7,
-            right: -10,
-            child: Container(
-              constraints: const BoxConstraints(minWidth: 17, minHeight: 17),
-              padding: const EdgeInsets.symmetric(horizontal: 4),
-              alignment: Alignment.center,
-              decoration: BoxDecoration(color: scheme.error, borderRadius: BorderRadius.circular(99), border: Border.all(color: scheme.surfaceContainerLowest, width: 1.5)),
-              child: Text(count > 99 ? '99+' : '$count', style: TextStyle(color: scheme.onError, fontSize: 8, fontWeight: FontWeight.w900, height: 1)),
-            ),
-          ),
-      ],
     );
   }
 }
