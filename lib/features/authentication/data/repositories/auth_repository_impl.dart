@@ -74,7 +74,10 @@ class AuthRepositoryImpl implements AuthRepository {
   Future<void> signInWithEmail({required String email, required String password}) async => _supabase.auth.signInWithPassword(email: email, password: password);
 
   @override
-  Future<void> signUpWithEmail({required String email, required String password, required String fullName, required String role}) async => _supabase.auth.signUp(email: email, password: password, data: {'full_name': fullName, 'role': role});
+  Future<void> signUpWithEmail({required String email, required String password, required String fullName, required String role}) async {
+    final safeRole = role == 'lawyer' ? 'lawyer' : 'user';
+    await _supabase.auth.signUp(email: email, password: password, data: {'full_name': fullName, 'role': safeRole});
+  }
 
   @override
   Future<void> signOut() async => _supabase.auth.signOut();
@@ -115,7 +118,10 @@ class AuthRepositoryImpl implements AuthRepository {
     final data = <String, dynamic>{};
     if (fullName != null && fullName.trim().isNotEmpty) data['full_name'] = fullName.trim();
     if (email != null && email.trim().isNotEmpty) data['email'] = email.trim();
-    if (role != null && role.trim().isNotEmpty) data['role'] = role.trim();
+    if (role != null && role.trim().isNotEmpty) {
+      final requestedRole = role.trim().toLowerCase();
+      if (requestedRole == 'lawyer' || requestedRole == 'user') data['role'] = requestedRole;
+    }
     if (avatarUrl != null && avatarUrl.trim().isNotEmpty) data['avatar_url'] = avatarUrl.trim();
     if (onboardingCompleted != null) data['onboarding_completed'] = onboardingCompleted;
     if (walletNumber != null) data['wallet_number'] = walletNumber.trim();
