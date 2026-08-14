@@ -179,7 +179,14 @@ class HomePage extends ConsumerWidget {
                           title: Text(name, textAlign: TextAlign.right, style: const TextStyle(fontWeight: FontWeight.w800)),
                           subtitle: Text(specialization, textAlign: TextAlign.right),
                           trailing: const Icon(Icons.chevron_left_rounded),
-                          onTap: () => context.push('/lawyers/${lawyer.id}'),
+                          onTap: () {
+                            final profileId = lawyer.profileId.trim();
+                            if (profileId.isEmpty) {
+                              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تعذر فتح ملف المحامي')));
+                              return;
+                            }
+                            context.push('/lawyers/$profileId');
+                          },
                         ),
                       ),
                     );
