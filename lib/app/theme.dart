@@ -4,7 +4,6 @@ import '../core/constants/app_colors.dart';
 
 class AppTheme {
   static const double _cardRadius = 16.0;
-  static const double _largeRadius = 24.0;
 
   static TextTheme _arabicTextTheme(TextTheme base, Color color) {
     return GoogleFonts.ibmPlexSansArabicTextTheme(base).copyWith(
