@@ -100,10 +100,6 @@ class LawyerDashboardPage extends ConsumerWidget {
                     _sectionHeader('طلبات الاستشارة الواردة', 'عرض الكل', () => context.push('/bookings')),
                     const SizedBox(height: 12),
                     if (bookings.isEmpty) _emptyState() else ...bookings.take(5).map((booking) => _BookingCard(booking: booking)),
-                    const SizedBox(height: 24),
-                    const Text('الوصول السريع', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: AppColors.secondary)),
-                    const SizedBox(height: 12),
-                    _quickActions(context),
                   ],
                 ),
               ),
@@ -172,22 +168,6 @@ class LawyerDashboardPage extends ConsumerWidget {
             Text('لا توجد طلبات استشارة حالياً', style: TextStyle(fontWeight: FontWeight.w700)),
           ],
         ),
-      );
-
-  Widget _quickActions(BuildContext context) => Wrap(
-        spacing: 10,
-        runSpacing: 10,
-        children: [
-          _quickAction(context, Icons.calendar_month_rounded, 'المواعيد', '/bookings'),
-          _quickAction(context, Icons.person_rounded, 'ملفي', '/lawyer-profile-edit'),
-          _quickAction(context, Icons.schedule_rounded, 'أوقات التوفر', '/lawyer-availability'),
-        ],
-      );
-
-  Widget _quickAction(BuildContext context, IconData icon, String label, String route) => ActionChip(
-        avatar: Icon(icon, size: 18, color: AppColors.goldDark),
-        label: Text(label),
-        onPressed: () => context.push(route),
       );
 }
 
