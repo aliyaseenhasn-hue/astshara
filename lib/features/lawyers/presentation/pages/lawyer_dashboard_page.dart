@@ -28,51 +28,61 @@ class LawyerDashboardPage extends ConsumerWidget {
             backgroundColor: AppColors.secondaryDark,
             foregroundColor: Colors.white,
             elevation: 0,
-            leading: _NotificationBell(
-              unreadCount: unread,
-              onTap: () => context.push('/notifications'),
-            ),
+            automaticallyImplyLeading: false,
             title: const Text('لوحة المحامي', style: TextStyle(fontWeight: FontWeight.w800)),
             centerTitle: true,
             flexibleSpace: FlexibleSpaceBar(
-              background: Container(
-                decoration: const BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topRight,
-                    end: Alignment.bottomLeft,
-                    colors: [AppColors.secondaryDark, AppColors.secondary, AppColors.primaryDark],
-                    stops: [0, .62, 1],
-                  ),
-                ),
-                child: SafeArea(
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(20, 72, 20, 20),
-                    child: Column(
-                      children: [
-                        Container(
-                          width: 78,
-                          height: 78,
-                          padding: const EdgeInsets.all(3),
-                          decoration: const BoxDecoration(color: AppColors.gold, shape: BoxShape.circle),
-                          child: CircleAvatar(
-                            backgroundColor: AppColors.surfaceVariant,
-                            backgroundImage: user?.avatarUrl != null && user!.avatarUrl!.isNotEmpty ? NetworkImage(user.avatarUrl!) : null,
-                            child: user?.avatarUrl == null || user!.avatarUrl!.isEmpty
-                                ? const Icon(Icons.person_rounded, size: 42, color: AppColors.secondary)
-                                : null,
-                          ),
-                        ),
-                        const SizedBox(height: 10),
-                        Text(
-                          user?.fullName?.trim().isNotEmpty == true ? user!.fullName! : 'أستاذ قانون',
-                          style: const TextStyle(color: Colors.white, fontSize: 21, fontWeight: FontWeight.w800),
-                        ),
-                        const SizedBox(height: 3),
-                        const Text('إدارة الاستشارات والمواعيد من مكان واحد', style: TextStyle(color: Colors.white70, fontSize: 12)),
-                      ],
+              background: Stack(
+                fit: StackFit.expand,
+                children: [
+                  Container(
+                    decoration: const BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topRight,
+                        end: Alignment.bottomLeft,
+                        colors: [AppColors.secondaryDark, AppColors.secondary, AppColors.primaryDark],
+                        stops: [0, .62, 1],
+                      ),
                     ),
                   ),
-                ),
+                  SafeArea(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(20, 72, 20, 20),
+                      child: Column(
+                        children: [
+                          Container(
+                            width: 78,
+                            height: 78,
+                            padding: const EdgeInsets.all(3),
+                            decoration: const BoxDecoration(color: AppColors.gold, shape: BoxShape.circle),
+                            child: CircleAvatar(
+                              backgroundColor: AppColors.surfaceVariant,
+                              backgroundImage: user?.avatarUrl != null && user!.avatarUrl!.isNotEmpty ? NetworkImage(user.avatarUrl!) : null,
+                              child: user?.avatarUrl == null || user!.avatarUrl!.isEmpty
+                                  ? const Icon(Icons.person_rounded, size: 42, color: AppColors.secondary)
+                                  : null,
+                            ),
+                          ),
+                          const SizedBox(height: 10),
+                          Text(
+                            user?.fullName?.trim().isNotEmpty == true ? user!.fullName! : 'أستاذ قانون',
+                            style: const TextStyle(color: Colors.white, fontSize: 21, fontWeight: FontWeight.w800),
+                          ),
+                          const SizedBox(height: 3),
+                          const Text('إدارة الاستشارات والمواعيد من مكان واحد', style: TextStyle(color: Colors.white70, fontSize: 12)),
+                        ],
+                      ),
+                    ),
+                  ),
+                  Positioned(
+                    top: 8,
+                    right: 8,
+                    child: _NotificationBell(
+                      unreadCount: unread,
+                      onTap: () => context.push('/notifications'),
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
@@ -89,10 +99,7 @@ class LawyerDashboardPage extends ConsumerWidget {
                     const SizedBox(height: 28),
                     _sectionHeader('طلبات الاستشارة الواردة', 'عرض الكل', () => context.push('/bookings')),
                     const SizedBox(height: 12),
-                    if (bookings.isEmpty)
-                      _emptyState()
-                    else
-                      ...bookings.take(5).map((booking) => _BookingCard(booking: booking)),
+                    if (bookings.isEmpty) _emptyState() else ...bookings.take(5).map((booking) => _BookingCard(booking: booking)),
                     const SizedBox(height: 24),
                     const Text('الوصول السريع', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: AppColors.secondary)),
                     const SizedBox(height: 12),
@@ -289,30 +296,34 @@ class _NotificationBell extends StatelessWidget {
     return Semantics(
       button: true,
       label: 'التنبيهات',
-      child: IconButton(
-        tooltip: 'التنبيهات',
-        onPressed: onTap,
-        icon: Stack(
-          clipBehavior: Clip.none,
-          children: [
-            const Icon(Icons.notifications_none_rounded, size: 26),
-            if (unreadCount > 0)
-              Positioned(
-                top: -5,
-                right: -7,
-                child: Container(
-                  constraints: const BoxConstraints(minWidth: 17, minHeight: 17),
-                  padding: const EdgeInsets.symmetric(horizontal: 4),
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.error,
-                    borderRadius: BorderRadius.circular(99),
-                    border: Border.all(color: AppColors.secondaryDark, width: 1.5),
+      child: Material(
+        color: AppColors.secondaryDark.withValues(alpha: .72),
+        shape: const CircleBorder(),
+        child: IconButton(
+          tooltip: 'التنبيهات',
+          onPressed: onTap,
+          icon: Stack(
+            clipBehavior: Clip.none,
+            children: [
+              const Icon(Icons.notifications_none_rounded, size: 26, color: Colors.white),
+              if (unreadCount > 0)
+                Positioned(
+                  top: -5,
+                  right: -7,
+                  child: Container(
+                    constraints: const BoxConstraints(minWidth: 17, minHeight: 17),
+                    padding: const EdgeInsets.symmetric(horizontal: 4),
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.error,
+                      borderRadius: BorderRadius.circular(99),
+                      border: Border.all(color: AppColors.secondaryDark, width: 1.5),
+                    ),
+                    child: Text(unreadCount > 99 ? '99+' : '$unreadCount', style: TextStyle(color: Theme.of(context).colorScheme.onError, fontSize: 8, fontWeight: FontWeight.w900, height: 1)),
                   ),
-                  child: Text(unreadCount > 99 ? '99+' : '$unreadCount', style: TextStyle(color: Theme.of(context).colorScheme.onError, fontSize: 8, fontWeight: FontWeight.w900, height: 1)),
                 ),
-              ),
-          ],
+            ],
+          ),
         ),
       ),
     );
