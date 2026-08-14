@@ -19,9 +19,8 @@ class AppShell extends ConsumerWidget {
           location == '/lawyer-profile-edit' ||
           location == '/lawyer-availability' ||
           location == '/lawyer-specialization-change') {
-        return 3;
+        return 2;
       }
-      if (location == '/notifications') return 2;
       if (location == '/bookings' ||
           location == '/booking-details' ||
           location == '/manual-payment' ||
@@ -40,9 +39,8 @@ class AppShell extends ConsumerWidget {
         location == '/notification-settings' ||
         location == '/payment-methods' ||
         location == '/help-center') {
-      return 4;
+      return 3;
     }
-    if (location == '/notifications') return 3;
     if (location == '/bookings' ||
         location == '/booking-details' ||
         location == '/manual-payment' ||
