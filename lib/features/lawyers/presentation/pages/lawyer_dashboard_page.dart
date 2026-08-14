@@ -25,11 +25,11 @@ class LawyerDashboardPage extends ConsumerWidget {
           SliverAppBar(
             pinned: true,
             expandedHeight: 245,
-            backgroundColor: AppColors.secondaryDark,
+            backgroundColor: AppColors.primary,
             foregroundColor: Colors.white,
             elevation: 0,
             automaticallyImplyLeading: false,
-            title: const Text('لوحة المحامي', style: TextStyle(fontWeight: FontWeight.w800)),
+            title: const Text('لوحة المحامي', style: TextStyle(fontWeight: FontWeight.w700)),
             centerTitle: true,
             flexibleSpace: FlexibleSpaceBar(
               background: Stack(
@@ -40,7 +40,7 @@ class LawyerDashboardPage extends ConsumerWidget {
                       gradient: LinearGradient(
                         begin: Alignment.topRight,
                         end: Alignment.bottomLeft,
-                        colors: [AppColors.secondaryDark, AppColors.secondary, AppColors.primaryDark],
+                        colors: [AppColors.primary, AppColors.primaryDark, AppColors.tertiary],
                         stops: [0, .62, 1],
                       ),
                     ),
@@ -58,18 +58,13 @@ class LawyerDashboardPage extends ConsumerWidget {
                             child: CircleAvatar(
                               backgroundColor: AppColors.surfaceVariant,
                               backgroundImage: user?.avatarUrl != null && user!.avatarUrl!.isNotEmpty ? NetworkImage(user.avatarUrl!) : null,
-                              child: user?.avatarUrl == null || user!.avatarUrl!.isEmpty
-                                  ? const Icon(Icons.person_rounded, size: 42, color: AppColors.secondary)
-                                  : null,
+                              child: user?.avatarUrl == null || user!.avatarUrl!.isEmpty ? const Icon(Icons.person_rounded, size: 42, color: AppColors.primary) : null,
                             ),
                           ),
                           const SizedBox(height: 10),
-                          Text(
-                            user?.fullName?.trim().isNotEmpty == true ? user!.fullName! : 'أستاذ قانون',
-                            style: const TextStyle(color: Colors.white, fontSize: 21, fontWeight: FontWeight.w800),
-                          ),
+                          Text(user?.fullName?.trim().isNotEmpty == true ? user!.fullName! : 'أستاذ قانون', style: const TextStyle(color: Colors.white, fontSize: 21, fontWeight: FontWeight.w700)),
                           const SizedBox(height: 3),
-                          const Text('إدارة الاستشارات والمواعيد من مكان واحد', style: TextStyle(color: Colors.white70, fontSize: 12)),
+                          const Text('إدارة الاستشارات والمواعيد من مكان واحد', style: TextStyle(color: Color(0xFFDDE5ED), fontSize: 12)),
                         ],
                       ),
                     ),
@@ -77,10 +72,7 @@ class LawyerDashboardPage extends ConsumerWidget {
                   Positioned(
                     top: 8,
                     right: 8,
-                    child: _NotificationBell(
-                      unreadCount: unread,
-                      onTap: () => context.push('/notifications'),
-                    ),
+                    child: _NotificationBell(unreadCount: unread, onTap: () => context.push('/notifications')),
                   ),
                 ],
               ),
@@ -93,7 +85,7 @@ class LawyerDashboardPage extends ConsumerWidget {
               data: (bookings) => Padding(
                 padding: const EdgeInsets.fromLTRB(AppSizes.p20, 20, AppSizes.p20, 110),
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
                     _buildOverview(bookings),
                     const SizedBox(height: 28),
@@ -111,9 +103,10 @@ class LawyerDashboardPage extends ConsumerWidget {
   }
 
   Widget _sectionHeader(String title, String action, VoidCallback onTap) => Row(
+        textDirection: TextDirection.rtl,
         children: [
-          Expanded(child: Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: AppColors.secondary))),
-          TextButton(onPressed: onTap, child: const Text('عرض الكل', style: TextStyle(color: AppColors.goldDark, fontWeight: FontWeight.bold))),
+          Expanded(child: Text(title, textAlign: TextAlign.right, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: AppColors.primary))),
+          TextButton(onPressed: onTap, child: const Text('عرض الكل')),
         ],
       );
 
@@ -122,17 +115,18 @@ class LawyerDashboardPage extends ConsumerWidget {
     final active = bookings.where((b) => ['قيد انتظار الدفع', 'قيد معالجة الدفع', 'قيد مراجعة المحامي', 'مؤكد', 'قيد التنفيذ'].contains(b.status)).length;
     final earnings = bookings.where((b) => b.status == 'مكتمل').fold<double>(0, (sum, b) => sum + b.price);
     return Container(
-      padding: const EdgeInsets.all(18),
+      width: double.infinity,
+      padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: AppColors.secondary,
-        borderRadius: BorderRadius.circular(22),
-        boxShadow: [BoxShadow(color: AppColors.secondary.withValues(alpha: .16), blurRadius: 20, offset: const Offset(0, 8))],
+        color: AppColors.primary,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [BoxShadow(color: AppColors.primary.withValues(alpha: .06), blurRadius: 24, offset: const Offset(0, 8))],
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.end,
         children: [
-          const Text('ملخص الأداء', style: TextStyle(color: AppColors.gold, fontSize: 16, fontWeight: FontWeight.w800)),
-          const SizedBox(height: 16),
+          const Text('ملخص الأداء', style: TextStyle(color: AppColors.goldLight, fontSize: 16, fontWeight: FontWeight.w700)),
+          const SizedBox(height: 18),
           Row(
             children: [
               _metric('$completed', 'استشارات مكتملة', Icons.gavel_rounded),
@@ -150,9 +144,9 @@ class LawyerDashboardPage extends ConsumerWidget {
           children: [
             Icon(icon, color: AppColors.gold, size: 24),
             const SizedBox(height: 6),
-            Text(value, style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w800)),
+            Text(value, style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w700)),
             const SizedBox(height: 2),
-            Text(label, textAlign: TextAlign.center, style: const TextStyle(color: Colors.white70, fontSize: 10)),
+            Text(label, textAlign: TextAlign.center, style: const TextStyle(color: Color(0xFFDDE5ED), fontSize: 10)),
           ],
         ),
       );
@@ -160,12 +154,12 @@ class LawyerDashboardPage extends ConsumerWidget {
   Widget _emptyState() => Container(
         width: double.infinity,
         padding: const EdgeInsets.all(24),
-        decoration: BoxDecoration(color: AppColors.surfaceVariant, borderRadius: BorderRadius.circular(16)),
+        decoration: BoxDecoration(color: AppColors.surface, borderRadius: BorderRadius.circular(16), border: Border.all(color: AppColors.divider)),
         child: const Column(
           children: [
             Icon(Icons.event_available_rounded, color: AppColors.gold, size: 34),
             SizedBox(height: 8),
-            Text('لا توجد طلبات استشارة حالياً', style: TextStyle(fontWeight: FontWeight.w700)),
+            Text('لا توجد طلبات استشارة حالياً', style: TextStyle(fontWeight: FontWeight.w600)),
           ],
         ),
       );
@@ -173,7 +167,6 @@ class LawyerDashboardPage extends ConsumerWidget {
 
 class _BookingCard extends ConsumerWidget {
   final Booking booking;
-
   const _BookingCard({required this.booking});
 
   @override
@@ -182,17 +175,16 @@ class _BookingCard extends ConsumerWidget {
     final clientNameAsync = ref.watch(bookingClientNameProvider(booking.id));
     final clientName = clientNameAsync.valueOrNull;
     final displayName = clientName != null && clientName.trim().isNotEmpty ? clientName.trim() : 'اسم العميل غير متوفر';
-
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       color: scheme.surfaceContainerLowest,
-      elevation: 0,
       child: InkWell(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
         onTap: () => context.push('/booking-details', extra: booking),
         child: Padding(
-          padding: const EdgeInsets.all(14),
+          padding: const EdgeInsets.all(20),
           child: Row(
+            textDirection: TextDirection.rtl,
             children: [
               CircleAvatar(
                 radius: 24,
@@ -205,8 +197,9 @@ class _BookingCard extends ConsumerWidget {
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
                     Row(
+                      textDirection: TextDirection.rtl,
                       children: [
-                        Expanded(child: Text(displayName, textAlign: TextAlign.right, style: TextStyle(fontWeight: FontWeight.w800, color: scheme.onSurface))),
+                        Expanded(child: Text(displayName, textAlign: TextAlign.right, style: TextStyle(fontWeight: FontWeight.w700, color: scheme.onSurface))),
                         const SizedBox(width: 8),
                         _StatusChip(status: booking.status),
                       ],
@@ -239,7 +232,6 @@ class _BookingCard extends ConsumerWidget {
 
 class _StatusChip extends StatelessWidget {
   final String status;
-
   const _StatusChip({required this.status});
 
   @override
@@ -258,8 +250,8 @@ class _StatusChip extends StatelessWidget {
       foreground = AppColors.pendingText;
     }
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 4),
-      decoration: BoxDecoration(color: background, borderRadius: BorderRadius.circular(8), border: Border.all(color: Theme.of(context).colorScheme.outlineVariant.withValues(alpha: .45))),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+      decoration: BoxDecoration(color: background, borderRadius: BorderRadius.circular(999), border: Border.all(color: Theme.of(context).colorScheme.outlineVariant.withValues(alpha: .45))),
       child: Text(normalized, style: TextStyle(color: foreground, fontSize: 9.5, fontWeight: FontWeight.w700)),
     );
   }
@@ -268,7 +260,6 @@ class _StatusChip extends StatelessWidget {
 class _NotificationBell extends StatelessWidget {
   final int unreadCount;
   final VoidCallback onTap;
-
   const _NotificationBell({required this.unreadCount, required this.onTap});
 
   @override
@@ -277,7 +268,7 @@ class _NotificationBell extends StatelessWidget {
       button: true,
       label: 'التنبيهات',
       child: Material(
-        color: AppColors.secondaryDark.withValues(alpha: .72),
+        color: AppColors.primaryDark.withValues(alpha: .85),
         shape: const CircleBorder(),
         child: IconButton(
           tooltip: 'التنبيهات',
@@ -294,11 +285,7 @@ class _NotificationBell extends StatelessWidget {
                     constraints: const BoxConstraints(minWidth: 17, minHeight: 17),
                     padding: const EdgeInsets.symmetric(horizontal: 4),
                     alignment: Alignment.center,
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.error,
-                      borderRadius: BorderRadius.circular(99),
-                      border: Border.all(color: AppColors.secondaryDark, width: 1.5),
-                    ),
+                    decoration: BoxDecoration(color: Theme.of(context).colorScheme.error, borderRadius: BorderRadius.circular(99), border: Border.all(color: AppColors.primary, width: 1.5)),
                     child: Text(unreadCount > 99 ? '99+' : '$unreadCount', style: TextStyle(color: Theme.of(context).colorScheme.onError, fontSize: 8, fontWeight: FontWeight.w900, height: 1)),
                   ),
                 ),
