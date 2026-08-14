@@ -23,194 +23,115 @@ class HomePage extends ConsumerWidget {
         child: CustomScrollView(
           slivers: [
             SliverPadding(
-              padding: const EdgeInsets.fromLTRB(24, 10, 24, 0),
+              padding: const EdgeInsets.fromLTRB(20, 14, 20, 0),
               sliver: SliverToBoxAdapter(
                 child: Row(
                   textDirection: TextDirection.rtl,
                   children: [
-                    _NotificationBell(
-                      unreadCount: unread,
-                      onTap: () => context.push('/notifications'),
-                    ),
-                    const Spacer(),
-                  ],
-                ),
-              ),
-            ),
-            SliverPadding(
-              padding: const EdgeInsets.fromLTRB(24, 12, 24, 0),
-              sliver: SliverToBoxAdapter(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Text(
-                      'استشر محامياً بثقة',
-                      textAlign: TextAlign.right,
-                      style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                            fontWeight: FontWeight.w800,
-                            color: scheme.onSurface,
-                            height: 1.3,
-                          ),
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      'اختر تخصصك وابحث عن المحامي المناسب',
-                      textAlign: TextAlign.right,
-                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                            color: scheme.onSurfaceVariant,
-                            height: 1.5,
-                          ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            SliverPadding(
-              padding: const EdgeInsets.fromLTRB(24, 28, 24, 12),
-              sliver: SliverToBoxAdapter(
-                child: Text(
-                  'التخصصات القانونية',
-                  textAlign: TextAlign.right,
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.w800,
-                        color: scheme.onSurface,
+                    Container(
+                      width: 46,
+                      height: 46,
+                      decoration: BoxDecoration(
+                        color: scheme.primaryContainer,
+                        borderRadius: BorderRadius.circular(15),
+                        border: Border.all(color: scheme.outlineVariant),
                       ),
+                      alignment: Alignment.center,
+                      child: Icon(Icons.balance_rounded, color: scheme.primary, size: 25),
+                    ),
+                    const SizedBox(width: 11),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Text('استشارة', style: TextStyle(color: scheme.primary, fontSize: 18, fontWeight: FontWeight.w900)),
+                          Text('منصة الاستشارات القانونية', style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 10.5)),
+                        ],
+                      ),
+                    ),
+                    _NotificationBell(unreadCount: unread, onTap: () => context.push('/notifications')),
+                  ],
                 ),
               ),
             ),
             SliverPadding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
+              padding: const EdgeInsets.fromLTRB(20, 28, 20, 0),
+              sliver: SliverToBoxAdapter(
+                child: Container(
+                  padding: const EdgeInsets.fromLTRB(22, 24, 22, 24),
+                  decoration: BoxDecoration(
+                    color: scheme.primaryContainer,
+                    borderRadius: BorderRadius.circular(24),
+                    border: Border.all(color: scheme.outlineVariant),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Text('استشر محامياً بثقة', textAlign: TextAlign.right, style: TextStyle(color: scheme.onPrimaryContainer, fontSize: 28, fontWeight: FontWeight.w900, height: 1.2)),
+                      const SizedBox(height: 8),
+                      Text('اختر تخصصك وابحث عن المحامي المناسب لطلبك القانوني.', textAlign: TextAlign.right, style: TextStyle(color: scheme.onPrimaryContainer.withValues(alpha: .78), height: 1.55, fontSize: 13)),
+                      const SizedBox(height: 18),
+                      SizedBox(
+                        width: double.infinity,
+                        height: 48,
+                        child: ElevatedButton.icon(
+                          onPressed: () => context.push('/lawyers'),
+                          icon: const Icon(Icons.search_rounded, size: 20),
+                          label: const Text('ابحث عن محامٍ', style: TextStyle(fontWeight: FontWeight.w800)),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            SliverPadding(
+              padding: const EdgeInsets.fromLTRB(20, 28, 20, 12),
+              sliver: SliverToBoxAdapter(
+                child: _SectionTitle(title: 'التخصصات القانونية', action: 'عرض الكل', onTap: () => context.push('/lawyers')),
+              ),
+            ),
+            SliverPadding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
               sliver: SliverGrid(
                 delegate: SliverChildBuilderDelegate(
                   (context, index) {
                     final category = categories[index];
-                    return Material(
-                      color: scheme.surfaceContainerLowest,
-                      borderRadius: BorderRadius.circular(12),
-                      child: InkWell(
-                        borderRadius: BorderRadius.circular(12),
-                        onTap: () {
-                          ref.read(selectedCategoryProvider.notifier).setCategory(category);
-                          context.push('/lawyers');
-                        },
-                        child: Container(
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: scheme.outlineVariant),
-                          ),
-                          padding: const EdgeInsets.all(10),
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Container(
-                                width: 42,
-                                height: 42,
-                                decoration: BoxDecoration(
-                                  color: AppColors.goldLight.withValues(alpha: .45),
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: const Icon(Icons.gavel_rounded, color: AppColors.gold, size: 23),
-                              ),
-                              const SizedBox(height: 8),
-                              Text(
-                                category,
-                                textAlign: TextAlign.center,
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                                style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                                      fontWeight: FontWeight.w700,
-                                      color: scheme.onSurface,
-                                      height: 1.25,
-                                    ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    );
+                    return _CategoryCard(title: category, onTap: () {
+                      ref.read(selectedCategoryProvider.notifier).setCategory(category);
+                      context.push('/lawyers');
+                    });
                   },
                   childCount: categories.length,
                 ),
                 gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: 2,
-                  crossAxisSpacing: 12,
-                  mainAxisSpacing: 12,
-                  childAspectRatio: 1.18,
+                  crossAxisSpacing: 10,
+                  mainAxisSpacing: 10,
+                  childAspectRatio: 1.28,
                 ),
               ),
             ),
             SliverPadding(
-              padding: const EdgeInsets.fromLTRB(24, 28, 24, 10),
+              padding: const EdgeInsets.fromLTRB(20, 28, 20, 10),
               sliver: SliverToBoxAdapter(
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        'محامون مقترحون',
-                        textAlign: TextAlign.right,
-                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                              fontWeight: FontWeight.w800,
-                              color: scheme.onSurface,
-                            ),
-                      ),
-                    ),
-                    TextButton(
-                      onPressed: () => context.push('/lawyers'),
-                      child: const Text('عرض الكل'),
-                    ),
-                  ],
-                ),
+                child: _SectionTitle(title: 'محامون مقترحون', action: 'عرض الكل', onTap: () => context.push('/lawyers')),
               ),
             ),
             lawyers.when(
-              loading: () => const SliverToBoxAdapter(
-                child: Padding(
-                  padding: EdgeInsets.all(28),
-                  child: Center(child: CircularProgressIndicator()),
-                ),
-              ),
-              error: (_, __) => SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                  child: Text('تعذر تحميل المحامين حالياً', textAlign: TextAlign.right, style: TextStyle(color: scheme.onSurfaceVariant)),
-                ),
-              ),
-              data: (items) => SliverList(
-                delegate: SliverChildBuilderDelegate(
-                  (context, index) {
-                    final lawyer = items[index] as LawyerProfile;
-                    final name = lawyer.fullName?.trim().isNotEmpty == true ? lawyer.fullName!.trim() : 'محامٍ';
-                    final specialization = lawyer.specializations.isNotEmpty ? lawyer.specializations.join('، ') : 'استشارات قانونية';
-                    return Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 5),
-                      child: Card(
-                        color: scheme.surfaceContainerLowest,
-                        child: ListTile(
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
-                          leading: CircleAvatar(
-                            radius: 24,
-                            backgroundColor: AppColors.goldLight.withValues(alpha: .45),
-                            backgroundImage: lawyer.avatarUrl != null && lawyer.avatarUrl!.isNotEmpty ? NetworkImage(lawyer.avatarUrl!) : null,
-                            child: lawyer.avatarUrl == null || lawyer.avatarUrl!.isEmpty ? const Icon(Icons.person_outline, color: AppColors.goldDark) : null,
-                          ),
-                          title: Text(name, textAlign: TextAlign.right, style: const TextStyle(fontWeight: FontWeight.w800)),
-                          subtitle: Text(specialization, textAlign: TextAlign.right),
-                          trailing: const Icon(Icons.chevron_left_rounded),
-                          onTap: () {
-                            final profileId = lawyer.profileId.trim();
-                            if (profileId.isEmpty) {
-                              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تعذر فتح ملف المحامي')));
-                              return;
-                            }
-                            context.push('/lawyers/$profileId');
-                          },
+              loading: () => const SliverToBoxAdapter(child: Padding(padding: EdgeInsets.all(32), child: Center(child: CircularProgressIndicator()))),
+              error: (_, __) => const SliverToBoxAdapter(child: _EmptyState(icon: Icons.cloud_off_rounded, text: 'تعذر تحميل المحامين حالياً')),
+              data: (items) => items.isEmpty
+                  ? const SliverToBoxAdapter(child: _EmptyState(icon: Icons.person_search_outlined, text: 'لا يوجد محامون موثقون حالياً'))
+                  : SliverList(
+                      delegate: SliverChildBuilderDelegate(
+                        (context, index) => Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 5),
+                          child: _SuggestedLawyerCard(lawyer: items[index] as LawyerProfile),
                         ),
+                        childCount: items.length > 6 ? 6 : items.length,
                       ),
-                    );
-                  },
-                  childCount: items.length > 6 ? 6 : items.length,
-                ),
-              ),
+                    ),
             ),
             const SliverToBoxAdapter(child: SizedBox(height: 112)),
           ],
@@ -220,10 +141,125 @@ class HomePage extends ConsumerWidget {
   }
 }
 
+class _SectionTitle extends StatelessWidget {
+  final String title;
+  final String action;
+  final VoidCallback onTap;
+  const _SectionTitle({required this.title, required this.action, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Row(
+      textDirection: TextDirection.rtl,
+      children: [
+        Expanded(child: Text(title, textAlign: TextAlign.right, style: TextStyle(color: scheme.onSurface, fontSize: 19, fontWeight: FontWeight.w900))),
+        TextButton(onPressed: onTap, child: Text(action, style: TextStyle(color: scheme.primary, fontWeight: FontWeight.w700))),
+      ],
+    );
+  }
+}
+
+class _CategoryCard extends StatelessWidget {
+  final String title;
+  final VoidCallback onTap;
+  const _CategoryCard({required this.title, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Material(
+      color: scheme.surfaceContainerLowest,
+      borderRadius: BorderRadius.circular(18),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(18),
+        child: Container(
+          padding: const EdgeInsets.all(13),
+          decoration: BoxDecoration(borderRadius: BorderRadius.circular(18), border: Border.all(color: scheme.outlineVariant)),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(width: 42, height: 42, decoration: BoxDecoration(color: AppColors.goldLight.withValues(alpha: .38), borderRadius: BorderRadius.circular(13)), alignment: Alignment.center, child: const Icon(Icons.gavel_rounded, color: AppColors.gold, size: 22)),
+              const SizedBox(height: 9),
+              Text(title, textAlign: TextAlign.center, maxLines: 2, overflow: TextOverflow.ellipsis, style: TextStyle(color: scheme.onSurface, fontSize: 12, fontWeight: FontWeight.w800, height: 1.25)),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _SuggestedLawyerCard extends StatelessWidget {
+  final LawyerProfile lawyer;
+  const _SuggestedLawyerCard({required this.lawyer});
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final name = lawyer.fullName?.trim().isNotEmpty == true ? lawyer.fullName!.trim() : 'محامٍ';
+    final specialization = lawyer.specializations.isNotEmpty ? lawyer.specializations.take(2).join('، ') : 'استشارات قانونية';
+    final hasAvatar = lawyer.avatarUrl?.isNotEmpty == true;
+    return Material(
+      color: scheme.surfaceContainerLowest,
+      borderRadius: BorderRadius.circular(18),
+      child: InkWell(
+        onTap: () {
+          final id = lawyer.profileId.trim();
+          if (id.isEmpty) return;
+          context.push('/lawyers/$id');
+        },
+        borderRadius: BorderRadius.circular(18),
+        child: Container(
+          padding: const EdgeInsets.all(13),
+          decoration: BoxDecoration(borderRadius: BorderRadius.circular(18), border: Border.all(color: scheme.outlineVariant)),
+          child: Row(
+            textDirection: TextDirection.rtl,
+            children: [
+              CircleAvatar(radius: 27, backgroundColor: scheme.primaryContainer, backgroundImage: hasAvatar ? NetworkImage(lawyer.avatarUrl!) : null, child: hasAvatar ? null : Icon(Icons.person_outline_rounded, color: scheme.primary)),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
+                  Text(name, textAlign: TextAlign.right, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: scheme.onSurface, fontWeight: FontWeight.w900, fontSize: 15)),
+                  const SizedBox(height: 4),
+                  Text(specialization, textAlign: TextAlign.right, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 11)),
+                  const SizedBox(height: 7),
+                  Row(mainAxisAlignment: MainAxisAlignment.end, children: [const Icon(Icons.star_rounded, color: AppColors.gold, size: 15), const SizedBox(width: 3), Text(lawyer.rating.toStringAsFixed(1), style: TextStyle(color: scheme.onSurface, fontWeight: FontWeight.w700, fontSize: 11)), const SizedBox(width: 7), Text('${lawyer.reviewCount} استشارة', style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 10))]),
+                ]),
+              ),
+              const SizedBox(width: 8),
+              Icon(Icons.chevron_left_rounded, color: scheme.onSurfaceVariant),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _EmptyState extends StatelessWidget {
+  final IconData icon;
+  final String text;
+  const _EmptyState({required this.icon, required this.text});
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 20, 20, 20),
+      child: Container(
+        padding: const EdgeInsets.all(24),
+        decoration: BoxDecoration(color: scheme.surfaceContainerLowest, borderRadius: BorderRadius.circular(18), border: Border.all(color: scheme.outlineVariant)),
+        child: Column(children: [Icon(icon, color: scheme.onSurfaceVariant, size: 30), const SizedBox(height: 8), Text(text, textAlign: TextAlign.center, style: TextStyle(color: scheme.onSurfaceVariant))]),
+      ),
+    );
+  }
+}
+
 class _NotificationBell extends StatelessWidget {
   final int unreadCount;
   final VoidCallback onTap;
-
   const _NotificationBell({required this.unreadCount, required this.onTap});
 
   @override
@@ -239,30 +275,22 @@ class _NotificationBell extends StatelessWidget {
           customBorder: const CircleBorder(),
           onTap: onTap,
           child: SizedBox(
-            width: 48,
-            height: 48,
+            width: 46,
+            height: 46,
             child: Stack(
-              clipBehavior: Clip.none,
               alignment: Alignment.center,
               children: [
-                Icon(Icons.notifications_none_rounded, color: scheme.onSurface, size: 26),
+                Icon(Icons.notifications_none_rounded, color: scheme.onSurface, size: 25),
                 if (unreadCount > 0)
                   Positioned(
-                    top: 4,
-                    right: 4,
+                    top: 3,
+                    right: 2,
                     child: Container(
                       constraints: const BoxConstraints(minWidth: 18, minHeight: 18),
                       padding: const EdgeInsets.symmetric(horizontal: 4),
                       alignment: Alignment.center,
-                      decoration: BoxDecoration(
-                        color: scheme.error,
-                        borderRadius: BorderRadius.circular(99),
-                        border: Border.all(color: scheme.surfaceContainerLowest, width: 1.5),
-                      ),
-                      child: Text(
-                        unreadCount > 99 ? '99+' : '$unreadCount',
-                        style: TextStyle(color: scheme.onError, fontSize: 8, fontWeight: FontWeight.w900, height: 1),
-                      ),
+                      decoration: BoxDecoration(color: scheme.error, borderRadius: BorderRadius.circular(99), border: Border.all(color: scheme.surfaceContainerLowest, width: 1.5)),
+                      child: Text(unreadCount > 99 ? '99+' : '$unreadCount', style: TextStyle(color: scheme.onError, fontSize: 8, fontWeight: FontWeight.w900)),
                     ),
                   ),
               ],
