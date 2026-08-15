@@ -1,5 +1,7 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import '../../../../core/services/notification_service.dart';
+import '../../../../core/services/pwa_notification_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class NotificationSettingsPage extends StatefulWidget {
@@ -10,6 +12,8 @@ class NotificationSettingsPage extends StatefulWidget {
 
 class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
   String _selectedSound = 'default';
+  bool _pwaNotificationsEnabled = false;
+  bool _pwaBusy = false;
 
   @override
   void initState() {
@@ -19,13 +23,47 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
 
   Future<void> _loadSettings() async {
     final prefs = await SharedPreferences.getInstance();
-    if (mounted) setState(() => _selectedSound = prefs.getString('notification_sound') ?? 'default');
+    if (mounted) {
+      setState(() {
+        _selectedSound = prefs.getString('notification_sound') ?? 'default';
+        _pwaNotificationsEnabled = prefs.getBool('pwa_notifications_enabled') ?? false;
+      });
+    }
   }
 
   void _saveSound(String sound) {
     NotificationService.setNotificationSound(sound);
     setState(() => _selectedSound = sound);
     NotificationService.showNotification(title: 'تم تغيير النغمة', body: 'تم تطبيق نغمة الإشعارات الجديدة');
+  }
+
+  Future<void> _togglePwaNotifications(bool enabled) async {
+    if (!kIsWeb || _pwaBusy) return;
+    setState(() => _pwaBusy = true);
+    try {
+      final success = enabled
+          ? await PwaNotificationService.enable()
+          : await PwaNotificationService.disable();
+      if (enabled && !success) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('تعذر تفعيل إشعارات الويب. تأكد من السماح بالإشعارات ثم أعد المحاولة.')),
+          );
+        }
+        return;
+      }
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool('pwa_notifications_enabled', enabled && success);
+      if (mounted) setState(() => _pwaNotificationsEnabled = enabled && success);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('تعذر إعداد إشعارات الويب: $e')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _pwaBusy = false);
+    }
   }
 
   @override
@@ -63,6 +101,20 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
               ]),
             ),
             const SizedBox(height: 18),
+            if (kIsWeb) ...[
+              _SectionCard(
+                title: 'إشعارات التطبيق على الهاتف',
+                icon: Icons.phone_android_rounded,
+                child: SwitchListTile.adaptive(
+                  contentPadding: EdgeInsets.zero,
+                  value: _pwaNotificationsEnabled,
+                  onChanged: _pwaBusy ? null : _togglePwaNotifications,
+                  title: Text('إشعارات PWA', style: TextStyle(fontWeight: FontWeight.w700, color: scheme.onSurface)),
+                  subtitle: Text('استقبال إشعارات الطلبات والرسائل حتى عند تشغيل التطبيق في الخلفية، حسب دعم المتصفح.', style: TextStyle(color: scheme.onSurfaceVariant, height: 1.4)),
+                ),
+              ),
+              const SizedBox(height: 14),
+            ],
             _SectionCard(title: 'نغمة التنبيه', icon: Icons.music_note_rounded, child: RadioGroup<String>(groupValue: _selectedSound, onChanged: (value) { if (value != null) _saveSound(value); }, child: Column(children: sounds.map((sound) => RadioListTile<String>(contentPadding: EdgeInsets.zero, activeColor: scheme.primary, title: Text(sound.label, style: TextStyle(fontWeight: FontWeight.w600, color: scheme.onSurface)), value: sound.value)).toList()))),
             const SizedBox(height: 14),
             _SectionCard(title: 'خيارات الجهاز', icon: Icons.phone_android_rounded, child: ListTile(contentPadding: EdgeInsets.zero, leading: Icon(Icons.vibration_rounded, color: scheme.primary), title: Text('الاهتزاز', style: TextStyle(fontWeight: FontWeight.w700, color: scheme.onSurface)), subtitle: Text('يتحكم به إعدادات الجهاز', style: TextStyle(color: scheme.onSurfaceVariant)), trailing: Icon(Icons.check_circle_rounded, color: scheme.primary))),
