@@ -3,5 +3,5 @@ class PwaNotificationService {
 
   static Future<bool> enable() async => false;
 
-  static Future<void> disable() async {}
+  static Future<bool> disable() async => true;
 }
