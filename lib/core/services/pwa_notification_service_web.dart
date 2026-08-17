@@ -14,8 +14,7 @@ external JSAny? _disablePush();
 class PwaNotificationService {
   static const String _vapidPublicKey = String.fromEnvironment('VAPID_PUBLIC_KEY');
 
-  static bool get supported =>
-      _vapidPublicKey.isNotEmpty && web.window.navigator.serviceWorker != null;
+  static bool get supported => _vapidPublicKey.isNotEmpty;
 
   static Future<bool> enable() async {
     if (!supported) return false;
