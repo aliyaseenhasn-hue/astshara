@@ -1,38 +1,41 @@
 import 'dart:convert';
-import 'dart:js_util' as js_util;
-import 'dart:html' as html;
+import 'dart:js_interop';
+
+import 'package:web/web.dart' as web;
 
 import '../config/supabase_config.dart';
+
+@JS('astsharaEnablePush')
+external JSPromise<JSString?> _enablePush(JSString vapidPublicKey);
+
+@JS('astsharaDisablePush')
+external JSAny? _disablePush();
 
 class PwaNotificationService {
   static const String _vapidPublicKey = String.fromEnvironment('VAPID_PUBLIC_KEY');
 
   static bool get supported =>
-      html.window.navigator.serviceWorker != null &&
-      html.Notification.supported;
+      _vapidPublicKey.isNotEmpty && web.window.navigator.serviceWorker != null;
 
   static Future<bool> enable() async {
-    if (!supported || _vapidPublicKey.isEmpty) return false;
+    if (!supported) return false;
 
-    final result = await js_util.promiseToFuture<Object?>(
-      js_util.callMethod<Object?>(
-        html.window,
-        'astsharaEnablePush',
-        <Object?>[_vapidPublicKey],
-      ),
-    );
-
+    final result = await _enablePush(_vapidPublicKey.toJS).toDart;
     if (result == null) return false;
-    final subscription = jsonDecode(result.toString()) as Map<String, dynamic>;
+
+    final decoded = jsonDecode(result.toDart) as Map<String, dynamic>;
+    final subscription = Map<String, dynamic>.from(decoded);
     final keys = Map<String, dynamic>.from(subscription['keys'] as Map);
+    final user = SupabaseConfig.client.auth.currentUser;
+    if (user == null) return false;
 
     await SupabaseConfig.client.from('pwa_push_subscriptions').upsert(
       <String, dynamic>{
-        'user_id': SupabaseConfig.client.auth.currentUser!.id,
+        'user_id': user.id,
         'endpoint': subscription['endpoint'],
         'p256dh': keys['p256dh'],
         'auth': keys['auth'],
-        'user_agent': html.window.navigator.userAgent,
+        'user_agent': web.window.navigator.userAgent,
       },
       onConflict: 'user_id,endpoint',
     );
@@ -40,12 +43,20 @@ class PwaNotificationService {
     return true;
   }
 
-  static Future<void> disable() async {
+  static Future<bool> disable() async {
+    try {
+      _disablePush();
+    } catch (_) {
+      // The browser subscription can still be removed from Supabase below.
+    }
+
     final user = SupabaseConfig.client.auth.currentUser;
-    if (user == null) return;
+    if (user == null) return false;
+
     await SupabaseConfig.client
         .from('pwa_push_subscriptions')
         .delete()
         .eq('user_id', user.id);
+    return true;
   }
 }
