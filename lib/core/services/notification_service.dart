@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:convert';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:audioplayers/audioplayers.dart';
@@ -200,8 +199,9 @@ class NotificationService {
   static Future<void> _playCustomSound(String soundName) async {
     try {
       await _audioPlayer.play(AssetSource('sounds/$soundName.mp3'));
-    } catch (e) {
+    } catch (e, stack) {
       debugPrint('Warning: Failed to play custom sound: $e');
+      debugPrintStack(stackTrace: stack);
     }
   }
 
