@@ -41,20 +41,31 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
     if (!kIsWeb || _pwaBusy) return;
     setState(() => _pwaBusy = true);
     try {
-      final success = enabled
-          ? await PwaNotificationService.enable()
-          : await PwaNotificationService.disable();
-      if (enabled && !success) {
+      bool success;
+      if (enabled) {
+        success = await PwaNotificationService.enable();
+      } else {
+        success = await PwaNotificationService.disable();
+      }
+
+      if (!success) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('تعذر تفعيل إشعارات الويب. تأكد من السماح بالإشعارات ثم أعد المحاولة.')),
+            SnackBar(
+              content: Text(
+                enabled
+                    ? 'تعذر تفعيل إشعارات الويب. تأكد من السماح بالإشعارات ثم أعد المحاولة.'
+                    : 'تعذر إيقاف إشعارات الويب. حاول مرة أخرى.',
+              ),
+            ),
           );
         }
         return;
       }
+
       final prefs = await SharedPreferences.getInstance();
-      await prefs.setBool('pwa_notifications_enabled', enabled && success);
-      if (mounted) setState(() => _pwaNotificationsEnabled = enabled && success);
+      await prefs.setBool('pwa_notifications_enabled', enabled);
+      if (mounted) setState(() => _pwaNotificationsEnabled = enabled);
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
