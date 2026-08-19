@@ -1,4 +1,4 @@
-const CACHE_NAME = 'astshara-pwa-v3';
+const CACHE_NAME = 'astshara-pwa-v4';
 const APP_SHELL = [
   './',
   './index.html',
@@ -46,10 +46,9 @@ self.addEventListener('push', (event) => {
     lang: 'ar',
     tag: data.tag || 'astshara-notification',
     renotify: true,
+    silent: false,
     requireInteraction: Boolean(data.requireInteraction),
     data: { url: data.url || './', notification_id: data.notification_id || null },
-    sound: data.sound || undefined,
-    vibrate: data.vibrate || [200, 100, 200],
   };
 
   event.waitUntil(self.registration.showNotification(title, options));
