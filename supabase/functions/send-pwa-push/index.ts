@@ -71,6 +71,10 @@ Deno.serve(async (req) => {
   if (subscriptionError) return json({ error: subscriptionError.message }, 500);
   if (!subscriptions?.length) return json({ sent: 0, removed: 0 });
 
+  // `silent: false` explicitly requests an audible notification where the
+  // platform/browser supports notification sounds. iOS Home Screen PWAs do
+  // not expose a developer-controlled custom sound for Web Push; the system
+  // decides the actual alert sound.
   const notification = JSON.stringify({
     title: payload.title || "استشارة",
     body: payload.body || "لديك إشعار جديد",
@@ -80,8 +84,7 @@ Deno.serve(async (req) => {
     tag: payload.tag || "astshara-notification",
     requireInteraction: Boolean(payload.requireInteraction),
     notification_id: payload.notification_id || null,
-    sound: "default",
-    vibrate: [200, 100, 200],
+    silent: false,
   });
 
   let sent = 0;
