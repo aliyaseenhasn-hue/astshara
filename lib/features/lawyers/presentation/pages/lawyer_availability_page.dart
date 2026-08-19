@@ -13,6 +13,9 @@ class LawyerAvailabilityPage extends ConsumerStatefulWidget {
 }
 
 class _LawyerAvailabilityPageState extends ConsumerState<LawyerAvailabilityPage> {
+  final Set<String> _pendingCancellationBookings = <String>{};
+  final Set<String> _submittingCancellationBookings = <String>{};
+
   Future<String?> _profileId() async {
     final user = ref.read(authStateChangesProvider).value;
     if (user == null) return null;
@@ -40,6 +43,14 @@ class _LawyerAvailabilityPageState extends ConsumerState<LawyerAvailabilityPage>
     final lawyerId = await _profileId();
     if (lawyerId == null) return [];
     final rows = await SupabaseConfig.client.from('lawyer_availability_slots').select('id, starts_at, ends_at, is_available').eq('lawyer_id', lawyerId).order('starts_at', ascending: false);
+    try {
+      final requests = await SupabaseConfig.client.rpc('get_my_cancellation_requests');
+      _pendingCancellationBookings
+        ..clear()
+        ..addAll((requests is List ? requests : const []).whereType<Map>().where((r) => r['status'] == 'بانتظار مراجعة الإدارة').map((r) => r['booking_id'].toString()));
+    } catch (_) {
+      // The availability list remains usable even if the optional review-state query fails.
+    }
     return (rows as List).map((e) => Map<String, dynamic>.from(e as Map)).toList();
   }
 
@@ -49,6 +60,40 @@ class _LawyerAvailabilityPageState extends ConsumerState<LawyerAvailabilityPage>
       if (mounted) setState(() {});
     } catch (e) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('تعذر حذف الموعد: $e'), backgroundColor: AppColors.error));
+    }
+  }
+
+  Future<void> _requestCancellation(String bookingId) async {
+    if (_pendingCancellationBookings.contains(bookingId) || _submittingCancellationBookings.contains(bookingId)) return;
+    final controller = TextEditingController();
+    final reason = await showDialog<String>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('طلب إلغاء الحجز'),
+        content: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+          const Text('يرجى توضيح سبب إلغاء الحجز. سيتم إرسال الطلب إلى الإدارة للمراجعة.'),
+          const SizedBox(height: 14),
+          TextField(controller: controller, maxLines: 5, autofocus: true, decoration: const InputDecoration(labelText: 'سبب الإلغاء', hintText: 'اكتب سبب الإلغاء هنا')),
+        ]),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('إلغاء')),
+          FilledButton(onPressed: () { if (controller.text.trim().isEmpty) { ScaffoldMessenger.of(dialogContext).showSnackBar(const SnackBar(content: Text('سبب الإلغاء إلزامي'))); return; } Navigator.pop(dialogContext, controller.text.trim()); }, child: const Text('إرسال طلب الإلغاء')),
+        ],
+      ),
+    );
+    controller.dispose();
+    if (reason == null || !mounted) return;
+    setState(() => _submittingCancellationBookings.add(bookingId));
+    try {
+      await SupabaseConfig.client.rpc('request_booking_cancellation', params: {'p_booking_id': bookingId, 'p_reason': reason});
+      if (!mounted) return;
+      setState(() => _pendingCancellationBookings.add(bookingId));
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تم إرسال طلب إلغاء الحجز إلى الإدارة للمراجعة.')));
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString().replaceFirst('Exception: ', '')), backgroundColor: AppColors.error));
+    } finally {
+      if (mounted) setState(() => _submittingCancellationBookings.remove(bookingId));
     }
   }
 
@@ -72,15 +117,7 @@ class _LawyerAvailabilityPageState extends ConsumerState<LawyerAvailabilityPage>
             child: ListView(
               padding: const EdgeInsets.fromLTRB(20, 10, 20, 110),
               children: [
-                Container(
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(gradient: LinearGradient(begin: Alignment.topRight, end: Alignment.bottomLeft, colors: [scheme.primaryContainer, scheme.surfaceContainerHighest]), borderRadius: BorderRadius.circular(24), border: Border.all(color: scheme.outlineVariant.withValues(alpha: .55))),
-                  child: Row(textDirection: rtl, children: [
-                    Container(width: 52, height: 52, decoration: BoxDecoration(color: dark ? AppColors.gold.withValues(alpha: .16) : scheme.primary.withValues(alpha: .12), shape: BoxShape.circle), child: Icon(Icons.calendar_month_rounded, color: dark ? AppColors.gold : scheme.primary, size: 27)),
-                    const SizedBox(width: 14),
-                    Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [Text('مواعيدك المتاحة', textAlign: TextAlign.right, style: TextStyle(color: scheme.onSurface, fontSize: 18, fontWeight: FontWeight.w800)), const SizedBox(height: 5), Text('أضف أوقاتاً متاحة لتظهر لطالبي الاستشارة عند الحجز.', textAlign: TextAlign.right, style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 12, height: 1.45))])),
-                  ]),
-                ),
+                Container(padding: const EdgeInsets.all(20), decoration: BoxDecoration(gradient: LinearGradient(begin: Alignment.topRight, end: Alignment.bottomLeft, colors: [scheme.primaryContainer, scheme.surfaceContainerHighest]), borderRadius: BorderRadius.circular(24), border: Border.all(color: scheme.outlineVariant.withValues(alpha: .55))), child: Row(textDirection: rtl, children: [Container(width: 52, height: 52, decoration: BoxDecoration(color: dark ? AppColors.gold.withValues(alpha: .16) : scheme.primary.withValues(alpha: .12), shape: BoxShape.circle), child: Icon(Icons.calendar_month_rounded, color: dark ? AppColors.gold : scheme.primary, size: 27)), const SizedBox(width: 14), Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [Text('مواعيدك المتاحة', textAlign: TextAlign.right, style: TextStyle(color: scheme.onSurface, fontSize: 18, fontWeight: FontWeight.w800)), const SizedBox(height: 5), Text('أضف أوقاتاً متاحة لتظهر لطالبي الاستشارة عند الحجز.', textAlign: TextAlign.right, style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 12, height: 1.45))]))]),
                 const SizedBox(height: 26),
                 Row(textDirection: rtl, children: [Expanded(child: Text('المواعيد المنشورة', textAlign: TextAlign.right, style: TextStyle(color: scheme.onSurface, fontSize: 19, fontWeight: FontWeight.w800))), Container(padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 6), decoration: BoxDecoration(color: scheme.primary.withValues(alpha: .10), borderRadius: BorderRadius.circular(12)), child: Text('${slots.length}', style: TextStyle(color: scheme.primary, fontWeight: FontWeight.w800)))]),
                 const SizedBox(height: 14),
@@ -93,7 +130,11 @@ class _LawyerAvailabilityPageState extends ConsumerState<LawyerAvailabilityPage>
                     final available = slot['is_available'] == true;
                     final statusColor = isPast ? scheme.onSurfaceVariant : (available ? AppColors.success : AppColors.warning);
                     final statusText = isPast ? 'موعد سابق' : (available ? 'متاح للحجز' : 'محجوز');
-                    return Container(margin: const EdgeInsets.only(bottom: 12), padding: const EdgeInsets.all(15), decoration: BoxDecoration(color: scheme.surfaceContainerLowest, borderRadius: BorderRadius.circular(20), border: Border.all(color: scheme.outlineVariant), boxShadow: dark ? null : [BoxShadow(color: Colors.black.withValues(alpha: .025), blurRadius: 16, offset: const Offset(0, 5))]), child: Row(textDirection: rtl, children: [Container(width: 50, height: 50, decoration: BoxDecoration(color: statusColor.withValues(alpha: .10), borderRadius: BorderRadius.circular(15)), child: Icon(isPast ? Icons.history_rounded : (available ? Icons.event_available_rounded : Icons.event_busy_rounded), color: statusColor, size: 25)), const SizedBox(width: 13), Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [Text(DateFormat('EEEE، d MMMM yyyy', 'ar').format(start), textAlign: TextAlign.right, style: TextStyle(color: scheme.onSurface, fontSize: 14.5, fontWeight: FontWeight.w800)), const SizedBox(height: 5), Text('${AppTimeFormat.time12(start)} • مدة الاستشارة 30 دقيقة', textAlign: TextAlign.right, style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 11.5)), const SizedBox(height: 7), Row(mainAxisAlignment: MainAxisAlignment.end, children: [Container(width: 7, height: 7, decoration: BoxDecoration(color: statusColor, shape: BoxShape.circle)), const SizedBox(width: 5), Text(statusText, style: TextStyle(color: statusColor, fontSize: 11, fontWeight: FontWeight.w700))])])), isPast || available ? IconButton(tooltip: 'حذف الموعد', onPressed: () => _delete(slot['id'] as String), icon: Icon(Icons.delete_outline_rounded, color: scheme.error)) : Icon(Icons.lock_outline_rounded, color: scheme.onSurfaceVariant)]));
+                    final bookingId = slot['booking_id']?.toString();
+                    final isPending = bookingId != null && _pendingCancellationBookings.contains(bookingId);
+                    final isSubmitting = bookingId != null && _submittingCancellationBookings.contains(bookingId);
+                    return Container(margin: const EdgeInsets.only(bottom: 12), padding: const EdgeInsets.all(15), decoration: BoxDecoration(color: scheme.surfaceContainerLowest, borderRadius: BorderRadius.circular(20), border: Border.all(color: scheme.outlineVariant), boxShadow: dark ? null : [BoxShadow(color: Colors.black.withValues(alpha: .025), blurRadius: 16, offset: const Offset(0, 5))]), child: Column(children: [Row(textDirection: rtl, children: [Container(width: 50, height: 50, decoration: BoxDecoration(color: statusColor.withValues(alpha: .10), borderRadius: BorderRadius.circular(15)), child: Icon(isPast ? Icons.history_rounded : (available ? Icons.event_available_rounded : Icons.event_busy_rounded), color: statusColor, size: 25)), const SizedBox(width: 13), Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [Text(DateFormat('EEEE، d MMMM yyyy', 'ar').format(start), textAlign: TextAlign.right, style: TextStyle(color: scheme.onSurface, fontSize: 14.5, fontWeight: FontWeight.w800)), const SizedBox(height: 5), Text('${AppTimeFormat.time12(start)} • مدة الاستشارة 30 دقيقة', textAlign: TextAlign.right, style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 11.5)), const SizedBox(height: 7), Row(mainAxisAlignment: MainAxisAlignment.end, children: [Container(width: 7, height: 7, decoration: BoxDecoration(color: statusColor, shape: BoxShape.circle)), const SizedBox(width: 5), Text(statusText, style: TextStyle(color: statusColor, fontSize: 11, fontWeight: FontWeight.w700))])])), isPast || available ? IconButton(tooltip: 'حذف الموعد', onPressed: () => _delete(slot['id'] as String), icon: Icon(Icons.delete_outline_rounded, color: scheme.error)) : Icon(Icons.lock_outline_rounded, color: scheme.onSurfaceVariant)]),
+                      if (!isPast && !available && bookingId != null) Padding(padding: const EdgeInsets.only(top: 12), child: SizedBox(width: double.infinity, child: isPending ? Container(padding: const EdgeInsets.symmetric(vertical: 11), decoration: BoxDecoration(color: scheme.surfaceContainerHighest, borderRadius: BorderRadius.circular(12)), child: const Row(mainAxisAlignment: MainAxisAlignment.center, children: [Icon(Icons.hourglass_top_rounded, size: 18), SizedBox(width: 8), Text('طلب الإلغاء بانتظار مراجعة الإدارة')])) : OutlinedButton.icon(onPressed: isSubmitting ? null : () => _requestCancellation(bookingId), icon: isSubmitting ? const SizedBox(width: 17, height: 17, child: CircularProgressIndicator(strokeWidth: 2)) : const Icon(Icons.event_busy_outlined), label: const Text('طلب إلغاء الحجز'))))]));
                   }),
               ],
             ),
