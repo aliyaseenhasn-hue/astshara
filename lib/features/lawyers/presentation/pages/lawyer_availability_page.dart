@@ -49,30 +49,7 @@ class _LawyerAvailabilityPageState extends ConsumerState<LawyerAvailabilityPage>
       _pendingCancellationBookings.clear();
     }
 
-    // إثراء المواعيد المحجوزة بالـ booking_id عند الإمكان.
-    // مسار الإلغاء نفسه يستخدم RPC مباشر بالـslot_id كمسار احتياطي مضمون.
-    try {
-      final bookedRows = await SupabaseConfig.client.rpc('get_my_booked_schedule_slots');
-      final booked = (bookedRows is List ? bookedRows : const <dynamic>[])
-          .whereType<Map>()
-          .map((row) => Map<String, dynamic>.from(row))
-          .toList();
-      final bookedBySlot = <String, Map<String, dynamic>>{};
-      for (final booking in booked) {
-        final slotId = booking['slot_id']?.toString();
-        final bookingId = booking['booking_id']?.toString();
-        if (slotId != null && slotId.isNotEmpty && bookingId != null && bookingId.isNotEmpty) {
-          bookedBySlot[slotId] = booking;
-        }
-      }
-      for (final slot in slots) {
-        final booking = bookedBySlot[slot['id']?.toString()];
-        if (booking == null) continue;
-        slot['booking_id'] = booking['booking_id']?.toString();
-        slot['is_available'] = false;
-      }
-    } catch (_) {}
-
+    // لا نعتمد على RPC عام لتحديد الحجز. نحدد الحجز مباشرة عند الضغط على زر الإلغاء.
     return slots;
   }
 
@@ -81,10 +58,36 @@ class _LawyerAvailabilityPageState extends ConsumerState<LawyerAvailabilityPage>
     if (existing != null && existing.isNotEmpty) return existing;
 
     final slotId = slot['id']?.toString();
-    if (slotId == null || slotId.isEmpty) return null;
+    final startsAtRaw = slot['starts_at']?.toString();
+    if (slotId == null || slotId.isEmpty || startsAtRaw == null || startsAtRaw.isEmpty) return null;
 
-    // لا نعتمد هنا على قائمة الحجوزات العامة. نطلب من الخادم تحديد الحجز
-    // المرتبط بهذا الـslot تحديداً، مع التحقق من ملكية المحامي داخل RPC.
+    // المسار الأساسي: استعلام مباشر إلى bookings من جهة المحامي.
+    // توجد RLS صريحة تسمح للمحامي بقراءة الحجوزات التي يكون lawyer_id فيها ملفه.
+    try {
+      final lawyerId = await _profileId();
+      if (lawyerId != null) {
+        final startsAt = DateTime.tryParse(startsAtRaw);
+        if (startsAt != null) {
+          final from = startsAt.subtract(const Duration(seconds: 120)).toUtc().toIso8601String();
+          final to = startsAt.add(const Duration(seconds: 120)).toUtc().toIso8601String();
+          final rows = await SupabaseConfig.client
+              .from('bookings')
+              .select('id, scheduled_at, status, consultation_status')
+              .eq('lawyer_id', lawyerId)
+              .gte('scheduled_at', from)
+              .lte('scheduled_at', to)
+              .not('status', 'in', '(ملغي,ملغى,مسترد,مكتمل)')
+              .order('scheduled_at', ascending: true)
+              .limit(1);
+          if (rows is List && rows.isNotEmpty && rows.first is Map) {
+            final id = (rows.first as Map)['id']?.toString();
+            if (id != null && id.isNotEmpty) return id;
+          }
+        }
+      }
+    } catch (_) {}
+
+    // مسار خادم مباشر بالـslot_id للتوافق مع النسخ السابقة.
     try {
       final result = await SupabaseConfig.client.rpc(
         'get_booking_id_for_slot',
@@ -99,18 +102,6 @@ class _LawyerAvailabilityPageState extends ConsumerState<LawyerAvailabilityPage>
       }
     } catch (_) {}
 
-    // توافق مع النسخ القديمة من قاعدة البيانات.
-    try {
-      final bookedRows = await SupabaseConfig.client.rpc('get_my_booked_schedule_slots');
-      for (final raw in (bookedRows is List ? bookedRows : const <dynamic>[])) {
-        if (raw is! Map) continue;
-        final booking = Map<String, dynamic>.from(raw);
-        if (booking['slot_id']?.toString() == slotId) {
-          final id = booking['booking_id']?.toString();
-          if (id != null && id.isNotEmpty) return id;
-        }
-      }
-    } catch (_) {}
     return null;
   }
 
