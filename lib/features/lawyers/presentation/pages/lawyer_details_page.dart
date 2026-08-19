@@ -32,43 +32,54 @@ class LawyerDetailsPage extends ConsumerWidget {
                 title: const Text('الملف الشخصي', style: TextStyle(fontWeight: FontWeight.w800)),
                 leading: IconButton(tooltip: 'رجوع', onPressed: () => context.pop(), icon: const Icon(Icons.arrow_forward_rounded)),
               ),
-              SliverToBoxAdapter(child: Column(children: [
-                Container(height: 150, decoration: BoxDecoration(gradient: LinearGradient(colors: [scheme.primary, scheme.primaryContainer]))),
-                Transform.translate(
-                  offset: const Offset(0, -56),
-                  child: CircleAvatar(
-                    radius: 59,
-                    backgroundColor: scheme.surface,
-                    child: CircleAvatar(
-                      radius: 54,
-                      backgroundColor: scheme.surfaceContainerHighest,
-                      backgroundImage: avatar != null && avatar.isNotEmpty ? NetworkImage(avatar) : null,
-                      child: avatar == null || avatar.isEmpty ? Text(name.substring(0, 1), style: TextStyle(fontSize: 36, fontWeight: FontWeight.w900, color: scheme.primary)) : null,
+              SliverToBoxAdapter(
+                child: Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    Container(
+                      height: 150,
+                      decoration: BoxDecoration(gradient: LinearGradient(colors: [scheme.primary, scheme.primaryContainer])),
                     ),
-                  ),
-                ),
-                Transform.translate(
-                  offset: const Offset(0, -40),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
-                    child: Column(children: [
-                      Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                        Flexible(child: Text(name, textAlign: TextAlign.center, style: TextStyle(color: scheme.onSurface, fontSize: 22, fontWeight: FontWeight.w900))),
-                        if (lawyer.verified) Padding(padding: const EdgeInsets.only(right: 6), child: Icon(Icons.verified_rounded, color: scheme.primary, size: 20)),
+                    Positioned(
+                      top: 90,
+                      left: 0,
+                      right: 0,
+                      child: Center(
+                        child: CircleAvatar(
+                          radius: 59,
+                          backgroundColor: scheme.surface,
+                          child: CircleAvatar(
+                            radius: 54,
+                            backgroundColor: scheme.surfaceContainerHighest,
+                            backgroundImage: avatar != null && avatar.isNotEmpty ? NetworkImage(avatar) : null,
+                            child: avatar == null || avatar.isEmpty
+                                ? Text(name.substring(0, 1), style: TextStyle(fontSize: 36, fontWeight: FontWeight.w900, color: scheme.primary))
+                                : null,
+                          ),
+                        ),
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(20, 126, 20, 110),
+                      child: Column(children: [
+                        const SizedBox(height: 0),
+                        Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                          Flexible(child: Text(name, textAlign: TextAlign.center, style: TextStyle(color: scheme.onSurface, fontSize: 22, fontWeight: FontWeight.w900))),
+                          if (lawyer.verified) Padding(padding: const EdgeInsets.only(right: 6), child: Icon(Icons.verified_rounded, color: scheme.primary, size: 20)),
+                        ]),
+                        const SizedBox(height: 6),
+                        Text(lawyer.specializations.isEmpty ? 'محامي ومستشار قانوني' : lawyer.specializations.join('، '), textAlign: TextAlign.center, style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 14, height: 1.4)),
+                        const SizedBox(height: 16),
+                        _Stats(lawyer: lawyer),
+                        const SizedBox(height: 18),
+                        LawyerAchievementsGallery(lawyerId: lawyer.profileId, editable: false),
+                        const SizedBox(height: 20),
+                        SizedBox(width: double.infinity, height: 48, child: OutlinedButton.icon(onPressed: () => context.push('/create-booking', extra: {'lawyer': lawyer, 'isCustom': true}), icon: const Icon(Icons.edit_note_rounded), label: const Text('طلب استشارة بنوع مختلف', style: TextStyle(fontWeight: FontWeight.w700)))),
                       ]),
-                      const SizedBox(height: 6),
-                      Text(lawyer.specializations.isEmpty ? 'محامي ومستشار قانوني' : lawyer.specializations.join('، '), textAlign: TextAlign.center, style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 14, height: 1.4)),
-                      const SizedBox(height: 16),
-                      _Stats(lawyer: lawyer),
-                      const SizedBox(height: 18),
-                      LawyerAchievementsGallery(lawyerId: lawyer.profileId, editable: false),
-                      const SizedBox(height: 20),
-                      SizedBox(width: double.infinity, height: 48, child: OutlinedButton.icon(onPressed: () => context.push('/create-booking', extra: {'lawyer': lawyer, 'isCustom': true}), icon: const Icon(Icons.edit_note_rounded), label: const Text('طلب استشارة بنوع مختلف', style: TextStyle(fontWeight: FontWeight.w700)))),
-                      const SizedBox(height: 110),
-                    ]),
-                  ),
+                    ),
+                  ],
                 ),
-              ])),
+              ),
             ]),
             Positioned(
               left: 14,
