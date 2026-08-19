@@ -49,7 +49,6 @@ class _LawyerAvailabilityPageState extends ConsumerState<LawyerAvailabilityPage>
       _pendingCancellationBookings.clear();
     }
 
-    // الحجز يُعاد من PostgreSQL مع slot_id الحقيقي. لا نعتمد على قراءة bookings مباشرة من Flutter.
     try {
       final bookedRows = await SupabaseConfig.client.rpc('get_my_booked_schedule_slots');
       final booked = (bookedRows is List ? bookedRows : const <dynamic>[])
@@ -72,9 +71,7 @@ class _LawyerAvailabilityPageState extends ConsumerState<LawyerAvailabilityPage>
         slot['booking_id'] = booking['booking_id']?.toString();
         slot['is_available'] = false;
       }
-    } catch (_) {
-      // لا نخفي المواعيد عند تعذر RPC؛ تبقى الحالة الأصلية للموعد.
-    }
+    } catch (_) {}
 
     return slots;
   }
@@ -90,9 +87,7 @@ class _LawyerAvailabilityPageState extends ConsumerState<LawyerAvailabilityPage>
       for (final raw in (bookedRows is List ? bookedRows : const <dynamic>[])) {
         if (raw is! Map) continue;
         final booking = Map<String, dynamic>.from(raw);
-        if (booking['slot_id']?.toString() == slotId) {
-          return booking['booking_id']?.toString();
-        }
+        if (booking['slot_id']?.toString() == slotId) return booking['booking_id']?.toString();
       }
     } catch (_) {}
     return null;
@@ -103,10 +98,7 @@ class _LawyerAvailabilityPageState extends ConsumerState<LawyerAvailabilityPage>
     if (!mounted) return;
     if (bookingId == null || bookingId.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('تعذر العثور على الحجز المرتبط بهذا الموعد. حدّث الصفحة وحاول مرة أخرى.'),
-          backgroundColor: AppColors.error,
-        ),
+        const SnackBar(content: Text('تعذر العثور على الحجز المرتبط بهذا الموعد. حدّث الصفحة وحاول مرة أخرى.'), backgroundColor: AppColors.error),
       );
       return;
     }
@@ -123,12 +115,7 @@ class _LawyerAvailabilityPageState extends ConsumerState<LawyerAvailabilityPage>
           children: [
             const Text('يرجى توضيح سبب إلغاء الحجز. سيتم إرسال الطلب إلى الإدارة للمراجعة.'),
             const SizedBox(height: 14),
-            TextField(
-              controller: controller,
-              maxLines: 5,
-              autofocus: true,
-              decoration: const InputDecoration(labelText: 'سبب الإلغاء', hintText: 'اكتب سبب الإلغاء هنا'),
-            ),
+            TextField(controller: controller, maxLines: 5, autofocus: true, decoration: const InputDecoration(labelText: 'سبب الإلغاء', hintText: 'اكتب سبب الإلغاء هنا')),
           ],
         ),
         actions: [
@@ -151,20 +138,13 @@ class _LawyerAvailabilityPageState extends ConsumerState<LawyerAvailabilityPage>
 
     setState(() => _submittingCancellationBookings.add(bookingId));
     try {
-      await SupabaseConfig.client.rpc(
-        'request_booking_cancellation',
-        params: {'p_booking_id': bookingId, 'p_reason': reason},
-      );
+      await SupabaseConfig.client.rpc('request_booking_cancellation', params: {'p_booking_id': bookingId, 'p_reason': reason});
       if (!mounted) return;
       setState(() => _pendingCancellationBookings.add(bookingId));
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('تم إرسال طلب إلغاء الحجز إلى الإدارة للمراجعة.')),
-      );
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تم إرسال طلب إلغاء الحجز إلى الإدارة للمراجعة.')));
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.toString().replaceFirst('Exception: ', '')), backgroundColor: AppColors.error),
-      );
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString().replaceFirst('Exception: ', '')), backgroundColor: AppColors.error));
     } finally {
       if (mounted) setState(() => _submittingCancellationBookings.remove(bookingId));
     }
@@ -175,21 +155,12 @@ class _LawyerAvailabilityPageState extends ConsumerState<LawyerAvailabilityPage>
       await SupabaseConfig.client.from('lawyer_availability_slots').delete().eq('id', id);
       if (mounted) setState(() {});
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('تعذر حذف الموعد: $e'), backgroundColor: AppColors.error),
-        );
-      }
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('تعذر حذف الموعد: $e'), backgroundColor: AppColors.error));
     }
   }
 
   Future<void> _addSlot() async {
-    final date = await showDatePicker(
-      context: context,
-      firstDate: DateTime.now(),
-      lastDate: DateTime.now().add(const Duration(days: 90)),
-      initialDate: DateTime.now().add(const Duration(days: 1)),
-    );
+    final date = await showDatePicker(context: context, firstDate: DateTime.now(), lastDate: DateTime.now().add(const Duration(days: 90)), initialDate: DateTime.now().add(const Duration(days: 1)));
     if (date == null || !mounted) return;
     final time = await showTimePicker(context: context, initialTime: const TimeOfDay(hour: 10, minute: 0));
     if (time == null) return;
@@ -197,19 +168,10 @@ class _LawyerAvailabilityPageState extends ConsumerState<LawyerAvailabilityPage>
     final lawyerId = await _profileId();
     if (lawyerId == null) return;
     try {
-      await SupabaseConfig.client.from('lawyer_availability_slots').insert({
-        'lawyer_id': lawyerId,
-        'starts_at': start.toUtc().toIso8601String(),
-        'ends_at': start.add(const Duration(minutes: 30)).toUtc().toIso8601String(),
-        'is_available': true,
-      });
+      await SupabaseConfig.client.from('lawyer_availability_slots').insert({'lawyer_id': lawyerId, 'starts_at': start.toUtc().toIso8601String(), 'ends_at': start.add(const Duration(minutes: 30)).toUtc().toIso8601String(), 'is_available': true});
       if (mounted) setState(() {});
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('تعذر إضافة الموعد: $e'), backgroundColor: AppColors.error),
-        );
-      }
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('تعذر إضافة الموعد: $e'), backgroundColor: AppColors.error));
     }
   }
 
@@ -221,13 +183,15 @@ class _LawyerAvailabilityPageState extends ConsumerState<LawyerAvailabilityPage>
     final isPast = start.isBefore(DateTime.now());
     final available = slot['is_available'] == true;
     final bookingId = slot['booking_id']?.toString();
-    final isBooked = !isPast && bookingId != null && bookingId.isNotEmpty;
-    final pending = isBooked && _pendingCancellationBookings.contains(bookingId);
-    final submitting = isBooked && _submittingCancellationBookings.contains(bookingId);
-    final statusText = isPast ? 'موعد سابق' : (isBooked ? 'محجوز' : (available ? 'متاح للحجز' : 'غير متاح'));
-    final statusColor = isPast
-        ? scheme.onSurfaceVariant
-        : (isBooked ? AppColors.warning : (available ? AppColors.success : scheme.onSurfaceVariant));
+
+    // في هذا التدفق: الموعد المستقبلي الذي أصبح غير متاح هو الموعد المحجوز.
+    // نُظهر إجراء الإلغاء حتى لو لم تنجح RPC في إثراء البطاقة بـ booking_id؛
+    // الضغط نفسه يتحقق من الحجز خادمياً قبل إرسال طلب الإلغاء.
+    final isBooked = !isPast && !available;
+    final pending = isBooked && bookingId != null && _pendingCancellationBookings.contains(bookingId);
+    final submitting = isBooked && bookingId != null && _submittingCancellationBookings.contains(bookingId);
+    final statusText = isPast ? 'موعد سابق' : (isBooked ? 'محجوز' : 'متاح للحجز');
+    final statusColor = isPast ? scheme.onSurfaceVariant : (isBooked ? AppColors.warning : AppColors.success);
 
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
@@ -238,11 +202,7 @@ class _LawyerAvailabilityPageState extends ConsumerState<LawyerAvailabilityPage>
           children: [
             Row(
               children: [
-                Icon(
-                  isPast ? Icons.history_rounded : (isBooked ? Icons.event_busy_rounded : Icons.event_available_rounded),
-                  color: statusColor,
-                  size: 28,
-                ),
+                Icon(isPast ? Icons.history_rounded : (isBooked ? Icons.event_busy_rounded : Icons.event_available_rounded), color: statusColor, size: 28),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Column(
@@ -257,11 +217,7 @@ class _LawyerAvailabilityPageState extends ConsumerState<LawyerAvailabilityPage>
                   ),
                 ),
                 if (!isBooked && (isPast || available))
-                  IconButton(
-                    tooltip: 'حذف الموعد',
-                    onPressed: () => _deleteSlot(slot['id'].toString()),
-                    icon: Icon(Icons.delete_outline_rounded, color: scheme.error),
-                  ),
+                  IconButton(tooltip: 'حذف الموعد', onPressed: () => _deleteSlot(slot['id'].toString()), icon: Icon(Icons.delete_outline_rounded, color: scheme.error)),
               ],
             ),
             if (isBooked)
@@ -278,9 +234,7 @@ class _LawyerAvailabilityPageState extends ConsumerState<LawyerAvailabilityPage>
                         )
                       : OutlinedButton.icon(
                           onPressed: submitting ? null : () => _requestCancellation(slot),
-                          icon: submitting
-                              ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
-                              : const Icon(Icons.event_busy_outlined),
+                          icon: submitting ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2)) : const Icon(Icons.event_busy_outlined),
                           label: const Text('طلب إلغاء الحجز'),
                         ),
                 ),
