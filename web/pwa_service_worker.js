@@ -1,4 +1,4 @@
-const CACHE_NAME = 'astshara-pwa-v1';
+const CACHE_NAME = 'astshara-pwa-v2';
 const APP_SHELL = [
   './',
   './index.html',
@@ -48,7 +48,6 @@ self.addEventListener('push', (event) => {
     renotify: true,
     requireInteraction: Boolean(data.requireInteraction),
     data: { url: data.url || './', notification_id: data.notification_id || null },
-    // Browsers/OSes may ignore custom sounds for Web Push, especially on iOS.
     sound: data.sound || undefined,
     vibrate: data.vibrate || [200, 100, 200],
   };
