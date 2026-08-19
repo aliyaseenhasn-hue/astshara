@@ -60,9 +60,8 @@ class LawyerDetailsPage extends ConsumerWidget {
                       ),
                     ),
                     Padding(
-                      padding: const EdgeInsets.fromLTRB(20, 126, 20, 110),
+                      padding: const EdgeInsets.fromLTRB(20, 110, 20, 110),
                       child: Column(children: [
-                        const SizedBox(height: 0),
                         Row(mainAxisAlignment: MainAxisAlignment.center, children: [
                           Flexible(child: Text(name, textAlign: TextAlign.center, style: TextStyle(color: scheme.onSurface, fontSize: 22, fontWeight: FontWeight.w900))),
                           if (lawyer.verified) Padding(padding: const EdgeInsets.only(right: 6), child: Icon(Icons.verified_rounded, color: scheme.primary, size: 20)),
