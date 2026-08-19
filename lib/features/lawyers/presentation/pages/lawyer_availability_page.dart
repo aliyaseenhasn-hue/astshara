@@ -49,13 +49,14 @@ class _LawyerAvailabilityPageState extends ConsumerState<LawyerAvailabilityPage>
       _pendingCancellationBookings.clear();
     }
 
+    // إثراء المواعيد المحجوزة بالـ booking_id عند الإمكان.
+    // مسار الإلغاء نفسه يستخدم RPC مباشر بالـslot_id كمسار احتياطي مضمون.
     try {
       final bookedRows = await SupabaseConfig.client.rpc('get_my_booked_schedule_slots');
       final booked = (bookedRows is List ? bookedRows : const <dynamic>[])
           .whereType<Map>()
           .map((row) => Map<String, dynamic>.from(row))
           .toList();
-
       final bookedBySlot = <String, Map<String, dynamic>>{};
       for (final booking in booked) {
         final slotId = booking['slot_id']?.toString();
@@ -64,7 +65,6 @@ class _LawyerAvailabilityPageState extends ConsumerState<LawyerAvailabilityPage>
           bookedBySlot[slotId] = booking;
         }
       }
-
       for (final slot in slots) {
         final booking = bookedBySlot[slot['id']?.toString()];
         if (booking == null) continue;
@@ -80,14 +80,35 @@ class _LawyerAvailabilityPageState extends ConsumerState<LawyerAvailabilityPage>
     final existing = slot['booking_id']?.toString();
     if (existing != null && existing.isNotEmpty) return existing;
 
+    final slotId = slot['id']?.toString();
+    if (slotId == null || slotId.isEmpty) return null;
+
+    // لا نعتمد هنا على قائمة الحجوزات العامة. نطلب من الخادم تحديد الحجز
+    // المرتبط بهذا الـslot تحديداً، مع التحقق من ملكية المحامي داخل RPC.
+    try {
+      final result = await SupabaseConfig.client.rpc(
+        'get_booking_id_for_slot',
+        params: {'p_slot_id': slotId},
+      );
+      if (result is String && result.isNotEmpty) return result;
+      if (result is Map) return result['booking_id']?.toString();
+      if (result is List && result.isNotEmpty) {
+        final first = result.first;
+        if (first is String && first.isNotEmpty) return first;
+        if (first is Map) return first['booking_id']?.toString();
+      }
+    } catch (_) {}
+
+    // توافق مع النسخ القديمة من قاعدة البيانات.
     try {
       final bookedRows = await SupabaseConfig.client.rpc('get_my_booked_schedule_slots');
-      final slotId = slot['id']?.toString();
-      if (slotId == null || slotId.isEmpty) return null;
       for (final raw in (bookedRows is List ? bookedRows : const <dynamic>[])) {
         if (raw is! Map) continue;
         final booking = Map<String, dynamic>.from(raw);
-        if (booking['slot_id']?.toString() == slotId) return booking['booking_id']?.toString();
+        if (booking['slot_id']?.toString() == slotId) {
+          final id = booking['booking_id']?.toString();
+          if (id != null && id.isNotEmpty) return id;
+        }
       }
     } catch (_) {}
     return null;
@@ -179,14 +200,9 @@ class _LawyerAvailabilityPageState extends ConsumerState<LawyerAvailabilityPage>
     final scheme = Theme.of(context).colorScheme;
     final start = DateTime.tryParse(slot['starts_at']?.toString() ?? '')?.toLocal();
     if (start == null) return const SizedBox.shrink();
-
     final isPast = start.isBefore(DateTime.now());
     final available = slot['is_available'] == true;
     final bookingId = slot['booking_id']?.toString();
-
-    // في هذا التدفق: الموعد المستقبلي الذي أصبح غير متاح هو الموعد المحجوز.
-    // نُظهر إجراء الإلغاء حتى لو لم تنجح RPC في إثراء البطاقة بـ booking_id؛
-    // الضغط نفسه يتحقق من الحجز خادمياً قبل إرسال طلب الإلغاء.
     final isBooked = !isPast && !available;
     final pending = isBooked && bookingId != null && _pendingCancellationBookings.contains(bookingId);
     final submitting = isBooked && bookingId != null && _submittingCancellationBookings.contains(bookingId);
