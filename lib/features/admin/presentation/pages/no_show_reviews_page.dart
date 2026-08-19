@@ -44,11 +44,11 @@ class _NoShowReviewsPageState extends State<NoShowReviewsPage> {
     appBar: AppBar(title: const Text('مراجعة عدم الحضور'), actions: [IconButton(onPressed: _load, icon: const Icon(Icons.refresh))]),
     body: _loading ? const Center(child: CircularProgressIndicator()) : RefreshIndicator(
       onRefresh: _load,
-      child: _items.isEmpty ? const ListView(children: [SizedBox(height: 180), Center(child: Text('لا توجد طلبات عدم حضور'))]) : ListView.builder(
+      child: _items.isEmpty ? ListView(children: const [SizedBox(height: 180), Center(child: Text('لا توجد طلبات عدم حضور'))]) : ListView.builder(
         padding: const EdgeInsets.all(16), itemCount: _items.length,
         itemBuilder: (_, i) { final x = _items[i]; final pending = x['status'] == 'pending'; return Card(margin: const EdgeInsets.only(bottom: 12), child: Padding(padding: const EdgeInsets.all(16), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Text(pending ? 'قيد المراجعة' : (x['status'] == 'approved' ? 'تمت الموافقة' : 'تم الرفض'), style: const TextStyle(fontWeight: FontWeight.bold)),
-          const SizedBox(height: 8), Text('رقم الحجز: ${x['booking_id']}'), Text('سبب البلاغ: ${x['reason']}'), if ((x['evidence_url'] ?? '').toString().isNotEmpty) Text('يوجد دليل مرفق'),
+          const SizedBox(height: 8), Text('رقم الحجز: ${x['booking_id']}'), Text('سبب البلاغ: ${x['reason']}'), if ((x['evidence_url'] ?? '').toString().isNotEmpty) const Text('يوجد دليل مرفق'),
           if (pending) Row(mainAxisAlignment: MainAxisAlignment.end, children: [TextButton(onPressed: () => _review(x, 'rejected'), child: const Text('رفض')), const SizedBox(width: 8), ElevatedButton(onPressed: () => _review(x, 'approved'), child: const Text('موافقة'))])
         ]))); },
       ),
