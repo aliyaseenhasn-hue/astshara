@@ -10,7 +10,7 @@ dependencies:
     sdk: flutter
   flutter_localizations:
     sdk: flutter
-  
+
   # State Management
   flutter_riverpod: ^2.5.1
   riverpod_annotation: ^2.3.5
@@ -18,7 +18,7 @@ dependencies:
   # Backend (Supabase)
   supabase_flutter: ^2.6.0
   storage_client: ^2.6.0
-  
+
   # Navigation
   go_router: ^14.2.0
 
@@ -38,10 +38,10 @@ dependencies:
   audioplayers: ^6.1.0
   flutter_dotenv: ^5.2.1
   image_picker: ^1.1.2
-  file_picker: ^8.0.3
+  file_picker: ^10.3.8
   url_launcher: ^6.3.0
   web: ^1.1.1
-  
+
   # Functional Programming & Models
   freezed_annotation: ^2.4.4
   json_annotation: ^4.9.0
@@ -49,13 +49,13 @@ dependencies:
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  
+
   # Code Generation
   build_runner: ^2.4.11
   freezed: ^2.5.2
   riverpod_generator: ^2.4.0
   json_serializable: ^6.8.0
-  
+
   # Linting
   flutter_lints: ^4.0.0
 
