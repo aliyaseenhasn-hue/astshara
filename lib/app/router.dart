@@ -27,7 +27,6 @@ import '../features/lawyers/presentation/pages/specialization_change_page.dart';
 import '../features/bookings/presentation/pages/create_booking_page.dart';
 import '../features/bookings/presentation/pages/bookings_list_page.dart';
 import '../features/bookings/presentation/pages/archived_bookings_page.dart';
-import '../features/bookings/presentation/pages/booking_details_page.dart';
 import '../features/bookings/presentation/pages/booking_cancellation_overlay.dart';
 import '../features/bookings/presentation/pages/manual_payment_page.dart';
 import '../features/bookings/presentation/pages/manual_payment_required_page.dart';
