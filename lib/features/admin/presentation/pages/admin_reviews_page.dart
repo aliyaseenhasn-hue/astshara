@@ -26,12 +26,15 @@ class _AdminReviewsPageState extends State<AdminReviewsPage> {
       c.from('cancellation_requests').select('id').eq('status', 'بانتظار مراجعة الإدارة'),
       c.from('specialization_change_requests').select('id').eq('status', 'pending'),
       c.from('payments').select('id').eq('status', 'pending'),
+      c.rpc('admin_list_no_show_reviews'),
     ]);
+    final noShowRows = List<Map<String, dynamic>>.from(results[4] as List);
     return {
       'verifications': (results[0] as List).length,
       'cancellations': (results[1] as List).length,
       'specializations': (results[2] as List).length,
       'payments': (results[3] as List).length,
+      'noShow': noShowRows.where((row) => row['status'] == 'pending').length,
     };
   }
 
@@ -57,6 +60,7 @@ class _AdminReviewsPageState extends State<AdminReviewsPage> {
             (title: 'طلبات إلغاء الحجوزات', subtitle: 'مراجعة الإلغاء والغرامات والتعويضات', icon: Icons.event_busy_outlined, count: counts['cancellations'] ?? 0, route: '/admin/cancellation-requests'),
             (title: 'طلبات تغيير التخصص', subtitle: 'مراجعة طلبات تغيير التخصص والوثائق', icon: Icons.badge_outlined, count: counts['specializations'] ?? 0, route: '/admin/specialization-change-requests'),
             (title: 'مراجعة الدفعات', subtitle: 'مراجعة الدفعات المعلقة والتحقق منها', icon: Icons.payments_outlined, count: counts['payments'] ?? 0, route: '/admin/payments'),
+            (title: 'مراجعة عدم الحضور', subtitle: 'التحقق من بلاغات عدم حضور الاستشارة واتخاذ القرار', icon: Icons.person_off_outlined, count: counts['noShow'] ?? 0, route: '/admin/no-show-reviews'),
           ];
           return ListView(
             padding: const EdgeInsets.all(16),
