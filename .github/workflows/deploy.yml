@@ -95,13 +95,19 @@ jobs:
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+          PWA_VAPID_PUBLIC_KEY: ${{ secrets.PWA_VAPID_PUBLIC_KEY }}
         run: |
           set -euo pipefail
+          if [ -z "${PWA_VAPID_PUBLIC_KEY:-}" ]; then
+            echo "::error::PWA_VAPID_PUBLIC_KEY secret is missing in GitHub repository settings."
+            exit 1
+          fi
           flutter clean
           flutter pub get
           flutter build web --release --no-wasm-dry-run --base-href "/astshara/" \
             --dart-define=SUPABASE_URL="$SUPABASE_URL" \
-            --dart-define=SUPABASE_ANON_KEY="$SUPABASE_ANON_KEY"
+            --dart-define=SUPABASE_ANON_KEY="$SUPABASE_ANON_KEY" \
+            --dart-define=VAPID_PUBLIC_KEY="$PWA_VAPID_PUBLIC_KEY"
           test -f build/web/index.html
           test -f build/web/manifest.json
           test -f build/web/icons/Icon-192.png
