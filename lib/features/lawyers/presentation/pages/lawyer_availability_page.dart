@@ -8,7 +8,6 @@ import '../../../../core/utils/app_time_format.dart';
 
 class LawyerAvailabilityPage extends ConsumerStatefulWidget {
   const LawyerAvailabilityPage({super.key});
-
   @override
   ConsumerState<LawyerAvailabilityPage> createState() => _LawyerAvailabilityPageState();
 }
@@ -27,86 +26,53 @@ class _LawyerAvailabilityPageState extends ConsumerState<LawyerAvailabilityPage>
   Future<List<Map<String, dynamic>>> _slots() async {
     final lawyerId = await _profileId();
     if (lawyerId == null) return <Map<String, dynamic>>[];
-
-    final rows = await SupabaseConfig.client
-        .from('lawyer_availability_slots')
-        .select('id, starts_at, ends_at, is_available')
-        .eq('lawyer_id', lawyerId)
-        .order('starts_at', ascending: false);
+    final rows = await SupabaseConfig.client.from('lawyer_availability_slots').select('id, starts_at, ends_at, is_available').eq('lawyer_id', lawyerId).order('starts_at', ascending: false);
     final slots = (rows as List).map((row) => Map<String, dynamic>.from(row as Map)).toList();
-
     try {
       final requests = await SupabaseConfig.client.rpc('get_my_cancellation_requests');
       _pendingCancellationBookings
         ..clear()
-        ..addAll((requests is List ? requests : const <dynamic>[])
-            .whereType<Map>()
-            .where((row) => row['status']?.toString() == 'بانتظار مراجعة الإدارة')
-            .map((row) => row['booking_id'].toString()));
+        ..addAll((requests is List ? requests : const <dynamic>[]).whereType<Map>().where((row) => row['status']?.toString() == 'بانتظار مراجعة الإدارة').map((row) => row['booking_id'].toString()));
     } catch (_) {
       _pendingCancellationBookings.clear();
     }
-
-    // Resolve the actual booking for every slot. This also handles slots whose
-    // is_available flag was not synchronized by the booking flow.
     try {
-      final bookings = await SupabaseConfig.client
-          .from('bookings')
-          .select('id, scheduled_at, status')
-          .eq('lawyer_id', lawyerId);
-
+      final bookings = await SupabaseConfig.client.from('bookings').select('id, scheduled_at, status').eq('lawyer_id', lawyerId);
       for (final slot in slots) {
         final slotStart = DateTime.tryParse(slot['starts_at']?.toString() ?? '');
         if (slotStart == null) continue;
         final slotUtc = slotStart.toUtc();
-
         for (final raw in (bookings as List)) {
           final booking = Map<String, dynamic>.from(raw as Map);
           final status = booking['status']?.toString();
           if (status == 'ملغي' || status == 'ملغى' || status == 'مسترد') continue;
           final bookingStart = DateTime.tryParse(booking['scheduled_at']?.toString() ?? '');
-          if (bookingStart == null) continue;
-          if (bookingStart.toUtc().difference(slotUtc).inSeconds.abs() <= 120) {
+          if (bookingStart != null && bookingStart.toUtc().difference(slotUtc).inSeconds.abs() <= 120) {
             slot['booking_id'] = booking['id']?.toString();
             slot['is_available'] = false;
             break;
           }
         }
       }
-    } catch (_) {
-      // Keep the slots visible if the optional booking lookup is blocked by RLS.
-    }
-
+    } catch (_) {}
     return slots;
   }
 
   Future<String?> _resolveBookingId(Map<String, dynamic> slot) async {
     final existing = slot['booking_id']?.toString();
     if (existing != null && existing.isNotEmpty) return existing;
-
     final lawyerId = await _profileId();
     if (lawyerId == null) return null;
     final start = DateTime.tryParse(slot['starts_at']?.toString() ?? '');
     if (start == null) return null;
-
     final startUtc = start.toUtc();
-    final rows = await SupabaseConfig.client
-        .from('bookings')
-        .select('id, scheduled_at, status')
-        .eq('lawyer_id', lawyerId)
-        .gte('scheduled_at', startUtc.subtract(const Duration(minutes: 2)).toIso8601String())
-        .lte('scheduled_at', startUtc.add(const Duration(minutes: 2)).toIso8601String())
-        .order('scheduled_at', ascending: true)
-        .limit(10);
-
+    final rows = await SupabaseConfig.client.from('bookings').select('id, scheduled_at, status').eq('lawyer_id', lawyerId).gte('scheduled_at', startUtc.subtract(const Duration(minutes: 2)).toIso8601String()).lte('scheduled_at', startUtc.add(const Duration(minutes: 2)).toIso8601String()).order('scheduled_at', ascending: true).limit(10);
     for (final raw in (rows as List)) {
       final booking = Map<String, dynamic>.from(raw as Map);
       final status = booking['status']?.toString();
       if (status == 'ملغي' || status == 'ملغى' || status == 'مسترد') continue;
       final bookingStart = DateTime.tryParse(booking['scheduled_at']?.toString() ?? '');
-      if (bookingStart != null && bookingStart.toUtc().difference(startUtc).inSeconds.abs() <= 120) {
-        return booking['id']?.toString();
-      }
+      if (bookingStart != null && bookingStart.toUtc().difference(startUtc).inSeconds.abs() <= 120) return booking['id']?.toString();
     }
     return null;
   }
@@ -119,7 +85,6 @@ class _LawyerAvailabilityPageState extends ConsumerState<LawyerAvailabilityPage>
       return;
     }
     if (_pendingCancellationBookings.contains(bookingId) || _submittingCancellationBookings.contains(bookingId)) return;
-
     final controller = TextEditingController();
     final reason = await showDialog<String>(
       context: context,
@@ -132,22 +97,18 @@ class _LawyerAvailabilityPageState extends ConsumerState<LawyerAvailabilityPage>
         ]),
         actions: [
           TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('إلغاء')),
-          FilledButton(
-            onPressed: () {
-              if (controller.text.trim().isEmpty) {
-                ScaffoldMessenger.of(dialogContext).showSnackBar(const SnackBar(content: Text('سبب الإلغاء إلزامي')));
-                return;
-              }
-              Navigator.pop(dialogContext, controller.text.trim());
-            },
-            child: const Text('إرسال طلب الإلغاء'),
-          ),
+          FilledButton(onPressed: () {
+            if (controller.text.trim().isEmpty) {
+              ScaffoldMessenger.of(dialogContext).showSnackBar(const SnackBar(content: Text('سبب الإلغاء إلزامي')));
+              return;
+            }
+            Navigator.pop(dialogContext, controller.text.trim());
+          }, child: const Text('إرسال طلب الإلغاء')),
         ],
       ),
     );
     controller.dispose();
     if (reason == null || !mounted) return;
-
     setState(() => _submittingCancellationBookings.add(bookingId));
     try {
       await SupabaseConfig.client.rpc('request_booking_cancellation', params: {'p_booking_id': bookingId, 'p_reason': reason});
@@ -198,7 +159,6 @@ class _LawyerAvailabilityPageState extends ConsumerState<LawyerAvailabilityPage>
     final submitting = bookingId != null && _submittingCancellationBookings.contains(bookingId);
     final statusText = isPast ? 'موعد سابق' : (available ? 'متاح للحجز' : 'محجوز');
     final statusColor = isPast ? scheme.onSurfaceVariant : (available ? AppColors.success : AppColors.warning);
-
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       child: Padding(
@@ -247,7 +207,10 @@ class _LawyerAvailabilityPageState extends ConsumerState<LawyerAvailabilityPage>
           if (snapshot.hasError) return Center(child: Text('تعذر تحميل المواعيد: ${snapshot.error}'));
           final slots = snapshot.data ?? const <Map<String, dynamic>>[];
           if (slots.isEmpty) return const Center(child: Text('لا توجد مواعيد منشورة'));
-          return RefreshIndicator(onRefresh: () async => setState(() {}), child: ListView(padding: const EdgeInsets.fromLTRB(16, 16, 16, 100), children: slots.map(_slotCard).toList());
+          return RefreshIndicator(
+            onRefresh: () async { setState(() {}); },
+            child: ListView(padding: const EdgeInsets.fromLTRB(16, 16, 16, 100), children: slots.map(_slotCard).toList()),
+          );
         },
       ),
     );
