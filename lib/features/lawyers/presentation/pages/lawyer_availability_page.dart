@@ -28,6 +28,45 @@ class _LawyerAvailabilityPageState extends ConsumerState<LawyerAvailabilityPage>
     if (lawyerId == null) return <Map<String, dynamic>>[];
     final rows = await SupabaseConfig.client.from('lawyer_availability_slots').select('id, starts_at, ends_at, is_available').eq('lawyer_id', lawyerId).order('starts_at', ascending: false);
     final slots = (rows as List).map((row) => Map<String, dynamic>.from(row as Map)).toList();
+
+    // is_available=false alone does not prove that a slot has a booking.
+    // Link each slot to a real, active booking using lawyer_id + scheduled_at.
+    if (slots.isNotEmpty) {
+      final starts = slots.map((s) => DateTime.tryParse(s['starts_at']?.toString() ?? '')).whereType<DateTime>().toList();
+      if (starts.isNotEmpty) {
+        final minStart = starts.reduce((a, b) => a.isBefore(b) ? a : b).subtract(const Duration(minutes: 2)).toUtc().toIso8601String();
+        final maxStart = starts.reduce((a, b) => a.isAfter(b) ? a : b).add(const Duration(minutes: 2)).toUtc().toIso8601String();
+        try {
+          final rawBookings = await SupabaseConfig.client.from('bookings').select('id, scheduled_at, status, consultation_status').eq('lawyer_id', lawyerId).gte('scheduled_at', minStart).lte('scheduled_at', maxStart).order('scheduled_at', ascending: true);
+          final bookings = (rawBookings as List).map((r) => Map<String, dynamic>.from(r as Map)).toList();
+          const terminal = {'ملغي', 'ملغى', 'مسترد', 'مكتمل'};
+          for (final slot in slots) {
+            final slotStart = DateTime.tryParse(slot['starts_at']?.toString() ?? '');
+            if (slotStart == null) continue;
+            Map<String, dynamic>? best;
+            var bestSeconds = double.infinity;
+            for (final booking in bookings) {
+              if (terminal.contains(booking['status']?.toString())) continue;
+              final bookingStart = DateTime.tryParse(booking['scheduled_at']?.toString() ?? '');
+              if (bookingStart == null) continue;
+              final seconds = bookingStart.difference(slotStart).inSeconds.abs().toDouble();
+              if (seconds <= 120 && seconds < bestSeconds) {
+                best = booking;
+                bestSeconds = seconds;
+              }
+            }
+            if (best != null) {
+              slot['booking_id'] = best['id']?.toString();
+              slot['booking_status'] = best['status']?.toString();
+              slot['consultation_status'] = best['consultation_status']?.toString();
+            }
+          }
+        } catch (e) {
+          debugPrint('تعذر تحميل الحجوزات المرتبطة بالمواعيد: $e');
+        }
+      }
+    }
+
     try {
       final requests = await SupabaseConfig.client.rpc('get_my_cancellation_requests');
       _pendingCancellationBookings
@@ -38,58 +77,15 @@ class _LawyerAvailabilityPageState extends ConsumerState<LawyerAvailabilityPage>
   }
 
   Future<String?> _resolveBookingId(Map<String, dynamic> slot) async {
-    final existing = slot['booking_id']?.toString();
-    if (existing != null && existing.isNotEmpty) return existing;
-    final slotId = slot['id']?.toString();
-    final startsAtRaw = slot['starts_at']?.toString();
-    if (slotId == null || slotId.isEmpty || startsAtRaw == null || startsAtRaw.isEmpty) return null;
-
-    // The database currently has no booking.slot_id column. The authoritative relationship
-    // is lawyer_id + scheduled_at == slot.lawyer_id + slot.starts_at.
-    final lawyerId = await _profileId();
-    final startsAt = DateTime.tryParse(startsAtRaw);
-    if (lawyerId != null && startsAt != null) {
-      try {
-        final from = startsAt.subtract(const Duration(seconds: 5)).toUtc().toIso8601String();
-        final to = startsAt.add(const Duration(seconds: 5)).toUtc().toIso8601String();
-        final rows = await SupabaseConfig.client.from('bookings').select('id, scheduled_at, status, consultation_status').eq('lawyer_id', lawyerId).gte('scheduled_at', from).lte('scheduled_at', to).order('scheduled_at', ascending: true);
-        for (final raw in (rows as List)) {
-          if (raw is! Map) continue;
-          final row = Map<String, dynamic>.from(raw);
-          final status = row['status']?.toString();
-          if (status == 'ملغي' || status == 'ملغى' || status == 'مسترد' || status == 'مكتمل') continue;
-          final id = row['id']?.toString();
-          if (id != null && id.isNotEmpty) return id;
-        }
-      } catch (e) {
-        debugPrint('Cancellation booking lookup failed: $e');
-      }
-    }
-
-    try {
-      final result = await SupabaseConfig.client.rpc('get_booking_id_for_slot', params: {'p_slot_id': slotId});
-      if (result is String && result.isNotEmpty) return result;
-      if (result is Map) {
-        final id = result['booking_id']?.toString();
-        if (id != null && id.isNotEmpty) return id;
-      }
-      if (result is List && result.isNotEmpty) {
-        final first = result.first;
-        if (first is String && first.isNotEmpty) return first;
-        if (first is Map) {
-          final id = first['booking_id']?.toString();
-          if (id != null && id.isNotEmpty) return id;
-        }
-      }
-    } catch (e) { debugPrint('Cancellation slot RPC failed: $e'); }
-    return null;
+    final id = slot['booking_id']?.toString();
+    return (id == null || id.isEmpty) ? null : id;
   }
 
   Future<void> _requestCancellation(Map<String, dynamic> slot) async {
     final bookingId = await _resolveBookingId(slot);
     if (!mounted) return;
     if (bookingId == null || bookingId.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تعذر العثور على الحجز المرتبط بهذا الموعد. حدّث الصفحة وحاول مرة أخرى.'), backgroundColor: AppColors.error));
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('لا يوجد حجز فعلي مرتبط بهذا الموعد.'), backgroundColor: AppColors.error));
       return;
     }
     if (_pendingCancellationBookings.contains(bookingId) || _submittingCancellationBookings.contains(bookingId)) return;
@@ -141,12 +137,13 @@ class _LawyerAvailabilityPageState extends ConsumerState<LawyerAvailabilityPage>
     if (start == null) return const SizedBox.shrink();
     final isPast = start.isBefore(DateTime.now());
     final available = slot['is_available'] == true;
-    final isBooked = !isPast && !available;
     final bookingId = slot['booking_id']?.toString();
-    final pending = isBooked && bookingId != null && _pendingCancellationBookings.contains(bookingId);
-    final submitting = isBooked && bookingId != null && _submittingCancellationBookings.contains(bookingId);
-    final statusText = isPast ? 'موعد سابق' : (isBooked ? 'محجوز' : 'متاح للحجز');
-    final statusColor = isPast ? scheme.onSurfaceVariant : (isBooked ? AppColors.warning : AppColors.success);
+    final isBooked = !isPast && !available && bookingId != null && bookingId.isNotEmpty;
+    final isBlocked = !isPast && !available && !isBooked;
+    final pending = isBooked && _pendingCancellationBookings.contains(bookingId);
+    final submitting = isBooked && _submittingCancellationBookings.contains(bookingId);
+    final statusText = isPast ? 'موعد سابق' : (isBooked ? 'محجوز' : (isBlocked ? 'غير متاح' : 'متاح للحجز'));
+    final statusColor = isPast ? scheme.onSurfaceVariant : (isBooked ? AppColors.warning : (isBlocked ? scheme.onSurfaceVariant : AppColors.success));
     return Card(margin: const EdgeInsets.only(bottom: 12), child: Padding(padding: const EdgeInsets.all(15), child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
       Row(children: [Icon(isPast ? Icons.history_rounded : (isBooked ? Icons.event_busy_rounded : Icons.event_available_rounded), color: statusColor, size: 28), const SizedBox(width: 12), Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [Text(DateFormat('EEEE، d MMMM yyyy', 'ar').format(start), style: const TextStyle(fontWeight: FontWeight.w800)), const SizedBox(height: 5), Text('${AppTimeFormat.time12(start)} • مدة الاستشارة 30 دقيقة', style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 12)), const SizedBox(height: 6), Text(statusText, style: TextStyle(color: statusColor, fontWeight: FontWeight.w700, fontSize: 12))])), if (!isBooked && (isPast || available)) IconButton(tooltip: 'حذف الموعد', onPressed: () => _deleteSlot(slot['id'].toString()), icon: Icon(Icons.delete_outline_rounded, color: scheme.error))]),
       if (isBooked) Padding(padding: const EdgeInsets.only(top: 12), child: SizedBox(width: double.infinity, child: pending ? Container(padding: const EdgeInsets.symmetric(vertical: 12), alignment: Alignment.center, decoration: BoxDecoration(color: scheme.surfaceContainerHighest, borderRadius: BorderRadius.circular(12)), child: const Text('طلب الإلغاء بانتظار مراجعة الإدارة', style: TextStyle(fontWeight: FontWeight.w700))) : OutlinedButton.icon(onPressed: submitting ? null : () => _requestCancellation(slot), icon: submitting ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2)) : const Icon(Icons.event_busy_outlined), label: const Text('طلب إلغاء الحجز')))),
