@@ -16,6 +16,7 @@ class BookingDetailsWithCancellation extends ConsumerStatefulWidget {
 class _BookingDetailsWithCancellationState extends ConsumerState<BookingDetailsWithCancellation> {
   bool _pending = false;
   bool _loading = true;
+  String? _requestStatus;
   Map<String, dynamic>? _credit;
 
   @override
@@ -28,7 +29,14 @@ class _BookingDetailsWithCancellationState extends ConsumerState<BookingDetailsW
       if (user.role == 'lawyer') {
         final rows = await SupabaseConfig.client.rpc('get_my_cancellation_requests');
         final list = rows is List ? rows : const [];
-        _pending = list.any((row) { final map = Map<String, dynamic>.from(row as Map); return map['booking_id']?.toString() == widget.booking.id && map['status'] == 'بانتظار مراجعة الإدارة'; });
+        for (final row in list) {
+          final map = Map<String, dynamic>.from(row as Map);
+          if (map['booking_id']?.toString() == widget.booking.id) {
+            _requestStatus = map['status']?.toString();
+            _pending = _requestStatus == 'بانتظار مراجعة الإدارة';
+            break;
+          }
+        }
       } else if (user.id == widget.booking.userId) {
         final row = await SupabaseConfig.client.from('client_credits').select('amount,currency,status,created_at').eq('booking_id', widget.booking.id).maybeSingle();
         _credit = row == null ? null : Map<String, dynamic>.from(row);
@@ -57,7 +65,7 @@ class _BookingDetailsWithCancellationState extends ConsumerState<BookingDetailsW
     try {
       await SupabaseConfig.client.rpc('request_booking_cancellation', params: {'p_booking_id': widget.booking.id, 'p_reason': reason});
       if (!mounted) return;
-      setState(() => _pending = true);
+      setState(() { _pending = true; _requestStatus = 'بانتظار مراجعة الإدارة'; });
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تم إرسال طلب إلغاء الحجز إلى الإدارة للمراجعة.')));
     } catch (e) {
       if (!mounted) return;
@@ -71,10 +79,18 @@ class _BookingDetailsWithCancellationState extends ConsumerState<BookingDetailsW
     final isLawyer = user?.role == 'lawyer';
     final isClient = user?.id == widget.booking.userId && !isLawyer;
     final eligible = BookingCancellationPolicy.canRequest(status: widget.booking.status, scheduledAt: widget.booking.scheduledAt, pendingReview: _pending);
+    final decisionText = switch (_requestStatus) {
+      'تم رفض الطلب' => 'تم رفض طلب إلغاء الحجز من الإدارة.',
+      'تمت الموافقة' => 'تمت الموافقة على طلب إلغاء الحجز بدون غرامة.',
+      'بانتظار تحصيل الغرامة' => 'تمت الموافقة على الإلغاء مع غرامة، والغرامة بانتظار التحصيل.',
+      'تم تحصيل الغرامة' => 'تمت الموافقة على الإلغاء وتم تحصيل الغرامة.',
+      _ => null,
+    };
     return Stack(children: [
       BookingDetailsPage(booking: widget.booking),
       if (isLawyer && !_loading && eligible) Positioned(left: 16, right: 16, bottom: 18, child: SafeArea(child: OutlinedButton.icon(onPressed: _showRequestDialog, icon: const Icon(Icons.event_busy_outlined), label: const Text('طلب إلغاء الحجز')))),
       if (isLawyer && !_loading && _pending) Positioned(left: 16, right: 16, bottom: 18, child: SafeArea(child: Container(padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13), decoration: BoxDecoration(color: Theme.of(context).colorScheme.surfaceContainerHighest, borderRadius: BorderRadius.circular(14)), child: const Row(children: [Icon(Icons.hourglass_top_rounded), SizedBox(width: 10), Expanded(child: Text('طلب إلغاء الحجز بانتظار مراجعة الإدارة.'))])))),
+      if (isLawyer && !_loading && !_pending && decisionText != null) Positioned(left: 16, right: 16, bottom: 18, child: SafeArea(child: Container(padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13), decoration: BoxDecoration(color: Theme.of(context).colorScheme.surfaceContainerHighest, borderRadius: BorderRadius.circular(14)), child: Row(children: [const Icon(Icons.info_outline_rounded), const SizedBox(width: 10), Expanded(child: Text(decisionText))])))),
       if (isClient && _credit != null && _credit!['status'] == 'مستحق') Positioned(left: 16, right: 16, bottom: 18, child: SafeArea(child: Container(padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13), decoration: BoxDecoration(color: Theme.of(context).colorScheme.primaryContainer, borderRadius: BorderRadius.circular(14)), child: Row(children: [const Icon(Icons.account_balance_wallet_outlined), const SizedBox(width: 10), Expanded(child: Text('تعويض مستحق لك: ${_credit!['amount']} ${_credit!['currency']}'))])))),
     ]);
   }
