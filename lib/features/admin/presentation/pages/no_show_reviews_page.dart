@@ -3,7 +3,6 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 class NoShowReviewsPage extends StatefulWidget {
   const NoShowReviewsPage({super.key});
-
   @override
   State<NoShowReviewsPage> createState() => _NoShowReviewsPageState();
 }
@@ -11,28 +10,21 @@ class NoShowReviewsPage extends StatefulWidget {
 class _NoShowReviewsPageState extends State<NoShowReviewsPage> {
   final _supabase = Supabase.instance.client;
   bool _loading = true;
+  bool _pendingOnly = true;
   List<Map<String, dynamic>> _items = [];
 
   @override
-  void initState() {
-    super.initState();
-    _load();
-  }
+  void initState() { super.initState(); _load(); }
 
   Future<void> _load() async {
     if (mounted) setState(() => _loading = true);
     try {
       final result = await _supabase.rpc('admin_list_no_show_reviews');
-      _items = List<Map<String, dynamic>>.from(result as List);
+      final rows = (result as List).map((e) => Map<String, dynamic>.from(e as Map)).toList();
+      if (mounted) setState(() => _items = rows);
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('تعذر تحميل مراجعات عدم الحضور: $e')),
-        );
-      }
-    } finally {
-      if (mounted) setState(() => _loading = false);
-    }
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('تعذر تحميل مراجعات عدم الحضور: $e')));
+    } finally { if (mounted) setState(() => _loading = false); }
   }
 
   Future<void> _review(Map<String, dynamic> item, String decision) async {
@@ -41,111 +33,93 @@ class _NoShowReviewsPageState extends State<NoShowReviewsPage> {
       context: context,
       builder: (_) => AlertDialog(
         title: Text(decision == 'approved' ? 'تأكيد عدم الحضور' : 'رفض البلاغ'),
-        content: TextField(
-          controller: controller,
-          maxLines: 4,
-          decoration: const InputDecoration(labelText: 'ملاحظة الإدارة (اختياري)'),
-        ),
+        content: TextField(controller: controller, maxLines: 4, decoration: const InputDecoration(labelText: 'ملاحظة الإدارة (اختياري)')),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('إلغاء'),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(context, controller.text.trim()),
-            child: const Text('تأكيد'),
-          ),
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('إلغاء')),
+          ElevatedButton(onPressed: () => Navigator.pop(context, controller.text.trim()), child: const Text('تأكيد')),
         ],
       ),
     );
     controller.dispose();
     if (note == null) return;
-
     try {
-      await _supabase.rpc(
-        'admin_review_no_show_request',
-        params: {
-          'p_request_id': item['id'],
-          'p_decision': decision,
-          'p_note': note.isEmpty ? null : note,
-        },
-      );
+      await _supabase.rpc('admin_review_no_show_request', params: {
+        'p_request_id': item['id'],
+        'p_decision': decision,
+        'p_note': note.isEmpty ? null : note,
+      });
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(decision == 'approved' ? 'تمت الموافقة على البلاغ' : 'تم رفض البلاغ')));
       await _load();
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('تعذر حفظ القرار: $e')),
-        );
-      }
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('تعذر حفظ القرار: $e')));
     }
   }
 
-  Widget _emptyState() {
-    return ListView(
-      children: const [
-        SizedBox(height: 180),
-        Center(child: Text('لا توجد طلبات عدم حضور')),
-      ],
-    );
+  String _statusLabel(dynamic status) {
+    switch (status?.toString()) {
+      case 'pending': return 'قيد المراجعة';
+      case 'approved': return 'تمت الموافقة';
+      case 'rejected': return 'تم الرفض';
+      default: return status?.toString() ?? 'غير محدد';
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    final visible = _pendingOnly ? _items.where((e) => e['status'] == 'pending').toList() : _items;
+    final pendingCount = _items.where((e) => e['status'] == 'pending').length;
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('مراجعة عدم الحضور'),
-        actions: [
-          IconButton(onPressed: _load, icon: const Icon(Icons.refresh)),
-        ],
-      ),
+      appBar: AppBar(title: const Text('مراجعة عدم الحضور'), actions: [IconButton(onPressed: _load, icon: const Icon(Icons.refresh))]),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : RefreshIndicator(
               onRefresh: _load,
-              child: _items.isEmpty ? _emptyState() : ListView.builder(
+              child: ListView(
                 padding: const EdgeInsets.all(16),
-                itemCount: _items.length,
-                itemBuilder: (_, i) {
-                  final item = _items[i];
-                  final pending = item['status'] == 'pending';
-                  return Card(
-                    margin: const EdgeInsets.only(bottom: 12),
-                    child: Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            pending
-                                ? 'قيد المراجعة'
-                                : (item['status'] == 'approved' ? 'تمت الموافقة' : 'تم الرفض'),
-                            style: const TextStyle(fontWeight: FontWeight.bold),
-                          ),
-                          const SizedBox(height: 8),
-                          Text('رقم الحجز: ${item['booking_id']}'),
-                          Text('سبب البلاغ: ${item['reason']}'),
-                          if ((item['evidence_url'] ?? '').toString().isNotEmpty)
-                            const Text('يوجد دليل مرفق'),
-                          if (pending)
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.end,
-                              children: [
-                                TextButton(
-                                  onPressed: () => _review(item, 'rejected'),
-                                  child: const Text('رفض'),
-                                ),
+                children: [
+                  Card(child: ListTile(leading: const Icon(Icons.fact_check_outlined), title: const Text('طلبات عدم الحضور'), subtitle: Text('$_items.length طلباً إجمالاً'), trailing: Chip(label: Text('معلق: $pendingCount')))),
+                  const SizedBox(height: 8),
+                  SwitchListTile(value: _pendingOnly, onChanged: (v) => setState(() => _pendingOnly = v), title: const Text('عرض الطلبات المعلقة فقط')),
+                  const SizedBox(height: 8),
+                  if (visible.isEmpty)
+                    const Padding(padding: EdgeInsets.only(top: 100), child: Center(child: Text('لا توجد طلبات في الحالة المحددة')))
+                  else
+                    ...visible.map((item) {
+                      final pending = item['status'] == 'pending';
+                      final reason = item['reason']?.toString() ?? 'غير محدد';
+                      final evidence = item['evidence_url']?.toString() ?? '';
+                      return Card(
+                        margin: const EdgeInsets.only(bottom: 12),
+                        child: Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                            Row(children: [Expanded(child: Text(_statusLabel(item['status']), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16))), Chip(label: Text(reason))]),
+                            const Divider(),
+                            Text('رقم الحجز: ${item['booking_id']}'),
+                            if (item['created_at'] != null) Text('تاريخ البلاغ: ${item['created_at']}'),
+                            if (item['reported_by'] != null) Text('مقدم البلاغ: ${item['reported_by']}'),
+                            if (evidence.isNotEmpty) ...[
+                              const SizedBox(height: 8),
+                              const Text('يوجد دليل مرفق', style: TextStyle(fontWeight: FontWeight.bold)),
+                              Text(evidence, maxLines: 2, overflow: TextOverflow.ellipsis),
+                            ],
+                            if (item['admin_note'] != null && item['admin_note'].toString().isNotEmpty) ...[
+                              const SizedBox(height: 8),
+                              Text('ملاحظة الإدارة: ${item['admin_note']}'),
+                            ],
+                            if (pending) ...[
+                              const SizedBox(height: 12),
+                              Row(mainAxisAlignment: MainAxisAlignment.end, children: [
+                                OutlinedButton(onPressed: () => _review(item, 'rejected'), child: const Text('رفض')),
                                 const SizedBox(width: 8),
-                                ElevatedButton(
-                                  onPressed: () => _review(item, 'approved'),
-                                  child: const Text('موافقة'),
-                                ),
-                              ],
-                            ),
-                        ],
-                      ),
-                    ),
-                  );
-                },
+                                ElevatedButton(onPressed: () => _review(item, 'approved'), child: const Text('موافقة')),
+                              ]),
+                            ],
+                          ]),
+                        ),
+                      );
+                    }),
+                ],
               ),
             ),
     );
