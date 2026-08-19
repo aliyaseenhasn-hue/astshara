@@ -13,6 +13,7 @@ import '../features/admin/presentation/pages/admin_dashboard_page.dart';
 import '../features/admin/presentation/pages/lawyer_verification_page.dart';
 import '../features/admin/presentation/pages/payment_management_page.dart';
 import '../features/admin/presentation/pages/specialization_change_requests_page.dart';
+import '../features/admin/presentation/pages/cancellation_requests_page.dart';
 import '../features/home/presentation/pages/home_page.dart';
 import '../features/lawyers/presentation/pages/lawyers_list_page.dart';
 import '../features/lawyers/presentation/pages/lawyer_details_page.dart';
@@ -27,6 +28,7 @@ import '../features/bookings/presentation/pages/create_booking_page.dart';
 import '../features/bookings/presentation/pages/bookings_list_page.dart';
 import '../features/bookings/presentation/pages/archived_bookings_page.dart';
 import '../features/bookings/presentation/pages/booking_details_page.dart';
+import '../features/bookings/presentation/pages/booking_cancellation_overlay.dart';
 import '../features/bookings/presentation/pages/manual_payment_page.dart';
 import '../features/bookings/presentation/pages/manual_payment_required_page.dart';
 import '../features/chat/presentation/pages/chat_page.dart';
@@ -125,7 +127,7 @@ GoRouter router(RouterRef ref) {
           GoRoute(path: '/bookings', builder: (c, s) => const BookingsListPage()),
           GoRoute(path: '/archived-bookings', builder: (c, s) => const ArchivedBookingsPage()),
           GoRoute(path: '/chats', builder: (c, s) => const ConversationsPage()),
-          GoRoute(path: '/booking-details', builder: (c, s) { final b = s.extra as Booking?; return b == null ? const BookingsListPage() : BookingDetailsPage(booking: b); }),
+          GoRoute(path: '/booking-details', builder: (c, s) { final b = s.extra as Booking?; return b == null ? const BookingsListPage() : BookingDetailsWithCancellation(booking: b); }),
           GoRoute(path: '/manual-payment-required', builder: (c, s) => const ManualPaymentRequiredPage()),
           GoRoute(path: '/manual-payment', builder: (c, s) { final b = s.extra as Booking?; return b == null ? const ManualPaymentRequiredPage() : ManualPaymentPage(booking: b); }),
           GoRoute(path: '/chat/:id', builder: (c, s) => ChatPage(conversationId: s.pathParameters['id']!)),
@@ -139,7 +141,7 @@ GoRouter router(RouterRef ref) {
           GoRoute(path: '/help-center', builder: (c, s) => const HelpCenterPage()),
         ],
       ),
-      GoRoute(path: '/admin', builder: (c, s) => const AdminDashboardPage(), routes: [GoRoute(path: 'lawyer-verifications', builder: (c, s) => const LawyerVerificationPage()), GoRoute(path: 'payments', builder: (c, s) => const PaymentManagementPage()), GoRoute(path: 'specialization-change-requests', builder: (c, s) => const SpecializationChangeRequestsPage())]),
+      GoRoute(path: '/admin', builder: (c, s) => const AdminDashboardPage(), routes: [GoRoute(path: 'lawyer-verifications', builder: (c, s) => const LawyerVerificationPage()), GoRoute(path: 'payments', builder: (c, s) => const PaymentManagementPage()), GoRoute(path: 'specialization-change-requests', builder: (c, s) => const SpecializationChangeRequestsPage()), GoRoute(path: 'cancellation-requests', builder: (c, s) => const CancellationRequestsPage())]),
       GoRoute(path: '/lawyer-pending', builder: (c, s) => const LawyerPendingPage()),
     ],
   );
