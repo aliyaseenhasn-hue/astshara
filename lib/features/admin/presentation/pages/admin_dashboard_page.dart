@@ -75,10 +75,8 @@ class AdminDashboardPage extends ConsumerWidget {
           const SizedBox(height: AppSizes.p16),
           _buildAdminActionCard('إدارة المستخدمين', 'البحث في الحسابات ومراجعة حالتها وبياناتها', Icons.people_alt_outlined, AppColors.primary, () => context.push('/admin/users')),
           _buildAdminActionCard('مركز جميع المراجعات', 'مكان موحد لكل الطلبات التي تحتاج قراراً إدارياً', Icons.fact_check_outlined, AppColors.primary, () => context.push('/admin/reviews')),
-          _buildAdminActionCard('مراقبة الحجوزات', 'متابعة الحجوزات وحالاتها والتدخل عند الحاجة', Icons.calendar_month_outlined, AppColors.secondary, () => context.push('/admin/bookings')),
-          _buildAdminActionCard('التقارير والإحصائيات', 'مؤشرات تشغيلية ومالية تساعد الإدارة على اتخاذ القرار', Icons.analytics_outlined, AppColors.secondary, () => context.push('/admin/reports')),
-          _buildAdminActionCard('سجل العمليات الإدارية', 'تتبع القرارات والإجراءات التي نفذتها الإدارة', Icons.history_outlined, AppColors.secondary, () => context.push('/admin/audit-log')),
-          _buildAdminActionCard('الإعدادات الإدارية', 'إدارة إعدادات النظام والقواعد العامة للتطبيق', Icons.settings_outlined, AppColors.secondary, () => context.push('/admin/settings')),
+          _buildAdminActionCard('طلبات توثيق المحامين', 'الوصول المباشر لطلبات التوثيق المعلقة', Icons.verified_user_outlined, AppColors.secondary, () => context.push('/admin/lawyer-verifications')),
+          _buildAdminActionCard('الحجوزات الملغاة', 'مراجعة طلبات الإلغاء والغرامات والتعويضات', Icons.event_busy_outlined, AppColors.secondary, () => context.push('/admin/cancellation-requests')),
         ],
       ),
     );
