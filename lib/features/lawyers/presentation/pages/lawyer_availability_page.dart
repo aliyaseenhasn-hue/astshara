@@ -28,6 +28,7 @@ class _LawyerAvailabilityPageState extends ConsumerState<LawyerAvailabilityPage>
     if (lawyerId == null) return <Map<String, dynamic>>[];
     final rows = await SupabaseConfig.client.from('lawyer_availability_slots').select('id, starts_at, ends_at, is_available').eq('lawyer_id', lawyerId).order('starts_at', ascending: false);
     final slots = (rows as List).map((row) => Map<String, dynamic>.from(row as Map)).toList();
+
     try {
       final requests = await SupabaseConfig.client.rpc('get_my_cancellation_requests');
       _pendingCancellationBookings
@@ -36,55 +37,48 @@ class _LawyerAvailabilityPageState extends ConsumerState<LawyerAvailabilityPage>
     } catch (_) {
       _pendingCancellationBookings.clear();
     }
+
+    // لا نقرأ bookings مباشرة من Flutter لأن RLS قد يمنع هذه القراءة.
+    // نستعمل RPC آمنة مرتبطة بالمحامي الحالي ثم نطابق الحجز مع slot بواسطة وقت البداية.
     try {
-      final bookings = await SupabaseConfig.client.from('bookings').select('id, slot_id, scheduled_at, status').eq('lawyer_id', lawyerId);
+      final bookedRows = await SupabaseConfig.client.rpc('get_my_booked_schedule_slots');
+      final booked = (bookedRows is List ? bookedRows : const <dynamic>[]).whereType<Map>().map((row) => Map<String, dynamic>.from(row)).toList();
       for (final slot in slots) {
-        final slotId = slot['id']?.toString();
         final slotStart = DateTime.tryParse(slot['starts_at']?.toString() ?? '');
-        for (final raw in (bookings as List)) {
-          final booking = Map<String, dynamic>.from(raw as Map);
-          final status = booking['status']?.toString();
-          if (status == 'ملغي' || status == 'ملغى' || status == 'مسترد') continue;
-          final linkedBySlot = slotId != null && booking['slot_id']?.toString() == slotId;
+        if (slotStart == null) continue;
+        for (final booking in booked) {
           final bookingStart = DateTime.tryParse(booking['scheduled_at']?.toString() ?? '');
-          final linkedByTime = slotStart != null && bookingStart != null && bookingStart.toUtc().difference(slotStart.toUtc()).inSeconds.abs() <= 120;
-          if (linkedBySlot || linkedByTime) {
-            slot['booking_id'] = booking['id']?.toString();
+          if (bookingStart == null) continue;
+          final sameTime = bookingStart.toUtc().difference(slotStart.toUtc()).inSeconds.abs() <= 120;
+          if (sameTime) {
+            slot['booking_id'] = booking['booking_id']?.toString();
             slot['is_available'] = false;
             break;
           }
         }
       }
-    } catch (_) {}
+    } catch (_) {
+      // تبقى حالة slot كما هي إذا تعذر استدعاء RPC، دون تعطيل الصفحة.
+    }
     return slots;
   }
 
   Future<String?> _resolveBookingId(Map<String, dynamic> slot) async {
     final existing = slot['booking_id']?.toString();
     if (existing != null && existing.isNotEmpty) return existing;
-    final lawyerId = await _profileId();
-    if (lawyerId == null) return null;
-    final slotId = slot['id']?.toString();
-    if (slotId != null) {
-      try {
-        final rows = await SupabaseConfig.client.from('bookings').select('id, slot_id, scheduled_at, status').eq('lawyer_id', lawyerId).eq('slot_id', slotId).order('scheduled_at', ascending: true).limit(10);
-        for (final raw in (rows as List)) {
-          final booking = Map<String, dynamic>.from(raw as Map);
-          final status = booking['status']?.toString();
-          if (status != 'ملغي' && status != 'ملغى' && status != 'مسترد') return booking['id']?.toString();
+    try {
+      final bookedRows = await SupabaseConfig.client.rpc('get_my_booked_schedule_slots');
+      final start = DateTime.tryParse(slot['starts_at']?.toString() ?? '');
+      if (start == null) return null;
+      for (final raw in (bookedRows is List ? bookedRows : const <dynamic>[])) {
+        if (raw is! Map) continue;
+        final booking = Map<String, dynamic>.from(raw);
+        final bookingStart = DateTime.tryParse(booking['scheduled_at']?.toString() ?? '');
+        if (bookingStart != null && bookingStart.toUtc().difference(start.toUtc()).inSeconds.abs() <= 120) {
+          return booking['booking_id']?.toString();
         }
-      } catch (_) {}
-    }
-    final start = DateTime.tryParse(slot['starts_at']?.toString() ?? '');
-    if (start == null) return null;
-    final startUtc = start.toUtc();
-    final rows = await SupabaseConfig.client.from('bookings').select('id, scheduled_at, status').eq('lawyer_id', lawyerId).gte('scheduled_at', startUtc.subtract(const Duration(minutes: 2)).toIso8601String()).lte('scheduled_at', startUtc.add(const Duration(minutes: 2)).toIso8601String()).order('scheduled_at', ascending: true).limit(10);
-    for (final raw in (rows as List)) {
-      final booking = Map<String, dynamic>.from(raw as Map);
-      final status = booking['status']?.toString();
-      if (status == 'ملغي' || status == 'ملغى' || status == 'مسترد') continue;
-      return booking['id']?.toString();
-    }
+      }
+    } catch (_) {}
     return null;
   }
 
