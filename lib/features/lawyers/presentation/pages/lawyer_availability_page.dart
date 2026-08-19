@@ -44,6 +44,7 @@ class _LawyerAvailabilityPageState extends ConsumerState<LawyerAvailabilityPage>
     if (lawyerId == null) return [];
     final rows = await SupabaseConfig.client.from('lawyer_availability_slots').select('id, starts_at, ends_at, is_available').eq('lawyer_id', lawyerId).order('starts_at', ascending: false);
     final slots = (rows as List).map((e) => Map<String, dynamic>.from(e as Map)).toList();
+
     try {
       final requests = await SupabaseConfig.client.rpc('get_my_cancellation_requests');
       _pendingCancellationBookings
@@ -51,6 +52,35 @@ class _LawyerAvailabilityPageState extends ConsumerState<LawyerAvailabilityPage>
         ..addAll((requests is List ? requests : const []).whereType<Map>().where((r) => r['status'] == 'بانتظار مراجعة الإدارة').map((r) => r['booking_id'].toString()));
     } catch (_) {
       _pendingCancellationBookings.clear();
+    }
+
+    // A slot can be visually marked as booked by the booking flow even when
+    // is_available has not yet been synchronized. Resolve the real booking
+    // from bookings so the cancellation action is shown for the correct slot.
+    try {
+      final bookingRows = await SupabaseConfig.client
+          .from('bookings')
+          .select('id, scheduled_at, status')
+          .eq('lawyer_id', lawyerId);
+      for (final rawSlot in slots) {
+        final slotStart = DateTime.tryParse(rawSlot['starts_at']?.toString() ?? '');
+        if (slotStart == null) continue;
+        final startUtc = slotStart.toUtc();
+        for (final rawBooking in (bookingRows as List)) {
+          final booking = Map<String, dynamic>.from(rawBooking as Map);
+          final bookingStatus = booking['status']?.toString();
+          if (bookingStatus == 'ملغي' || bookingStatus == 'مسترد' || bookingStatus == 'ملغى') continue;
+          final bookingStart = DateTime.tryParse(booking['scheduled_at']?.toString() ?? '');
+          if (bookingStart == null) continue;
+          if (bookingStart.toUtc().difference(startUtc).inSeconds.abs() <= 120) {
+            rawSlot['booking_id'] = booking['id']?.toString();
+            rawSlot['is_available'] = false;
+            break;
+          }
+        }
+      }
+    } catch (_) {
+      // Keep the existing slots visible if RLS prevents the optional lookup.
     }
     return slots;
   }
@@ -69,7 +99,7 @@ class _LawyerAvailabilityPageState extends ConsumerState<LawyerAvailabilityPage>
     for (final raw in (rows as List)) {
       final booking = Map<String, dynamic>.from(raw as Map);
       final status = booking['status']?.toString();
-      if (status == 'ملغي' || status == 'مسترد') continue;
+      if (status == 'ملغي' || status == 'مسترد' || status == 'ملغى') continue;
       final bookingStart = DateTime.tryParse(booking['scheduled_at']?.toString() ?? '');
       if (bookingStart != null && bookingStart.toUtc().difference(startUtc).inSeconds.abs() <= 120) return booking['id']?.toString();
     }
