@@ -60,19 +60,17 @@ class AppShell extends ConsumerWidget {
     final scheme = Theme.of(context).colorScheme;
     final user = ref.watch(authStateChangesProvider).valueOrNull;
     final isLawyer = user?.role == 'lawyer';
-    final isCreateBooking = location == '/create-booking';
-    final isLawyerDetails = location.startsWith('/lawyer-details/');
-    final isBookingDetails = location == '/booking-details';
+    final hidesShellNav = location == '/create-booking' ||
+        location.startsWith('/lawyer-details/') ||
+        location == '/booking-details' ||
+        location == '/lawyer-profile-edit' ||
+        location == '/lawyer-availability';
 
     return Scaffold(
       backgroundColor: scheme.surface,
-      body: ColoredBox(
-        color: scheme.surface,
-        child: child,
-      ),
-      // الصفحات ذات الإجراءات السفلية الخاصة بها لا تعرض الشريط العام؛
-      // هذا يمنع تغطية الأزرار في iOS/PWA ويضمن مساحة لمس كاملة.
-      bottomNavigationBar: isCreateBooking || isLawyerDetails || isBookingDetails
+      body: ColoredBox(color: scheme.surface, child: child),
+      // الصفحات ذات شريط الإجراءات الخاص بها لا تعرض شريط التنقل العام.
+      bottomNavigationBar: hidesShellNav
           ? null
           : MainBottomNav(
               currentIndex: _currentIndex(isLawyer),
