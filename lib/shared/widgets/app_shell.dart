@@ -66,16 +66,20 @@ class AppShell extends ConsumerWidget {
         location == '/lawyer-profile-edit' ||
         location == '/lawyer-availability';
 
+    // صفحات الإجراءات الخاصة تحتوي على Scaffold خاص بها (ومن ضمنه
+    // شريط الأزرار السفلي). يجب عدم وضعها داخل Scaffold آخر، وإلا يصبح
+    // شريط الإجراء جزءاً من body للـShell وقد لا يظهر بصورة صحيحة.
+    if (hidesShellNav) {
+      return child;
+    }
+
     return Scaffold(
       backgroundColor: scheme.surface,
       body: ColoredBox(color: scheme.surface, child: child),
-      // الصفحات ذات شريط الإجراءات الخاص بها لا تعرض شريط التنقل العام.
-      bottomNavigationBar: hidesShellNav
-          ? null
-          : MainBottomNav(
-              currentIndex: _currentIndex(isLawyer),
-              isLawyer: isLawyer,
-            ),
+      bottomNavigationBar: MainBottomNav(
+        currentIndex: _currentIndex(isLawyer),
+        isLawyer: isLawyer,
+      ),
     );
   }
 }
