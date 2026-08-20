@@ -62,6 +62,7 @@ class AppShell extends ConsumerWidget {
     final isLawyer = user?.role == 'lawyer';
     final isCreateBooking = location == '/create-booking';
     final isLawyerDetails = location.startsWith('/lawyer-details/');
+    final isBookingDetails = location == '/booking-details';
 
     return Scaffold(
       backgroundColor: scheme.surface,
@@ -69,10 +70,9 @@ class AppShell extends ConsumerWidget {
         color: scheme.surface,
         child: child,
       ),
-      // صفحات الحجز وملف المحامي تحتوي على إجراءات سفلية خاصة بها.
-      // إظهار شريط التنقل العام معها يسبب تداخل الأزرار ويغطي المحتوى،
-      // خصوصاً على iOS/PWA.
-      bottomNavigationBar: isCreateBooking || isLawyerDetails
+      // الصفحات ذات الإجراءات السفلية الخاصة بها لا تعرض الشريط العام؛
+      // هذا يمنع تغطية الأزرار في iOS/PWA ويضمن مساحة لمس كاملة.
+      bottomNavigationBar: isCreateBooking || isLawyerDetails || isBookingDetails
           ? null
           : MainBottomNav(
               currentIndex: _currentIndex(isLawyer),
