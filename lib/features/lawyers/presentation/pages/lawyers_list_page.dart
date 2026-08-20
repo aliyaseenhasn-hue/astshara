@@ -155,7 +155,7 @@ class _LawyerCard extends StatelessWidget {
               const SizedBox(height: 4),
               Text(lawyer.specializations.isNotEmpty ? 'محامي ${tags.first}' : 'محامي ومستشار قانوني', textAlign: TextAlign.right, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: scheme.primary, fontSize: 11, fontWeight: FontWeight.w700)),
               const SizedBox(height: 8),
-              Row(mainAxisAlignment: MainAxisAlignment.end, children: [Text('(${lawyer.reviewCount} استشارة)', style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 10)), const SizedBox(width: 5), Icon(Icons.star_rounded, color: scheme.tertiary, size: 16), const SizedBox(width: 2), Text(lawyer.rating.toStringAsFixed(1), style: TextStyle(color: scheme.onSurface, fontSize: 11, fontWeight: FontWeight.w800))]),
+              Row(mainAxisAlignment: MainAxisAlignment.end, children: [Icon(Icons.star_rounded, color: scheme.tertiary, size: 16), const SizedBox(width: 2), Text(lawyer.rating.toStringAsFixed(1), style: TextStyle(color: scheme.onSurface, fontSize: 11, fontWeight: FontWeight.w800)), const SizedBox(width: 7), Text('تقييم المحامي', style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 10))]),
             ])),
           ]),
         ),
