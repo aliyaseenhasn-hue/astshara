@@ -60,6 +60,7 @@ class AppShell extends ConsumerWidget {
     final scheme = Theme.of(context).colorScheme;
     final user = ref.watch(authStateChangesProvider).valueOrNull;
     final isLawyer = user?.role == 'lawyer';
+    final isCreateBooking = location == '/create-booking';
 
     return Scaffold(
       backgroundColor: scheme.surface,
@@ -67,10 +68,15 @@ class AppShell extends ConsumerWidget {
         color: scheme.surface,
         child: child,
       ),
-      bottomNavigationBar: MainBottomNav(
-        currentIndex: _currentIndex(isLawyer),
-        isLawyer: isLawyer,
-      ),
+      // صفحة إنشاء الحجز تحتوي على شريط إجراءات خاص بها في
+      // CreateBookingPage.bottomNavigationBar. إخفاء شريط التطبيق
+      // هنا يمنع تداخل الشريطين داخل الـShellRoute، خصوصاً في PWA.
+      bottomNavigationBar: isCreateBooking
+          ? null
+          : MainBottomNav(
+              currentIndex: _currentIndex(isLawyer),
+              isLawyer: isLawyer,
+            ),
     );
   }
 }
