@@ -65,7 +65,7 @@ class LawyerDetailsPage extends ConsumerWidget {
                           ),
                         ),
                         Padding(
-                          padding: const EdgeInsets.fromLTRB(20, 110, 20, 110),
+                          padding: const EdgeInsets.fromLTRB(20, 225, 20, 110),
                           child: Column(
                             children: [
                               Row(
