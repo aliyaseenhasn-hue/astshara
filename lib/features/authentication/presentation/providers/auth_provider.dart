@@ -57,18 +57,19 @@ class AuthController extends _$AuthController {
     finally { ref.read(globalLoadingProvider.notifier).setLoading(false); }
   }
 
+  // Telegram has its own local spinner on the login dialog/page.
+  // Do not activate the global loading overlay here, otherwise two loaders
+  // are displayed at the same time during Telegram verification.
   Future<Map<String, dynamic>> startTelegramLogin(String phone) async {
-    ref.read(globalLoadingProvider.notifier).setLoading(true); state = const AsyncLoading();
-    try { return await ref.read(authRepositoryProvider).startTelegramLogin(phone); }
+    state = const AsyncLoading();
+    try { final result = await ref.read(authRepositoryProvider).startTelegramLogin(phone); state = const AsyncData(null); return result; }
     catch (e, st) { state = AsyncValue.error(e, st); rethrow; }
-    finally { ref.read(globalLoadingProvider.notifier).setLoading(false); }
   }
 
   Future<void> verifyTelegramLogin({required String requestToken, required String code}) async {
-    ref.read(globalLoadingProvider.notifier).setLoading(true); state = const AsyncLoading();
+    state = const AsyncLoading();
     try { await ref.read(authRepositoryProvider).verifyTelegramLogin(requestToken: requestToken, code: code); state = const AsyncData(null); }
     catch (e, st) { state = AsyncValue.error(e, st); rethrow; }
-    finally { ref.read(globalLoadingProvider.notifier).setLoading(false); }
   }
 
   Future<void> signInWithTelegram() async => throw UnsupportedError('استخدم تسجيل Telegram عبر رمز التحقق');
