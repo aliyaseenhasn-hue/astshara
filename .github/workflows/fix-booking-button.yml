@@ -1,0 +1,71 @@
+name: Apply booking button visibility fix
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Patch booking action area
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('lib/features/bookings/presentation/pages/create_booking_page.dart')
+          s = p.read_text(encoding='utf-8')
+          old = '''    // مثبت أسفل الشاشة في جميع الخطوات
+    bottomNavigationBar: _BottomActions(
+      step: _step,
+      loading: state.isLoading,
+      onContinue: _next,
+      onBack: _step == 0
+          ? null
+          : () => setState(() => _step--),
+    ),'''
+          new = '''    // زر الإجراء مثبت فوق المحتوى، ولا يعتمد على bottomNavigationBar.
+    // هذا يضمن ظهوره حتى مع أي حاوية/انتقال يستخدمه الـShell.
+    floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
+    floatingActionButton: SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
+        child: _BottomActions(
+          step: _step,
+          loading: state.isLoading,
+          onContinue: _next,
+          onBack: _step == 0
+              ? null
+              : () => setState(() => _step--),
+        ),
+      ),
+    ),'''
+          if old not in s:
+              raise SystemExit('Expected booking action block was not found')
+          s = s.replace(old, new, 1)
+          s = s.replace('padding: const EdgeInsets.fromLTRB(20, 8, 20, 32),', 'padding: const EdgeInsets.fromLTRB(20, 8, 20, 112),', 1)
+          p.write_text(s, encoding='utf-8')
+          PY
+
+      - name: Commit and push patch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add lib/features/bookings/presentation/pages/create_booking_page.dart .github/workflows/fix-booking-button.yml
+          git diff --cached --quiet && exit 0
+          git commit -m "fix(ui): make booking continue button always visible"
+          git push origin HEAD:main
+
+      - name: Remove one-shot patch workflow
+        if: success()
+        run: |
+          git rm .github/workflows/fix-booking-button.yml
+          git commit -m "chore: remove temporary booking patch workflow"
+          git push origin HEAD:main
