@@ -42,7 +42,6 @@ class AuthController extends _$AuthController {
   }
 
   Future<void> logout() async { ref.read(globalLoadingProvider.notifier).setLoading(true); try { await ref.read(authRepositoryProvider).signOut(); state = const AsyncData(null); } catch (e, st) { state = AsyncValue.error(e, st); } finally { ref.read(globalLoadingProvider.notifier).setLoading(false); } }
-
   Future<void> deleteAccount() async { ref.read(globalLoadingProvider.notifier).setLoading(true); state = const AsyncLoading(); try { await ref.read(authRepositoryProvider).deleteAccount(); state = const AsyncData(null); } catch (e, st) { state = AsyncValue.error(e, st); } finally { ref.read(globalLoadingProvider.notifier).setLoading(false); } }
 
   Future<void> signInWithPhone(String phone) async {
@@ -58,11 +57,21 @@ class AuthController extends _$AuthController {
     finally { ref.read(globalLoadingProvider.notifier).setLoading(false); }
   }
 
-  Future<void> signInWithTelegram() async {
+  Future<Map<String, dynamic>> startTelegramLogin(String phone) async {
     ref.read(globalLoadingProvider.notifier).setLoading(true); state = const AsyncLoading();
-    try { state = await AsyncValue.guard(() => ref.read(authRepositoryProvider).signInWithTelegram()); }
+    try { return await ref.read(authRepositoryProvider).startTelegramLogin(phone); }
+    catch (e, st) { state = AsyncValue.error(e, st); rethrow; }
     finally { ref.read(globalLoadingProvider.notifier).setLoading(false); }
   }
+
+  Future<void> verifyTelegramLogin({required String requestToken, required String code}) async {
+    ref.read(globalLoadingProvider.notifier).setLoading(true); state = const AsyncLoading();
+    try { await ref.read(authRepositoryProvider).verifyTelegramLogin(requestToken: requestToken, code: code); state = const AsyncData(null); }
+    catch (e, st) { state = AsyncValue.error(e, st); rethrow; }
+    finally { ref.read(globalLoadingProvider.notifier).setLoading(false); }
+  }
+
+  Future<void> signInWithTelegram() async => throw UnsupportedError('استخدم تسجيل Telegram عبر رمز التحقق');
 
   Future<void> verifyOTP(String phone, String token) async {
     if (phone.isEmpty || token.isEmpty) { state = AsyncValue.error(Exception('رقم الهاتف والرمز مطلوبان'), StackTrace.current); return; }
