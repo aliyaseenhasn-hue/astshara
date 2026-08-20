@@ -35,9 +35,7 @@ class AuthRepositoryImpl implements AuthRepository {
     if (user == null) return null;
     try {
       final profileResponse = await _supabase.from('profiles').select().eq('auth_id', user.id).maybeSingle();
-      if (profileResponse == null) {
-        return AppUser(id: user.id, email: user.email, fullName: user.userMetadata?['full_name'] as String?, phone: user.phone, role: 'user', isOnboardingComplete: false);
-      }
+      if (profileResponse == null) return AppUser(id: user.id, email: user.email, fullName: user.userMetadata?['full_name'] as String?, phone: user.phone, role: 'user', isOnboardingComplete: false);
       bool isVerified = false;
       bool hasProfessionalProfile = false;
       final roleValue = profileResponse['role'];
@@ -82,15 +80,25 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
-  Future<void> signInWithTelegram() async {
-    String redirectUrl = 'io.supabase.astshara://login-callback';
-    if (kIsWeb) redirectUrl = Uri.base.origin + Uri.base.path;
-    await _supabase.auth.signInWithOAuth(
-      OAuthProvider('custom:telegram'),
-      redirectTo: redirectUrl,
-      scopes: 'openid profile phone',
-      authScreenLaunchMode: LaunchMode.externalApplication,
-    );
+  Future<void> signInWithTelegram() async => throw UnsupportedError('استخدم تسجيل Telegram عبر رمز التحقق داخل التطبيق');
+
+  @override
+  Future<Map<String, dynamic>> startTelegramLogin(String phone) async {
+    final result = await _supabase.functions.invoke('telegram-auth-v2', body: {'action': 'start', 'phone': phone});
+    if (result.data is! Map) throw Exception('تعذر بدء تسجيل Telegram');
+    final data = Map<String, dynamic>.from(result.data as Map);
+    if (data['ok'] != true) throw Exception(data['error'] ?? 'تعذر بدء تسجيل Telegram');
+    return data;
+  }
+
+  @override
+  Future<Map<String, dynamic>> verifyTelegramLogin({required String requestToken, required String code}) async {
+    final result = await _supabase.functions.invoke('telegram-auth-v2', body: {'action': 'verify', 'request_token': requestToken, 'code': code});
+    if (result.data is! Map) throw Exception('تعذر التحقق من الرمز');
+    final data = Map<String, dynamic>.from(result.data as Map);
+    if (data['ok'] != true) throw Exception(data['error'] ?? 'رمز التحقق غير صحيح');
+    await signInWithEmail(email: data['syntheticEmail'] as String, password: data['password'] as String);
+    return data;
   }
 
   @override
