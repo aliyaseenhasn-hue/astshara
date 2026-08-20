@@ -150,16 +150,17 @@ class _Stats extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final specializationCount = (lawyer.specializations as List).length;
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 15),
       decoration: BoxDecoration(color: scheme.surfaceContainerLowest, borderRadius: BorderRadius.circular(16), border: Border.all(color: scheme.outlineVariant)),
       child: Row(
         children: [
-          _item(context, '${lawyer.reviewCount}', 'استشارة'),
+          _item(context, lawyer.rating.toStringAsFixed(1), 'التقييم'),
           _divider(context),
           _item(context, '${lawyer.yearsExperience ?? 0}+', 'سنوات الخبرة'),
           _divider(context),
-          _item(context, lawyer.rating.toStringAsFixed(1), 'التقييم'),
+          _item(context, '$specializationCount', 'التخصصات'),
         ],
       ),
     );
