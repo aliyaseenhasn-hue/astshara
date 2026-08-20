@@ -51,21 +51,6 @@ class ConversationsPage extends ConsumerWidget {
             Text('تواصل مع محاميك بأمان', style: TextStyle(fontSize: 12, color: scheme.onSurfaceVariant)),
           ],
         ),
-        actions: [
-          Padding(
-            padding: const EdgeInsetsDirectional.only(end: 12),
-            child: Container(
-              width: 42,
-              height: 42,
-              decoration: BoxDecoration(
-                color: scheme.surfaceContainerHighest,
-                shape: BoxShape.circle,
-                border: Border.all(color: scheme.outlineVariant.withValues(alpha: .65)),
-              ),
-              child: Icon(Icons.search_rounded, color: scheme.onSurfaceVariant),
-            ),
-          ),
-        ],
       ),
       body: conversations.when(
         loading: () => Center(child: CircularProgressIndicator(color: scheme.primary)),
@@ -127,28 +112,10 @@ class ConversationsPage extends ConsumerWidget {
                           ),
                           child: Row(
                             children: [
-                              Stack(
-                                clipBehavior: Clip.none,
-                                children: [
-                                  CircleAvatar(
-                                    radius: 27,
-                                    backgroundColor: scheme.primaryContainer,
-                                    child: Icon(Icons.person_outline_rounded, color: scheme.primary, size: 27),
-                                  ),
-                                  Positioned(
-                                    bottom: 0,
-                                    right: -1,
-                                    child: Container(
-                                      width: 12,
-                                      height: 12,
-                                      decoration: BoxDecoration(
-                                        color: Colors.green,
-                                        shape: BoxShape.circle,
-                                        border: Border.all(color: scheme.surface, width: 2),
-                                      ),
-                                    ),
-                                  ),
-                                ],
+                              CircleAvatar(
+                                radius: 27,
+                                backgroundColor: scheme.primaryContainer,
+                                child: Icon(Icons.person_outline_rounded, color: scheme.primary, size: 27),
                               ),
                               const SizedBox(width: 13),
                               Expanded(
