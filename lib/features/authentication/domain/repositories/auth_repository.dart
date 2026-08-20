@@ -8,6 +8,7 @@ abstract class AuthRepository {
   Future<void> signInWithPhone(String phone);
   Future<void> verifyOTP({required String phone, required String token});
   Future<void> signInWithGoogle();
+  Future<void> signInWithTelegram();
   Future<void> updateProfile({String? fullName, String? email, String? role, String? avatarUrl, bool? onboardingCompleted, String? walletNumber});
   Future<void> refreshUser();
   Future<void> deleteAccount();
