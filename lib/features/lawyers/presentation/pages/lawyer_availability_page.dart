@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:astshara/core/config/supabase_config.dart';
 import '../../../../core/constants/app_colors.dart';
@@ -33,41 +34,26 @@ class _LawyerAvailabilityPageState extends ConsumerState<LawyerAvailabilityPage>
     final lawyerId = await _profileId();
     if (lawyerId == null) return <Map<String, dynamic>>[];
 
-    final rawSlots = await SupabaseConfig.client
-        .from('lawyer_availability_slots')
-        .select('id, starts_at, ends_at, is_available')
-        .eq('lawyer_id', lawyerId)
-        .order('starts_at', ascending: false);
+    final rawSlots = await SupabaseConfig.client.from('lawyer_availability_slots').select('id, starts_at, ends_at, is_available').eq('lawyer_id', lawyerId).order('starts_at', ascending: false);
     final slots = (rawSlots as List).map((row) => Map<String, dynamic>.from(row as Map)).toList();
 
     _pendingCancellationBookings.clear();
     try {
       final requests = await SupabaseConfig.client.rpc('get_my_cancellation_requests');
       final list = requests is List ? requests : const <dynamic>[];
-      _pendingCancellationBookings.addAll(
-        list.whereType<Map>().where((row) => row['status']?.toString() == 'بانتظار مراجعة الإدارة').map((row) => row['booking_id'].toString()),
-      );
+      _pendingCancellationBookings.addAll(list.whereType<Map>().where((row) => row['status']?.toString() == 'بانتظار مراجعة الإدارة').map((row) => row['booking_id'].toString()));
     } catch (_) {}
-
     if (slots.isEmpty) return slots;
 
     final starts = slots.map((s) => DateTime.tryParse(s['starts_at']?.toString() ?? '')).whereType<DateTime>().toList();
     if (starts.isEmpty) return slots;
-
     final minStart = starts.reduce((a, b) => a.isBefore(b) ? a : b).subtract(const Duration(minutes: 2)).toUtc().toIso8601String();
     final maxStart = starts.reduce((a, b) => a.isAfter(b) ? a : b).add(const Duration(minutes: 2)).toUtc().toIso8601String();
 
     try {
-      final rawBookings = await SupabaseConfig.client
-          .from('bookings')
-          .select('id, scheduled_at, status, consultation_status')
-          .eq('lawyer_id', lawyerId)
-          .gte('scheduled_at', minStart)
-          .lte('scheduled_at', maxStart)
-          .order('scheduled_at', ascending: true);
+      final rawBookings = await SupabaseConfig.client.from('bookings').select('id, scheduled_at, status, consultation_status').eq('lawyer_id', lawyerId).gte('scheduled_at', minStart).lte('scheduled_at', maxStart).order('scheduled_at', ascending: true);
       final bookings = (rawBookings as List).map((row) => Map<String, dynamic>.from(row as Map)).toList();
       const terminalStatuses = {'ملغي', 'ملغى', 'مسترد', 'مكتمل'};
-
       for (final slot in slots) {
         final slotStart = DateTime.tryParse(slot['starts_at']?.toString() ?? '');
         if (slotStart == null) continue;
@@ -92,7 +78,6 @@ class _LawyerAvailabilityPageState extends ConsumerState<LawyerAvailabilityPage>
     } catch (e) {
       debugPrint('تعذر تحميل الحجوزات المرتبطة بالمواعيد: $e');
     }
-
     return slots;
   }
 
@@ -118,16 +103,7 @@ class _LawyerAvailabilityPageState extends ConsumerState<LawyerAvailabilityPage>
         ]),
         actions: [
           TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('إلغاء')),
-          FilledButton(
-            onPressed: () {
-              if (controller.text.trim().isEmpty) {
-                ScaffoldMessenger.of(dialogContext).showSnackBar(const SnackBar(content: Text('سبب الإلغاء إلزامي')));
-                return;
-              }
-              Navigator.pop(dialogContext, controller.text.trim());
-            },
-            child: const Text('إرسال طلب الإلغاء'),
-          ),
+          FilledButton(onPressed: () { if (controller.text.trim().isEmpty) { ScaffoldMessenger.of(dialogContext).showSnackBar(const SnackBar(content: Text('سبب الإلغاء إلزامي'))); return; } Navigator.pop(dialogContext, controller.text.trim()); }, child: const Text('إرسال طلب الإلغاء')),
         ],
       ),
     );
