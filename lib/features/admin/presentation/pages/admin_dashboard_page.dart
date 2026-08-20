@@ -25,7 +25,7 @@ class AdminDashboardPage extends ConsumerWidget {
       ),
       body: statsAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, stack) => _errorView(ref),
+        error: (_, __) => _errorView(ref),
         data: (stats) => _dashboard(context, stats),
       ),
     );
@@ -50,9 +50,9 @@ class AdminDashboardPage extends ConsumerWidget {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(AppSizes.p20),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const Text('نظرة عامة', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.primary)),
+          const Text('نظرة عامة', textAlign: TextAlign.right, style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.primary)),
           const SizedBox(height: AppSizes.p16),
           GridView.count(
             shrinkWrap: true,
@@ -62,32 +62,43 @@ class AdminDashboardPage extends ConsumerWidget {
             mainAxisSpacing: 12,
             childAspectRatio: 1.4,
             children: [
-              _buildStatCard('إجمالي المستخدمين', stats['total_users'].toString(), Icons.people, Colors.blue),
-              _buildStatCard('إجمالي المحامين', stats['total_lawyers'].toString(), Icons.gavel, Colors.orange),
-              _buildStatCard('طلبات التوثيق', stats['pending_verifications'].toString(), Icons.verified_user, Colors.purple),
-              _buildStatCard('الحجوزات النشطة', stats['active_bookings'].toString(), Icons.calendar_today, Colors.green),
+              _buildStatCard('إجمالي المستخدمين', stats['total_users'].toString(), Icons.people, AppColors.primary),
+              _buildStatCard('إجمالي المحامين', stats['total_lawyers'].toString(), Icons.gavel, AppColors.secondaryDark),
+              _buildStatCard('طلبات التوثيق', stats['pending_verifications'].toString(), Icons.verified_user, AppColors.teal),
+              _buildStatCard('الحجوزات النشطة', stats['active_bookings'].toString(), Icons.calendar_today, AppColors.success),
             ],
           ),
           const SizedBox(height: AppSizes.p32),
           _buildRevenueCard((stats['total_revenue'] as num?)?.toDouble() ?? 0),
           const SizedBox(height: AppSizes.p32),
-          const Text('إدارة النظام', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          const Text('إدارة النظام', textAlign: TextAlign.right, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.primary)),
           const SizedBox(height: AppSizes.p16),
           _buildAdminActionCard('إدارة المستخدمين', 'البحث في الحسابات ومراجعة حالتها وبياناتها', Icons.people_alt_outlined, AppColors.primary, () => context.push('/admin/users')),
           _buildAdminActionCard('مركز جميع المراجعات', 'مكان موحد لكل الطلبات التي تحتاج قراراً إدارياً', Icons.fact_check_outlined, AppColors.primary, () => context.push('/admin/reviews')),
-          _buildAdminActionCard('طلبات توثيق المحامين', 'الوصول المباشر لطلبات التوثيق المعلقة', Icons.verified_user_outlined, AppColors.secondary, () => context.push('/admin/lawyer-verifications')),
-          _buildAdminActionCard('الحجوزات الملغاة', 'مراجعة طلبات الإلغاء والغرامات والتعويضات', Icons.event_busy_outlined, AppColors.secondary, () => context.push('/admin/cancellation-requests')),
+          _buildAdminActionCard('طلبات توثيق المحامين', 'الوصول المباشر لطلبات التوثيق المعلقة', Icons.verified_user_outlined, AppColors.secondaryDark, () => context.push('/admin/lawyer-verifications')),
+          _buildAdminActionCard('الحجوزات الملغاة', 'مراجعة طلبات الإلغاء والغرامات والتعويضات', Icons.event_busy_outlined, AppColors.secondaryDark, () => context.push('/admin/cancellation-requests')),
         ],
       ),
     );
   }
 
-  Widget _buildStatCard(String title, String value, IconData icon, Color color) {
+  Widget _buildStatCard(String title, String value, IconData icon, Color accent) {
     return Container(
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), boxShadow: [BoxShadow(color: color.withValues(alpha: .1), blurRadius: 10, offset: const Offset(0, 4))]),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.outlineVariant),
+        boxShadow: [BoxShadow(color: AppColors.primary.withValues(alpha: .05), blurRadius: 16, offset: const Offset(0, 5))],
+      ),
       child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-        Icon(icon, color: color, size: 28),
+        Container(
+          width: 44,
+          height: 44,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(color: accent.withValues(alpha: .10), borderRadius: BorderRadius.circular(13)),
+          child: Icon(icon, color: accent, size: 24),
+        ),
         const SizedBox(height: 8),
         Text(value, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppColors.primary)),
         Text(title, style: const TextStyle(fontSize: 12, color: AppColors.outline), textAlign: TextAlign.center),
@@ -99,13 +110,16 @@ class AdminDashboardPage extends ConsumerWidget {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(gradient: const LinearGradient(colors: [AppColors.secondary, AppColors.textSecondary], begin: Alignment.topLeft, end: Alignment.bottomRight), borderRadius: BorderRadius.circular(20)),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        const Text('إجمالي الأرباح المجمعة', style: TextStyle(color: Colors.white70, fontSize: 14)),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(colors: [AppColors.primary, AppColors.primaryContainer], begin: Alignment.topRight, end: Alignment.bottomLeft),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
+        const Text('إجمالي الإيرادات', textAlign: TextAlign.right, style: TextStyle(color: Colors.white70, fontSize: 14)),
         const SizedBox(height: 12),
-        Text('$amount د.ع', style: const TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.bold)),
+        Text('$amount د.ع', textAlign: TextAlign.right, style: const TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.bold)),
         const SizedBox(height: 8),
-        const Text('تحديث فوري للقيمة الإجمالية', style: TextStyle(color: Colors.white54, fontSize: 12)),
+        const Text('القيمة الإجمالية المسجلة في النظام', textAlign: TextAlign.right, style: TextStyle(color: Colors.white70, fontSize: 12)),
       ]),
     );
   }
@@ -117,8 +131,8 @@ class AdminDashboardPage extends ConsumerWidget {
         child: ListTile(
           contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
           leading: Container(padding: const EdgeInsets.all(10), decoration: BoxDecoration(color: color.withValues(alpha: .08), borderRadius: BorderRadius.circular(12)), child: Icon(icon, color: color)),
-          title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
-          subtitle: Text(subtitle, style: const TextStyle(fontSize: 12)),
+          title: Text(title, textAlign: TextAlign.right, style: const TextStyle(fontWeight: FontWeight.bold)),
+          subtitle: Text(subtitle, textAlign: TextAlign.right, style: const TextStyle(fontSize: 12)),
           trailing: const Icon(Icons.arrow_forward_ios, size: 14),
           onTap: onTap,
         ),
