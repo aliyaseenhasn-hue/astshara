@@ -9,10 +9,13 @@
 /.idea/assetWizardSettings.xml
 .DS_Store
 /build
+/.dart_tool
 /captures
 .externalNativeBuild
 .cxx
 local.properties
+.flutter-plugins
+.flutter-plugins-dependencies
 
 # Environment & Secrets
 .env
