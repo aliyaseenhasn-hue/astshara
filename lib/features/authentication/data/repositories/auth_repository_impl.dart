@@ -55,36 +55,20 @@ class AuthRepositoryImpl implements AuthRepository {
 
   @override
   Future<void> signInWithEmail({required String email, required String password}) async => _supabase.auth.signInWithPassword(email: email, password: password);
-
   @override
-  Future<void> signUpWithEmail({required String email, required String password, required String fullName, required String role}) async {
-    final safeRole = role == 'lawyer' ? 'lawyer' : 'user';
-    await _supabase.auth.signUp(email: email, password: password, data: {'full_name': fullName, 'role': safeRole});
-  }
-
+  Future<void> signUpWithEmail({required String email, required String password, required String fullName, required String role}) async { final safeRole = role == 'lawyer' ? 'lawyer' : 'user'; await _supabase.auth.signUp(email: email, password: password, data: {'full_name': fullName, 'role': safeRole}); }
   @override
   Future<void> signOut() async => _supabase.auth.signOut();
-
   @override
-  Future<void> signInWithPhone(String phone) async {
-    String formattedPhone = phone.trim().replaceAll(' ', '');
-    if (!formattedPhone.startsWith('+')) formattedPhone = '+$formattedPhone';
-    await _supabase.auth.signInWithOtp(phone: formattedPhone);
-  }
-
+  Future<void> signInWithPhone(String phone) async { var formattedPhone = phone.trim().replaceAll(' ', ''); if (!formattedPhone.startsWith('+')) formattedPhone = '+$formattedPhone'; await _supabase.auth.signInWithOtp(phone: formattedPhone); }
   @override
-  Future<void> signInWithGoogle() async {
-    String redirectUrl = 'io.supabase.astshara://login-callback';
-    if (kIsWeb) redirectUrl = Uri.base.origin + Uri.base.path;
-    await _supabase.auth.signInWithOAuth(OAuthProvider.google, redirectTo: redirectUrl, queryParams: {'prompt': 'select_account'});
-  }
-
+  Future<void> signInWithGoogle() async { var redirectUrl = 'io.supabase.astshara://login-callback'; if (kIsWeb) redirectUrl = Uri.base.origin + Uri.base.path; await _supabase.auth.signInWithOAuth(OAuthProvider.google, redirectTo: redirectUrl, queryParams: {'prompt': 'select_account'}); }
   @override
   Future<void> signInWithTelegram() async => throw UnsupportedError('استخدم تسجيل Telegram عبر رمز التحقق داخل التطبيق');
 
   @override
-  Future<Map<String, dynamic>> startTelegramLogin(String phone) async {
-    final result = await _supabase.functions.invoke('telegram-auth-v2', body: {'action': 'start', 'phone': phone});
+  Future<Map<String, dynamic>> startTelegramLogin(String phone, {bool registration = false}) async {
+    final result = await _supabase.functions.invoke('telegram-auth-v2', body: {'action': 'start', 'phone': phone, 'mode': registration ? 'signup' : 'login'});
     if (result.data is! Map) throw Exception('تعذر بدء تسجيل Telegram');
     final data = Map<String, dynamic>.from(result.data as Map);
     if (data['ok'] != true) throw Exception(data['error'] ?? 'تعذر بدء تسجيل Telegram');
@@ -97,65 +81,29 @@ class AuthRepositoryImpl implements AuthRepository {
     if (result.data is! Map) throw Exception('تعذر التحقق من الرمز');
     final data = Map<String, dynamic>.from(result.data as Map);
     if (data['ok'] != true) throw Exception(data['error'] ?? 'رمز التحقق غير صحيح');
-
-    // Telegram verification now returns a real Supabase session. Do not perform
-    // a second password login: that path caused failures for existing accounts.
     final accessToken = data['access_token'];
     final refreshToken = data['refresh_token'];
     if (accessToken is String && accessToken.isNotEmpty && refreshToken is String && refreshToken.isNotEmpty) {
       await _supabase.auth.setSession(refreshToken);
       final current = _supabase.auth.currentSession;
-      if (current == null || current.accessToken != accessToken) {
-        // Supabase may rotate the access token while setting the session; the
-        // refresh token establishes the authoritative persisted session.
-        await _supabase.auth.refreshSession();
-      }
+      if (current == null || current.accessToken != accessToken) await _supabase.auth.refreshSession();
       await refreshUser();
       return data;
     }
-
-    // Backward compatibility for an older function version only.
     final syntheticEmail = data['syntheticEmail'];
     final password = data['password'];
-    if (syntheticEmail is String && syntheticEmail.isNotEmpty && password is String && password.isNotEmpty) {
-      await signInWithEmail(email: syntheticEmail, password: password);
-      return data;
-    }
-
+    if (syntheticEmail is String && syntheticEmail.isNotEmpty && password is String && password.isNotEmpty) { await signInWithEmail(email: syntheticEmail, password: password); return data; }
     throw Exception('تم التحقق من Telegram لكن تعذر إنشاء جلسة الدخول');
   }
 
   @override
   Future<void> verifyOTP({required String phone, required String token}) async => _supabase.auth.verifyOTP(phone: phone, token: token, type: OtpType.sms);
-
   @override
-  Future<void> updateProfile({String? fullName, String? email, String? role, String? avatarUrl, bool? onboardingCompleted, String? walletNumber}) async {
-    final user = _supabase.auth.currentUser;
-    if (user == null) throw Exception('❌ لا يوجد مستخدم مسجل دخول');
-    final data = <String, dynamic>{};
-    if (fullName != null && fullName.trim().isNotEmpty) data['full_name'] = fullName.trim();
-    if (email != null && email.trim().isNotEmpty) data['email'] = email.trim();
-    if (role != null && (role == 'lawyer' || role == 'user')) data['role'] = role;
-    if (avatarUrl != null && avatarUrl.trim().isNotEmpty) data['avatar_url'] = avatarUrl.trim();
-    if (onboardingCompleted != null) data['onboarding_completed'] = onboardingCompleted;
-    if (walletNumber != null) data['wallet_number'] = walletNumber.trim();
-    if (data.isEmpty) return;
-    await _supabase.from('profiles').upsert({...data, 'auth_id': user.id, 'id': user.id, 'updated_at': DateTime.now().toIso8601String()}, onConflict: 'auth_id');
-    await refreshUser();
-  }
-
+  Future<void> updateProfile({String? fullName, String? email, String? role, String? avatarUrl, bool? onboardingCompleted, String? walletNumber}) async { final user = _supabase.auth.currentUser; if (user == null) throw Exception('❌ لا يوجد مستخدم مسجل دخول'); final data = <String, dynamic>{}; if (fullName != null && fullName.trim().isNotEmpty) data['full_name'] = fullName.trim(); if (email != null && email.trim().isNotEmpty) data['email'] = email.trim(); if (role != null && (role == 'lawyer' || role == 'user')) data['role'] = role; if (avatarUrl != null && avatarUrl.trim().isNotEmpty) data['avatar_url'] = avatarUrl.trim(); if (onboardingCompleted != null) data['onboarding_completed'] = onboardingCompleted; if (walletNumber != null) data['wallet_number'] = walletNumber.trim(); if (data.isEmpty) return; await _supabase.from('profiles').upsert({...data, 'auth_id': user.id, 'id': user.id, 'updated_at': DateTime.now().toIso8601String()}, onConflict: 'auth_id'); await refreshUser(); }
   @override
   Future<void> refreshUser() async { if (_supabase.auth.currentUser != null) _userStateController.add(await getCurrentUser()); }
-
   @override
-  Future<void> deleteAccount() async {
-    final user = _supabase.auth.currentUser;
-    if (user == null) return;
-    await _supabase.from('profiles').delete().eq('auth_id', user.id);
-    try { await _supabase.rpc('delete_user_account'); } catch (e) { debugPrint('RPC delete failed: $e'); }
-    await signOut();
-  }
-
+  Future<void> deleteAccount() async { final user = _supabase.auth.currentUser; if (user == null) return; await _supabase.from('profiles').delete().eq('auth_id', user.id); try { await _supabase.rpc('delete_user_account'); } catch (e) { debugPrint('RPC delete failed: $e'); } await signOut(); }
   @override
   Stream<AppUser?> authStateChanges() => _userStateController.stream;
 }
