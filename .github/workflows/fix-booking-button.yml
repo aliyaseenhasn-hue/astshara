@@ -1,6 +1,9 @@
 name: Apply booking button visibility fix
 
 on:
+  push:
+    branches:
+      - main
   workflow_dispatch:
 
 permissions:
@@ -9,7 +12,6 @@ permissions:
 jobs:
   patch:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -20,93 +22,75 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-
           python3 - <<'PY'
           from pathlib import Path
-          import re
 
-          path = Path("lib/features/bookings/presentation/pages/create_booking_page.dart")
-          text = path.read_text(encoding="utf-8")
+          path = Path('lib/features/bookings/presentation/pages/create_booking_page.dart')
+          text = path.read_text(encoding='utf-8')
 
-          pattern = re.compile(
-              r"    // مثبت أسفل الشاشة في جميع الخطوات\s*"
-              r"bottomNavigationBar:\s*_BottomActions\(\s*"
-              r"step:\s*_step,\s*"
-              r"loading:\s*state\.isLoading,\s*"
-              r"onContinue:\s*_next,\s*"
-              r"onBack:\s*_step == 0\s*"
-              r"\?\s*null\s*"
-              r":\s*\(\)\s*=>\s*setState\(\(\)\s*=>\s*_step--\),\s*"
-              r"\),",
-              re.MULTILINE,
-          )
+          old = '''    // مثبت أسفل الشاشة في جميع الخطوات
+    bottomNavigationBar: _BottomActions(
+      step: _step,
+      loading: state.isLoading,
+      onContinue: _next,
+      onBack: _step == 0
+          ? null
+          : () => setState(() => _step--),
+    ),'''
 
-          replacement = """    // زر الإجراء مثبت فوق المحتوى.
-          floatingActionButtonLocation:
-              FloatingActionButtonLocation.centerFloat,
-          floatingActionButton: SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
-              child: _BottomActions(
-                step: _step,
-                loading: state.isLoading,
-                onContinue: _next,
-                onBack: _step == 0
-                    ? null
-                    : () => setState(() => _step--),
-              ),
-            ),
-          ),"""
+          new = '''    // زر الإجراء مثبت فوق المحتوى حتى يبقى ظاهراً في جميع الخطوات.
+    floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
+    floatingActionButton: SafeArea(
+      minimum: const EdgeInsets.only(bottom: 8),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20),
+        child: _BottomActions(
+          step: _step,
+          loading: state.isLoading,
+          onContinue: _next,
+          onBack: _step == 0
+              ? null
+              : () => setState(() => _step--),
+        ),
+      ),
+    ),'''
 
-          updated, count = pattern.subn(replacement, text, count=1)
-
-          if count == 0:
-              if "floatingActionButton: SafeArea(" in text:
-                  print("Patch already applied.")
+          if old not in text:
+              if 'floatingActionButton: SafeArea(' in text:
+                  print('Patch already applied.')
                   raise SystemExit(0)
+              raise SystemExit('ERROR: existing booking action block was not found')
 
-              raise SystemExit(
-                  "ERROR: Could not find the existing bottomNavigationBar block."
-              )
-
-          updated = updated.replace(
-              "padding: const EdgeInsets.fromLTRB(20, 8, 20, 32),",
-              "padding: const EdgeInsets.fromLTRB(20, 8, 20, 112),",
+          text = text.replace(old, new, 1)
+          text = text.replace(
+              'padding: const EdgeInsets.fromLTRB(20, 8, 20, 32),',
+              'padding: const EdgeInsets.fromLTRB(20, 8, 20, 112),',
               1,
           )
-
-          path.write_text(updated, encoding="utf-8")
-          print("Booking action area patched successfully.")
+          path.write_text(text, encoding='utf-8')
+          print('Booking action area patched successfully.')
           PY
 
-      - name: Validate Flutter source
+      - name: Validate source
         run: |
           set -euo pipefail
-
-          grep -q "floatingActionButton: SafeArea(" \
-            lib/features/bookings/presentation/pages/create_booking_page.dart
-
-          grep -q "FloatingActionButtonLocation.centerFloat" \
-            lib/features/bookings/presentation/pages/create_booking_page.dart
-
-          grep -q "fromLTRB(20, 8, 20, 112)" \
-            lib/features/bookings/presentation/pages/create_booking_page.dart
-
-          echo "Booking button patch validated."
+          grep -q "floatingActionButton: SafeArea(" lib/features/bookings/presentation/pages/create_booking_page.dart
+          grep -q "FloatingActionButtonLocation.centerFloat" lib/features/bookings/presentation/pages/create_booking_page.dart
+          grep -q "fromLTRB(20, 8, 20, 112)" lib/features/bookings/presentation/pages/create_booking_page.dart
+          if grep -q "bottomNavigationBar: _BottomActions" lib/features/bookings/presentation/pages/create_booking_page.dart; then
+            echo "ERROR: old booking action block is still present"
+            exit 1
+          fi
 
       - name: Commit and push
         run: |
           set -euo pipefail
-
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-
           git add lib/features/bookings/presentation/pages/create_booking_page.dart
-
           if git diff --cached --quiet; then
             echo "No changes to commit."
             exit 0
           fi
-
           git commit -m "fix(ui): make booking continue button always visible"
           git push origin HEAD:main
