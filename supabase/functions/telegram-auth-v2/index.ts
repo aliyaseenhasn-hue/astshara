@@ -17,6 +17,7 @@ const sha256 = async (text: string) => { const digest = await crypto.subtle.dige
 const randomCode = () => String(Math.floor(100000 + Math.random() * 900000));
 const randomPassword = () => crypto.randomUUID() + crypto.randomUUID();
 const syntheticEmail = (phone: string) => `telegram.${phone}@login.astshara.app`;
+const TELEGRAM_LINKED_MESSAGE = 'هذا الحساب مرتبط بحساب آخر في تطبيق استشارة.';
 
 async function telegram(method: string, body: Record<string, unknown>) { const response = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/${method}`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) }); const data = await response.json(); if (!data.ok) throw new Error(data.description || `Telegram ${method} failed`); return data.result; }
 async function ensureWebhook() { if (WEBHOOK_SECRET) await telegram('setWebhook', { url: `${SUPABASE_URL}/functions/v1/telegram-auth-v2?webhook=1`, secret_token: WEBHOOK_SECRET, allowed_updates: ['message'] }); }
@@ -48,6 +49,8 @@ async function webhook(req: Request) {
   if (!arg) { await telegram('sendMessage', { chat_id: chatId, text: 'مرحباً بك في بوت استشارة ⚖️\nاضغط «بدء» من رابط التسجيل في التطبيق، ثم أرسل /start.' }); return json({ ok: true }); }
   const { data: request, error } = await admin.from('telegram_login_requests').select('*').eq('request_token', arg).maybeSingle();
   if (error || !request || new Date(request.expires_at).getTime() <= Date.now() || request.status === 'expired') { await telegram('sendMessage', { chat_id: chatId, text: 'انتهت صلاحية طلب التسجيل. ارجع إلى تطبيق استشارة واطلب رمزاً جديداً.' }); return json({ ok: true }); }
+  const existingTelegramProfile = await findTelegramProfile(chatId);
+  if (existingTelegramProfile) { await telegram('sendMessage', { chat_id: chatId, text: TELEGRAM_LINKED_MESSAGE }); return json({ ok: false, error: TELEGRAM_LINKED_MESSAGE }, 200); }
   const code = randomCode(); const hash = await sha256(`${code}:${arg}`);
   const { error: updateError } = await admin.from('telegram_login_requests').update({ telegram_user_id: chatId, telegram_username: message.from?.username ?? null, telegram_first_name: message.from?.first_name ?? null, telegram_last_name: message.from?.last_name ?? null, code_hash: hash, status: 'code_sent', attempts: 0 }).eq('id', request.id);
   if (updateError) throw new Error(updateError.message);
@@ -66,13 +69,7 @@ async function verify(requestToken: string, rawCode: string) {
 
   const phone = request.phone; const mode = request.mode || 'login'; const profile = await findProfile(phone);
   const telegramProfile = await findTelegramProfile(Number(request.telegram_user_id));
-
-  // A Telegram identity can belong to only one profile. Never overwrite that link.
-  if (telegramProfile && (!profile || telegramProfile.id !== profile.id)) {
-    throw new Error(mode === 'signup'
-      ? 'حساب Telegram هذا مرتبط بحساب موجود مسبقاً. يرجى تسجيل الدخول بالحساب المرتبط به.'
-      : 'حساب Telegram هذا مرتبط بحساب آخر. يرجى استخدام الحساب المرتبط به.');
-  }
+  if (telegramProfile && (!profile || telegramProfile.id !== profile.id)) throw new Error(TELEGRAM_LINKED_MESSAGE);
   if (mode === 'signup' && profile) throw new Error('هذا الرقم مرتبط بحساب آخر. يرجى استخدام رقم هاتف آخر أو تسجيل الدخول بالحساب المرتبط به.');
 
   let authUser: any; const email = syntheticEmail(phone); const password = randomPassword();
@@ -81,17 +78,14 @@ async function verify(requestToken: string, rawCode: string) {
     const patch: any = { password, user_metadata: { ...(authUser.user_metadata || {}), full_name: profile.full_name, role: profile.role } }; if (!authUser.email) { patch.email = email; patch.email_confirm = true; }
     const { error: updateUserError } = await admin.auth.admin.updateUserById(authUser.id, patch); if (updateUserError) throw new Error(`تعذر تجهيز حساب الدخول: ${updateUserError.message}`);
     const { error: profileError } = await admin.from('profiles').update({ telegram_user_id: request.telegram_user_id, updated_at: new Date().toISOString() }).eq('id', profile.id);
-    if (profileError) {
-      if (profileError.code === '23505') throw new Error('حساب Telegram هذا مرتبط بحساب موجود مسبقاً. يرجى تسجيل الدخول بالحساب المرتبط به.');
-      throw new Error(`تعذر ربط Telegram: ${profileError.message}`);
-    }
+    if (profileError) { if (profileError.code === '23505') throw new Error(TELEGRAM_LINKED_MESSAGE); throw new Error(`تعذر ربط Telegram: ${profileError.message}`); }
   } else if (mode === 'signup') {
     const role = request.role === 'lawyer' ? 'lawyer' : 'user'; const fullName = String(request.full_name || '').trim(); if (fullName.length < 3) throw new Error('الاسم الكامل مطلوب');
     const { data: created, error: createError } = await admin.auth.admin.createUser({ email, password, email_confirm: true, phone: `+${phone}`, phone_confirm: true, user_metadata: { full_name: fullName, role } });
     if (createError) { const duplicate = /already|exists|registered|duplicate/i.test(createError.message); if (duplicate) throw new Error('هذا الرقم مرتبط بحساب آخر. يرجى استخدام رقم هاتف آخر أو تسجيل الدخول بالحساب المرتبط به.'); throw new Error(`تعذر إنشاء الحساب: ${createError.message}`); }
     authUser = created.user;
     const { error: insertError } = await admin.from('profiles').insert({ auth_id: authUser.id, phone, email, full_name: fullName, role, telegram_user_id: request.telegram_user_id });
-    if (insertError) { await admin.auth.admin.deleteUser(authUser.id); if (insertError.code === '23505') throw new Error('حساب Telegram هذا مرتبط بحساب موجود مسبقاً. يرجى تسجيل الدخول بالحساب المرتبط به.'); throw new Error(`تعذر إنشاء ملف المستخدم: ${insertError.message}`); }
+    if (insertError) { await admin.auth.admin.deleteUser(authUser.id); if (insertError.code === '23505') throw new Error(TELEGRAM_LINKED_MESSAGE); throw new Error(`تعذر إنشاء ملف المستخدم: ${insertError.message}`); }
   } else if (profile) { throw new Error('تعذر ربط حساب Telegram بالحساب الموجود. يرجى التواصل مع الدعم.'); }
   else { throw new Error('لم يتم العثور على حساب مرتبط بهذا الرقم. يرجى إنشاء حساب أولاً.'); }
 
@@ -107,6 +101,6 @@ Deno.serve(async (req) => {
     const url = new URL(req.url); if (url.searchParams.get('webhook') === '1') return await webhook(req); if (req.method !== 'POST') return json({ ok: false, error: 'Method not allowed' }, 405);
     const body = await req.json(); if (body.action === 'start') return json(await start(body.phone, body.mode || 'login', body.full_name, body.role)); if (body.action === 'verify') return json(await verify(body.request_token, body.code)); return json({ ok: false, error: 'إجراء غير معروف' }, 400);
   } catch (error) {
-    console.error(error); const message = error instanceof Error ? error.message : String(error); const status = /مرتبط بحساب|مرتبط بحساب آخر|غير صحيح|غير موجود|انتهت|تجاوز|يجب أن|افتح Telegram|مطلوب|نوع الحساب|استخدام الحساب المرتبط/.test(message) ? 400 : 500; return json({ ok: false, error: message }, status);
+    console.error(error); const message = error instanceof Error ? error.message : String(error); const status = message === TELEGRAM_LINKED_MESSAGE || /مرتبط بحساب آخر|هذا الرقم مرتبط/.test(message) ? 400 : (/غير صحيح|غير موجود|انتهت|تجاوز|يجب أن|افتح Telegram|مطلوب|نوع الحساب/.test(message) ? 400 : 500); return json({ ok: false, error: message }, status);
   }
 });
