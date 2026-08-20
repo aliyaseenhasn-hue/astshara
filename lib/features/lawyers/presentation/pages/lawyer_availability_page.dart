@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:astshara/core/config/supabase_config.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/utils/app_time_format.dart';
@@ -167,12 +166,7 @@ class _LawyerAvailabilityPageState extends ConsumerState<LawyerAvailabilityPage>
     final lawyerId = await _profileId();
     if (lawyerId == null) return;
     try {
-      await SupabaseConfig.client.from('lawyer_availability_slots').insert({
-        'lawyer_id': lawyerId,
-        'starts_at': start.toUtc().toIso8601String(),
-        'ends_at': start.add(const Duration(minutes: 30)).toUtc().toIso8601String(),
-        'is_available': true,
-      });
+      await SupabaseConfig.client.from('lawyer_availability_slots').insert({'lawyer_id': lawyerId, 'starts_at': start.toUtc().toIso8601String(), 'ends_at': start.add(const Duration(minutes: 30)).toUtc().toIso8601String(), 'is_available': true});
       if (mounted) _refresh();
     } catch (e) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('تعذر إضافة الموعد: $e'), backgroundColor: AppColors.error));
@@ -183,7 +177,6 @@ class _LawyerAvailabilityPageState extends ConsumerState<LawyerAvailabilityPage>
     final scheme = Theme.of(context).colorScheme;
     final start = DateTime.tryParse(slot['starts_at']?.toString() ?? '')?.toLocal();
     if (start == null) return const SizedBox.shrink();
-
     final isPast = start.isBefore(DateTime.now());
     final available = slot['is_available'] == true;
     final bookingId = slot['booking_id']?.toString();
@@ -193,7 +186,6 @@ class _LawyerAvailabilityPageState extends ConsumerState<LawyerAvailabilityPage>
     final submitting = isBooked && _submittingCancellationBookings.contains(bookingId);
     final statusText = isPast ? 'موعد سابق' : (isBooked ? 'محجوز' : (isBlocked ? 'غير متاح' : 'متاح للحجز'));
     final statusColor = isPast ? scheme.onSurfaceVariant : (isBooked ? AppColors.warning : (isBlocked ? scheme.onSurfaceVariant : AppColors.success));
-
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       child: Padding(
