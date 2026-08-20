@@ -225,7 +225,7 @@ class _SuggestedLawyerCard extends StatelessWidget {
                   const SizedBox(height: 4),
                   Text(specialization, textAlign: TextAlign.right, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 11)),
                   const SizedBox(height: 7),
-                  Row(mainAxisAlignment: MainAxisAlignment.end, children: [const Icon(Icons.star_rounded, color: AppColors.gold, size: 15), const SizedBox(width: 3), Text(lawyer.rating.toStringAsFixed(1), style: TextStyle(color: scheme.onSurface, fontWeight: FontWeight.w700, fontSize: 11)), const SizedBox(width: 7), Text('${lawyer.reviewCount} استشارة', style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 10))]),
+                  Row(mainAxisAlignment: MainAxisAlignment.end, children: [const Icon(Icons.star_rounded, color: AppColors.gold, size: 15), const SizedBox(width: 3), Text(lawyer.rating.toStringAsFixed(1), style: TextStyle(color: scheme.onSurface, fontWeight: FontWeight.w700, fontSize: 11)), const SizedBox(width: 7), Text('التقييم', style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 10))]),
                 ]),
               ),
               const SizedBox(width: 8),
