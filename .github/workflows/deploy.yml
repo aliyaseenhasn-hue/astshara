@@ -112,7 +112,8 @@ jobs:
           test -f build/web/manifest.json
           test -f build/web/icons/Icon-192.png
           test -f build/web/icons/Icon-512.png
-          test -f build/web/pwa_service_worker.js
+          test -f build/web/pwa_service_worker_v5.js
+          grep -q "pwa_service_worker_v5.js" build/web/index.html
           echo "Flutter Web build verified:"
           du -sh build/web
           find build/web -maxdepth 2 -type f | sort | head -80
