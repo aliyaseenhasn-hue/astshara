@@ -11,21 +11,15 @@ class AuthRepositoryImpl implements AuthRepository {
   bool _isListening = false;
   Future<AppUser?>? _currentUserFuture;
 
-  AuthRepositoryImpl(this._supabase) {
-    _setupAuthListener();
-  }
+  AuthRepositoryImpl(this._supabase) { _setupAuthListener(); }
 
   void _setupAuthListener() {
     if (_isListening) return;
     _isListening = true;
     _supabase.auth.onAuthStateChange.listen((data) async {
       final user = data.session?.user;
-      if (user == null) {
-        _userStateController.add(null);
-      } else {
-        final currentUser = await getCurrentUser();
-        _userStateController.add(currentUser);
-      }
+      if (user == null) { _userStateController.add(null); }
+      else { _userStateController.add(await getCurrentUser()); }
     });
   }
 
@@ -33,11 +27,7 @@ class AuthRepositoryImpl implements AuthRepository {
   Future<AppUser?> getCurrentUser() async {
     if (_currentUserFuture != null) return _currentUserFuture;
     _currentUserFuture = _getCurrentUserInternal();
-    try {
-      return await _currentUserFuture;
-    } finally {
-      _currentUserFuture = null;
-    }
+    try { return await _currentUserFuture; } finally { _currentUserFuture = null; }
   }
 
   Future<AppUser?> _getCurrentUserInternal() async {
@@ -46,26 +36,21 @@ class AuthRepositoryImpl implements AuthRepository {
     try {
       final profileResponse = await _supabase.from('profiles').select().eq('auth_id', user.id).maybeSingle();
       if (profileResponse == null) {
-        debugPrint('Profile not found in database for user_id: ${user.id}');
         return AppUser(id: user.id, email: user.email, fullName: user.userMetadata?['full_name'] as String?, phone: user.phone, role: 'user', isOnboardingComplete: false);
       }
       bool isVerified = false;
       bool hasProfessionalProfile = false;
-      final dynamic roleValue = profileResponse['role'];
-      final String roleStr = (roleValue is String) ? roleValue : (roleValue?.toString() ?? 'user');
+      final roleValue = profileResponse['role'];
+      final roleStr = roleValue is String ? roleValue : (roleValue?.toString() ?? 'user');
       if (roleStr == 'lawyer') {
         final profileId = profileResponse['id'] as String;
         final lawyerResponse = await _supabase.from('lawyer_profiles').select('verified').eq('profile_id', profileId).maybeSingle();
-        if (lawyerResponse != null) {
-          isVerified = lawyerResponse['verified'] == true;
-          hasProfessionalProfile = true;
-        }
+        if (lawyerResponse != null) { isVerified = lawyerResponse['verified'] == true; hasProfessionalProfile = true; }
       }
       final appUser = AppUserModel.fromJson(profileResponse).toEntity();
-      final bool isOnboarded = profileResponse['onboarding_completed'] == true;
-      return appUser.copyWith(isVerified: isVerified, hasProfessionalProfile: hasProfessionalProfile, isOnboardingComplete: isOnboarded);
+      return appUser.copyWith(isVerified: isVerified, hasProfessionalProfile: hasProfessionalProfile, isOnboardingComplete: profileResponse['onboarding_completed'] == true);
     } catch (e) {
-      debugPrint('Error fetching user profile from DB: $e');
+      debugPrint('Error fetching user profile: $e');
       return AppUser(id: user.id, email: user.email, phone: user.phone, fullName: user.userMetadata?['full_name'] as String?, role: (user.userMetadata?['role'] as String?) ?? 'user');
     }
   }
@@ -91,21 +76,21 @@ class AuthRepositoryImpl implements AuthRepository {
 
   @override
   Future<void> signInWithGoogle() async {
-    try {
-      String redirectUrl = 'io.supabase.astshara://login-callback';
-      if (kIsWeb) {
-        final String currentUri = Uri.base.origin + Uri.base.path;
-        redirectUrl = currentUri;
-        debugPrint('🌐 Web Auth Redirect URL: $redirectUrl');
-      }
-      await _supabase.auth.signInWithOAuth(OAuthProvider.google, redirectTo: redirectUrl, queryParams: {'prompt': 'select_account'});
-    } on AuthException catch (e) {
-      debugPrint('Google OAuth AuthException: ${e.message}');
-      rethrow;
-    } catch (e) {
-      debugPrint('Unexpected Google OAuth error: $e');
-      rethrow;
-    }
+    String redirectUrl = 'io.supabase.astshara://login-callback';
+    if (kIsWeb) redirectUrl = Uri.base.origin + Uri.base.path;
+    await _supabase.auth.signInWithOAuth(OAuthProvider.google, redirectTo: redirectUrl, queryParams: {'prompt': 'select_account'});
+  }
+
+  @override
+  Future<void> signInWithTelegram() async {
+    String redirectUrl = 'io.supabase.astshara://login-callback';
+    if (kIsWeb) redirectUrl = Uri.base.origin + Uri.base.path;
+    await _supabase.auth.signInWithOAuth(
+      OAuthProvider('custom:telegram'),
+      redirectTo: redirectUrl,
+      scopes: 'openid profile phone',
+      authScreenLaunchMode: LaunchMode.externalApplication,
+    );
   }
 
   @override
@@ -118,43 +103,24 @@ class AuthRepositoryImpl implements AuthRepository {
     final data = <String, dynamic>{};
     if (fullName != null && fullName.trim().isNotEmpty) data['full_name'] = fullName.trim();
     if (email != null && email.trim().isNotEmpty) data['email'] = email.trim();
-    if (role != null && role.trim().isNotEmpty) {
-      final requestedRole = role.trim().toLowerCase();
-      if (requestedRole == 'lawyer' || requestedRole == 'user') data['role'] = requestedRole;
-    }
+    if (role != null && (role == 'lawyer' || role == 'user')) data['role'] = role;
     if (avatarUrl != null && avatarUrl.trim().isNotEmpty) data['avatar_url'] = avatarUrl.trim();
     if (onboardingCompleted != null) data['onboarding_completed'] = onboardingCompleted;
     if (walletNumber != null) data['wallet_number'] = walletNumber.trim();
     if (data.isEmpty) return;
-    try {
-      await _supabase.from('profiles').upsert({...data, 'auth_id': user.id, 'id': user.id, 'updated_at': DateTime.now().toIso8601String()}, onConflict: 'auth_id');
-      await refreshUser();
-    } on PostgrestException catch (e) {
-      debugPrint('❌ خطأ Supabase: ${e.message}');
-      rethrow;
-    } catch (e) {
-      debugPrint('❌ خطأ غير متوقع: $e');
-      rethrow;
-    }
+    await _supabase.from('profiles').upsert({...data, 'auth_id': user.id, 'id': user.id, 'updated_at': DateTime.now().toIso8601String()}, onConflict: 'auth_id');
+    await refreshUser();
   }
 
   @override
-  Future<void> refreshUser() async {
-    final user = _supabase.auth.currentUser;
-    if (user == null) return;
-    _userStateController.add(await getCurrentUser());
-  }
+  Future<void> refreshUser() async { if (_supabase.auth.currentUser != null) _userStateController.add(await getCurrentUser()); }
 
   @override
   Future<void> deleteAccount() async {
     final user = _supabase.auth.currentUser;
     if (user == null) return;
     await _supabase.from('profiles').delete().eq('auth_id', user.id);
-    try {
-      await _supabase.rpc('delete_user_account');
-    } catch (e) {
-      debugPrint('RPC delete failed: $e');
-    }
+    try { await _supabase.rpc('delete_user_account'); } catch (e) { debugPrint('RPC delete failed: $e'); }
     await signOut();
   }
 
