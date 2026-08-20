@@ -148,63 +148,74 @@ class _CreateBookingPageState extends ConsumerState<CreateBookingPage> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    final dark = Theme.of(context).brightness == Brightness.dark;
-    final state = ref.watch(bookingsControllerProvider);
-    final slotsAsync = ref.watch(availableSlotsProvider(widget.lawyer.profileId));
-    final user = ref.watch(authStateChangesProvider).value;
-    final whatsappAsync = ref.watch(currentUserWhatsAppProvider);
+Widget build(BuildContext context) {
+  final scheme = Theme.of(context).colorScheme;
+  final dark = Theme.of(context).brightness == Brightness.dark;
+  final state = ref.watch(bookingsControllerProvider);
+  final slotsAsync =
+      ref.watch(availableSlotsProvider(widget.lawyer.profileId));
+  final user = ref.watch(authStateChangesProvider).value;
+  final whatsappAsync = ref.watch(currentUserWhatsAppProvider);
 
-    return Scaffold(
-      backgroundColor: scheme.surface,
-      appBar: AppBar(
-        title: const Text('طلب استشارة'),
-        leading: IconButton(
-          onPressed: () => context.pop(),
-          icon: const Icon(Icons.arrow_forward_rounded),
-        ),
+  return Scaffold(
+    backgroundColor: scheme.surface,
+    appBar: AppBar(
+      title: const Text('طلب استشارة'),
+      leading: IconButton(
+        onPressed: () => context.pop(),
+        icon: const Icon(Icons.arrow_forward_rounded),
       ),
-      body: Form(
-        key: _formKey,
-        child: Column(
-          children: [
-            _ProgressHeader(step: _step, dark: dark),
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(20, 8, 20, 32),
-                child: Column(
-                  children: [
-                    _LawyerSummary(lawyer: widget.lawyer),
-                    const SizedBox(height: 18),
-                    AnimatedSwitcher(
-                      duration: const Duration(milliseconds: 220),
-                      child: KeyedSubtree(
-                        key: ValueKey(_step),
-                        child: _stepContent(
-                          scheme,
-                          slotsAsync,
-                          user,
-                          whatsappAsync,
-                        ),
+    ),
+
+    // محتوى الخطوات
+    body: Form(
+      key: _formKey,
+      child: Column(
+        children: [
+          _ProgressHeader(
+            step: _step,
+            dark: dark,
+          ),
+          Expanded(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(20, 8, 20, 32),
+              child: Column(
+                children: [
+                  _LawyerSummary(
+                    lawyer: widget.lawyer,
+                  ),
+                  const SizedBox(height: 18),
+                  AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 220),
+                    child: KeyedSubtree(
+                      key: ValueKey(_step),
+                      child: _stepContent(
+                        scheme,
+                        slotsAsync,
+                        user,
+                        whatsappAsync,
                       ),
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ),
-            _BottomActions(
-              step: _step,
-              loading: state.isLoading,
-              onContinue: _next,
-              onBack: _step == 0 ? null : () => setState(() => _step--),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
-    );
-  }
+    ),
 
+    // مثبت أسفل الشاشة في جميع الخطوات
+    bottomNavigationBar: _BottomActions(
+      step: _step,
+      loading: state.isLoading,
+      onContinue: _next,
+      onBack: _step == 0
+          ? null
+          : () => setState(() => _step--),
+    ),
+  );
+}
   Widget _stepContent(
     ColorScheme scheme,
     AsyncValue<List<AvailableBookingSlot>> slotsAsync,
