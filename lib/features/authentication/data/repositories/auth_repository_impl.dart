@@ -97,8 +97,32 @@ class AuthRepositoryImpl implements AuthRepository {
     if (result.data is! Map) throw Exception('تعذر التحقق من الرمز');
     final data = Map<String, dynamic>.from(result.data as Map);
     if (data['ok'] != true) throw Exception(data['error'] ?? 'رمز التحقق غير صحيح');
-    await signInWithEmail(email: data['syntheticEmail'] as String, password: data['password'] as String);
-    return data;
+
+    // Telegram verification now returns a real Supabase session. Do not perform
+    // a second password login: that path caused failures for existing accounts.
+    final accessToken = data['access_token'];
+    final refreshToken = data['refresh_token'];
+    if (accessToken is String && accessToken.isNotEmpty && refreshToken is String && refreshToken.isNotEmpty) {
+      await _supabase.auth.setSession(refreshToken);
+      final current = _supabase.auth.currentSession;
+      if (current == null || current.accessToken != accessToken) {
+        // Supabase may rotate the access token while setting the session; the
+        // refresh token establishes the authoritative persisted session.
+        await _supabase.auth.refreshSession();
+      }
+      await refreshUser();
+      return data;
+    }
+
+    // Backward compatibility for an older function version only.
+    final syntheticEmail = data['syntheticEmail'];
+    final password = data['password'];
+    if (syntheticEmail is String && syntheticEmail.isNotEmpty && password is String && password.isNotEmpty) {
+      await signInWithEmail(email: syntheticEmail, password: password);
+      return data;
+    }
+
+    throw Exception('تم التحقق من Telegram لكن تعذر إنشاء جلسة الدخول');
   }
 
   @override
