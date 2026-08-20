@@ -19,6 +19,7 @@ class LoginPage extends ConsumerStatefulWidget {
 class _LoginPageState extends ConsumerState<LoginPage> {
   final _formKey = GlobalKey<FormState>();
   final _phoneController = TextEditingController();
+  bool _telegramStarting = false;
 
   @override
   void dispose() { _phoneController.dispose(); super.dispose(); }
@@ -32,7 +33,8 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   }
 
   Future<void> _telegramLogin() async {
-    if (!(_formKey.currentState?.validate() ?? false)) return;
+    if (_telegramStarting || !(_formKey.currentState?.validate() ?? false)) return;
+    setState(() => _telegramStarting = true);
     try {
       final phone = _normalizePhone();
       final data = await ref.read(authControllerProvider.notifier).startTelegramLogin(phone);
@@ -46,6 +48,8 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString().replaceFirst('Exception: ', '')), backgroundColor: Theme.of(context).colorScheme.error));
+    } finally {
+      if (mounted) setState(() => _telegramStarting = false);
     }
   }
 
@@ -128,12 +132,12 @@ class _LoginPageState extends ConsumerState<LoginPage> {
               const SizedBox(height: 9),
               TextFormField(controller: _phoneController, keyboardType: TextInputType.phone, textDirection: TextDirection.ltr, style: TextStyle(color: scheme.onSurface, fontSize: 17, fontWeight: FontWeight.w600), decoration: InputDecoration(hintText: '07xxxxxxxx', prefixIcon: Icon(Icons.phone_android_rounded, color: accent), filled: true, fillColor: scheme.surfaceContainerLow, border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: scheme.outlineVariant)), enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: scheme.outlineVariant)), focusedBorder: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(12)), borderSide: BorderSide(color: AppColors.primary, width: 2))), validator: (value) => value == null || value.trim().isEmpty ? 'رقم الهاتف مطلوب' : null),
               const SizedBox(height: 16),
-              if (state.isLoading) const LoadingWidget() else SizedBox(height: 54, child: ElevatedButton.icon(onPressed: _telegramLogin, icon: const Icon(Icons.send_rounded), label: const Text('الحصول على الرمز عبر Telegram', style: TextStyle(fontWeight: FontWeight.w800)))),
+              SizedBox(height: 54, child: ElevatedButton.icon(onPressed: (_telegramStarting || state.isLoading) ? null : _telegramLogin, icon: _telegramStarting ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)) : const Icon(Icons.send_rounded), label: Text(_telegramStarting ? 'جارٍ فتح Telegram...' : 'الحصول على الرمز عبر Telegram', style: const TextStyle(fontWeight: FontWeight.w800)))),
               const SizedBox(height: 10),
               Text('سيتم فتح Telegram تلقائياً. اضغط «بدء» أو أرسل رسالة للبوت ليصلك الرمز.', textAlign: TextAlign.center, style: TextStyle(fontSize: 11, color: scheme.onSurfaceVariant, height: 1.5)),
             ])),
             const SizedBox(height: 18),
-            OutlinedButton.icon(onPressed: state.isLoading ? null : () => ref.read(authControllerProvider.notifier).signInWithGoogle(), icon: const Icon(Icons.g_mobiledata_rounded, size: 30, color: AppColors.primary), label: const Text('المتابعة باستخدام Google')),
+            OutlinedButton.icon(onPressed: state.isLoading || _telegramStarting ? null : () => ref.read(authControllerProvider.notifier).signInWithGoogle(), icon: const Icon(Icons.g_mobiledata_rounded, size: 30, color: AppColors.primary), label: const Text('المتابعة باستخدام Google')),
             const SizedBox(height: 22),
             Text('باستمرارك، أنت توافق على شروط الاستخدام وسياسة الخصوصية.', textAlign: TextAlign.center, style: TextStyle(fontSize: 10.5, color: scheme.onSurfaceVariant, height: 1.55)),
           ]))))),
