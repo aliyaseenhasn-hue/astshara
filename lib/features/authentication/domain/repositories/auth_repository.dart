@@ -9,7 +9,7 @@ abstract class AuthRepository {
   Future<void> verifyOTP({required String phone, required String token});
   Future<void> signInWithGoogle();
   Future<void> signInWithTelegram();
-  Future<Map<String, dynamic>> startTelegramLogin(String phone);
+  Future<Map<String, dynamic>> startTelegramLogin(String phone, {bool registration = false});
   Future<Map<String, dynamic>> verifyTelegramLogin({required String requestToken, required String code});
   Future<void> updateProfile({String? fullName, String? email, String? role, String? avatarUrl, bool? onboardingCompleted, String? walletNumber});
   Future<void> refreshUser();
