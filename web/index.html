@@ -12,45 +12,29 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="استشارة">
   <meta name="format-detection" content="telephone=no">
-
   <link rel="apple-touch-icon" href="icons/Icon-192.png">
   <link rel="apple-touch-icon" sizes="180x180" href="icons/Icon-192.png">
   <link rel="icon" type="image/png" href="favicon.png">
   <link rel="manifest" href="manifest.json">
-
   <title>استشارة</title>
-
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-
   <style>
     :root { color-scheme: light dark; }
     html, body {
-      margin: 0;
-      padding: 0;
-      width: 100%;
-      height: 100%;
-      min-height: 100%;
-      background: #0B172A;
-      direction: rtl;
-      overflow: hidden;
-      overscroll-behavior: none;
+      margin: 0; padding: 0; width: 100%; height: 100%; min-height: 100%;
+      background: #0B172A; direction: rtl; overflow: hidden; overscroll-behavior: none;
     }
     body {
-      font-family: 'Cairo', sans-serif;
-      -webkit-font-smoothing: antialiased;
-      text-rendering: optimizeLegibility;
-      -webkit-tap-highlight-color: transparent;
+      font-family: 'Cairo', sans-serif; -webkit-font-smoothing: antialiased;
+      text-rendering: optimizeLegibility; -webkit-tap-highlight-color: transparent;
       touch-action: manipulation;
     }
   </style>
 </head>
 <body>
   <script>
-    // Keep the HTML viewport and Flutter pointer coordinate space identical
-    // in iOS standalone/PWA mode. Do not add safe-area padding or viewport
-    // transforms here; Flutter handles its own insets.
     (function () {
       function syncViewportHeight() {
         var height = window.visualViewport ? window.visualViewport.height : window.innerHeight;
@@ -71,7 +55,6 @@
       if (!('serviceWorker' in navigator) || !('PushManager' in window) || !('Notification' in window)) return null;
       const permission = await Notification.requestPermission();
       if (permission !== 'granted') return null;
-
       const registration = await navigator.serviceWorker.ready;
       let subscription = await registration.pushManager.getSubscription();
       if (!subscription) {
@@ -93,7 +76,8 @@
 
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('pwa_service_worker.js', { scope: './' })
+        // Versioned filename forces installed PWAs to replace the stale v4 worker.
+        navigator.serviceWorker.register('pwa_service_worker_v5.js', { scope: './' })
           .catch((error) => console.warn('PWA service worker registration failed:', error));
       });
     }
