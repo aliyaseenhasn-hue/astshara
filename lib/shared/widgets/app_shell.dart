@@ -61,6 +61,7 @@ class AppShell extends ConsumerWidget {
     final user = ref.watch(authStateChangesProvider).valueOrNull;
     final isLawyer = user?.role == 'lawyer';
     final isCreateBooking = location == '/create-booking';
+    final isLawyerDetails = location.startsWith('/lawyer-details/');
 
     return Scaffold(
       backgroundColor: scheme.surface,
@@ -68,10 +69,10 @@ class AppShell extends ConsumerWidget {
         color: scheme.surface,
         child: child,
       ),
-      // صفحة إنشاء الحجز تحتوي على شريط إجراءات خاص بها في
-      // CreateBookingPage.bottomNavigationBar. إخفاء شريط التطبيق
-      // هنا يمنع تداخل الشريطين داخل الـShellRoute، خصوصاً في PWA.
-      bottomNavigationBar: isCreateBooking
+      // صفحات الحجز وملف المحامي تحتوي على إجراءات سفلية خاصة بها.
+      // إظهار شريط التنقل العام معها يسبب تداخل الأزرار ويغطي المحتوى،
+      // خصوصاً على iOS/PWA.
+      bottomNavigationBar: isCreateBooking || isLawyerDetails
           ? null
           : MainBottomNav(
               currentIndex: _currentIndex(isLawyer),
