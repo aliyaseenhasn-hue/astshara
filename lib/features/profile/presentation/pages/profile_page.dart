@@ -20,13 +20,13 @@ class ProfilePage extends ConsumerWidget {
     if (user == null) return Scaffold(backgroundColor: scheme.surface, body: Center(child: Text('يرجى تسجيل الدخول', style: TextStyle(color: scheme.onSurface))));
 
     return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF101314) : const Color(0xFFF7F8F8),
+      backgroundColor: scheme.surface,
       body: CustomScrollView(slivers: [
         SliverAppBar(
           expandedHeight: 275,
           pinned: true,
           elevation: 0,
-          backgroundColor: isDark ? const Color(0xFF101314) : scheme.surface,
+          backgroundColor: scheme.surface,
           foregroundColor: scheme.onSurface,
           title: const Text('الملف الشخصي', style: TextStyle(fontWeight: FontWeight.w800)),
           centerTitle: true,
@@ -46,7 +46,7 @@ class ProfilePage extends ConsumerWidget {
           ]),
           const SizedBox(height: 22),
           _section(context, 'الدعم والحساب', [
-            _tile(context, Icons.privacy_tip_outlined, 'سياسة الخصوصية', 'شروط حماية بياناتك', () {}),
+            _tile(context, Icons.privacy_tip_outlined, 'سياسة الخصوصية', 'مراجعة سياسة حماية البيانات', () => _showPrivacyPolicy(context)),
             Card(elevation: 0, margin: const EdgeInsets.only(bottom: 10), color: scheme.surface, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(17), side: BorderSide(color: scheme.outlineVariant)), child: ListTile(contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 3), leading: _iconBox(context, Icons.logout_rounded, danger: true), title: const Text('تسجيل الخروج', style: TextStyle(color: AppColors.error, fontWeight: FontWeight.w800)), onTap: () => _logout(context, ref))),
             Center(child: TextButton.icon(onPressed: () => _showDeleteConfirmation(context, ref), icon: Icon(Icons.delete_outline_rounded, color: scheme.onSurfaceVariant, size: 18), label: Text('حذف الحساب نهائياً', style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 12)))),
           ]),
@@ -58,7 +58,8 @@ class ProfilePage extends ConsumerWidget {
   }
 
   Widget _profileHero({required dynamic user, required bool isDark, required VoidCallback onAvatar, required VoidCallback onEdit}) => Builder(builder: (context) {
-    return Container(decoration: BoxDecoration(gradient: LinearGradient(begin: Alignment.topRight, end: Alignment.bottomLeft, colors: isDark ? [const Color(0xFF1C2425), const Color(0xFF101314)] : [AppColors.secondary, AppColors.secondaryDark])), child: Center(child: Column(mainAxisAlignment: MainAxisAlignment.end, children: [
+    final scheme = Theme.of(context).colorScheme;
+    return Container(decoration: BoxDecoration(gradient: LinearGradient(begin: Alignment.topRight, end: Alignment.bottomLeft, colors: isDark ? [const Color(0xFF1C2425), const Color(0xFF101314)] : [AppColors.primary, AppColors.primaryContainer])), child: Center(child: Column(mainAxisAlignment: MainAxisAlignment.end, children: [
       Stack(children: [Container(padding: const EdgeInsets.all(3), decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle), child: CircleAvatar(radius: 49, backgroundColor: AppColors.surfaceVariant, backgroundImage: user.avatarUrl != null && user.avatarUrl!.isNotEmpty ? NetworkImage(user.avatarUrl!) : null, child: user.avatarUrl == null || user.avatarUrl!.isEmpty ? const Icon(Icons.person_rounded, size: 52, color: AppColors.primary) : null)), Positioned(bottom: 0, right: 0, child: Material(color: AppColors.gold, shape: const CircleBorder(), child: InkWell(onTap: onAvatar, customBorder: const CircleBorder(), child: const Padding(padding: EdgeInsets.all(9), child: Icon(Icons.camera_alt_rounded, size: 16, color: AppColors.secondaryDark)))))]),
       const SizedBox(height: 12),
       InkWell(onTap: onEdit, borderRadius: BorderRadius.circular(12), child: Padding(padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4), child: Row(mainAxisSize: MainAxisSize.min, children: [Text(user.fullName ?? 'مستخدم', style: const TextStyle(color: Colors.white, fontSize: 21, fontWeight: FontWeight.w900)), const SizedBox(width: 8), const Icon(Icons.edit_rounded, size: 15, color: AppColors.gold)]))),
@@ -69,6 +70,51 @@ class ProfilePage extends ConsumerWidget {
   Widget _section(BuildContext context, String title, List<Widget> children) { final scheme = Theme.of(context).colorScheme; return Column(crossAxisAlignment: CrossAxisAlignment.end, children: [Padding(padding: const EdgeInsetsDirectional.only(end: 6, bottom: 9), child: Text(title, textAlign: TextAlign.right, style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 13, fontWeight: FontWeight.w800))), ...children]); }
   Widget _iconBox(BuildContext context, IconData icon, {bool danger = false}) { final scheme = Theme.of(context).colorScheme; return Container(width: 42, height: 42, alignment: Alignment.center, decoration: BoxDecoration(color: danger ? AppColors.error.withValues(alpha: .10) : scheme.surfaceContainerHighest, borderRadius: BorderRadius.circular(13)), child: Icon(icon, color: danger ? AppColors.error : scheme.primary, size: 21)); }
   Widget _tile(BuildContext context, IconData icon, String title, String subtitle, VoidCallback onTap) { final scheme = Theme.of(context).colorScheme; return Card(elevation: 0, margin: const EdgeInsets.only(bottom: 10), color: scheme.surface, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(17), side: BorderSide(color: scheme.outlineVariant)), child: ListTile(contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 3), leading: _iconBox(context, icon), title: Text(title, textAlign: TextAlign.right, style: TextStyle(color: scheme.onSurface, fontWeight: FontWeight.w700)), subtitle: Text(subtitle, textAlign: TextAlign.right, style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 11)), trailing: Icon(Icons.chevron_left_rounded, color: scheme.onSurfaceVariant), onTap: onTap)); }
+
+  void _showPrivacyPolicy(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      backgroundColor: scheme.surface,
+      builder: (sheetContext) => DraggableScrollableSheet(
+        expand: false,
+        initialChildSize: .78,
+        minChildSize: .55,
+        maxChildSize: .94,
+        builder: (_, controller) => ListView(
+          controller: controller,
+          padding: const EdgeInsets.fromLTRB(20, 8, 20, 28),
+          children: [
+            Text('سياسة الخصوصية', textAlign: TextAlign.right, style: TextStyle(color: scheme.primary, fontSize: 22, fontWeight: FontWeight.w900)),
+            const SizedBox(height: 14),
+            _privacySection(context, 'البيانات التي نجمعها', 'قد تشمل الاسم ورقم الهاتف وواتساب والمدينة وبيانات الحساب وصورة الملف الشخصي وبيانات الحجوزات والملفات التي يختار المستخدم رفعها.'),
+            _privacySection(context, 'لماذا نستخدمها؟', 'لتشغيل الحسابات والحجوزات والاستشارات والمدفوعات والتواصل والإشعارات ومنع إساءة استخدام المنصة.'),
+            _privacySection(context, 'مشاركة البيانات', 'تظهر بيانات التواصل المرتبطة بالاستشارة وفق حالة الحجز والصلاحيات المعتمدة في التطبيق، وقد تُشارك البيانات التقنية اللازمة مع مزودي الخدمات الذين تعتمد عليهم المنصة.'),
+            _privacySection(context, 'حذف الحساب', 'يمكن طلب حذف الحساب من داخل التطبيق، مع الاحتفاظ بما يلزم قانونياً أو تشغيلياً من السجلات المرتبطة بالحجوزات والمدفوعات والنزاعات.'),
+            _privacySection(context, 'التحديثات', 'قد تتغير هذه السياسة عند إضافة وظائف أو متطلبات جديدة، وسيتم نشر النسخة المحدثة داخل التطبيق.'),
+            const SizedBox(height: 6),
+            Text('يجب اعتماد الصياغة القانونية النهائية لهذه السياسة قبل الإطلاق التجاري.', textAlign: TextAlign.right, style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 11, height: 1.6)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _privacySection(BuildContext context, String title, String body) {
+    final scheme = Theme.of(context).colorScheme;
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.all(15),
+      decoration: BoxDecoration(color: scheme.surfaceContainerLowest, borderRadius: BorderRadius.circular(15), border: Border.all(color: scheme.outlineVariant)),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
+        Text(title, textAlign: TextAlign.right, style: TextStyle(color: scheme.primary, fontWeight: FontWeight.w800)),
+        const SizedBox(height: 5),
+        Text(body, textAlign: TextAlign.right, style: TextStyle(color: scheme.onSurface, fontSize: 12, height: 1.6)),
+      ]),
+    );
+  }
 
   Future<void> _updateAvatar(BuildContext context, WidgetRef ref) async { try { final picker = ImagePicker(); final image = await picker.pickImage(source: ImageSource.gallery, imageQuality: 80, maxWidth: 1200); if (image == null) return; final bytes = await image.readAsBytes(); final user = ref.read(authStateChangesProvider).value; if (user == null) return; final ext = image.name.split('.').last.toLowerCase(); final contentType = switch (ext) {'png' => 'image/png', 'webp' => 'image/webp', _ => 'image/jpeg'}; final path = '${user.id}/profile_${DateTime.now().millisecondsSinceEpoch}.$ext'; await SupabaseConfig.client.storage.from('avatars').uploadBinary(path, bytes, fileOptions: FileOptions(upsert: true, contentType: contentType)); final url = SupabaseConfig.client.storage.from('avatars').getPublicUrl(path); await SupabaseConfig.client.from('profiles').update({'avatar_url': url}).eq('auth_id', user.id); await ref.read(authRepositoryProvider).refreshUser(); if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تم تحديث الصورة الشخصية'))); } catch (e) { if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('تعذر تحديث الصورة: ${e.toString().replaceFirst('Exception: ', '')}'), backgroundColor: AppColors.error)); } }
 
