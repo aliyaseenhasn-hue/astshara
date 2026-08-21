@@ -178,7 +178,7 @@ Widget build(BuildContext context) {
           ),
           Expanded(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(20, 8, 20, 32),
+              padding: const EdgeInsets.fromLTRB(20, 8, 20, 112),
               child: Column(
                 children: [
                   _LawyerSummary(
@@ -205,14 +205,21 @@ Widget build(BuildContext context) {
       ),
     ),
 
-    // مثبت أسفل الشاشة في جميع الخطوات
-    bottomNavigationBar: _BottomActions(
-      step: _step,
-      loading: state.isLoading,
-      onContinue: _next,
-      onBack: _step == 0
-          ? null
-          : () => setState(() => _step--),
+    // زر الإجراء مثبت فوق المحتوى حتى يبقى ظاهراً في جميع الخطوات.
+    floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
+    floatingActionButton: SafeArea(
+      minimum: const EdgeInsets.only(bottom: 8),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20),
+        child: _BottomActions(
+          step: _step,
+          loading: state.isLoading,
+          onContinue: _next,
+          onBack: _step == 0
+              ? null
+              : () => setState(() => _step--),
+        ),
+      ),
     ),
   );
 }
