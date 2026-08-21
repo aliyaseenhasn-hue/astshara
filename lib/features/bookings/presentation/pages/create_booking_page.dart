@@ -148,81 +148,73 @@ class _CreateBookingPageState extends ConsumerState<CreateBookingPage> {
   }
 
   @override
-Widget build(BuildContext context) {
-  final scheme = Theme.of(context).colorScheme;
-  final dark = Theme.of(context).brightness == Brightness.dark;
-  final state = ref.watch(bookingsControllerProvider);
-  final slotsAsync =
-      ref.watch(availableSlotsProvider(widget.lawyer.profileId));
-  final user = ref.watch(authStateChangesProvider).value;
-  final whatsappAsync = ref.watch(currentUserWhatsAppProvider);
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final dark = Theme.of(context).brightness == Brightness.dark;
+    final state = ref.watch(bookingsControllerProvider);
+    final slotsAsync =
+        ref.watch(availableSlotsProvider(widget.lawyer.profileId));
+    final user = ref.watch(authStateChangesProvider).value;
+    final whatsappAsync = ref.watch(currentUserWhatsAppProvider);
 
-  return Scaffold(
-    backgroundColor: scheme.surface,
-    appBar: AppBar(
-      title: const Text('طلب استشارة'),
-      leading: IconButton(
-        onPressed: () => context.pop(),
-        icon: const Icon(Icons.arrow_forward_rounded),
-      ),
-    ),
-
-    // محتوى الخطوات
-    body: Form(
-      key: _formKey,
-      child: Column(
-        children: [
-          _ProgressHeader(
-            step: _step,
-            dark: dark,
-          ),
-          Expanded(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(20, 8, 20, 112),
-              child: Column(
-                children: [
-                  _LawyerSummary(
-                    lawyer: widget.lawyer,
-                  ),
-                  const SizedBox(height: 18),
-                  AnimatedSwitcher(
-                    duration: const Duration(milliseconds: 220),
-                    child: KeyedSubtree(
-                      key: ValueKey(_step),
-                      child: _stepContent(
-                        scheme,
-                        slotsAsync,
-                        user,
-                        whatsappAsync,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    ),
-
-    // زر الإجراء مثبت فوق المحتوى حتى يبقى ظاهراً في جميع الخطوات.
-    floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
-    floatingActionButton: SafeArea(
-      minimum: const EdgeInsets.only(bottom: 8),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 20),
-        child: _BottomActions(
-          step: _step,
-          loading: state.isLoading,
-          onContinue: _next,
-          onBack: _step == 0
-              ? null
-              : () => setState(() => _step--),
+    return Scaffold(
+      backgroundColor: scheme.surface,
+      appBar: AppBar(
+        title: const Text('طلب استشارة'),
+        leading: IconButton(
+          onPressed: () => context.pop(),
+          icon: const Icon(Icons.arrow_forward_rounded),
         ),
       ),
-    ),
-  );
-}
+      body: Form(
+        key: _formKey,
+        child: Column(
+          children: [
+            _ProgressHeader(step: _step, dark: dark),
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
+                child: Column(
+                  children: [
+                    _LawyerSummary(lawyer: widget.lawyer),
+                    const SizedBox(height: 18),
+                    AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 220),
+                      child: KeyedSubtree(
+                        key: ValueKey(_step),
+                        child: _stepContent(
+                          scheme,
+                          slotsAsync,
+                          user,
+                          whatsappAsync,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            Material(
+              color: AppColors.surface,
+              elevation: 8,
+              child: SafeArea(
+                top: false,
+                minimum: const EdgeInsets.fromLTRB(20, 10, 20, 12),
+                child: _BottomActions(
+                  step: _step,
+                  loading: state.isLoading,
+                  onContinue: _next,
+                  onBack: _step == 0
+                      ? null
+                      : () => setState(() => _step--),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
   Widget _stepContent(
     ColorScheme scheme,
     AsyncValue<List<AvailableBookingSlot>> slotsAsync,
@@ -996,40 +988,36 @@ class _BottomActions extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: AppColors.surface,
-      elevation: 4,
-      child: SafeArea(
-        top: false,
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(20, 12, 20, 12),
-          child: Row(
-            textDirection: TextDirection.rtl,
-            children: [
-              Expanded(
-                child: ElevatedButton.icon(
-                  onPressed: loading ? null : onContinue,
-                  icon: Icon(
-                    step == 3
-                        ? Icons.check_circle_outline_rounded
-                        : Icons.arrow_back_rounded,
-                  ),
-                  label: Text(
-                    step == 3 ? 'إرسال طلب الاستشارة' : 'متابعة',
-                  ),
-                ),
+    return Row(
+      textDirection: TextDirection.rtl,
+      children: [
+        Expanded(
+          child: SizedBox(
+            height: 54,
+            child: ElevatedButton.icon(
+              onPressed: loading ? null : onContinue,
+              icon: Icon(
+                step == 3
+                    ? Icons.check_circle_outline_rounded
+                    : Icons.arrow_back_rounded,
               ),
-              if (onBack != null) ...[
-                const SizedBox(width: 10),
-                OutlinedButton(
-                  onPressed: loading ? null : onBack,
-                  child: const Text('رجوع'),
-                ),
-              ],
-            ],
+              label: Text(
+                step == 3 ? 'إرسال طلب الاستشارة' : 'متابعة',
+              ),
+            ),
           ),
         ),
-      ),
+        if (onBack != null) ...[
+          const SizedBox(width: 10),
+          SizedBox(
+            height: 54,
+            child: OutlinedButton(
+              onPressed: loading ? null : onBack,
+              child: const Text('رجوع'),
+            ),
+          ),
+        ],
+      ],
     );
   }
 }
