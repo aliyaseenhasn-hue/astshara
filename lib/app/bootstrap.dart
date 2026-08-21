@@ -1,6 +1,7 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 import '../core/config/supabase_config.dart';
 import '../core/services/notification_service.dart';
 import '../core/services/realtime_notification_service.dart';
@@ -12,6 +13,11 @@ Future<ProviderContainer> bootstrap() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   try {
+    // تهيئة التخزين المحلي مبكراً حتى تستطيع الصفحات استخدام البيانات
+    // المحفوظة بدون إعادة تحميل كامل من الشبكة في كل تشغيل.
+    await Hive.initFlutter();
+    await Hive.openBox('app_cache');
+
     try {
       await dotenv.load(fileName: '.env');
     } catch (_) {
