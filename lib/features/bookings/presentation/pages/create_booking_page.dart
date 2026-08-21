@@ -15,12 +15,7 @@ class CreateBookingPage extends ConsumerStatefulWidget {
   final LawyerService? service;
   final bool isCustom;
 
-  const CreateBookingPage({
-    super.key,
-    required this.lawyer,
-    this.service,
-    this.isCustom = false,
-  });
+  const CreateBookingPage({super.key, required this.lawyer, this.service, this.isCustom = false});
 
   @override
   ConsumerState<CreateBookingPage> createState() => _CreateBookingPageState();
@@ -67,8 +62,6 @@ class _CreateBookingPageState extends ConsumerState<CreateBookingPage> {
           return false;
         }
         return true;
-      case 1:
-        return true;
       case 2:
         if (_selectedSlot == null) {
           _showMessage('يرجى اختيار موعد');
@@ -110,31 +103,24 @@ class _CreateBookingPageState extends ConsumerState<CreateBookingPage> {
       _showMessage('يرجى تسجيل الدخول أولاً');
       return;
     }
-
-    final type = widget.isCustom
-        ? _customConsultationTypeController.text.trim()
-        : _consultationType;
-
+    final type = widget.isCustom ? _customConsultationTypeController.text.trim() : _consultationType;
     final booking = await ref.read(bookingsControllerProvider.notifier).createBooking(
       lawyerId: widget.lawyer.profileId,
       serviceId: _package?.id,
       scheduledAt: _selectedSlot?.startsAt,
+      slotId: _selectedSlot?.id,
       consultationType: type,
       consultationMode: _consultationMode,
       description: _descriptionController.text.trim(),
       documentBytes: _fileBytes,
       documentName: _fileName,
     );
-
     if (!mounted) return;
     if (booking == null) {
       final error = ref.read(bookingsControllerProvider).error;
-      _showMessage(
-        error?.toString().replaceFirst('Exception: ', '') ?? 'تعذر إنشاء الحجز',
-      );
+      _showMessage(error?.toString().replaceFirst('Exception: ', '') ?? 'تعذر إنشاء الحجز');
       return;
     }
-
     await context.push(
       _consultationMode == 'في المكتب' ? '/booking-details' : '/upload-payment',
       extra: booking,
@@ -145,7 +131,6 @@ class _CreateBookingPageState extends ConsumerState<CreateBookingPage> {
   Widget build(BuildContext context) {
     final state = ref.watch(bookingsControllerProvider);
     final slots = ref.watch(availableSlotsProvider(widget.lawyer.profileId));
-
     return Scaffold(
       resizeToAvoidBottomInset: false,
       appBar: AppBar(title: const Text('طلب استشارة')),
@@ -202,17 +187,10 @@ class _CreateBookingPageState extends ConsumerState<CreateBookingPage> {
               else
                 TextField(
                   controller: _customConsultationTypeController,
-                  decoration: const InputDecoration(
-                    labelText: 'نوع الاستشارة',
-                    hintText: 'اكتب نوع الاستشارة',
-                  ),
+                  decoration: const InputDecoration(labelText: 'نوع الاستشارة', hintText: 'اكتب نوع الاستشارة'),
                 ),
               const SizedBox(height: 12),
-              _InfoBox(
-                icon: Icons.info_outline,
-                title: 'نوع التواصل',
-                text: 'اختر طريقة التواصل المناسبة لك.',
-              ),
+              const _InfoBox(icon: Icons.info_outline, title: 'نوع التواصل', text: 'اختر طريقة التواصل المناسبة لك.'),
               const SizedBox(height: 12),
               _SelectField<String>(
                 label: 'طريقة التنفيذ',
@@ -241,11 +219,7 @@ class _CreateBookingPageState extends ConsumerState<CreateBookingPage> {
             controller: _descriptionController,
             minLines: 5,
             maxLines: 8,
-            decoration: const InputDecoration(
-              labelText: 'تفاصيل الاستشارة',
-              hintText: 'اكتب تفاصيل طلبك هنا...',
-              alignLabelWithHint: true,
-            ),
+            decoration: const InputDecoration(labelText: 'تفاصيل الاستشارة', hintText: 'اكتب تفاصيل طلبك هنا...', alignLabelWithHint: true),
           ),
         );
       case 2:
@@ -257,21 +231,13 @@ class _CreateBookingPageState extends ConsumerState<CreateBookingPage> {
             loading: () => const Center(child: CircularProgressIndicator()),
             error: (error, _) => Text('تعذر تحميل المواعيد: $error'),
             data: (items) => items.isEmpty
-                ? const _InfoBox(
-                    icon: Icons.event_busy_outlined,
-                    title: 'لا توجد مواعيد',
-                    text: 'لا توجد مواعيد متاحة حالياً لهذا المحامي.',
-                  )
+                ? const _InfoBox(icon: Icons.event_busy_outlined, title: 'لا توجد مواعيد', text: 'لا توجد مواعيد متاحة حالياً لهذا المحامي.')
                 : Column(
-                    children: items
-                        .map(
-                          (slot) => _SelectableSlot(
-                            slot: slot,
-                            selected: _selectedSlot?.startsAt == slot.startsAt,
-                            onTap: () => setState(() => _selectedSlot = slot),
-                          ),
-                        )
-                        .toList(),
+                    children: items.map((slot) => _SelectableSlot(
+                      slot: slot,
+                      selected: _selectedSlot?.id == slot.id,
+                      onTap: () => setState(() => _selectedSlot = slot),
+                    )).toList(),
                   ),
           ),
         );
@@ -283,25 +249,12 @@ class _CreateBookingPageState extends ConsumerState<CreateBookingPage> {
           child: Column(
             children: [
               _ReviewRow(label: 'المحامي', value: widget.lawyer.fullName ?? 'محامي'),
-              _ReviewRow(
-                label: 'الباقة',
-                value: widget.isCustom ? 'استشارة مختلفة' : (_package?.title ?? 'غير محددة'),
-              ),
-              _ReviewRow(
-                label: 'نوع الاستشارة',
-                value: widget.isCustom
-                    ? _customConsultationTypeController.text.trim()
-                    : _consultationType,
-              ),
+              _ReviewRow(label: 'الباقة', value: widget.isCustom ? 'استشارة مختلفة' : (_package?.title ?? 'غير محددة')),
+              _ReviewRow(label: 'نوع الاستشارة', value: widget.isCustom ? _customConsultationTypeController.text.trim() : _consultationType),
               _ReviewRow(label: 'طريقة التنفيذ', value: _consultationMode),
-              if (_selectedSlot != null)
-                _ReviewRow(label: 'الموعد', value: _formatSlot(_selectedSlot!)),
+              if (_selectedSlot != null) _ReviewRow(label: 'الموعد', value: _formatSlot(_selectedSlot!)),
               const SizedBox(height: 12),
-              OutlinedButton.icon(
-                onPressed: _pickFile,
-                icon: const Icon(Icons.attach_file_rounded),
-                label: Text(_fileName ?? 'إرفاق مستند (اختياري)'),
-              ),
+              OutlinedButton.icon(onPressed: _pickFile, icon: const Icon(Icons.attach_file_rounded), label: Text(_fileName ?? 'إرفاق مستند (اختياري)')),
             ],
           ),
         );
@@ -320,34 +273,26 @@ class _CreateBookingPageState extends ConsumerState<CreateBookingPage> {
 class _ProgressHeader extends StatelessWidget {
   final int step;
   const _ProgressHeader({required this.step});
-
   @override
   Widget build(BuildContext context) {
     const labels = ['الباقة', 'التفاصيل', 'الموعد', 'التأكيد'];
     final scheme = Theme.of(context).colorScheme;
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
-      child: Row(
-        children: List.generate(labels.length, (index) {
-          final active = index <= step;
-          return Expanded(
-            child: Row(
-              children: [
-                CircleAvatar(
-                  radius: 14,
-                  backgroundColor: active ? AppColors.ctaGold : scheme.surfaceContainerHighest,
-                  foregroundColor: active ? AppColors.primary : scheme.onSurfaceVariant,
-                  child: Text('${index + 1}', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-                ),
-                const SizedBox(width: 5),
-                Expanded(child: Text(labels[index], overflow: TextOverflow.ellipsis)),
-                if (index < labels.length - 1)
-                  Expanded(child: Divider(color: index < step ? AppColors.ctaGold : scheme.outlineVariant)),
-              ],
-            ),
-          );
-        }),
-      ),
+      child: Row(children: List.generate(labels.length, (index) {
+        final active = index <= step;
+        return Expanded(child: Row(children: [
+          CircleAvatar(
+            radius: 14,
+            backgroundColor: active ? AppColors.ctaGold : scheme.surfaceContainerHighest,
+            foregroundColor: active ? AppColors.primary : scheme.onSurfaceVariant,
+            child: Text('${index + 1}', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+          ),
+          const SizedBox(width: 5),
+          Expanded(child: Text(labels[index], overflow: TextOverflow.ellipsis)),
+          if (index < labels.length - 1) Expanded(child: Divider(color: index < step ? AppColors.ctaGold : scheme.outlineVariant)),
+        ]));
+      })),
     );
   }
 }
@@ -355,37 +300,25 @@ class _ProgressHeader extends StatelessWidget {
 class _LawyerSummary extends StatelessWidget {
   final LawyerProfile lawyer;
   const _LawyerSummary({required this.lawyer});
-
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     return Container(
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: scheme.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: scheme.outlineVariant),
-      ),
-      child: Row(
-        children: [
-          CircleAvatar(
-            radius: 28,
-            backgroundImage: lawyer.avatarUrl == null ? null : NetworkImage(lawyer.avatarUrl!),
-            child: lawyer.avatarUrl == null ? const Icon(Icons.person_outline_rounded) : null,
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(lawyer.fullName ?? 'محامي', style: const TextStyle(fontWeight: FontWeight.w800)),
-                const SizedBox(height: 4),
-                Text(lawyer.specializations.isEmpty ? 'استشارات قانونية' : lawyer.specializations.take(2).join(' • ')),
-              ],
-            ),
-          ),
-        ],
-      ),
+      decoration: BoxDecoration(color: scheme.surfaceContainerLow, borderRadius: BorderRadius.circular(18), border: Border.all(color: scheme.outlineVariant)),
+      child: Row(children: [
+        CircleAvatar(
+          radius: 28,
+          backgroundImage: lawyer.avatarUrl == null ? null : NetworkImage(lawyer.avatarUrl!),
+          child: lawyer.avatarUrl == null ? const Icon(Icons.person_outline_rounded) : null,
+        ),
+        const SizedBox(width: 12),
+        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text(lawyer.fullName ?? 'محامي', style: const TextStyle(fontWeight: FontWeight.w800)),
+          const SizedBox(height: 4),
+          Text(lawyer.specializations.isEmpty ? 'استشارات قانونية' : lawyer.specializations.take(2).join(' • ')),
+        ])),
+      ]),
     );
   }
 }
@@ -396,25 +329,17 @@ class _StepCard extends StatelessWidget {
   final IconData icon;
   final Widget child;
   const _StepCard({required this.title, required this.subtitle, required this.icon, required this.child});
-
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     return Container(
       padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: scheme.surface,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: scheme.outlineVariant),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Row(children: [Icon(icon), const SizedBox(width: 10), Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(title, style: const TextStyle(fontWeight: FontWeight.w800)), const SizedBox(height: 3), Text(subtitle)]))]),
-          const SizedBox(height: 18),
-          child,
-        ],
-      ),
+      decoration: BoxDecoration(color: scheme.surface, borderRadius: BorderRadius.circular(20), border: Border.all(color: scheme.outlineVariant)),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        Row(children: [Icon(icon), const SizedBox(width: 10), Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(title, style: const TextStyle(fontWeight: FontWeight.w800)), const SizedBox(height: 3), Text(subtitle)]))]),
+        const SizedBox(height: 18),
+        child,
+      ]),
     );
   }
 }
@@ -424,7 +349,6 @@ class _InfoBox extends StatelessWidget {
   final String title;
   final String text;
   const _InfoBox({required this.icon, required this.title, required this.text});
-
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -440,7 +364,6 @@ class _SelectablePackage extends StatelessWidget {
   final bool selected;
   final VoidCallback onTap;
   const _SelectablePackage({required this.service, required this.selected, required this.onTap});
-
   @override
   Widget build(BuildContext context) {
     return InkWell(
@@ -463,7 +386,6 @@ class _SelectField<T> extends StatelessWidget {
   final IconData icon;
   final ValueChanged<T> onChanged;
   const _SelectField({required this.label, required this.value, required this.items, required this.icon, required this.onChanged});
-
   @override
   Widget build(BuildContext context) {
     return DropdownButtonFormField<T>(
@@ -481,7 +403,6 @@ class _SelectableSlot extends StatelessWidget {
   final bool selected;
   final VoidCallback onTap;
   const _SelectableSlot({required this.slot, required this.selected, required this.onTap});
-
   @override
   Widget build(BuildContext context) {
     final time = TimeOfDay.fromDateTime(slot.startsAt).format(context);
@@ -503,7 +424,6 @@ class _ReviewRow extends StatelessWidget {
   final String label;
   final String value;
   const _ReviewRow({required this.label, required this.value});
-
   @override
   Widget build(BuildContext context) {
     return Padding(padding: const EdgeInsets.symmetric(vertical: 7), child: Row(children: [SizedBox(width: 105, child: Text(label)), Expanded(child: Text(value, textAlign: TextAlign.right, style: const TextStyle(fontWeight: FontWeight.w700)))]));
@@ -516,7 +436,6 @@ class _BottomActions extends StatelessWidget {
   final VoidCallback onContinue;
   final VoidCallback? onBack;
   const _BottomActions({required this.step, required this.loading, required this.onContinue, required this.onBack});
-
   @override
   Widget build(BuildContext context) {
     final last = step == 3;
