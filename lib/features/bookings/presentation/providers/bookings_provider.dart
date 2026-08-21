@@ -25,6 +25,18 @@ final currentUserWhatsAppProvider = FutureProvider<String?>((ref) async { final 
 @riverpod
 class BookingsController extends _$BookingsController { @override FutureOr<void> build() {}
 Future<Booking?> requestBooking({required String lawyerId, required DateTime scheduledAt, String? slotId, required String packageName, required String consultationType, String? description, dynamic documentBytes, String? documentName, String? consultationMode}) async { state = const AsyncLoading(); Booking? createdBooking; state = await AsyncValue.guard(() async { final user = ref.read(authStateChangesProvider).value; if (user == null) throw Exception('يجب تسجيل الدخول أولاً'); if (!(user.role == 'user' || user.role == 'client')) throw Exception('فقط طالب الخدمة يمكنه طلب حجز استشارة'); final whatsapp = await ref.read(currentUserWhatsAppProvider.future); if (whatsapp == null) throw Exception('يجب إضافة رقم واتساب في الإعدادات قبل طلب الاستشارة'); final repo = ref.read(bookingsRepositoryProvider); String? documentUrl; if (documentBytes != null && documentName != null) documentUrl = await repo.uploadDocument(documentBytes, documentName); createdBooking = await repo.createBooking(lawyerId: lawyerId, scheduledAt: scheduledAt, slotId: slotId, packageName: packageName, consultationType: consultationType, description: description, documentUrl: documentUrl, consultationMode: consultationMode); ref.invalidate(userBookingsProvider); }); return state.hasError ? null : createdBooking; }
+
+/// Compatibility API for the booking page. Keeps the existing UI contract while
+/// delegating persistence to the canonical requestBooking method.
+Future<Booking?> createBooking({required String lawyerId, String? serviceId, DateTime? scheduledAt, required String consultationType, String? consultationMode, String? description, dynamic documentBytes, String? documentName}) async {
+  final when = scheduledAt;
+  if (when == null) {
+    state = AsyncError(Exception('يرجى اختيار موعد متاح'), StackTrace.current);
+    return null;
+  }
+  final packageName = serviceId == null || serviceId.trim().isEmpty ? 'استشارة مختلفة' : serviceId;
+  return requestBooking(lawyerId: lawyerId, scheduledAt: when, packageName: packageName, consultationType: consultationType, consultationMode: consultationMode, description: description, documentBytes: documentBytes, documentName: documentName);
+}
 Future<Booking?> recordManualPayment({required String bookingId, required double amount}) async { state = const AsyncLoading(); Booking? updated; state = await AsyncValue.guard(() async { updated = await ref.read(bookingsRepositoryProvider).recordManualPayment(bookingId, amount); ref.invalidate(lawyerBookingsProvider); ref.invalidate(userBookingsProvider); ref.invalidate(bookingDetailsProvider(bookingId)); }); return state.hasError ? null : updated; }
 Future<void> reviewBooking(String bookingId, bool approved) async { state = const AsyncLoading(); state = await AsyncValue.guard(() async { await ref.read(bookingsRepositoryProvider).reviewBooking(bookingId, approved); ref.invalidate(userBookingsProvider); ref.invalidate(lawyerBookingsProvider); ref.invalidate(bookingDetailsProvider(bookingId)); }); }
 Future<void> updateBookingStatus(String bookingId, String status) async { state = const AsyncLoading(); state = await AsyncValue.guard(() async { await ref.read(bookingsRepositoryProvider).updateBookingStatus(bookingId, status); ref.invalidate(userBookingsProvider); ref.invalidate(lawyerBookingsProvider); ref.invalidate(bookingDetailsProvider(bookingId)); }); }
