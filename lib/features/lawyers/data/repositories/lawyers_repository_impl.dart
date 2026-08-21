@@ -11,8 +11,10 @@ class LawyersRepositoryImpl implements LawyersRepository {
 
   static const _cachePrefix = 'public_lawyers_page_';
   static const _cacheTtl = Duration(minutes: 10);
+  static const _backgroundRefreshAfter = Duration(minutes: 2);
   static final Map<String, _MemoryPage> _memoryCache = {};
   static final Map<String, _MemoryProfile> _profileMemoryCache = {};
+  static final Set<String> _refreshingPages = <String>{};
 
   String _cacheKey(int limit, int offset) => '$_cachePrefix${limit}_$offset';
   String _cacheTimeKey(int limit, int offset) => '${_cacheKey(limit, offset)}_time';
@@ -25,16 +27,21 @@ class LawyersRepositoryImpl implements LawyersRepository {
   Future<List<dynamic>?> _readCachedPage(int limit, int offset) async {
     final key = _cacheKey(limit, offset);
     final memory = _memoryCache[key];
-    if (memory != null && DateTime.now().difference(memory.timestamp) <= _cacheTtl) return memory.rows;
+    if (memory != null) {
+      final age = DateTime.now().difference(memory.timestamp);
+      if (age <= _cacheTtl) return memory.rows;
+      _memoryCache.remove(key);
+    }
     try {
       final box = Hive.box('app_cache');
       final timestamp = box.get(_cacheTimeKey(limit, offset)) as int?;
       final raw = box.get(key);
       if (timestamp == null || raw is! List) return null;
-      final age = DateTime.now().difference(DateTime.fromMillisecondsSinceEpoch(timestamp));
+      final cachedAt = DateTime.fromMillisecondsSinceEpoch(timestamp);
+      final age = DateTime.now().difference(cachedAt);
       if (age > _cacheTtl) return null;
       final rows = List<dynamic>.from(raw);
-      _memoryCache[key] = _MemoryPage(rows, DateTime.fromMillisecondsSinceEpoch(timestamp));
+      _memoryCache[key] = _MemoryPage(rows, cachedAt);
       return rows;
     } catch (e) {
       debugPrint('⚠️ LawyersRepo: Cache read error: $e');
@@ -68,12 +75,30 @@ class LawyersRepositoryImpl implements LawyersRepository {
     return result;
   }
 
+  void _scheduleBackgroundRefresh(int limit, int offset) {
+    final key = _cacheKey(limit, offset);
+    if (!_refreshingPages.add(key)) return;
+    Future<void>(() async {
+      try {
+        await refreshLawyersPage(limit: limit, offset: offset);
+      } finally {
+        _refreshingPages.remove(key);
+      }
+    });
+  }
+
   @override
   Future<List<LawyerProfile>> getLawyers({int limit = 20, int offset = 0}) async {
     final safeLimit = limit.clamp(1, 100);
     final safeOffset = offset < 0 ? 0 : offset;
     final cached = await _readCachedPage(safeLimit, safeOffset);
-    if (cached != null) return _parseRows(cached);
+    if (cached != null) {
+      final page = _memoryCache[_cacheKey(safeLimit, safeOffset)];
+      if (page != null && DateTime.now().difference(page.timestamp) >= _backgroundRefreshAfter) {
+        _scheduleBackgroundRefresh(safeLimit, safeOffset);
+      }
+      return _parseRows(cached);
+    }
     try {
       final response = await _supabase.rpc('get_public_lawyers', params: {'p_limit': safeLimit, 'p_offset': safeOffset});
       final rows = List<dynamic>.from(response as List);
