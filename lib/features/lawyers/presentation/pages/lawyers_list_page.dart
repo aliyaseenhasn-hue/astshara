@@ -2,42 +2,144 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../providers/lawyers_provider.dart';
+import '../../data/repositories/lawyers_repository_impl.dart';
+import '../../domain/entities/lawyer_profile.dart';
+import '../../../../core/config/supabase_config.dart';
 import '../../../../shared/widgets/loading_widget.dart';
 
-class LawyersListPage extends ConsumerWidget {
+class LawyersListPage extends ConsumerStatefulWidget {
   const LawyersListPage({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<LawyersListPage> createState() => _LawyersListPageState();
+}
+
+class _LawyersListPageState extends ConsumerState<LawyersListPage> {
+  static const _pageSize = 20;
+  late final ScrollController _scrollController;
+  late final LawyersRepositoryImpl _repository;
+  final List<LawyerProfile> _lawyers = [];
+  String _query = '';
+  bool _loading = false;
+  bool _hasMore = true;
+  int _offset = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _repository = LawyersRepositoryImpl(SupabaseConfig.client);
+    _scrollController = ScrollController()..addListener(_onScroll);
+    _loadMore();
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _onScroll() {
+    if (!_scrollController.hasClients || _loading || !_hasMore) return;
+    if (_scrollController.position.extentAfter < 600) _loadMore();
+  }
+
+  Future<void> _loadMore({bool refresh = false}) async {
+    if (_loading) return;
+    if (refresh) {
+      _offset = 0;
+      _hasMore = true;
+      _lawyers.clear();
+    }
+    if (!_hasMore) return;
+    setState(() => _loading = true);
+    try {
+      final batch = await _repository.getLawyers(limit: _pageSize, offset: _offset);
+      if (!mounted) return;
+      setState(() {
+        _lawyers.addAll(batch);
+        _offset += batch.length;
+        _hasMore = batch.length == _pageSize;
+        _loading = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _loading = false);
+      if (_lawyers.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تعذر تحميل المحامين. حاول مرة أخرى.')));
+      }
+    }
+  }
+
+  List<LawyerProfile> _filtered(String? category) {
+    final q = _query.trim().toLowerCase();
+    final wanted = category?.trim().toLowerCase();
+    final list = _lawyers.where((lawyer) {
+      final searchMatch = q.isEmpty ||
+          (lawyer.fullName ?? '').toLowerCase().contains(q) ||
+          lawyer.specializations.any((s) => s.toLowerCase().contains(q));
+      final categoryMatch = wanted == null || wanted.isEmpty ||
+          lawyer.specializations.any((s) => s.trim().toLowerCase().contains(wanted));
+      return searchMatch && categoryMatch;
+    }).toList();
+    list.sort((a, b) {
+      if (a.availability && !b.availability) return -1;
+      if (!a.availability && b.availability) return 1;
+      final rating = b.rating.compareTo(a.rating);
+      return rating != 0 ? rating : b.reviewCount.compareTo(a.reviewCount);
+    });
+    return list;
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final selectedCategory = ref.watch(selectedCategoryProvider);
-    final lawyersAsync = ref.watch(lawyersListProvider);
+    final lawyers = _filtered(selectedCategory);
     final title = selectedCategory == null ? 'دليل المحامين' : 'القانون ${selectedCategory == 'أحوال شخصية' ? 'للأحوال الشخصية' : selectedCategory}';
+
     return Scaffold(
       backgroundColor: scheme.surface,
-      body: CustomScrollView(slivers: [
-        SliverToBoxAdapter(child: _DirectoryHeader(onNotifications: () => context.push('/notifications'))),
-        SliverPadding(padding: const EdgeInsets.fromLTRB(20, 22, 20, 112), sliver: SliverList(delegate: SliverChildListDelegate([
-          Text(title, textAlign: TextAlign.right, style: Theme.of(context).textTheme.headlineSmall?.copyWith(color: scheme.onSurface, fontWeight: FontWeight.w900)),
-          const SizedBox(height: 6),
-          Text('ابحث عن نخبة المحامين والمستشارين القانونيين المعتمدين.', textAlign: TextAlign.right, style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 12, height: 1.5)),
-          const SizedBox(height: 16),
-          _SearchField(onChanged: (value) => ref.read(searchQueryProvider.notifier).state = value),
-          const SizedBox(height: 12),
-          _FilterChips(selectedCategory: selectedCategory, onSelect: (value) => ref.read(selectedCategoryProvider.notifier).setCategory(value)),
-          const SizedBox(height: 20),
-          lawyersAsync.when(
-            loading: () => const Padding(padding: EdgeInsets.all(50), child: Center(child: LoadingWidget())),
-            error: (_, __) => const _Message(text: 'تعذر تحميل المحامين. حاول مرة أخرى.'),
-            data: (lawyers) => lawyers.isEmpty ? const _Message(text: 'لا يوجد محامون موثقون حالياً') : ListView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: lawyers.length,
-              itemBuilder: (context, index) => _LawyerCard(lawyer: lawyers[index]),
+      body: RefreshIndicator(
+        onRefresh: () => _loadMore(refresh: true),
+        child: CustomScrollView(
+          controller: _scrollController,
+          physics: const AlwaysScrollableScrollPhysics(),
+          slivers: [
+            SliverToBoxAdapter(child: _DirectoryHeader(onNotifications: () => context.push('/notifications'))),
+            SliverPadding(
+              padding: const EdgeInsets.fromLTRB(20, 22, 20, 112),
+              sliver: SliverList(delegate: SliverChildListDelegate([
+                Text(title, textAlign: TextAlign.right, style: Theme.of(context).textTheme.headlineSmall?.copyWith(color: scheme.onSurface, fontWeight: FontWeight.w900)),
+                const SizedBox(height: 6),
+                Text('ابحث عن نخبة المحامين والمستشارين القانونيين المعتمدين.', textAlign: TextAlign.right, style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 12, height: 1.5)),
+                const SizedBox(height: 16),
+                _SearchField(onChanged: (value) => setState(() => _query = value)),
+                const SizedBox(height: 12),
+                _FilterChips(selectedCategory: selectedCategory, onSelect: (value) => ref.read(selectedCategoryProvider.notifier).setCategory(value)),
+                const SizedBox(height: 20),
+              ])),
             ),
-          ),
-        ]))),
-      ]),
+            if (_lawyers.isEmpty && _loading)
+              const SliverToBoxAdapter(child: Padding(padding: EdgeInsets.all(50), child: Center(child: LoadingWidget())))
+            else if (_lawyers.isEmpty && !_loading)
+              const SliverToBoxAdapter(child: _Message(text: 'لا يوجد محامون موثقون حالياً'))
+            else if (lawyers.isEmpty)
+              const SliverToBoxAdapter(child: _Message(text: 'لا توجد نتائج مطابقة'))
+            else
+              SliverPadding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                sliver: SliverList.builder(
+                  itemCount: lawyers.length,
+                  itemBuilder: (context, index) => _LawyerCard(lawyer: lawyers[index]),
+                ),
+              ),
+            if (_loading && _lawyers.isNotEmpty)
+              const SliverToBoxAdapter(child: Padding(padding: EdgeInsets.fromLTRB(20, 4, 20, 100), child: Center(child: SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2)))))
+            else
+              const SliverToBoxAdapter(child: SizedBox(height: 100)),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -75,7 +177,7 @@ class _FilterChips extends StatelessWidget {
 }
 
 class _LawyerCard extends StatelessWidget {
-  final dynamic lawyer;
+  final LawyerProfile lawyer;
   const _LawyerCard({required this.lawyer});
   @override
   Widget build(BuildContext context) {
