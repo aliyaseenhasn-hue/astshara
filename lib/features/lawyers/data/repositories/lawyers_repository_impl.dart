@@ -11,19 +11,32 @@ class LawyersRepositoryImpl implements LawyersRepository {
 
   static const _cachePrefix = 'public_lawyers_page_';
   static const _cacheTtl = Duration(minutes: 10);
+  static final Map<String, _MemoryPage> _memoryCache = {};
 
   String _cacheKey(int limit, int offset) => '$_cachePrefix${limit}_$offset';
   String _cacheTimeKey(int limit, int offset) => '${_cacheKey(limit, offset)}_time';
 
+  bool hasFreshMemoryPage(int limit, int offset) {
+    final page = _memoryCache[_cacheKey(limit, offset)];
+    return page != null && DateTime.now().difference(page.timestamp) <= _cacheTtl;
+  }
+
   Future<List<dynamic>?> _readCachedPage(int limit, int offset) async {
+    final key = _cacheKey(limit, offset);
+    final memory = _memoryCache[key];
+    if (memory != null && DateTime.now().difference(memory.timestamp) <= _cacheTtl) {
+      return memory.rows;
+    }
     try {
       final box = Hive.box('app_cache');
       final timestamp = box.get(_cacheTimeKey(limit, offset)) as int?;
-      final raw = box.get(_cacheKey(limit, offset));
+      final raw = box.get(key);
       if (timestamp == null || raw is! List) return null;
       final age = DateTime.now().difference(DateTime.fromMillisecondsSinceEpoch(timestamp));
       if (age > _cacheTtl) return null;
-      return List<dynamic>.from(raw);
+      final rows = List<dynamic>.from(raw);
+      _memoryCache[key] = _MemoryPage(rows, DateTime.fromMillisecondsSinceEpoch(timestamp));
+      return rows;
     } catch (e) {
       debugPrint('⚠️ LawyersRepo: Cache read error: $e');
       return null;
@@ -31,9 +44,11 @@ class LawyersRepositoryImpl implements LawyersRepository {
   }
 
   Future<void> _writeCachedPage(int limit, int offset, List<dynamic> rows) async {
+    final key = _cacheKey(limit, offset);
+    _memoryCache[key] = _MemoryPage(rows, DateTime.now());
     try {
       final box = Hive.box('app_cache');
-      await box.put(_cacheKey(limit, offset), rows.map((e) => Map<String, dynamic>.from(e as Map)).toList());
+      await box.put(key, rows.map((e) => Map<String, dynamic>.from(e as Map)).toList());
       await box.put(_cacheTimeKey(limit, offset), DateTime.now().millisecondsSinceEpoch);
     } catch (e) {
       debugPrint('⚠️ LawyersRepo: Cache write error: $e');
@@ -61,25 +76,36 @@ class LawyersRepositoryImpl implements LawyersRepository {
   Future<List<LawyerProfile>> getLawyers({int limit = 20, int offset = 0}) async {
     final safeLimit = limit.clamp(1, 100);
     final safeOffset = offset < 0 ? 0 : offset;
-
     final cached = await _readCachedPage(safeLimit, safeOffset);
-    if (cached != null) {
-      return _parseRows(cached);
-    }
+    if (cached != null) return _parseRows(cached);
 
     try {
       final response = await _supabase.rpc(
         'get_public_lawyers',
-        params: {
-          'p_limit': safeLimit,
-          'p_offset': safeOffset,
-        },
+        params: {'p_limit': safeLimit, 'p_offset': safeOffset},
       );
       final rows = List<dynamic>.from(response as List);
       await _writeCachedPage(safeLimit, safeOffset, rows);
       return _parseRows(rows);
     } catch (e) {
       debugPrint('❌ LawyersRepo: Fetch error: $e');
+      return <LawyerProfile>[];
+    }
+  }
+
+  Future<List<LawyerProfile>> refreshLawyersPage({int limit = 20, int offset = 0}) async {
+    final safeLimit = limit.clamp(1, 100);
+    final safeOffset = offset < 0 ? 0 : offset;
+    try {
+      final response = await _supabase.rpc(
+        'get_public_lawyers',
+        params: {'p_limit': safeLimit, 'p_offset': safeOffset},
+      );
+      final rows = List<dynamic>.from(response as List);
+      await _writeCachedPage(safeLimit, safeOffset, rows);
+      return _parseRows(rows);
+    } catch (e) {
+      debugPrint('❌ LawyersRepo: Background refresh error: $e');
       return <LawyerProfile>[];
     }
   }
@@ -118,6 +144,7 @@ class LawyersRepositoryImpl implements LawyersRepository {
     if (profile.specializations.isNotEmpty) data['specialization'] = profile.specializations;
     await _supabase.from('lawyer_profiles').upsert(data, onConflict: 'profile_id');
     try {
+      _memoryCache.clear();
       final box = Hive.box('app_cache');
       final keys = box.keys.where((key) => key.toString().startsWith(_cachePrefix)).toList();
       await box.deleteAll(keys);
@@ -138,11 +165,7 @@ class LawyersRepositoryImpl implements LawyersRepository {
       'jpg' || 'jpeg' => 'image/jpeg',
       _ => 'application/octet-stream',
     };
-    await _supabase.storage.from(bucket).uploadBinary(
-      path,
-      bytes,
-      fileOptions: FileOptions(upsert: false, contentType: contentType),
-    );
+    await _supabase.storage.from(bucket).uploadBinary(path, bytes, fileOptions: FileOptions(upsert: false, contentType: contentType));
     return _supabase.storage.from(bucket).createSignedUrl(path, 31536000);
   }
 
@@ -155,20 +178,16 @@ class LawyersRepositoryImpl implements LawyersRepository {
     if (profileId == null) throw Exception('ملف المحامي غير مكتمل');
     if (newSpecs.isEmpty) throw Exception('يجب اختيار تخصص واحد على الأقل');
     if (unionIdCardUrl == null || unionIdCardUrl.trim().isEmpty) throw Exception('صورة هوية النقابة مطلوبة');
-    await _supabase.from('specialization_change_requests').insert({
-      'lawyer_id': profileId,
-      'requested_specializations': newSpecs,
-      'union_id_card_url': unionIdCardUrl,
-      'status': 'pending',
-    });
+    await _supabase.from('specialization_change_requests').insert({'lawyer_id': profileId, 'requested_specializations': newSpecs, 'union_id_card_url': unionIdCardUrl, 'status': 'pending'});
     final admins = await _supabase.from('profiles').select('id').eq('role', 'admin');
     for (final row in (admins as List)) {
-      await _supabase.from('notifications').insert({
-        'user_id': row['id'],
-        'title': 'طلب تغيير تخصص جديد',
-        'body': 'وصل طلب جديد من محامٍ لتغيير التخصص ويحتاج إلى مراجعة صورة هوية النقابة.',
-        'type': 'specialization_change',
-      });
+      await _supabase.from('notifications').insert({'user_id': row['id'], 'title': 'طلب تغيير تخصص جديد', 'body': 'وصل طلب جديد من محامٍ لتغيير التخصص ويحتاج إلى مراجعة صورة هوية النقابة.', 'type': 'specialization_change'});
     }
   }
+}
+
+class _MemoryPage {
+  final List<dynamic> rows;
+  final DateTime timestamp;
+  const _MemoryPage(this.rows, this.timestamp);
 }
