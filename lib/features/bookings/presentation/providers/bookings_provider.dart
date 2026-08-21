@@ -24,16 +24,20 @@ final bookingParticipantContactProvider = FutureProvider.family<Map<String, dyna
 final currentUserWhatsAppProvider = FutureProvider<String?>((ref) async { final user = ref.watch(authStateChangesProvider).value; if (user == null) return null; final row = await SupabaseConfig.client.from('profiles').select('whatsapp_number').eq('auth_id', user.id).maybeSingle(); final value = row?['whatsapp_number']?.toString().trim(); return value == null || value.isEmpty ? null : value; });
 @riverpod
 class BookingsController extends _$BookingsController { @override FutureOr<void> build() {}
-Future<Booking?> requestBooking({required String lawyerId, required DateTime scheduledAt, String? slotId, required String packageName, required String consultationType, String? description, dynamic documentBytes, String? documentName, String? consultationMode}) async { state = const AsyncLoading(); Booking? createdBooking; state = await AsyncValue.guard(() async { final user = ref.read(authStateChangesProvider).value; if (user == null) throw Exception('يجب تسجيل الدخول أولاً'); if (!(user.role == 'user' || user.role == 'client')) throw Exception('فقط طالب الخدمة يمكنه طلب حجز استشارة'); final whatsapp = await ref.read(currentUserWhatsAppProvider.future); if (whatsapp == null) throw Exception('يجب إضافة رقم واتساب في الإعدادات قبل طلب الاستشارة'); final repo = ref.read(bookingsRepositoryProvider); String? documentUrl; if (documentBytes != null && documentName != null) documentUrl = await repo.uploadDocument(documentBytes, documentName); createdBooking = await repo.createBooking(lawyerId: lawyerId, scheduledAt: scheduledAt, slotId: slotId, packageName: packageName, consultationType: consultationType, description: description, documentUrl: documentUrl, consultationMode: consultationMode); ref.invalidate(userBookingsProvider); }); return state.hasError ? null : createdBooking; }
+Future<Booking?> requestBooking({required String lawyerId, required DateTime scheduledAt, String? slotId, required String packageName, required String consultationType, String? description, dynamic documentBytes, String? documentName, String? consultationMode}) async { state = const AsyncLoading(); Booking? createdBooking; state = await AsyncValue.guard(() async { final user = ref.read(authStateChangesProvider).value; if (user == null) throw Exception('يجب تسجيل الدخول أولاً'); if (!(user.role == 'user' || user.role == 'client')) throw Exception('فقط طالب الخدمة يمكنه طلب حجز استشارة'); final whatsapp = await ref.read(currentUserWhatsAppProvider.future); if (whatsapp == null) throw Exception('يجب إضافة رقم واتساب في الإعدادات قبل طلب الاستشارة'); final repo = ref.read(bookingsRepositoryProvider); String? documentUrl; if (documentBytes != null && documentName != null) documentUrl = await repo.uploadDocument(documentBytes, documentName); createdBooking = await repo.createBooking(lawyerId: lawyerId, scheduledAt: scheduledAt, slotId: slotId, packageName: packageName, consultationType: consultationType, description: description, documentUrl: documentUrl, consultationMode: consultationMode); ref.invalidate(userBookingsProvider); });
+  if (state.hasError) {
+    ref.invalidate(availableSlotsProvider(lawyerId));
+    return null;
+  }
+  ref.invalidate(availableSlotsProvider(lawyerId));
+  return createdBooking;
+}
 
 /// Compatibility API for the booking page. Keeps the existing UI contract while
 /// delegating persistence to the canonical requestBooking method.
 Future<Booking?> createBooking({required String lawyerId, String? serviceId, DateTime? scheduledAt, required String consultationType, String? consultationMode, String? description, dynamic documentBytes, String? documentName}) async {
   final when = scheduledAt;
-  if (when == null) {
-    state = AsyncError(Exception('يرجى اختيار موعد متاح'), StackTrace.current);
-    return null;
-  }
+  if (when == null) { state = AsyncError(Exception('يرجى اختيار موعد متاح'), StackTrace.current); ref.invalidate(availableSlotsProvider(lawyerId)); return null; }
   final packageName = serviceId == null || serviceId.trim().isEmpty ? 'استشارة مختلفة' : serviceId;
   return requestBooking(lawyerId: lawyerId, scheduledAt: when, packageName: packageName, consultationType: consultationType, consultationMode: consultationMode, description: description, documentBytes: documentBytes, documentName: documentName);
 }
