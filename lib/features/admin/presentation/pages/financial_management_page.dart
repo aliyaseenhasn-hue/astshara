@@ -91,7 +91,12 @@ class _FinancialManagementPageState extends State<FinancialManagementPage> {
         context: context,
         builder: (context) => AlertDialog(
           title: Text(status == 'paid' ? 'تأكيد التحويل' : 'بدء التحويل'),
-          content: TextField(controller: controller, decoration: const InputDecoration(labelText: 'مرجع التحويل (اختياري)')),
+          content: TextField(
+            controller: controller,
+            decoration: InputDecoration(
+              labelText: status == 'paid' ? 'مرجع التحويل (مطلوب)' : 'مرجع التحويل (اختياري)',
+            ),
+          ),
           actions: [
             TextButton(onPressed: () => Navigator.pop(context), child: const Text('إلغاء')),
             FilledButton(onPressed: () => Navigator.pop(context, controller.text.trim()), child: const Text('تأكيد')),
@@ -100,13 +105,25 @@ class _FinancialManagementPageState extends State<FinancialManagementPage> {
       );
       controller.dispose();
       if (reference == null) return;
+      if (status == 'paid' && reference!.isEmpty) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('مرجع التحويل الخارجي مطلوب قبل تسجيل العملية كمدفوعة')),
+          );
+        }
+        return;
+      }
     } else if (status == 'rejected' || status == 'failed') {
       final controller = TextEditingController();
       reason = await showDialog<String>(
         context: context,
         builder: (context) => AlertDialog(
           title: Text(status == 'rejected' ? 'رفض طلب السحب' : 'فشل التحويل'),
-          content: TextField(controller: controller, maxLines: 3, decoration: const InputDecoration(labelText: 'السبب')),
+          content: TextField(
+            controller: controller,
+            maxLines: 3,
+            decoration: const InputDecoration(labelText: 'السبب (مطلوب)'),
+          ),
           actions: [
             TextButton(onPressed: () => Navigator.pop(context), child: const Text('إلغاء')),
             FilledButton(onPressed: () => Navigator.pop(context, controller.text.trim()), child: const Text('تأكيد')),
@@ -115,6 +132,14 @@ class _FinancialManagementPageState extends State<FinancialManagementPage> {
       );
       controller.dispose();
       if (reason == null) return;
+      if (reason!.isEmpty) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('سبب الرفض أو الفشل مطلوب')),
+          );
+        }
+        return;
+      }
     }
     try {
       await SupabaseConfig.client.rpc(
@@ -240,8 +265,6 @@ class _FinancialManagementPageState extends State<FinancialManagementPage> {
                                 onSelected: (value) => _status(row, value),
                                 itemBuilder: (_) => const [
                                   PopupMenuItem(value: 'approved', child: Text('موافقة')),
-                                  PopupMenuItem(value: 'processing', child: Text('بدء التحويل')),
-                                  PopupMenuItem(value: 'paid', child: Text('تم التحويل')),
                                   PopupMenuItem(value: 'rejected', child: Text('رفض')),
                                 ],
                               )
@@ -256,7 +279,10 @@ class _FinancialManagementPageState extends State<FinancialManagementPage> {
                                 : row['status'] == 'processing'
                                     ? PopupMenuButton<String>(
                                         onSelected: (value) => _status(row, value),
-                                        itemBuilder: (_) => const [PopupMenuItem(value: 'paid', child: Text('تأكيد تم التحويل')), PopupMenuItem(value: 'failed', child: Text('فشل التحويل'))],
+                                        itemBuilder: (_) => const [
+                                          PopupMenuItem(value: 'paid', child: Text('تأكيد تم التحويل')),
+                                          PopupMenuItem(value: 'failed', child: Text('فشل التحويل')),
+                                        ],
                                       )
                                     : Text(statusLabel('${row['status']}')),
                       ),
