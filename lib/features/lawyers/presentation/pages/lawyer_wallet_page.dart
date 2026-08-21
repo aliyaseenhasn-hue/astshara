@@ -3,7 +3,8 @@ import 'package:astshara/core/config/supabase_config.dart';
 
 class LawyerWalletPage extends StatefulWidget {
   const LawyerWalletPage({super.key});
-  @override State<LawyerWalletPage> createState() => _LawyerWalletPageState();
+  @override
+  State<LawyerWalletPage> createState() => _LawyerWalletPageState();
 }
 
 class _LawyerWalletPageState extends State<LawyerWalletPage> {
@@ -11,7 +12,9 @@ class _LawyerWalletPageState extends State<LawyerWalletPage> {
   List<Map<String, dynamic>> requests = [];
   bool loading = true;
   bool submitting = false;
-  @override void initState() { super.initState(); _load(); }
+
+  @override
+  void initState() { super.initState(); _load(); }
 
   Future<void> _load() async {
     setState(() => loading = true);
@@ -49,21 +52,35 @@ class _LawyerWalletPageState extends State<LawyerWalletPage> {
   String money(dynamic value) => '${(num.tryParse('${value ?? 0}') ?? 0).toStringAsFixed(0)} د.ع';
   String status(String value) => {'pending_review':'بانتظار مراجعة الإدارة','approved':'تمت الموافقة','processing':'قيد التنفيذ','paid':'تم التحويل','rejected':'مرفوض','failed':'فشل التحويل'}[value] ?? value;
 
-  @override Widget build(BuildContext context) {
+  @override
+  Widget build(BuildContext context) {
     final w = wallet ?? <String, dynamic>{};
     return Scaffold(
       appBar: AppBar(title: const Text('محفظتي المالية')),
-      body: RefreshIndicator(onRefresh: _load, child: loading ? const ListView(children: [SizedBox(height: 300), Center(child: CircularProgressIndicator())]) : ListView(padding: const EdgeInsets.all(16), children: [
-        Card(child: Padding(padding: const EdgeInsets.all(20), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          const Text('الرصيد المتاح', style: TextStyle(fontSize: 14)),
-          const SizedBox(height: 6), Text(money(w['available_balance']), style: const TextStyle(fontSize: 30, fontWeight: FontWeight.w800)),
-          const SizedBox(height: 18), Row(children: [Expanded(child: _stat('معلق', money(w['pending_balance']))), Expanded(child: _stat('إجمالي الأرباح', money(w['lifetime_earned']))), Expanded(child: _stat('المسحوبات', money(w['lifetime_paid_out'])))]),
-          const SizedBox(height: 18), SizedBox(width: double.infinity, child: FilledButton.icon(onPressed: submitting ? null : _requestPayout, icon: submitting ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2)) : const Icon(Icons.account_balance_wallet_outlined), label: const Text('طلب سحب'))),
-        ]))),
-        const SizedBox(height: 22), const Text('طلبات السحب', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-        const SizedBox(height: 8), if (requests.isEmpty) const Card(child: Padding(padding: EdgeInsets.all(18), child: Text('لا توجد طلبات سحب حتى الآن.'))),
-        ...requests.map((r) => Card(child: ListTile(leading: const CircleAvatar(child: Icon(Icons.payments_outlined)), title: Text(money(r['amount'])), subtitle: Text(status('${r['status']}')), trailing: Text('${r['wallet_number'] ?? ''}')))),
-      ])),
+      body: RefreshIndicator(
+        onRefresh: _load,
+        child: loading
+            ? ListView(children: const [SizedBox(height: 300), Center(child: CircularProgressIndicator())])
+            : ListView(
+                padding: const EdgeInsets.all(16),
+                children: [
+                  Card(child: Padding(padding: const EdgeInsets.all(20), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    const Text('الرصيد المتاح', style: TextStyle(fontSize: 14)),
+                    const SizedBox(height: 6),
+                    Text(money(w['available_balance']), style: const TextStyle(fontSize: 30, fontWeight: FontWeight.w800)),
+                    const SizedBox(height: 18),
+                    Row(children: [Expanded(child: _stat('معلق', money(w['pending_balance']))), Expanded(child: _stat('إجمالي الأرباح', money(w['lifetime_earned']))), Expanded(child: _stat('المسحوبات', money(w['lifetime_paid_out'])))]),
+                    const SizedBox(height: 18),
+                    SizedBox(width: double.infinity, child: FilledButton.icon(onPressed: submitting ? null : _requestPayout, icon: submitting ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2)) : const Icon(Icons.account_balance_wallet_outlined), label: const Text('طلب سحب'))),
+                  ]))),
+                  const SizedBox(height: 22),
+                  const Text('طلبات السحب', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 8),
+                  if (requests.isEmpty) const Card(child: Padding(padding: EdgeInsets.all(18), child: Text('لا توجد طلبات سحب حتى الآن.'))),
+                  ...requests.map((r) => Card(child: ListTile(leading: const CircleAvatar(child: Icon(Icons.payments_outlined)), title: Text(money(r['amount'])), subtitle: Text(status('${r['status']}')), trailing: Text('${r['wallet_number'] ?? ''}')))),
+                ],
+              ),
+      ),
     );
   }
 
