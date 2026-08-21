@@ -27,6 +27,7 @@ class MainBottomNav extends ConsumerWidget {
     _QuickAction(Icons.calendar_month_rounded, 'المواعيد', '/bookings'),
     _QuickAction(Icons.person_rounded, 'ملفي', '/lawyer-profile-edit'),
     _QuickAction(Icons.schedule_rounded, 'أوقات التوفر', '/lawyer-availability'),
+    _QuickAction(Icons.account_balance_wallet_rounded, 'المحفظة', '/lawyer-wallet'),
   ];
 
   @override
