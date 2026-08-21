@@ -12,6 +12,7 @@ class LawyersRepositoryImpl implements LawyersRepository {
   static const _cachePrefix = 'public_lawyers_page_';
   static const _cacheTtl = Duration(minutes: 10);
   static final Map<String, _MemoryPage> _memoryCache = {};
+  static final Map<String, _MemoryProfile> _profileMemoryCache = {};
 
   String _cacheKey(int limit, int offset) => '$_cachePrefix${limit}_$offset';
   String _cacheTimeKey(int limit, int offset) => '${_cacheKey(limit, offset)}_time';
@@ -24,9 +25,7 @@ class LawyersRepositoryImpl implements LawyersRepository {
   Future<List<dynamic>?> _readCachedPage(int limit, int offset) async {
     final key = _cacheKey(limit, offset);
     final memory = _memoryCache[key];
-    if (memory != null && DateTime.now().difference(memory.timestamp) <= _cacheTtl) {
-      return memory.rows;
-    }
+    if (memory != null && DateTime.now().difference(memory.timestamp) <= _cacheTtl) return memory.rows;
     try {
       final box = Hive.box('app_cache');
       final timestamp = box.get(_cacheTimeKey(limit, offset)) as int?;
@@ -61,10 +60,7 @@ class LawyersRepositoryImpl implements LawyersRepository {
       try {
         final json = Map<String, dynamic>.from(item as Map);
         final model = LawyerProfileModel.fromJson(json);
-        result.add(model.toEntity().copyWith(
-          fullName: model.fullName ?? 'محامي استشارة',
-          avatarUrl: json['avatar_url'] as String?,
-        ));
+        result.add(model.toEntity().copyWith(fullName: model.fullName ?? 'محامي استشارة', avatarUrl: json['avatar_url'] as String?));
       } catch (e) {
         debugPrint('❌ LawyersRepo: Record error: $e');
       }
@@ -78,12 +74,8 @@ class LawyersRepositoryImpl implements LawyersRepository {
     final safeOffset = offset < 0 ? 0 : offset;
     final cached = await _readCachedPage(safeLimit, safeOffset);
     if (cached != null) return _parseRows(cached);
-
     try {
-      final response = await _supabase.rpc(
-        'get_public_lawyers',
-        params: {'p_limit': safeLimit, 'p_offset': safeOffset},
-      );
+      final response = await _supabase.rpc('get_public_lawyers', params: {'p_limit': safeLimit, 'p_offset': safeOffset});
       final rows = List<dynamic>.from(response as List);
       await _writeCachedPage(safeLimit, safeOffset, rows);
       return _parseRows(rows);
@@ -97,10 +89,7 @@ class LawyersRepositoryImpl implements LawyersRepository {
     final safeLimit = limit.clamp(1, 100);
     final safeOffset = offset < 0 ? 0 : offset;
     try {
-      final response = await _supabase.rpc(
-        'get_public_lawyers',
-        params: {'p_limit': safeLimit, 'p_offset': safeOffset},
-      );
+      final response = await _supabase.rpc('get_public_lawyers', params: {'p_limit': safeLimit, 'p_offset': safeOffset});
       final rows = List<dynamic>.from(response as List);
       await _writeCachedPage(safeLimit, safeOffset, rows);
       return _parseRows(rows);
@@ -112,16 +101,19 @@ class LawyersRepositoryImpl implements LawyersRepository {
 
   @override
   Future<LawyerProfile?> getLawyerProfile(String profileId) async {
+    final key = profileId.trim();
+    if (key.isEmpty) return null;
+    final cached = _profileMemoryCache[key];
+    if (cached != null && DateTime.now().difference(cached.timestamp) <= _cacheTtl) return cached.profile;
     try {
-      final response = await _supabase.rpc('get_public_lawyer', params: {'p_profile_id': profileId});
+      final response = await _supabase.rpc('get_public_lawyer', params: {'p_profile_id': key});
       final rows = response as List;
       if (rows.isEmpty) return null;
       final json = Map<String, dynamic>.from(rows.first as Map);
       final model = LawyerProfileModel.fromJson(json);
-      return model.toEntity().copyWith(
-        fullName: model.fullName ?? 'محامي',
-        avatarUrl: json['avatar_url'] as String?,
-      );
+      final profile = model.toEntity().copyWith(fullName: model.fullName ?? 'محامي', avatarUrl: json['avatar_url'] as String?);
+      _profileMemoryCache[key] = _MemoryProfile(profile, DateTime.now());
+      return profile;
     } catch (e) {
       debugPrint('❌ LawyersRepo: Profile fetch error: $e');
       return null;
@@ -130,21 +122,12 @@ class LawyersRepositoryImpl implements LawyersRepository {
 
   @override
   Future<void> updateLawyerProfile(LawyerProfile profile) async {
-    final data = <String, dynamic>{
-      'profile_id': profile.profileId,
-      'license_number': profile.licenseNumber,
-      'bio': profile.bio,
-      'years_experience': profile.yearsExperience,
-      'consultation_price': profile.consultationPrice,
-      'whatsapp': profile.whatsapp,
-      'id_card_url': profile.idCardUrl,
-      'availability': profile.availability,
-      'services': profile.services.map((s) => s.toJson()).toList(),
-    };
+    final data = <String, dynamic>{'profile_id': profile.profileId, 'license_number': profile.licenseNumber, 'bio': profile.bio, 'years_experience': profile.yearsExperience, 'consultation_price': profile.consultationPrice, 'whatsapp': profile.whatsapp, 'id_card_url': profile.idCardUrl, 'availability': profile.availability, 'services': profile.services.map((s) => s.toJson()).toList()};
     if (profile.specializations.isNotEmpty) data['specialization'] = profile.specializations;
     await _supabase.from('lawyer_profiles').upsert(data, onConflict: 'profile_id');
     try {
       _memoryCache.clear();
+      _profileMemoryCache.remove(profile.profileId);
       final box = Hive.box('app_cache');
       final keys = box.keys.where((key) => key.toString().startsWith(_cachePrefix)).toList();
       await box.deleteAll(keys);
@@ -158,13 +141,7 @@ class LawyersRepositoryImpl implements LawyersRepository {
     final safe = fileName.replaceAll(RegExp(r'[^A-Za-z0-9._-]'), '_');
     final path = '${user.id}/${DateTime.now().microsecondsSinceEpoch}_$safe';
     final ext = fileName.split('.').last.toLowerCase();
-    final contentType = switch (ext) {
-      'png' => 'image/png',
-      'webp' => 'image/webp',
-      'pdf' => 'application/pdf',
-      'jpg' || 'jpeg' => 'image/jpeg',
-      _ => 'application/octet-stream',
-    };
+    final contentType = switch (ext) {'png' => 'image/png', 'webp' => 'image/webp', 'pdf' => 'application/pdf', 'jpg' || 'jpeg' => 'image/jpeg', _ => 'application/octet-stream'};
     await _supabase.storage.from(bucket).uploadBinary(path, bytes, fileOptions: FileOptions(upsert: false, contentType: contentType));
     return _supabase.storage.from(bucket).createSignedUrl(path, 31536000);
   }
@@ -180,9 +157,7 @@ class LawyersRepositoryImpl implements LawyersRepository {
     if (unionIdCardUrl == null || unionIdCardUrl.trim().isEmpty) throw Exception('صورة هوية النقابة مطلوبة');
     await _supabase.from('specialization_change_requests').insert({'lawyer_id': profileId, 'requested_specializations': newSpecs, 'union_id_card_url': unionIdCardUrl, 'status': 'pending'});
     final admins = await _supabase.from('profiles').select('id').eq('role', 'admin');
-    for (final row in (admins as List)) {
-      await _supabase.from('notifications').insert({'user_id': row['id'], 'title': 'طلب تغيير تخصص جديد', 'body': 'وصل طلب جديد من محامٍ لتغيير التخصص ويحتاج إلى مراجعة صورة هوية النقابة.', 'type': 'specialization_change'});
-    }
+    for (final row in (admins as List)) await _supabase.from('notifications').insert({'user_id': row['id'], 'title': 'طلب تغيير تخصص جديد', 'body': 'وصل طلب جديد من محامٍ لتغيير التخصص ويحتاج إلى مراجعة صورة هوية النقابة.', 'type': 'specialization_change'});
   }
 }
 
@@ -190,4 +165,10 @@ class _MemoryPage {
   final List<dynamic> rows;
   final DateTime timestamp;
   const _MemoryPage(this.rows, this.timestamp);
+}
+
+class _MemoryProfile {
+  final LawyerProfile profile;
+  final DateTime timestamp;
+  const _MemoryProfile(this.profile, this.timestamp);
 }
