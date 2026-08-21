@@ -12,13 +12,7 @@ LawyersRepository lawyersRepository(LawyersRepositoryRef ref) => LawyersReposito
 final searchQueryProvider = StateProvider<String>((ref) => '');
 
 String _normalizeSpecialization(String value) {
-  return value
-      .trim()
-      .toLowerCase()
-      .replaceAll(RegExp(r'[إأآ]'), 'ا')
-      .replaceAll('ة', 'ه')
-      .replaceAll(RegExp(r'[\u064B-\u065F]'), '')
-      .replaceAll(RegExp(r'\s+'), ' ');
+  return value.trim().toLowerCase().replaceAll(RegExp(r'[إأآ]'), 'ا').replaceAll('ة', 'ه').replaceAll(RegExp(r'[\u064B-\u065F]'), '').replaceAll(RegExp(r'\s+'), ' ');
 }
 
 bool _matchesCategory(LawyerProfile lawyer, String category) {
@@ -45,54 +39,36 @@ bool _matchesSearch(LawyerProfile lawyer, String query) {
 }
 
 @riverpod
-Future<List<LawyerProfile>> lawyersList(LawyersListRef ref) {
+Future<List<LawyerProfile>> lawyersList(LawyersListRef ref) async {
   final category = ref.watch(selectedCategoryProvider);
   final searchQuery = ref.watch(searchQueryProvider);
-  final repository = ref.watch(lawyersRepositoryProvider);
-  return repository.getLawyers().then((lawyers) {
-    Iterable<LawyerProfile> filtered = lawyers;
-    if (searchQuery.trim().isNotEmpty) {
-      filtered = filtered.where((lawyer) => _matchesSearch(lawyer, searchQuery));
-    }
-    if (category != null && category.isNotEmpty) {
-      filtered = filtered.where((lawyer) => _matchesCategory(lawyer, category));
-    }
-    final list = filtered.toList()
-      ..sort((a, b) {
-        if (a.availability && !b.availability) return -1;
-        if (!a.availability && b.availability) return 1;
-        final r = b.rating.compareTo(a.rating);
-        return r != 0 ? r : b.reviewCount.compareTo(a.reviewCount);
-      });
-    return list;
+  final lawyers = await ref.watch(lawyersRepositoryProvider).getLawyers();
+  Iterable<LawyerProfile> filtered = lawyers;
+  if (searchQuery.trim().isNotEmpty) filtered = filtered.where((lawyer) => _matchesSearch(lawyer, searchQuery));
+  if (category != null && category.isNotEmpty) filtered = filtered.where((lawyer) => _matchesCategory(lawyer, category));
+  final list = filtered.toList()..sort((a, b) {
+    if (a.availability && !b.availability) return -1;
+    if (!a.availability && b.availability) return 1;
+    final r = b.rating.compareTo(a.rating);
+    return r != 0 ? r : b.reviewCount.compareTo(a.reviewCount);
   });
+  return list;
 }
 
 @riverpod
 class SelectedCategory extends _$SelectedCategory {
   @override
   String? build() => null;
-
   void setCategory(String? category) => state == category ? state = null : state = category;
 }
 
 @riverpod
-Future<LawyerProfile?> lawyerProfile(LawyerProfileRef ref, String profileId) =>
-    ref.watch(lawyersRepositoryProvider).getLawyerProfile(profileId);
+Future<LawyerProfile?> lawyerProfile(LawyerProfileRef ref, String profileId) => ref.watch(lawyersRepositoryProvider).getLawyerProfile(profileId);
 
 final userNameProvider = FutureProvider.family<String?, String>((ref, profileId) async {
-  final profile = await SupabaseConfig.client
-      .from('profiles')
-      .select('full_name')
-      .eq('id', profileId)
-      .maybeSingle();
+  final profile = await SupabaseConfig.client.from('profiles').select('full_name').eq('id', profileId).maybeSingle();
   final profileName = profile?['full_name'] as String?;
   if (profileName != null && profileName.trim().isNotEmpty) return profileName;
-
-  final lawyer = await SupabaseConfig.client
-      .from('lawyer_profiles')
-      .select('full_name')
-      .eq('profile_id', profileId)
-      .maybeSingle();
+  final lawyer = await SupabaseConfig.client.from('lawyer_profiles').select('full_name').eq('profile_id', profileId).maybeSingle();
   return lawyer?['full_name'] as String?;
 });
