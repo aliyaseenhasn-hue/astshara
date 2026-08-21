@@ -2,6 +2,9 @@ name: Apply booking button visibility fix
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - main
 
 permissions:
   contents: write
@@ -25,6 +28,10 @@ jobs:
 
           p = Path('lib/features/bookings/presentation/pages/create_booking_page.dart')
           s = p.read_text(encoding='utf-8')
+
+          if 'bottomNavigationBar: SafeArea(' in s:
+              print('Fixed bottom action is already present.')
+              raise SystemExit(0)
 
           pattern = re.compile(
               r"(?ms)^    // زر الإجراء مثبت فوق المحتوى حتى يبقى ظاهراً في جميع الخطوات\.\n"
