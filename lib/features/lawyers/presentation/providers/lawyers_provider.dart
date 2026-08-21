@@ -38,7 +38,7 @@ bool _matchesSearch(LawyerProfile lawyer, String query) {
   });
 }
 
-@riverpod
+@Riverpod(keepAlive: true)
 Future<List<LawyerProfile>> lawyersList(LawyersListRef ref) async {
   final category = ref.watch(selectedCategoryProvider);
   final searchQuery = ref.watch(searchQueryProvider);
@@ -62,7 +62,7 @@ class SelectedCategory extends _$SelectedCategory {
   void setCategory(String? category) => state == category ? state = null : state = category;
 }
 
-@riverpod
+@Riverpod(keepAlive: true)
 Future<LawyerProfile?> lawyerProfile(LawyerProfileRef ref, String profileId) => ref.watch(lawyersRepositoryProvider).getLawyerProfile(profileId);
 
 final userNameProvider = FutureProvider.family<String?, String>((ref, profileId) async {
