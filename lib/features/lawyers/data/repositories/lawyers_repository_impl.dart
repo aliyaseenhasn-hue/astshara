@@ -48,25 +48,22 @@ class LawyersRepositoryImpl implements LawyersRepository {
 
   @override
   Future<List<LawyerProfile>> getLawyers({int limit = 20, int offset = 0}) async {
+    final safeLimit = limit.clamp(1, 100);
+    final safeOffset = offset < 0 ? 0 : offset;
     final cached = await _readCachedLawyers();
     if (cached != null && cached.isNotEmpty) {
-      final end = (offset + limit).clamp(0, cached.length);
-      if (offset < end) return cached.sublist(offset, end);
-      return [];
+      final end = (safeOffset + safeLimit).clamp(0, cached.length);
+      return safeOffset < end ? cached.sublist(safeOffset, end) : <LawyerProfile>[];
     }
     try {
-      // The current RPC is kept intact for compatibility. Pagination is applied
-      // after the fetch until the RPC itself exposes limit/offset parameters.
       final response = await _supabase.rpc('get_public_lawyers');
       final rows = List<dynamic>.from(response as List);
       await _writeLawyersCache(rows);
-      final end = (offset + limit).clamp(0, rows.length);
-      return offset < end ? _parseRows(rows.sublist(offset, end)) : [];
+      final end = (safeOffset + safeLimit).clamp(0, rows.length);
+      return safeOffset < end ? _parseRows(rows.sublist(safeOffset, end)) : <LawyerProfile>[];
     } catch (e) {
       debugPrint('❌ LawyersRepo: Fetch error: $e');
-      if (cached == null) return [];
-      final end = (offset + limit).clamp(0, cached.length);
-      return offset < end ? cached.sublist(offset, end) : [];
+      return <LawyerProfile>[];
     }
   }
 
