@@ -15,19 +15,59 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Patch booking action area
+      - name: Replace floating action with fixed bottom action
         shell: bash
         run: |
           set -euo pipefail
-          python3 -c "from pathlib import Path; import re; p=Path('lib/features/bookings/presentation/pages/create_booking_page.dart'); s=p.read_text(encoding='utf-8'); pattern=r'(?ms)^    // مثبت أسفل الشاشة في جميع الخطوات\\n    bottomNavigationBar: _BottomActions\\(\\n      step: _step,\\n      loading: state\\.isLoading,\\n      onContinue: _next,\\n      onBack: _step == 0\\n          \\? null\\n          : \\(\\) => setState\\(\\(\\) => _step--\\),\\n    \\),'; replacement='''    // زر الإجراء مثبت فوق المحتوى حتى يبقى ظاهراً في جميع الخطوات.\\n    floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,\\n    floatingActionButton: SafeArea(\\n      minimum: const EdgeInsets.only(bottom: 8),\\n      child: Padding(\\n        padding: const EdgeInsets.symmetric(horizontal: 20),\\n        child: _BottomActions(\\n          step: _step,\\n          loading: state.isLoading,\\n          onContinue: _next,\\n          onBack: _step == 0\\n              ? null\\n              : () => setState(() => _step--),\\n        ),\\n      ),\\n    ),'''; n,c=re.subn(pattern,replacement,s,count=1); assert c==1 or 'floatingActionButton: SafeArea(' in s, 'booking action block not found'; s=n.replace('padding: const EdgeInsets.fromLTRB(20, 8, 20, 32),','padding: const EdgeInsets.fromLTRB(20, 8, 20, 112),',1); p.write_text(s,encoding='utf-8')"
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+
+          p = Path('lib/features/bookings/presentation/pages/create_booking_page.dart')
+          s = p.read_text(encoding='utf-8')
+
+          pattern = re.compile(
+              r"(?ms)^    // زر الإجراء مثبت فوق المحتوى حتى يبقى ظاهراً في جميع الخطوات\.\n"
+              r"    floatingActionButtonLocation: FloatingActionButtonLocation\.centerFloat,\n"
+              r"    floatingActionButton: SafeArea\(.*?^    \),\n  \);",
+          )
+
+          replacement = '''    // شريط الإجراء ثابت أسفل الصفحة وليس داخل منطقة التمرير.
+    bottomNavigationBar: SafeArea(
+      minimum: const EdgeInsets.fromLTRB(20, 8, 20, 12),
+      child: _BottomActions(
+        step: _step,
+        loading: state.isLoading,
+        onContinue: _next,
+        onBack: _step == 0
+            ? null
+            : () => setState(() => _step--),
+      ),
+    ),
+  );'''
+
+          s, count = pattern.subn(replacement, s, count=1)
+          if count != 1:
+              raise SystemExit('Expected floating booking action block was not found')
+
+          s = s.replace(
+              'padding: const EdgeInsets.fromLTRB(20, 8, 20, 112),',
+              'padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),',
+              1,
+          )
+          p.write_text(s, encoding='utf-8')
+          PY
 
       - name: Validate source
         run: |
           set -euo pipefail
-          grep -q "floatingActionButton: SafeArea(" lib/features/bookings/presentation/pages/create_booking_page.dart
-          grep -q "FloatingActionButtonLocation.centerFloat" lib/features/bookings/presentation/pages/create_booking_page.dart
-          grep -q "fromLTRB(20, 8, 20, 112)" lib/features/bookings/presentation/pages/create_booking_page.dart
-          ! grep -q "bottomNavigationBar: _BottomActions" lib/features/bookings/presentation/pages/create_booking_page.dart
+          grep -q "bottomNavigationBar: SafeArea(" lib/features/bookings/presentation/pages/create_booking_page.dart
+          grep -q "_BottomActions(" lib/features/bookings/presentation/pages/create_booking_page.dart
+          grep -q "fromLTRB(20, 8, 20, 24)" lib/features/bookings/presentation/pages/create_booking_page.dart
+          if grep -q "floatingActionButton: SafeArea(" lib/features/bookings/presentation/pages/create_booking_page.dart; then
+            echo "ERROR: floating action is still present"
+            exit 1
+          fi
 
       - name: Commit and push
         run: |
@@ -35,6 +75,9 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add lib/features/bookings/presentation/pages/create_booking_page.dart
-          if git diff --cached --quiet; then exit 0; fi
-          git commit -m "fix(ui): make booking continue button always visible"
+          if git diff --cached --quiet; then
+            echo "No changes to commit."
+            exit 0
+          fi
+          git commit -m "fix(ui): pin booking actions to bottom of page"
           git push origin HEAD:main
