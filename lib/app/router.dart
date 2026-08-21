@@ -17,6 +17,7 @@ import '../features/admin/presentation/pages/payment_management_page.dart';
 import '../features/admin/presentation/pages/specialization_change_requests_page.dart';
 import '../features/admin/presentation/pages/cancellation_requests_page.dart';
 import '../features/admin/presentation/pages/no_show_reviews_page.dart';
+import '../features/admin/presentation/pages/financial_management_page.dart';
 import '../features/home/presentation/pages/home_page.dart';
 import '../features/lawyers/presentation/pages/lawyers_list_page.dart';
 import '../features/lawyers/presentation/pages/lawyer_details_page.dart';
@@ -27,6 +28,7 @@ import '../features/lawyers/presentation/pages/lawyer_dashboard_page.dart';
 import '../features/lawyers/presentation/pages/lawyer_profile_edit_page.dart';
 import '../features/lawyers/presentation/pages/lawyer_availability_page.dart';
 import '../features/lawyers/presentation/pages/specialization_change_page.dart';
+import '../features/lawyers/presentation/pages/lawyer_wallet_page.dart';
 import '../features/bookings/presentation/pages/create_booking_page.dart';
 import '../features/bookings/presentation/pages/bookings_list_page.dart';
 import '../features/bookings/presentation/pages/archived_bookings_page.dart';
@@ -49,15 +51,9 @@ import '../shared/widgets/app_shell.dart';
 part 'router.g.dart';
 
 class GoRouterRefreshStream extends ChangeNotifier {
-  GoRouterRefreshStream(Stream<dynamic> stream) {
-    _subscription = stream.asBroadcastStream().listen((_) => notifyListeners());
-  }
+  GoRouterRefreshStream(Stream<dynamic> stream) { _subscription = stream.asBroadcastStream().listen((_) => notifyListeners()); }
   late final StreamSubscription<dynamic> _subscription;
-  @override
-  void dispose() {
-    _subscription.cancel();
-    super.dispose();
-  }
+  @override void dispose() { _subscription.cancel(); super.dispose(); }
 }
 
 Future<bool> _lawyerHasPendingManualPayment() async {
@@ -69,9 +65,7 @@ Future<bool> _lawyerHasPendingManualPayment() async {
     if (profileId == null) return false;
     final pending = await SupabaseConfig.client.from('bookings').select('id').eq('lawyer_id', profileId).eq('manual_payment_required', true).isFilter('manual_received_at', null).inFilter('status', ['بانتظار التأكيد', 'قيد مراجعة المحامي']).limit(1).maybeSingle();
     return pending != null;
-  } catch (_) {
-    return false;
-  }
+  } catch (_) { return false; }
 }
 
 @riverpod
@@ -97,10 +91,7 @@ GoRouter router(RouterRef ref) {
       final isClient = user?.role == 'user' || user?.role == 'client';
       if (paymentResult) return null;
       if (user == null) return (login || signup || otp) ? null : '/login';
-      if (user.role == 'admin') {
-        if (complete || onboarding || login || signup) return '/admin';
-        return admin ? null : '/admin';
-      }
+      if (user.role == 'admin') { if (complete || onboarding || login || signup) return '/admin'; return admin ? null : '/admin'; }
       if (!user.isOnboardingComplete) return (complete || onboarding) ? null : '/complete-profile';
       if (admin && user.role != 'admin') return '/';
       if (location == '/create-booking' && !isClient) return user.role == 'lawyer' ? '/lawyer-home' : '/';
@@ -120,50 +111,45 @@ GoRouter router(RouterRef ref) {
       GoRoute(path: '/complete-profile', builder: (c, s) => const CompleteProfilePage()),
       GoRoute(path: '/lawyer-onboarding', builder: (c, s) { final e = s.extra as Map<String, dynamic>? ?? {}; return LawyerOnboardingPage(fullName: e['fullName'] ?? '', email: e['email'] ?? ''); }),
       GoRoute(path: '/otp', builder: (c, s) => OtpPage(phone: s.extra as String? ?? '')),
-      ShellRoute(
-        builder: (context, state, child) => AppShell(location: state.matchedLocation, child: child),
-        routes: [
-          GoRoute(path: '/', builder: (c, s) => const HomePage()),
-          GoRoute(path: '/lawyers', builder: (c, s) => const LawyersListPage()),
-          GoRoute(path: '/lawyers/:id', builder: (c, s) => LawyerDetailsPage(profileId: s.pathParameters['id']!)),
-          GoRoute(path: '/legal-categories', builder: (c, s) => const LegalCategoriesPage()),
-          GoRoute(path: '/lawyer-home', builder: (c, s) => const LawyerDashboardPage()),
-          GoRoute(path: '/lawyer-profile-edit', builder: (c, s) => const LawyerProfileEditPage()),
-          GoRoute(path: '/lawyer-availability', builder: (c, s) => const LawyerAvailabilityPage()),
-          GoRoute(path: '/lawyer-specialization-change', builder: (c, s) => const SpecializationChangePage()),
-          GoRoute(path: '/lawyer-setup', builder: (c, s) => const LawyerSetupPage()),
-          GoRoute(path: '/lawyer-details/:id', builder: (c, s) => LawyerDetailsPage(profileId: s.pathParameters['id']!)),
-          GoRoute(path: '/create-booking', builder: (c, s) { final e = s.extra as Map<String, dynamic>?; final lawyer = e?['lawyer'] as LawyerProfile?; if (lawyer == null) return const Scaffold(body: Center(child: Text('تعذر فتح صفحة الحجز. يرجى العودة إلى ملف المحامي والمحاولة مرة أخرى.'))); return CreateBookingPage(lawyer: lawyer, service: e?['service'], isCustom: e?['isCustom'] == true); }),
-          GoRoute(path: '/bookings', builder: (c, s) => const BookingsListPage()),
-          GoRoute(path: '/archived-bookings', builder: (c, s) => const ArchivedBookingsPage()),
-          GoRoute(path: '/chats', builder: (c, s) => const ConversationsPage()),
-          GoRoute(path: '/booking-details', builder: (c, s) { final b = s.extra as Booking?; return b == null ? const BookingsListPage() : BookingDetailsWithCancellation(booking: b); }),
-          GoRoute(path: '/manual-payment-required', builder: (c, s) => const ManualPaymentRequiredPage()),
-          GoRoute(path: '/manual-payment', builder: (c, s) { final b = s.extra as Booking?; return b == null ? const ManualPaymentRequiredPage() : ManualPaymentPage(booking: b); }),
-          GoRoute(path: '/chat/:id', builder: (c, s) => ChatPage(conversationId: s.pathParameters['id']!)),
-          GoRoute(path: '/upload-payment', builder: (c, s) { final b = s.extra as Booking?; return b == null ? const BookingsListPage() : PaymentUploadPage(booking: b); }),
-          GoRoute(path: '/payment-result', builder: (c, s) => PaymentResultPage(status: s.uri.queryParameters['status'], bookingId: s.uri.queryParameters['booking_id'])),
-          GoRoute(path: '/profile', builder: (c, s) => const ProfilePage()),
-          GoRoute(path: '/notifications', builder: (c, s) => const NotificationsPage()),
-          GoRoute(path: '/notification-settings', builder: (c, s) => const NotificationSettingsPage()),
-          GoRoute(path: '/payment-methods', builder: (c, s) => const PaymentMethodsPage()),
-          GoRoute(path: '/app-settings', builder: (c, s) => const ProfilePage()),
-          GoRoute(path: '/help-center', builder: (c, s) => const HelpCenterPage()),
-        ],
-      ),
-      GoRoute(
-        path: '/admin',
-        builder: (c, s) => const AdminDashboardPage(),
-        routes: [
-          GoRoute(path: 'reviews', builder: (c, s) => const AdminReviewsPage()),
-          GoRoute(path: 'no-show-reviews', builder: (c, s) => const NoShowReviewsPage()),
-          GoRoute(path: 'users', builder: (c, s) => const AdminUsersPage()),
-          GoRoute(path: 'lawyer-verifications', builder: (c, s) => const LawyerVerificationPage()),
-          GoRoute(path: 'payments', builder: (c, s) => const PaymentManagementPage()),
-          GoRoute(path: 'specialization-change-requests', builder: (c, s) => const SpecializationChangeRequestsPage()),
-          GoRoute(path: 'cancellation-requests', builder: (c, s) => const CancellationRequestsPage()),
-        ],
-      ),
+      ShellRoute(builder: (context, state, child) => AppShell(location: state.matchedLocation, child: child), routes: [
+        GoRoute(path: '/', builder: (c, s) => const HomePage()),
+        GoRoute(path: '/lawyers', builder: (c, s) => const LawyersListPage()),
+        GoRoute(path: '/lawyers/:id', builder: (c, s) => LawyerDetailsPage(profileId: s.pathParameters['id']!)),
+        GoRoute(path: '/legal-categories', builder: (c, s) => const LegalCategoriesPage()),
+        GoRoute(path: '/lawyer-home', builder: (c, s) => const LawyerDashboardPage()),
+        GoRoute(path: '/lawyer-profile-edit', builder: (c, s) => const LawyerProfileEditPage()),
+        GoRoute(path: '/lawyer-availability', builder: (c, s) => const LawyerAvailabilityPage()),
+        GoRoute(path: '/lawyer-specialization-change', builder: (c, s) => const SpecializationChangePage()),
+        GoRoute(path: '/lawyer-wallet', builder: (c, s) => const LawyerWalletPage()),
+        GoRoute(path: '/lawyer-setup', builder: (c, s) => const LawyerSetupPage()),
+        GoRoute(path: '/lawyer-details/:id', builder: (c, s) => LawyerDetailsPage(profileId: s.pathParameters['id']!)),
+        GoRoute(path: '/create-booking', builder: (c, s) { final e = s.extra as Map<String, dynamic>?; final lawyer = e?['lawyer'] as LawyerProfile?; if (lawyer == null) return const Scaffold(body: Center(child: Text('تعذر فتح صفحة الحجز. يرجى العودة إلى ملف المحامي والمحاولة مرة أخرى.'))); return CreateBookingPage(lawyer: lawyer, service: e?['service'], isCustom: e?['isCustom'] == true); }),
+        GoRoute(path: '/bookings', builder: (c, s) => const BookingsListPage()),
+        GoRoute(path: '/archived-bookings', builder: (c, s) => const ArchivedBookingsPage()),
+        GoRoute(path: '/chats', builder: (c, s) => const ConversationsPage()),
+        GoRoute(path: '/booking-details', builder: (c, s) { final b = s.extra as Booking?; return b == null ? const BookingsListPage() : BookingDetailsWithCancellation(booking: b); }),
+        GoRoute(path: '/manual-payment-required', builder: (c, s) => const ManualPaymentRequiredPage()),
+        GoRoute(path: '/manual-payment', builder: (c, s) { final b = s.extra as Booking?; return b == null ? const ManualPaymentRequiredPage() : ManualPaymentPage(booking: b); }),
+        GoRoute(path: '/chat/:id', builder: (c, s) => ChatPage(conversationId: s.pathParameters['id']!)),
+        GoRoute(path: '/upload-payment', builder: (c, s) { final b = s.extra as Booking?; return b == null ? const BookingsListPage() : PaymentUploadPage(booking: b); }),
+        GoRoute(path: '/payment-result', builder: (c, s) => PaymentResultPage(status: s.uri.queryParameters['status'], bookingId: s.uri.queryParameters['booking_id'])),
+        GoRoute(path: '/profile', builder: (c, s) => const ProfilePage()),
+        GoRoute(path: '/notifications', builder: (c, s) => const NotificationsPage()),
+        GoRoute(path: '/notification-settings', builder: (c, s) => const NotificationSettingsPage()),
+        GoRoute(path: '/payment-methods', builder: (c, s) => const PaymentMethodsPage()),
+        GoRoute(path: '/app-settings', builder: (c, s) => const ProfilePage()),
+        GoRoute(path: '/help-center', builder: (c, s) => const HelpCenterPage()),
+      ]),
+      GoRoute(path: '/admin', builder: (c, s) => const AdminDashboardPage(), routes: [
+        GoRoute(path: 'reviews', builder: (c, s) => const AdminReviewsPage()),
+        GoRoute(path: 'no-show-reviews', builder: (c, s) => const NoShowReviewsPage()),
+        GoRoute(path: 'users', builder: (c, s) => const AdminUsersPage()),
+        GoRoute(path: 'lawyer-verifications', builder: (c, s) => const LawyerVerificationPage()),
+        GoRoute(path: 'payments', builder: (c, s) => const PaymentManagementPage()),
+        GoRoute(path: 'financial', builder: (c, s) => const FinancialManagementPage()),
+        GoRoute(path: 'specialization-change-requests', builder: (c, s) => const SpecializationChangeRequestsPage()),
+        GoRoute(path: 'cancellation-requests', builder: (c, s) => const CancellationRequestsPage()),
+      ]),
       GoRoute(path: '/lawyer-pending', builder: (c, s) => const LawyerPendingPage()),
     ],
   );
