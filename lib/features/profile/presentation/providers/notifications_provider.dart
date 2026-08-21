@@ -22,19 +22,21 @@ Future<String?> _currentProfileId() async {
   return profile?['id']?.toString();
 }
 
-final notificationsProvider = FutureProvider<List<AppNotification>>((ref) async {
+@Riverpod(keepAlive: true)
+Future<List<AppNotification>> notifications(NotificationsRef ref) async {
   final profileId = await _currentProfileId();
   if (profileId == null) return const [];
   final rows = await SupabaseConfig.client.from('notifications').select('id,title,body,type,is_read,created_at,reference_id,reference_type').eq('user_id', profileId).order('created_at', ascending: false).limit(100);
   return (rows as List).map((row) => AppNotification.fromMap(Map<String, dynamic>.from(row as Map))).toList();
-});
+}
 
-final unreadNotificationsCountProvider = FutureProvider<int>((ref) async {
+@Riverpod(keepAlive: true)
+Future<int> unreadNotificationsCount(UnreadNotificationsCountRef ref) async {
   final profileId = await _currentProfileId();
   if (profileId == null) return 0;
   final rows = await SupabaseConfig.client.from('notifications').select('id').eq('user_id', profileId).eq('is_read', false);
   return (rows as List).length;
-});
+}
 
 Future<void> markNotificationAsRead(String id) async {
   final profileId = await _currentProfileId();
