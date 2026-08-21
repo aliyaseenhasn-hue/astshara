@@ -110,8 +110,8 @@ class _FinancialManagementPageState extends State<FinancialManagementPage> {
       body: RefreshIndicator(
         onRefresh: _load,
         child: loading
-            ? const ListView(
-                children: [
+            ? ListView(
+                children: const [
                   SizedBox(height: 300),
                   Center(child: CircularProgressIndicator()),
                 ],
