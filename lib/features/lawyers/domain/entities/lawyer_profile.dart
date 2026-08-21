@@ -9,6 +9,10 @@ class LawyerService {
     this.description,
   });
 
+  /// Compatibility identifier used by booking UI. Services in the current
+  /// profile model are embedded by title rather than by a separate database id.
+  String get id => title;
+
   Map<String, dynamic> toJson() => {
         'title': title,
         'price': price,
