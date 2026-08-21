@@ -137,7 +137,7 @@ class _CreateBookingPageState extends ConsumerState<CreateBookingPage> {
             _ProgressHeader(step: _step, dark: dark),
             Expanded(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
+                padding: const EdgeInsets.fromLTRB(20, 8, 20, 100),
                 child: Column(
                   children: [
                     _LawyerSummary(lawyer: widget.lawyer),
@@ -150,20 +150,21 @@ class _CreateBookingPageState extends ConsumerState<CreateBookingPage> {
                 ),
               ),
             ),
-            SizedBox(
-              width: double.infinity,
-              height: 82,
-              child: Material(
-                color: AppColors.surface,
-                elevation: 8,
-                child: SafeArea(
-                  top: false,
-                  minimum: const EdgeInsets.fromLTRB(20, 8, 20, 12),
-                  child: _BottomActions(step: _step, loading: state.isLoading, onContinue: _next, onBack: _step == 0 ? null : () => setState(() => _step--)),
-                ),
-              ),
-            ),
           ],
+        ),
+      ),
+      bottomNavigationBar: Material(
+        color: AppColors.surface,
+        elevation: 12,
+        child: SafeArea(
+          top: false,
+          minimum: const EdgeInsets.fromLTRB(20, 10, 20, 12),
+          child: _BottomActions(
+            step: _step,
+            loading: state.isLoading,
+            onContinue: _next,
+            onBack: _step == 0 ? null : () => setState(() => _step--),
+          ),
         ),
       ),
     );
@@ -201,7 +202,12 @@ class _CreateBookingPageState extends ConsumerState<CreateBookingPage> {
               const SizedBox(height: 14),
               _SelectField<String>(label: 'طريقة الموعد', value: _consultationMode, items: const ['عن بعد', 'في المكتب'], icon: _consultationMode == 'في المكتب' ? Icons.business_outlined : Icons.videocam_outlined, onChanged: (value) => setState(() => _consultationMode = value)),
               const SizedBox(height: 14),
-              TextFormField(controller: _descriptionController, maxLines: 5, decoration: const InputDecoration(labelText: 'وصف الطلب', hintText: 'اكتب تفاصيل مختصرة عن استشارتك'), validator: (value) => value == null || value.trim().isEmpty ? 'اكتب وصفاً مختصراً للطلب' : null),
+              TextFormField(
+                controller: _descriptionController,
+                maxLines: 5,
+                decoration: const InputDecoration(labelText: 'وصف الطلب', hintText: 'اكتب تفاصيل مختصرة عن استشارتك'),
+                validator: (value) => value == null || value.trim().isEmpty ? 'اكتب وصفاً مختصراً للطلب' : null,
+              ),
             ],
           ),
         );
@@ -292,28 +298,21 @@ class _LawyerSummary extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(color: scheme.surfaceContainerLow, borderRadius: BorderRadius.circular(18), border: Border.all(color: scheme.outlineVariant)),
+      decoration: BoxDecoration(color: Theme.of(context).colorScheme.surfaceContainerLow, borderRadius: BorderRadius.circular(18), border: Border.all(color: Theme.of(context).colorScheme.outlineVariant)),
       child: Row(
         children: [
-          CircleAvatar(
-            radius: 28,
-            backgroundImage: lawyer.avatarUrl == null ? null : NetworkImage(lawyer.avatarUrl!),
-            child: lawyer.avatarUrl == null ? const Icon(Icons.person_outline_rounded) : null,
-          ),
+          CircleAvatar(radius: 28, backgroundImage: lawyer.avatarUrl == null ? null : NetworkImage(lawyer.avatarUrl!), child: lawyer.avatarUrl == null ? const Icon(Icons.person_outline_rounded) : null),
           const SizedBox(width: 12),
-          Expanded(
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(lawyer.fullName ?? 'محامي', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800)),
-              const SizedBox(height: 4),
-              Text(lawyer.specializations.isEmpty ? 'استشارات قانونية' : lawyer.specializations.take(2).join(' • '), maxLines: 1, overflow: TextOverflow.ellipsis, style: Theme.of(context).textTheme.bodySmall),
-              const SizedBox(height: 5),
-              Row(children: [const Icon(Icons.star_rounded, size: 16, color: AppColors.ctaGold), const SizedBox(width: 3), Text(lawyer.rating.toStringAsFixed(1)), const SizedBox(width: 8), Text('${lawyer.reviewCount} مراجعة', style: Theme.of(context).textTheme.bodySmall)]),
-            ]),
-          ),
+          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(lawyer.fullName ?? 'محامي', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800)),
+            const SizedBox(height: 4),
+            Text(lawyer.specializations.isEmpty ? 'استشارات قانونية' : lawyer.specializations.take(2).join(' • '), maxLines: 1, overflow: TextOverflow.ellipsis, style: Theme.of(context).textTheme.bodySmall),
+            const SizedBox(height: 5),
+            Row(children: [const Icon(Icons.star_rounded, size: 16, color: AppColors.ctaGold), const SizedBox(width: 3), Text(lawyer.rating.toStringAsFixed(1)), const SizedBox(width: 8), Text('${lawyer.reviewCount} مراجعة', style: Theme.of(context).textTheme.bodySmall)]),
+          ])),
         ],
       ),
     );
@@ -369,16 +368,7 @@ class _SelectablePackage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(16),
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 10),
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(color: selected ? AppColors.primaryContainer.withValues(alpha: 0.08) : scheme.surface, borderRadius: BorderRadius.circular(16), border: Border.all(color: selected ? AppColors.ctaGold : scheme.outlineVariant, width: selected ? 1.5 : 1)),
-        child: Row(children: [Icon(selected ? Icons.radio_button_checked : Icons.radio_button_off, color: selected ? AppColors.ctaGold : scheme.onSurfaceVariant), const SizedBox(width: 10), Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(service.title, style: const TextStyle(fontWeight: FontWeight.w800)), if (service.description?.isNotEmpty == true) ...[const SizedBox(height: 3), Text(service.description!, maxLines: 2, overflow: TextOverflow.ellipsis, style: Theme.of(context).textTheme.bodySmall)]])), const SizedBox(width: 8), Text('${service.price.toStringAsFixed(0)} د.ع', style: const TextStyle(fontWeight: FontWeight.w800))]),
-      ),
-    );
+    return InkWell(onTap: onTap, borderRadius: BorderRadius.circular(16), child: Container(margin: const EdgeInsets.only(bottom: 10), padding: const EdgeInsets.all(14), decoration: BoxDecoration(color: selected ? AppColors.primaryContainer.withValues(alpha: 0.08) : scheme.surface, borderRadius: BorderRadius.circular(16), border: Border.all(color: selected ? AppColors.ctaGold : scheme.outlineVariant, width: selected ? 1.5 : 1)), child: Row(children: [Icon(selected ? Icons.radio_button_checked : Icons.radio_button_off, color: selected ? AppColors.ctaGold : scheme.onSurfaceVariant), const SizedBox(width: 10), Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(service.title, style: const TextStyle(fontWeight: FontWeight.w800)), if (service.description?.isNotEmpty == true) ...[const SizedBox(height: 3), Text(service.description!, maxLines: 2, overflow: TextOverflow.ellipsis, style: Theme.of(context).textTheme.bodySmall)]])), const SizedBox(width: 8), Text('${service.price.toStringAsFixed(0)} د.ع', style: const TextStyle(fontWeight: FontWeight.w800))])));
   }
 }
 
@@ -392,15 +382,7 @@ class _SelectField<T> extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return DropdownButtonFormField<T>(
-      initialValue: value,
-      isExpanded: true,
-      decoration: InputDecoration(labelText: label, prefixIcon: Icon(icon)),
-      items: items.map((item) => DropdownMenuItem<T>(value: item, child: Text('$item'))).toList(),
-      onChanged: (next) {
-        if (next != null) onChanged(next);
-      },
-    );
+    return DropdownButtonFormField<T>(initialValue: value, isExpanded: true, decoration: InputDecoration(labelText: label, prefixIcon: Icon(icon)), items: items.map((item) => DropdownMenuItem<T>(value: item, child: Text('$item'))).toList(), onChanged: (next) { if (next != null) onChanged(next); });
   }
 }
 
@@ -415,16 +397,7 @@ class _SelectableSlot extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
     final time = TimeOfDay.fromDateTime(slot.startsAt).format(context);
     final date = '${slot.startsAt.day}/${slot.startsAt.month}/${slot.startsAt.year}';
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(14),
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 9),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-        decoration: BoxDecoration(color: selected ? AppColors.primaryContainer.withValues(alpha: 0.08) : scheme.surface, borderRadius: BorderRadius.circular(14), border: Border.all(color: selected ? AppColors.ctaGold : scheme.outlineVariant, width: selected ? 1.5 : 1)),
-        child: Row(children: [Icon(selected ? Icons.check_circle_rounded : Icons.radio_button_unchecked_rounded, color: selected ? AppColors.ctaGold : scheme.onSurfaceVariant), const SizedBox(width: 10), Expanded(child: Text(date, style: const TextStyle(fontWeight: FontWeight.w700))), Text(time, style: const TextStyle(fontWeight: FontWeight.w800))]),
-      ),
-    );
+    return InkWell(onTap: onTap, borderRadius: BorderRadius.circular(14), child: Container(margin: const EdgeInsets.only(bottom: 9), padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12), decoration: BoxDecoration(color: selected ? AppColors.primaryContainer.withValues(alpha: 0.08) : scheme.surface, borderRadius: BorderRadius.circular(14), border: Border.all(color: selected ? AppColors.ctaGold : scheme.outlineVariant, width: selected ? 1.5 : 1)), child: Row(children: [Icon(selected ? Icons.check_circle_rounded : Icons.radio_button_unchecked_rounded, color: selected ? AppColors.ctaGold : scheme.onSurfaceVariant), const SizedBox(width: 10), Expanded(child: Text(date, style: const TextStyle(fontWeight: FontWeight.w700))), Text(time, style: const TextStyle(fontWeight: FontWeight.w800))])));
   }
 }
 
@@ -451,8 +424,21 @@ class _BottomActions extends StatelessWidget {
   Widget build(BuildContext context) {
     final last = step == 3;
     return Row(children: [
-      if (onBack != null) ...[SizedBox(width: 54, height: 52, child: OutlinedButton(onPressed: loading ? null : onBack, child: const Icon(Icons.arrow_back_rounded))), const SizedBox(width: 10)],
-      Expanded(child: SizedBox(height: 52, child: FilledButton.icon(onPressed: loading ? null : onContinue, icon: loading ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)) : Icon(last ? Icons.check_rounded : Icons.arrow_forward_rounded), label: Text(last ? 'إرسال طلب الاستشارة' : 'متابعة')))),
+      if (onBack != null) ...[
+        SizedBox(width: 54, height: 52, child: OutlinedButton(onPressed: loading ? null : onBack, child: const Icon(Icons.arrow_back_rounded))),
+        const SizedBox(width: 10),
+      ],
+      Expanded(
+        child: SizedBox(
+          height: 52,
+          child: FilledButton.icon(
+            style: FilledButton.styleFrom(backgroundColor: AppColors.primary, foregroundColor: Colors.white, minimumSize: const Size.fromHeight(52)),
+            onPressed: loading ? null : onContinue,
+            icon: loading ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)) : Icon(last ? Icons.check_rounded : Icons.arrow_forward_rounded),
+            label: Text(last ? 'إرسال طلب الاستشارة' : 'متابعة', style: const TextStyle(fontWeight: FontWeight.w800)),
+          ),
+        ),
+      ),
     ]);
   }
 }
