@@ -8,8 +8,7 @@ part 'payment_management_provider.g.dart';
 
 @riverpod
 class PaymentManagement extends _$PaymentManagement {
-  @override
-  FutureOr<List<Payment>> build() async {
+  Future<List<Payment>> _fetchPendingPayments() async {
     final response = await SupabaseConfig.client
         .from('payments')
         .select()
@@ -21,28 +20,45 @@ class PaymentManagement extends _$PaymentManagement {
         .toList();
   }
 
+  @override
+  FutureOr<List<Payment>> build() async {
+    return _fetchPendingPayments();
+  }
+
   Future<void> approvePayment(Payment payment) async {
     ref.read(globalLoadingProvider.notifier).setLoading(true);
     state = const AsyncLoading();
-    state = await AsyncValue.guard(() async {
-      // قاعدة البيانات تتحقق من الدفع وتبقي الحجز بانتظار موافقة المحامي.
+    try {
       await SupabaseConfig.client
           .from('payments')
-          .update({'status': 'تم الدفع'}).eq('id', payment.id);
-      return build();
-    });
-    ref.read(globalLoadingProvider.notifier).setLoading(false);
+          .update({'status': 'تم الدفع'})
+          .eq('id', payment.id);
+
+      // لا نستدعي build() من داخل AsyncValue.guard؛ ذلك قد يعيد تشغيل
+      // دورة بناء الـ AsyncNotifier نفسها ويتسبب في Future already completed.
+      state = AsyncData(await _fetchPendingPayments());
+    } catch (e, st) {
+      state = AsyncError(e, st);
+    } finally {
+      ref.read(globalLoadingProvider.notifier).setLoading(false);
+    }
   }
 
   Future<void> rejectPayment(Payment payment) async {
     ref.read(globalLoadingProvider.notifier).setLoading(true);
     state = const AsyncLoading();
-    state = await AsyncValue.guard(() async {
+    try {
       await SupabaseConfig.client
           .from('payments')
-          .update({'status': 'فشل الدفع'}).eq('id', payment.id);
-      return build();
-    });
-    ref.read(globalLoadingProvider.notifier).setLoading(false);
+          .update({'status': 'فشل الدفع'})
+          .eq('id', payment.id);
+
+      // إعادة تحميل القائمة مباشرة بدلاً من استدعاء build() بشكل متداخل.
+      state = AsyncData(await _fetchPendingPayments());
+    } catch (e, st) {
+      state = AsyncError(e, st);
+    } finally {
+      ref.read(globalLoadingProvider.notifier).setLoading(false);
+    }
   }
 }
