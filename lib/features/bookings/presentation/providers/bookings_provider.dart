@@ -32,14 +32,11 @@ Future<Booking?> requestBooking({required String lawyerId, required DateTime sch
   ref.invalidate(availableSlotsProvider(lawyerId));
   return createdBooking;
 }
-
-/// Compatibility API for the booking page. Keeps the existing UI contract while
-/// delegating persistence to the canonical requestBooking method.
-Future<Booking?> createBooking({required String lawyerId, String? serviceId, DateTime? scheduledAt, required String consultationType, String? consultationMode, String? description, dynamic documentBytes, String? documentName}) async {
+Future<Booking?> createBooking({required String lawyerId, String? serviceId, DateTime? scheduledAt, String? slotId, required String consultationType, String? consultationMode, String? description, dynamic documentBytes, String? documentName}) async {
   final when = scheduledAt;
   if (when == null) { state = AsyncError(Exception('يرجى اختيار موعد متاح'), StackTrace.current); ref.invalidate(availableSlotsProvider(lawyerId)); return null; }
   final packageName = serviceId == null || serviceId.trim().isEmpty ? 'استشارة مختلفة' : serviceId;
-  return requestBooking(lawyerId: lawyerId, scheduledAt: when, packageName: packageName, consultationType: consultationType, consultationMode: consultationMode, description: description, documentBytes: documentBytes, documentName: documentName);
+  return requestBooking(lawyerId: lawyerId, scheduledAt: when, slotId: slotId, packageName: packageName, consultationType: consultationType, consultationMode: consultationMode, description: description, documentBytes: documentBytes, documentName: documentName);
 }
 Future<Booking?> recordManualPayment({required String bookingId, required double amount}) async { state = const AsyncLoading(); Booking? updated; state = await AsyncValue.guard(() async { updated = await ref.read(bookingsRepositoryProvider).recordManualPayment(bookingId, amount); ref.invalidate(lawyerBookingsProvider); ref.invalidate(userBookingsProvider); ref.invalidate(bookingDetailsProvider(bookingId)); }); return state.hasError ? null : updated; }
 Future<void> reviewBooking(String bookingId, bool approved) async { state = const AsyncLoading(); state = await AsyncValue.guard(() async { await ref.read(bookingsRepositoryProvider).reviewBooking(bookingId, approved); ref.invalidate(userBookingsProvider); ref.invalidate(lawyerBookingsProvider); ref.invalidate(bookingDetailsProvider(bookingId)); }); }
