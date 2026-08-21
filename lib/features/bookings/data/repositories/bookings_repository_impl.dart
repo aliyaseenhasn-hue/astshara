@@ -2,7 +2,6 @@ import 'package:flutter/foundation.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../domain/entities/booking.dart';
-import '../../domain/entities/booking.dart';
 import '../../domain/repositories/bookings_repository.dart';
 import '../models/booking_model.dart';
 
@@ -27,7 +26,6 @@ class BookingsRepositoryImpl implements BookingsRepository {
       if (age <= _cacheTtl) return memory.bookings;
       _memoryCache.remove(key);
     }
-
     try {
       final box = Hive.box('app_cache');
       final timestamp = box.get(_timeKey(role, profileId)) as int?;
@@ -52,30 +50,29 @@ class BookingsRepositoryImpl implements BookingsRepository {
     _memoryCache[key] = _BookingCache(bookings, now);
     try {
       final box = Hive.box('app_cache');
-      await box.put(key, bookings.map((booking) => _bookingToJson(booking)).toList());
+      await box.put(key, bookings.map(_bookingToJson).toList());
       await box.put(_timeKey(role, profileId), now.millisecondsSinceEpoch);
     } catch (e) {
       debugPrint('⚠️ BookingsRepo: cache write error: $e');
     }
   }
 
-  Map<String, dynamic> _bookingToJson(Booking booking) {
-    return {
-      'id': booking.id,
-      'user_id': booking.userId,
-      'lawyer_id': booking.lawyerId,
-      'scheduled_at': booking.scheduledAt.toIso8601String(),
-      'status': booking.status,
-      'consultation_type': booking.consultationType,
-      'consultation_mode': booking.consultationMode,
-      'description': booking.description,
-      'document_url': booking.documentUrl,
-      'package_name': booking.packageName,
-      'package_description': booking.packageDescription,
-      'package_duration_minutes': booking.packageDurationMinutes,
-      'created_at': booking.createdAt.toIso8601String(),
-    };
-  }
+  Map<String, dynamic> _bookingToJson(Booking booking) => {
+        'id': booking.id,
+        'user_id': booking.userId,
+        'lawyer_id': booking.lawyerId,
+        'status': booking.status,
+        'scheduled_at': booking.scheduledAt.toIso8601String(),
+        'price': booking.price,
+        'created_at': booking.createdAt?.toIso8601String(),
+        'started_at': booking.startedAt?.toIso8601String(),
+        'whatsapp_number': booking.whatsappNumber,
+        'lawyer_approved': booking.lawyerApproved,
+        'consultation_mode': booking.consultationMode,
+        'manual_payment_required': booking.manualPaymentRequired,
+        'manual_received_amount': booking.manualReceivedAmount,
+        'manual_received_at': booking.manualReceivedAt?.toIso8601String(),
+      };
 
   void _scheduleRefresh(String role, String profileId) {
     final key = _cacheKey(role, profileId);
