@@ -9,26 +9,29 @@ class LawyerWalletPage extends StatefulWidget {
 
 class _LawyerWalletPageState extends State<LawyerWalletPage> {
   Map<String, dynamic>? wallet;
+  String? walletNumber;
   List<Map<String, dynamic>> requests = [];
   List<Map<String, dynamic>> payments = [];
   bool loading = true;
   bool submitting = false;
+  bool savingWallet = false;
 
   @override
   void initState() { super.initState(); _load(); }
 
   Future<void> _load() async {
-    setState(() => loading = true);
+    if (mounted) setState(() => loading = true);
     try {
       final user = SupabaseConfig.client.auth.currentUser;
       if (user == null) throw Exception('يجب تسجيل الدخول');
       final profile = await SupabaseConfig.client.from('profiles').select('id,wallet_number').eq('auth_id', user.id).maybeSingle();
       if (profile == null) throw Exception('ملف المحامي غير موجود');
       final lawyerId = profile['id'];
+      walletNumber = profile['wallet_number']?.toString().trim();
+      if (walletNumber?.isEmpty == true) walletNumber = null;
       wallet = await SupabaseConfig.client.from('lawyer_wallets').select().eq('lawyer_id', lawyerId).maybeSingle();
-      requests = List<Map<String, dynamic>>.from(await SupabaseConfig.client.from('lawyer_payout_requests').select('id,amount,currency,status,wallet_number,created_at,processed_at').eq('lawyer_id', lawyerId).order('created_at', ascending: false).limit(20));
+      requests = List<Map<String, dynamic>>.from(await SupabaseConfig.client.from('lawyer_payout_requests').select('id,amount,currency,status,wallet_number,created_at,processed_at,rejection_reason,provider_reference,completed_at').eq('lawyer_id', lawyerId).order('created_at', ascending: false).limit(20));
 
-      // سجل جميع عمليات الدفع المرتبطة باستشارات هذا المحامي، دون تصفية حسب الحالة.
       final bookingRows = await SupabaseConfig.client
           .from('bookings')
           .select('id,price,consultation_type,scheduled_at,user_id')
@@ -55,15 +58,66 @@ class _LawyerWalletPageState extends State<LawyerWalletPage> {
     } finally { if (mounted) setState(() => loading = false); }
   }
 
+  Future<void> _editWalletNumber() async {
+    final controller = TextEditingController(text: walletNumber ?? '');
+    final value = await showDialog<String>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('رقم محفظة الاستلام'),
+        content: TextField(
+          controller: controller,
+          keyboardType: TextInputType.phone,
+          textDirection: TextDirection.ltr,
+          decoration: const InputDecoration(labelText: 'رقم المحفظة', hintText: 'مثال: 07xxxxxxxxx', prefixIcon: Icon(Icons.account_balance_wallet_outlined)),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('إلغاء')),
+          FilledButton(onPressed: () => Navigator.pop(dialogContext, controller.text.trim()), child: const Text('حفظ')),
+        ],
+      ),
+    );
+    controller.dispose();
+    if (value == null) return;
+    if (value.length < 5 || value.length > 32) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('رقم المحفظة غير صالح')));
+      return;
+    }
+    setState(() => savingWallet = true);
+    try {
+      await SupabaseConfig.client.rpc('update_own_lawyer_wallet_number', params: {'p_wallet_number': value});
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تم حفظ رقم المحفظة')));
+      await _load();
+    } catch (e) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('تعذر حفظ رقم المحفظة: ${e.toString().replaceFirst('Exception: ', '')}')));
+    } finally { if (mounted) setState(() => savingWallet = false); }
+  }
+
   Future<void> _requestPayout() async {
+    if (walletNumber == null || walletNumber!.isEmpty) {
+      await _editWalletNumber();
+      if (walletNumber == null || walletNumber!.isEmpty) return;
+    }
+    final available = num.tryParse('${wallet?['available_balance'] ?? 0}') ?? 0;
+    if (available <= 0) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('لا يوجد رصيد متاح للسحب حالياً')));
+      return;
+    }
     final controller = TextEditingController();
     final amount = await showDialog<double>(context: context, builder: (context) => AlertDialog(
       title: const Text('طلب سحب'),
-      content: TextField(controller: controller, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: const InputDecoration(labelText: 'المبلغ بالدينار العراقي')),
-      actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('إلغاء')), FilledButton(onPressed: () => Navigator.pop(context, double.tryParse(controller.text.trim())), child: const Text('متابعة'))],
+      content: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        Text('المتاح للسحب: ${money(available)}'),
+        const SizedBox(height: 12),
+        TextField(controller: controller, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: const InputDecoration(labelText: 'المبلغ بالدينار العراقي')),
+      ]),
+      actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('إلغاء')), FilledButton(onPressed: () => Navigator.pop(context, double.tryParse(controller.text.trim())), child: const Text('إرسال الطلب'))],
     ));
     controller.dispose();
     if (amount == null || amount <= 0) return;
+    if (amount > available) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('المبلغ المطلوب أكبر من الرصيد المتاح')));
+      return;
+    }
     setState(() => submitting = true);
     try {
       await SupabaseConfig.client.rpc('request_lawyer_payout', params: {'p_amount': amount});
@@ -76,15 +130,8 @@ class _LawyerWalletPageState extends State<LawyerWalletPage> {
 
   String money(dynamic value) => '${(num.tryParse('${value ?? 0}') ?? 0).toStringAsFixed(0)} د.ع';
   String paymentStatus(String value) => {
-    'pending': 'قيد الانتظار',
-    'قيد معالجة الدفع': 'قيد معالجة الدفع',
-    'تم الدفع': 'تم الدفع',
-    'paid': 'تم الدفع',
-    'failed': 'فشل الدفع',
-    'فشل الدفع': 'فشل الدفع',
-    'cancelled': 'ملغاة',
-    'refunded': 'تم رد المبلغ',
-    'rejected': 'مرفوضة',
+    'pending': 'قيد الانتظار', 'قيد معالجة الدفع': 'قيد معالجة الدفع', 'تم الدفع': 'تم الدفع', 'paid': 'تم الدفع',
+    'failed': 'فشل الدفع', 'فشل الدفع': 'فشل الدفع', 'cancelled': 'ملغاة', 'refunded': 'تم رد المبلغ', 'rejected': 'مرفوضة',
   }[value] ?? value;
   String payoutStatus(String value) => {'pending_review':'بانتظار مراجعة الإدارة','approved':'تمت الموافقة','processing':'قيد التنفيذ','paid':'تم التحويل','rejected':'مرفوض','failed':'فشل التحويل'}[value] ?? value;
 
@@ -117,6 +164,13 @@ class _LawyerWalletPageState extends State<LawyerWalletPage> {
                     const SizedBox(height: 18),
                     SizedBox(width: double.infinity, child: FilledButton.icon(onPressed: submitting ? null : _requestPayout, icon: submitting ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2)) : const Icon(Icons.account_balance_wallet_outlined), label: const Text('طلب سحب'))),
                   ]))),
+                  const SizedBox(height: 16),
+                  Card(child: ListTile(
+                    leading: const CircleAvatar(child: Icon(Icons.account_balance_wallet_outlined)),
+                    title: const Text('محفظة الاستلام', style: TextStyle(fontWeight: FontWeight.w700)),
+                    subtitle: Text(walletNumber == null ? 'لم تتم إضافة رقم محفظة الاستلام بعد' : 'رقم المحفظة: $walletNumber'),
+                    trailing: savingWallet ? const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2)) : IconButton(tooltip: 'تعديل رقم المحفظة', onPressed: _editWalletNumber, icon: const Icon(Icons.edit_outlined)),
+                  )),
                   const SizedBox(height: 22),
                   const Text('سجل عمليات الدفع', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
                   const SizedBox(height: 6),
@@ -145,7 +199,17 @@ class _LawyerWalletPageState extends State<LawyerWalletPage> {
                   const Text('طلبات السحب', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
                   const SizedBox(height: 8),
                   if (requests.isEmpty) const Card(child: Padding(padding: EdgeInsets.all(18), child: Text('لا توجد طلبات سحب حتى الآن.'))),
-                  ...requests.map((r) => Card(child: ListTile(leading: const CircleAvatar(child: Icon(Icons.payments_outlined)), title: Text(money(r['amount'])), subtitle: Text(payoutStatus('${r['status']}')), trailing: Text('${r['wallet_number'] ?? ''}')))),
+                  ...requests.map((r) => Card(child: ListTile(
+                    leading: const CircleAvatar(child: Icon(Icons.payments_outlined)),
+                    title: Text(money(r['amount'])),
+                    subtitle: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                      Text(payoutStatus('${r['status']}')),
+                      Text('التاريخ: ${_date(r['created_at'])}'),
+                      if (r['rejection_reason'] != null) Text('السبب: ${r['rejection_reason']}'),
+                      if (r['provider_reference'] != null) Text('مرجع التحويل: ${r['provider_reference']}'),
+                    ]),
+                    trailing: Text('${r['wallet_number'] ?? ''}'),
+                  ))),
                 ],
               ),
       ),
