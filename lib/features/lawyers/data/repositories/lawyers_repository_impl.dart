@@ -19,11 +19,6 @@ class LawyersRepositoryImpl implements LawyersRepository {
   String _cacheKey(int limit, int offset) => '$_cachePrefix${limit}_$offset';
   String _cacheTimeKey(int limit, int offset) => '${_cacheKey(limit, offset)}_time';
 
-  bool hasFreshMemoryPage(int limit, int offset) {
-    final page = _memoryCache[_cacheKey(limit, offset)];
-    return page != null && DateTime.now().difference(page.timestamp) <= _cacheTtl;
-  }
-
   Future<List<dynamic>?> _readCachedPage(int limit, int offset) async {
     final key = _cacheKey(limit, offset);
     final memory = _memoryCache[key];
@@ -38,8 +33,7 @@ class LawyersRepositoryImpl implements LawyersRepository {
       final raw = box.get(key);
       if (timestamp == null || raw is! List) return null;
       final cachedAt = DateTime.fromMillisecondsSinceEpoch(timestamp);
-      final age = DateTime.now().difference(cachedAt);
-      if (age > _cacheTtl) return null;
+      if (DateTime.now().difference(cachedAt) > _cacheTtl) return null;
       final rows = List<dynamic>.from(raw);
       _memoryCache[key] = _MemoryPage(rows, cachedAt);
       return rows;
@@ -67,7 +61,10 @@ class LawyersRepositoryImpl implements LawyersRepository {
       try {
         final json = Map<String, dynamic>.from(item as Map);
         final model = LawyerProfileModel.fromJson(json);
-        result.add(model.toEntity().copyWith(fullName: model.fullName ?? 'محامي استشارة', avatarUrl: json['avatar_url'] as String?));
+        result.add(model.toEntity().copyWith(
+              fullName: model.fullName ?? 'محامي استشارة',
+              avatarUrl: json['avatar_url'] as String?,
+            ));
       } catch (e) {
         debugPrint('❌ LawyersRepo: Record error: $e');
       }
@@ -99,9 +96,17 @@ class LawyersRepositoryImpl implements LawyersRepository {
       }
       return _parseRows(cached);
     }
+
     try {
-      final response = await _supabase.rpc('get_public_lawyers', params: {'p_limit': safeLimit, 'p_offset': safeOffset});
-      final rows = List<dynamic>.from(response as List);
+      // The deployed Supabase RPC currently exposes get_public_lawyers() without
+      // pagination arguments. Keep the repository compatible with that contract
+      // and paginate the returned public rows locally until the database RPC is
+      // migrated to a paginated signature.
+      final response = await _supabase.rpc('get_public_lawyers');
+      final allRows = List<dynamic>.from(response as List);
+      final start = safeOffset.clamp(0, allRows.length);
+      final end = (start + safeLimit).clamp(start, allRows.length);
+      final rows = allRows.sublist(start, end);
       await _writeCachedPage(safeLimit, safeOffset, rows);
       return _parseRows(rows);
     } catch (e) {
@@ -114,8 +119,11 @@ class LawyersRepositoryImpl implements LawyersRepository {
     final safeLimit = limit.clamp(1, 100);
     final safeOffset = offset < 0 ? 0 : offset;
     try {
-      final response = await _supabase.rpc('get_public_lawyers', params: {'p_limit': safeLimit, 'p_offset': safeOffset});
-      final rows = List<dynamic>.from(response as List);
+      final response = await _supabase.rpc('get_public_lawyers');
+      final allRows = List<dynamic>.from(response as List);
+      final start = safeOffset.clamp(0, allRows.length);
+      final end = (start + safeLimit).clamp(start, allRows.length);
+      final rows = allRows.sublist(start, end);
       await _writeCachedPage(safeLimit, safeOffset, rows);
       return _parseRows(rows);
     } catch (e) {
