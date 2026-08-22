@@ -9,32 +9,35 @@ import '../core/services/realtime_notification_service.dart';
 const _buildSupabaseUrl = String.fromEnvironment('SUPABASE_URL');
 const _buildSupabaseAnonKey = String.fromEnvironment('SUPABASE_ANON_KEY');
 
+// Supabase publishable/anon keys are safe to embed in a client application.
+// Build-time values always take precedence; these defaults keep direct web
+// deployments (for example Cloudflare Pages) from failing before runApp().
+const _publicSupabaseUrl = 'https://iidxqrnrazkyfgzelzhb.supabase.co';
+const _publicSupabaseAnonKey = 'sb_publishable_LX3dMTuEV3WKxXVEjdaDNw_O3BK-gCa';
+
 Future<ProviderContainer> bootstrap() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   try {
-    // تهيئة التخزين المحلي مبكراً حتى تستطيع الصفحات استخدام البيانات
-    // المحفوظة بدون إعادة تحميل كامل من الشبكة في كل تشغيل.
     await Hive.initFlutter();
     await Hive.openBox('app_cache');
 
     try {
       await dotenv.load(fileName: '.env');
     } catch (_) {
-      debugPrint('⚠️ Warning: .env file not available - using build-time configuration');
+      debugPrint('⚠️ .env not available; using build-time/public client configuration');
     }
 
     final supabaseUrl = _buildSupabaseUrl.isNotEmpty
         ? _buildSupabaseUrl
-        : dotenv.env['SUPABASE_URL'];
+        : (dotenv.env['SUPABASE_URL']?.isNotEmpty == true
+            ? dotenv.env['SUPABASE_URL']!
+            : _publicSupabaseUrl);
     final supabaseAnonKey = _buildSupabaseAnonKey.isNotEmpty
         ? _buildSupabaseAnonKey
-        : dotenv.env['SUPABASE_ANON_KEY'];
-
-    if (supabaseUrl == null || supabaseUrl.isEmpty ||
-        supabaseAnonKey == null || supabaseAnonKey.isEmpty) {
-      throw Exception('Supabase credentials not found');
-    }
+        : (dotenv.env['SUPABASE_ANON_KEY']?.isNotEmpty == true
+            ? dotenv.env['SUPABASE_ANON_KEY']!
+            : _publicSupabaseAnonKey);
 
     await SupabaseConfig.initializeWithCredentials(
       url: supabaseUrl,
@@ -45,10 +48,11 @@ Future<ProviderContainer> bootstrap() async {
       await NotificationService.initialize();
       await RealtimeNotificationService().start();
     } catch (e) {
-      debugPrint('⚠️ Warning: notification services unavailable: $e');
+      debugPrint('⚠️ Notification services unavailable: $e');
     }
-  } catch (e) {
+  } catch (e, stackTrace) {
     debugPrint('🚨 Critical Bootstrap Error: $e');
+    debugPrintStack(stackTrace: stackTrace);
     rethrow;
   }
 
