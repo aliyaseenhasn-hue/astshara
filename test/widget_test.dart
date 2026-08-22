@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -23,9 +24,6 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
-          // Keep the smoke test independent from Supabase/Auth and network
-          // state. The real router is exercised by the application itself;
-          // this test only verifies that the root app can render safely.
           routerProvider.overrideWithValue(testRouter),
           unreadNotificationsCountProvider.overrideWith((ref) async => 0),
         ],
