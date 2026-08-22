@@ -8,10 +8,6 @@ import 'package:astshara/app/router.dart';
 import 'package:astshara/core/providers/theme_mode_provider.dart';
 import 'package:astshara/features/profile/presentation/providers/notifications_provider.dart';
 
-class _TestThemeModeController extends ThemeModeController {
-  _TestThemeModeController() : super(skipPersistence: true);
-}
-
 void main() {
   testWidgets('App smoke test', (WidgetTester tester) async {
     final testRouter = GoRouter(
@@ -29,7 +25,10 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
-          themeModeProvider.overrideWith((ref) => _TestThemeModeController()),
+          // StateNotifierProvider requires its override factory to return the
+          // notifier, not the state value. Keep the production controller so
+          // the test uses the same provider type as the application.
+          themeModeProvider.overrideWith((ref) => ThemeModeController()),
           routerProvider.overrideWithValue(testRouter),
           unreadNotificationsCountProvider.overrideWith((ref) async => 0),
         ],
