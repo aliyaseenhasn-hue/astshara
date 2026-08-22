@@ -82,10 +82,11 @@ class AuthRepositoryImpl implements AuthRepository {
 
   @override
   Future<void> signInWithGoogle() async {
-    // استخدم أصل الموقع الحالي بدل رابط GitHub Pages القديم.
-    // هذا يجعل OAuth يعمل تلقائياً على workers.dev أو أي دومين مخصص لاحقاً.
+    // On the web, let Supabase use the configured Site URL instead of
+    // forcing the current browser origin. This keeps OAuth consistent
+    // across workers.dev, custom domains, and preview deployments.
     final redirectUrl = kIsWeb
-        ? Uri.base.origin
+        ? null
         : 'https://istishara-platform.aliyaseenhasn.workers.dev';
 
     await _supabase.auth.signInWithOAuth(
@@ -97,37 +98,10 @@ class AuthRepositoryImpl implements AuthRepository {
 
   @override
   Future<void> signInWithTelegram() async => throw UnsupportedError('استخدم تسجيل Telegram عبر رمز التحقق داخل التطبيق');
-
   @override
-  Future<Map<String, dynamic>> startTelegramLogin(String phone, {bool registration = false}) async {
-    final result = await _supabase.functions.invoke('telegram-auth-v2', body: {'action': 'start', 'phone': phone, 'mode': registration ? 'signup' : 'login'});
-    if (result.data is! Map) throw Exception('تعذر بدء تسجيل Telegram');
-    final data = Map<String, dynamic>.from(result.data as Map);
-    if (data['ok'] != true) throw Exception(data['error'] ?? 'تعذر بدء تسجيل Telegram');
-    return data;
-  }
-
+  Future<Map<String, dynamic>> startTelegramLogin(String phone, {bool registration = false}) async { final result = await _supabase.functions.invoke('telegram-auth-v2', body: {'action': 'start', 'phone': phone, 'mode': registration ? 'signup' : 'login'}); if (result.data is! Map) throw Exception('تعذر بدء تسجيل Telegram'); final data = Map<String, dynamic>.from(result.data as Map); if (data['ok'] != true) throw Exception(data['error'] ?? 'تعذر بدء تسجيل Telegram'); return data; }
   @override
-  Future<Map<String, dynamic>> verifyTelegramLogin({required String requestToken, required String code}) async {
-    final result = await _supabase.functions.invoke('telegram-auth-v2', body: {'action': 'verify', 'request_token': requestToken, 'code': code});
-    if (result.data is! Map) throw Exception('تعذر التحقق من الرمز');
-    final data = Map<String, dynamic>.from(result.data as Map);
-    if (data['ok'] != true) throw Exception(data['error'] ?? 'رمز التحقق غير صحيح');
-    final accessToken = data['access_token'];
-    final refreshToken = data['refresh_token'];
-    if (accessToken is String && accessToken.isNotEmpty && refreshToken is String && refreshToken.isNotEmpty) {
-      await _supabase.auth.setSession(refreshToken);
-      final current = _supabase.auth.currentSession;
-      if (current == null || current.accessToken != accessToken) await _supabase.auth.refreshSession();
-      await refreshUser();
-      return data;
-    }
-    final syntheticEmail = data['syntheticEmail'];
-    final password = data['password'];
-    if (syntheticEmail is String && syntheticEmail.isNotEmpty && password is String && password.isNotEmpty) { await signInWithEmail(email: syntheticEmail, password: password); return data; }
-    throw Exception('تم التحقق من Telegram لكن تعذر إنشاء جلسة الدخول');
-  }
-
+  Future<Map<String, dynamic>> verifyTelegramLogin({required String requestToken, required String code}) async { final result = await _supabase.functions.invoke('telegram-auth-v2', body: {'action': 'verify', 'request_token': requestToken, 'code': code}); if (result.data is! Map) throw Exception('تعذر التحقق من الرمز'); final data = Map<String, dynamic>.from(result.data as Map); if (data['ok'] != true) throw Exception(data['error'] ?? 'رمز التحقق غير صحيح'); final accessToken = data['access_token']; final refreshToken = data['refresh_token']; if (accessToken is String && accessToken.isNotEmpty && refreshToken is String && refreshToken.isNotEmpty) { await _supabase.auth.setSession(refreshToken); final current = _supabase.auth.currentSession; if (current == null || current.accessToken != accessToken) await _supabase.auth.refreshSession(); await refreshUser(); return data; } final syntheticEmail = data['syntheticEmail']; final password = data['password']; if (syntheticEmail is String && syntheticEmail.isNotEmpty && password is String && password.isNotEmpty) { await signInWithEmail(email: syntheticEmail, password: password); return data; } throw Exception('تم التحقق من Telegram لكن تعذر إنشاء جلسة الدخول'); }
   @override
   Future<void> verifyOTP({required String phone, required String token}) async => _supabase.auth.verifyOTP(phone: phone, token: token, type: OtpType.sms);
   @override
