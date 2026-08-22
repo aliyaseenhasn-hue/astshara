@@ -4,6 +4,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:astshara/app/app.dart';
 import 'package:astshara/core/config/supabase_config.dart';
+import 'package:astshara/features/authentication/presentation/providers/auth_provider.dart';
 import 'package:astshara/features/profile/presentation/providers/notifications_provider.dart';
 
 const _testSupabaseUrl = 'https://test.supabase.co';
@@ -33,13 +34,18 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
+          // Keep the smoke test fully offline and deterministic. The router
+          // only needs to know that there is no authenticated user.
+          authStateChangesProvider.overrideWith((ref) => Stream.value(null)),
           unreadNotificationsCountProvider.overrideWith((ref) async => 0),
         ],
         child: const LawConnectApp(),
       ),
     );
 
-    await tester.pump();
+    // Allow the router's initial redirect and first frame to complete without
+    // waiting for any real Supabase/network activity.
+    await tester.pump(const Duration(milliseconds: 100));
 
     expect(find.byType(LawConnectApp), findsOneWidget);
   });
