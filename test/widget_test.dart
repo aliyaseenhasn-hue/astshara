@@ -1,4 +1,3 @@
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -25,10 +24,10 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
-          // StateNotifierProvider requires its override factory to return the
-          // notifier, not the state value. Keep the production controller so
-          // the test uses the same provider type as the application.
-          themeModeProvider.overrideWith((ref) => ThemeModeController()),
+          // StateNotifierProvider exposes ThemeMode as its state. Override the
+          // state directly so the test never constructs ThemeModeController,
+          // which initializes SharedPreferences through a platform plugin.
+          themeModeProvider.overrideWithValue(ThemeMode.light),
           routerProvider.overrideWithValue(testRouter),
           unreadNotificationsCountProvider.overrideWith((ref) async => 0),
         ],
