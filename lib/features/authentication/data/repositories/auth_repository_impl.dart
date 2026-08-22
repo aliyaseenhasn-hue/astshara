@@ -81,10 +81,12 @@ class AuthRepositoryImpl implements AuthRepository {
   Future<void> signInWithPhone(String phone) async { var formattedPhone = phone.trim().replaceAll(' ', ''); if (!formattedPhone.startsWith('+')) formattedPhone = '+$formattedPhone'; await _supabase.auth.signInWithOtp(phone: formattedPhone); }
   @override
   Future<void> signInWithGoogle() async {
-    final redirectUrl = kIsWeb
-        ? '${Uri.base.origin}${Uri.base.path.endsWith('/') ? Uri.base.path : '${Uri.base.path}/'}'
-        : 'io.supabase.astshara://login-callback';
-    await _supabase.auth.signInWithOAuth(OAuthProvider.google, redirectTo: redirectUrl, queryParams: {'prompt': 'select_account'});
+    const redirectUrl = 'https://aliyaseenhasn-hue.github.io/istishara-platform/';
+    await _supabase.auth.signInWithOAuth(
+      OAuthProvider.google,
+      redirectTo: redirectUrl,
+      queryParams: {'prompt': 'select_account'},
+    );
   }
   @override
   Future<void> signInWithTelegram() async => throw UnsupportedError('استخدم تسجيل Telegram عبر رمز التحقق داخل التطبيق');
