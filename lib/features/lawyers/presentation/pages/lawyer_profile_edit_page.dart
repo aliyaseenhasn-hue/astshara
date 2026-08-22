@@ -20,7 +20,7 @@ class _LawyerProfileEditPageState extends ConsumerState<LawyerProfileEditPage> {
   final _differentConsultationPriceController = TextEditingController();
   late List<LawyerService> _services;
   bool _isLoading = false;
-  String? _profileId;
+  String? _lawyerProfileId;
 
   @override
   void initState() { super.initState(); _services = []; _loadProfile(); }
@@ -37,7 +37,9 @@ class _LawyerProfileEditPageState extends ConsumerState<LawyerProfileEditPage> {
         _bioController.text = profile.bio ?? '';
         final price = profile.consultationPrice ?? 0;
         _differentConsultationPriceController.text = price > 0 ? price.toStringAsFixed(0) : '';
-        _profileId = profile.profileId;
+        // lawyer_achievements.lawyer_id references lawyer_profiles.id,
+        // not profiles.id (profile.profileId).
+        _lawyerProfileId = profile.id;
       });
     }
   }
@@ -132,10 +134,10 @@ class _LawyerProfileEditPageState extends ConsumerState<LawyerProfileEditPage> {
                     const SizedBox(height: 10),
                     TextFormField(controller: _bioController, maxLines: 6, maxLength: 1000, decoration: _input('نبذة مهنية', hint: 'اكتب نبذة عن خبرتك وتخصصك وإنجازاتك...'), validator: (v) => v == null || v.trim().isEmpty ? 'السيرة الذاتية مطلوبة' : null),
                     const SizedBox(height: 24),
-                    if (_profileId != null) ...[
+                    if (_lawyerProfileId != null) ...[
                       const Text('الإنجازات المهنية', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: AppColors.secondary)),
                       const SizedBox(height: 10),
-                      LawyerAchievementsGallery(lawyerId: _profileId!, editable: true),
+                      LawyerAchievementsGallery(lawyerId: _lawyerProfileId!, editable: true),
                       const SizedBox(height: 24),
                     ],
                     const Text('سعر الاستشارة المختلفة', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: AppColors.secondary)),
