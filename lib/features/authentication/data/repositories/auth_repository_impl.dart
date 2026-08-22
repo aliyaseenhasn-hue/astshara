@@ -79,15 +79,22 @@ class AuthRepositoryImpl implements AuthRepository {
   Future<void> signOut() async => _supabase.auth.signOut();
   @override
   Future<void> signInWithPhone(String phone) async { var formattedPhone = phone.trim().replaceAll(' ', ''); if (!formattedPhone.startsWith('+')) formattedPhone = '+$formattedPhone'; await _supabase.auth.signInWithOtp(phone: formattedPhone); }
+
   @override
   Future<void> signInWithGoogle() async {
-    const redirectUrl = 'https://aliyaseenhasn-hue.github.io/istishara-platform/';
+    // استخدم أصل الموقع الحالي بدل رابط GitHub Pages القديم.
+    // هذا يجعل OAuth يعمل تلقائياً على workers.dev أو أي دومين مخصص لاحقاً.
+    final redirectUrl = kIsWeb
+        ? Uri.base.origin
+        : 'https://istishara-platform.aliyaseenhasn.workers.dev';
+
     await _supabase.auth.signInWithOAuth(
       OAuthProvider.google,
       redirectTo: redirectUrl,
       queryParams: {'prompt': 'select_account'},
     );
   }
+
   @override
   Future<void> signInWithTelegram() async => throw UnsupportedError('استخدم تسجيل Telegram عبر رمز التحقق داخل التطبيق');
 
