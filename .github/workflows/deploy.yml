@@ -103,14 +103,11 @@ jobs:
           fi
           flutter clean
           flutter pub get
-          flutter build web --release --no-wasm-dry-run --base-href "/astshara/" \
+          flutter build web --release --no-wasm-dry-run --base-href "/istishara-platform/" \
             --dart-define=SUPABASE_URL="$SUPABASE_URL" \
             --dart-define=SUPABASE_ANON_KEY="$SUPABASE_ANON_KEY" \
             --dart-define=VAPID_PUBLIC_KEY="$PWA_VAPID_PUBLIC_KEY"
 
-          # Flutter copies pubspec assets under build/web/assets/<declared path>.
-          # The declared asset is assets/icons/app_icon.png, so the generated
-          # artifact path is build/web/assets/assets/icons/app_icon.png.
           test -f build/web/index.html
           test -f build/web/manifest.json
           test -f build/web/assets/assets/icons/app_icon.png
