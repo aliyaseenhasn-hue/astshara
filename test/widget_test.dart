@@ -1,6 +1,8 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:astshara/app/app.dart';
 import 'package:astshara/app/router.dart';
@@ -9,6 +11,8 @@ import 'package:astshara/features/profile/presentation/providers/notifications_p
 
 void main() {
   testWidgets('App smoke test', (WidgetTester tester) async {
+    SharedPreferences.setMockInitialValues({});
+
     final testRouter = GoRouter(
       initialLocation: '/login',
       routes: [
@@ -24,10 +28,7 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
-          // StateNotifierProvider exposes ThemeMode as its state. Override the
-          // state directly so the test never constructs ThemeModeController,
-          // which initializes SharedPreferences through a platform plugin.
-          themeModeProvider.overrideWithValue(ThemeMode.light),
+          themeModeProvider.overrideWith((ref) => ThemeModeController()),
           routerProvider.overrideWithValue(testRouter),
           unreadNotificationsCountProvider.overrideWith((ref) async => 0),
         ],
