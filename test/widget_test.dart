@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import 'package:astshara/app/app.dart';
 import 'package:astshara/app/router.dart';
@@ -22,13 +22,10 @@ class _TestGlobalLoading extends GlobalLoading {
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+  GoogleFonts.config.allowRuntimeFetching = false;
+  SharedPreferences.setMockInitialValues({});
 
-  setUpAll(() {
-    SharedPreferences.setMockInitialValues({});
-    GoogleFonts.config.allowRuntimeFetching = false;
-  });
-
-  testWidgets('LawConnectApp smoke test builds in isolation', (WidgetTester tester) async {
+  testWidgets('App smoke test', (WidgetTester tester) async {
     final testRouter = GoRouter(
       initialLocation: '/login',
       routes: [
@@ -38,8 +35,15 @@ void main() {
         ),
       ],
     );
-
     addTearDown(testRouter.dispose);
+
+    FlutterErrorDetails? capturedError;
+    final previousOnError = FlutterError.onError;
+    FlutterError.onError = (details) {
+      capturedError = details;
+      previousOnError?.call(details);
+    };
+    addTearDown(() => FlutterError.onError = previousOnError);
 
     await tester.pumpWidget(
       ProviderScope(
@@ -58,6 +62,17 @@ void main() {
     );
 
     await tester.pump();
+
+    final frameworkException = tester.takeException();
+    if (frameworkException != null) {
+      fail('LawConnectApp smoke test threw: $frameworkException');
+    }
+    if (capturedError != null) {
+      fail(
+        'LawConnectApp emitted FlutterError: '
+        '${capturedError!.exception}\n${capturedError!.stack}',
+      );
+    }
 
     expect(find.byType(LawConnectApp), findsOneWidget);
     expect(find.byType(MaterialApp), findsOneWidget);
