@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:astshara/app/app.dart';
@@ -20,9 +21,14 @@ class _TestGlobalLoading extends GlobalLoading {
 }
 
 void main() {
-  testWidgets('App smoke test', (WidgetTester tester) async {
-    SharedPreferences.setMockInitialValues({});
+  TestWidgetsFlutterBinding.ensureInitialized();
 
+  setUpAll(() {
+    SharedPreferences.setMockInitialValues({});
+    GoogleFonts.config.allowRuntimeFetching = false;
+  });
+
+  testWidgets('LawConnectApp smoke test builds in isolation', (WidgetTester tester) async {
     final testRouter = GoRouter(
       initialLocation: '/login',
       routes: [
