@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:web/web.dart' as web;
 import '../../domain/entities/app_user.dart';
 import '../../domain/repositories/auth_repository.dart';
 import '../models/app_user_model.dart';
@@ -18,9 +19,26 @@ class AuthRepositoryImpl implements AuthRepository {
     _isListening = true;
     _supabase.auth.onAuthStateChange.listen((data) async {
       final user = data.session?.user;
-      if (user == null) { _userStateController.add(null); }
-      else { _userStateController.add(await getCurrentUser()); }
+      if (user == null) {
+        _userStateController.add(null);
+      } else {
+        _clearWebOAuthCallbackUrl();
+        _userStateController.add(await getCurrentUser());
+      }
     });
+  }
+
+  void _clearWebOAuthCallbackUrl() {
+    if (!kIsWeb) return;
+    final uri = Uri.base;
+    final hasOAuthParams = uri.queryParameters.containsKey('code') ||
+        uri.queryParameters.containsKey('error') ||
+        uri.queryParameters.containsKey('error_code') ||
+        uri.fragment.contains('access_token=') ||
+        uri.fragment.contains('error=');
+    if (!hasOAuthParams) return;
+    final cleanUri = uri.replace(query: '', fragment: '');
+    web.window.history.replaceState(null, '', cleanUri.toString());
   }
 
   @override
@@ -62,7 +80,12 @@ class AuthRepositoryImpl implements AuthRepository {
   @override
   Future<void> signInWithPhone(String phone) async { var formattedPhone = phone.trim().replaceAll(' ', ''); if (!formattedPhone.startsWith('+')) formattedPhone = '+$formattedPhone'; await _supabase.auth.signInWithOtp(phone: formattedPhone); }
   @override
-  Future<void> signInWithGoogle() async { var redirectUrl = 'io.supabase.astshara://login-callback'; if (kIsWeb) redirectUrl = Uri.base.origin + Uri.base.path; await _supabase.auth.signInWithOAuth(OAuthProvider.google, redirectTo: redirectUrl, queryParams: {'prompt': 'select_account'}); }
+  Future<void> signInWithGoogle() async {
+    final redirectUrl = kIsWeb
+        ? '${Uri.base.origin}${Uri.base.path.endsWith('/') ? Uri.base.path : '${Uri.base.path}/'}'
+        : 'io.supabase.astshara://login-callback';
+    await _supabase.auth.signInWithOAuth(OAuthProvider.google, redirectTo: redirectUrl, queryParams: {'prompt': 'select_account'});
+  }
   @override
   Future<void> signInWithTelegram() async => throw UnsupportedError('استخدم تسجيل Telegram عبر رمز التحقق داخل التطبيق');
 
