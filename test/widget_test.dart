@@ -35,11 +35,13 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
-          themeModeProvider.overrideWithValue(ThemeModeController()),
+          themeModeProvider.overrideWith(
+            (ref) => ThemeModeController(),
+          ),
           globalLoadingProvider.overrideWith(_TestGlobalLoading.new),
           routerProvider.overrideWithValue(testRouter),
-          unreadNotificationsCountProvider.overrideWithValue(
-            const AsyncValue.data(0),
+          unreadNotificationsCountProvider.overrideWith(
+            (ref) async => 0,
           ),
         ],
         child: const LawConnectApp(),
