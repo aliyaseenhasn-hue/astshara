@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -19,6 +20,9 @@ Future<ProviderContainer> bootstrap() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   try {
+    // Only critical local/bootstrap work is awaited here. Optional services
+    // must never block runApp(), otherwise a slow network request can leave
+    // Flutter Web showing only the HTML background indefinitely.
     await Hive.initFlutter();
     await Hive.openBox('app_cache');
 
@@ -44,12 +48,23 @@ Future<ProviderContainer> bootstrap() async {
       anonKey: supabaseAnonKey,
     );
 
-    try {
-      await NotificationService.initialize();
-      await RealtimeNotificationService().start();
-    } catch (e) {
-      debugPrint('⚠️ Notification services unavailable: $e');
-    }
+    // These services are intentionally started after bootstrap has completed.
+    // Realtime startup can perform an authenticated profiles query; awaiting
+    // it here can block the entire Flutter tree on a slow/unavailable network.
+    unawaited(
+      NotificationService.initialize().catchError((error, stackTrace) {
+        debugPrint('⚠️ Notification services unavailable: $error');
+        debugPrintStack(stackTrace: stackTrace);
+      }),
+    );
+
+    final realtimeService = RealtimeNotificationService();
+    unawaited(
+      realtimeService.start().catchError((error, stackTrace) {
+        debugPrint('⚠️ Realtime notifications unavailable: $error');
+        debugPrintStack(stackTrace: stackTrace);
+      }),
+    );
   } catch (e, stackTrace) {
     debugPrint('🚨 Critical Bootstrap Error: $e');
     debugPrintStack(stackTrace: stackTrace);
