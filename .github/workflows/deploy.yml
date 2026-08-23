@@ -18,6 +18,12 @@ concurrency:
   group: pages
   cancel-in-progress: false
 
+env:
+  # The app is also served through Cloudflare/custom domains at the domain root.
+  # A repository sub-path here makes flutter_bootstrap.js and assets resolve to
+  # /istishara-platform/... and causes a blank/blue page on a root-domain host.
+  FLUTTER_WEB_BASE_HREF: "/"
+
 jobs:
   analyze:
     runs-on: ubuntu-latest
@@ -103,7 +109,7 @@ jobs:
           fi
           flutter clean
           flutter pub get
-          flutter build web --release --no-wasm-dry-run --base-href "/istishara-platform/" \
+          flutter build web --release --no-wasm-dry-run --base-href "$FLUTTER_WEB_BASE_HREF" \
             --dart-define=SUPABASE_URL="$SUPABASE_URL" \
             --dart-define=SUPABASE_ANON_KEY="$SUPABASE_ANON_KEY" \
             --dart-define=VAPID_PUBLIC_KEY="$PWA_VAPID_PUBLIC_KEY"
@@ -113,6 +119,7 @@ jobs:
           test -f build/web/assets/assets/icons/app_icon.png
           test -f build/web/pwa_service_worker_v5.js
           grep -q "pwa_service_worker_v5.js" build/web/index.html
+          grep -q '<base href="/">' build/web/index.html
 
           echo "Flutter Web build verified:"
           du -sh build/web
