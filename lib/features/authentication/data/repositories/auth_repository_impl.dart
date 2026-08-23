@@ -82,12 +82,21 @@ class AuthRepositoryImpl implements AuthRepository {
 
   @override
   Future<void> signInWithGoogle() async {
-    // On the web, let Supabase use the configured Site URL instead of
-    // forcing the current browser origin. This keeps OAuth consistent
-    // across workers.dev, custom domains, and preview deployments.
-    final redirectUrl = kIsWeb
-        ? null
-        : 'https://istishara-platform.aliyaseenhasn.workers.dev';
+    String? redirectUrl;
+    if (kIsWeb) {
+      final currentUri = Uri.base;
+      final isGitHubPages = currentUri.path == '/istishara-platform' ||
+          currentUri.path.startsWith('/istishara-platform/');
+      final basePath = isGitHubPages ? '/istishara-platform/' : '/';
+      redirectUrl = Uri(
+        scheme: currentUri.scheme,
+        host: currentUri.host,
+        port: currentUri.hasPort ? currentUri.port : null,
+        path: basePath,
+      ).toString();
+    } else {
+      redirectUrl = 'https://istishara-platform.aliyaseenhasn.workers.dev';
+    }
 
     await _supabase.auth.signInWithOAuth(
       OAuthProvider.google,
