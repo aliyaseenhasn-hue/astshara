@@ -35,22 +35,21 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
-          themeModeProvider.overrideWith(
-            (ref) => ThemeModeController(),
-          ),
+          themeModeProvider.overrideWith(ThemeModeController.new),
           globalLoadingProvider.overrideWith(_TestGlobalLoading.new),
           routerProvider.overrideWithValue(testRouter),
-          unreadNotificationsCountProvider.overrideWith(
-            (ref) async => 0,
-          ),
+          unreadNotificationsCountProvider.overrideWith((ref) async => 0),
         ],
         child: const LawConnectApp(),
       ),
     );
 
-    await tester.pump();
+    // Allow MaterialApp.router, Riverpod and SharedPreferences initialization
+    // to complete before assertions and before the test is torn down.
+    await tester.pumpAndSettle();
 
     expect(find.byType(LawConnectApp), findsOneWidget);
     expect(find.byType(MaterialApp), findsOneWidget);
+    expect(find.byType(SizedBox), findsWidgets);
   });
 }
