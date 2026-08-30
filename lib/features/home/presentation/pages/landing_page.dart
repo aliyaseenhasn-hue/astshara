@@ -149,7 +149,7 @@ class _Hero extends StatelessWidget {
         boxShadow: [BoxShadow(color: s.shadow.withValues(alpha: .08), blurRadius: 30, offset: const Offset(0, 16))],
       ),
       child: wide
-          ? Row(textDirection: TextDirection.rtl, children: [Expanded(flex: 6, child: content), const SizedBox(width: 40), const Expanded(flex: 4, child: visual)])
+          ? Row(textDirection: TextDirection.rtl, children: [Expanded(flex: 6, child: content), const SizedBox(width: 40), Expanded(flex: 4, child: visual)])
           : Column(children: [content, const SizedBox(height: 30), visual]),
     );
   }
