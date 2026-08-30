@@ -35,7 +35,7 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
-          themeModeProvider.overrideWith(ThemeModeController.new),
+          themeModeProvider.overrideWith((ref) => ThemeModeController()),
           globalLoadingProvider.overrideWith(_TestGlobalLoading.new),
           routerProvider.overrideWithValue(testRouter),
           unreadNotificationsCountProvider.overrideWith((ref) async => 0),
@@ -44,8 +44,6 @@ void main() {
       ),
     );
 
-    // Allow MaterialApp.router, Riverpod and SharedPreferences initialization
-    // to complete before assertions and before the test is torn down.
     await tester.pumpAndSettle();
 
     expect(find.byType(LawConnectApp), findsOneWidget);
