@@ -18,6 +18,7 @@ import '../features/admin/presentation/pages/specialization_change_requests_page
 import '../features/admin/presentation/pages/cancellation_requests_page.dart';
 import '../features/admin/presentation/pages/no_show_reviews_page.dart';
 import '../features/admin/presentation/pages/financial_management_page.dart';
+import '../features/home/presentation/pages/landing_page.dart';
 import '../features/home/presentation/pages/home_page.dart';
 import '../features/lawyers/presentation/pages/lawyers_list_page.dart';
 import '../features/lawyers/presentation/pages/lawyer_details_page.dart';
@@ -88,9 +89,11 @@ GoRouter router(RouterRef ref) {
       final manualPaymentGate = location == '/manual-payment-required';
       final manualPayment = location == '/manual-payment';
       final admin = location.startsWith('/admin') && location != '/admin-login';
+      final publicRoute = location == '/' || location == '/lawyers' || location.startsWith('/lawyers/') || location == '/legal-categories' || location == '/help-center';
       final isClient = user?.role == 'user' || user?.role == 'client';
+
       if (paymentResult) return null;
-      if (user == null) return (login || signup || otp) ? null : '/login';
+      if (user == null) return (login || signup || otp || publicRoute) ? null : '/login';
       if (user.role == 'admin') { if (complete || onboarding || login || signup) return '/admin'; return admin ? null : '/admin'; }
       if (!user.isOnboardingComplete) return (complete || onboarding) ? null : '/complete-profile';
       if (admin && user.role != 'admin') return '/';
@@ -100,11 +103,13 @@ GoRouter router(RouterRef ref) {
         if (location == '/lawyers' || location.startsWith('/lawyer-details/') || location.startsWith('/lawyers/')) return '/lawyer-home';
         if (!manualPaymentGate && !manualPayment && await _lawyerHasPendingManualPayment()) return '/manual-payment-required';
       }
-      if (login || signup || otp || (complete && user.isOnboardingComplete)) return user.role == 'lawyer' && user.isVerified ? '/lawyer-home' : '/';
+      if (login || signup || otp || (complete && user.isOnboardingComplete)) return user.role == 'lawyer' && user.isVerified ? '/lawyer-home' : '/home';
       if (location == '/' && user.role == 'lawyer' && user.isVerified) return '/lawyer-home';
+      if (location == '/') return '/home';
       return null;
     },
     routes: [
+      GoRoute(path: '/', builder: (c, s) => const LandingPage()),
       GoRoute(path: '/login', builder: (c, s) => const LoginPage()),
       GoRoute(path: '/admin-login', builder: (c, s) => const LoginPage(isAdminLogin: true)),
       GoRoute(path: '/signup', builder: (c, s) => const SignupPage()),
@@ -112,7 +117,7 @@ GoRouter router(RouterRef ref) {
       GoRoute(path: '/lawyer-onboarding', builder: (c, s) { final e = s.extra as Map<String, dynamic>? ?? {}; return LawyerOnboardingPage(fullName: e['fullName'] ?? '', email: e['email'] ?? ''); }),
       GoRoute(path: '/otp', builder: (c, s) => OtpPage(phone: s.extra as String? ?? '')),
       ShellRoute(builder: (context, state, child) => AppShell(location: state.matchedLocation, child: child), routes: [
-        GoRoute(path: '/', builder: (c, s) => const HomePage()),
+        GoRoute(path: '/home', builder: (c, s) => const HomePage()),
         GoRoute(path: '/lawyers', builder: (c, s) => const LawyersListPage()),
         GoRoute(path: '/lawyers/:id', builder: (c, s) => LawyerDetailsPage(profileId: s.pathParameters['id']!)),
         GoRoute(path: '/legal-categories', builder: (c, s) => const LegalCategoriesPage()),
