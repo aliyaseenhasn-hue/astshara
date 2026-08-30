@@ -4,33 +4,51 @@
   <base href="$FLUTTER_BASE_HREF">
   <meta charset="UTF-8">
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
-  <meta name="description" content="استشارة - منصة الاستشارات القانونية">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="استشارة منصة عراقية للاستشارات القانونية تربط طالبي الاستشارات بالمحامين وتتيح متابعة الطلبات إلكترونياً.">
+  <meta name="keywords" content="استشارة قانونية, محامي, محامين العراق, استشارات قانونية العراق, محامي بغداد, قانون العراق">
+  <meta name="author" content="استشارة">
+  <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <meta name="theme-color" content="#0B172A">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="استشارة">
   <meta name="format-detection" content="telephone=no">
+
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="استشارة">
+  <meta property="og:locale" content="ar_IQ">
+  <meta property="og:title" content="استشارة | منصة الاستشارات القانونية في العراق">
+  <meta property="og:description" content="تعرّف على المحامين واطلب استشارتك القانونية وتابع طلبك من منصة واحدة.">
+  <meta property="og:image" content="assets/icons/app_icon.png">
+
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="استشارة | منصة الاستشارات القانونية في العراق">
+  <meta name="twitter:description" content="منصة تربط طالبي الاستشارات القانونية بالمحامين في العراق.">
+  <meta name="twitter:image" content="assets/icons/app_icon.png">
+
   <link rel="apple-touch-icon" href="assets/icons/app_icon.png">
   <link rel="apple-touch-icon" sizes="180x180" href="assets/icons/app_icon.png">
   <link rel="icon" type="image/png" href="assets/icons/app_icon.png">
   <link rel="manifest" href="manifest.json">
-  <title>استشارة</title>
+  <title>استشارة | منصة الاستشارات القانونية في العراق</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    "name": "استشارة",
+    "description": "منصة عراقية للاستشارات القانونية تربط طالبي الاستشارات بالمحامين.",
+    "inLanguage": "ar-IQ"
+  }
+  </script>
   <style>
     :root { color-scheme: light dark; }
-    html, body {
-      margin: 0; padding: 0; width: 100%; height: 100%; min-height: 100%;
-      background: #0B172A; direction: rtl; overflow: hidden; overscroll-behavior: none;
-    }
-    body {
-      font-family: 'Cairo', sans-serif; -webkit-font-smoothing: antialiased;
-      text-rendering: optimizeLegibility; -webkit-tap-highlight-color: transparent;
-      touch-action: manipulation;
-    }
+    html, body { margin: 0; padding: 0; width: 100%; height: 100%; min-height: 100%; background: #0B172A; direction: rtl; overflow: hidden; overscroll-behavior: none; }
+    body { font-family: 'Cairo', sans-serif; -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
   </style>
 </head>
 <body>
@@ -43,12 +61,8 @@
       }
       syncViewportHeight();
       window.addEventListener('resize', syncViewportHeight, { passive: true });
-      window.addEventListener('orientationchange', function () {
-        setTimeout(syncViewportHeight, 100);
-      }, { passive: true });
-      if (window.visualViewport) {
-        window.visualViewport.addEventListener('resize', syncViewportHeight, { passive: true });
-      }
+      window.addEventListener('orientationchange', function () { setTimeout(syncViewportHeight, 100); }, { passive: true });
+      if (window.visualViewport) window.visualViewport.addEventListener('resize', syncViewportHeight, { passive: true });
     })();
 
     window.astsharaEnablePush = async function(vapidPublicKey) {
@@ -76,9 +90,7 @@
 
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        // Versioned filename forces installed PWAs to replace the stale v4 worker.
-        navigator.serviceWorker.register('pwa_service_worker_v5.js', { scope: './' })
-          .catch((error) => console.warn('PWA service worker registration failed:', error));
+        navigator.serviceWorker.register('pwa_service_worker_v5.js', { scope: './' }).catch((error) => console.warn('PWA service worker registration failed:', error));
       });
     }
   </script>
