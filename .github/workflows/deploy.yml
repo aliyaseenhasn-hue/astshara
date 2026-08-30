@@ -35,6 +35,9 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
+      - name: Regenerate generated Dart files
+        run: dart run build_runner build --delete-conflicting-outputs
+
       - name: Create .env file for analyzer
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
@@ -67,6 +70,9 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
+      - name: Regenerate generated Dart files
+        run: dart run build_runner build --delete-conflicting-outputs
+
       - name: Create .env file from GitHub Secrets
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
@@ -90,6 +96,7 @@ jobs:
           test -n "${PWA_VAPID_PUBLIC_KEY:-}" || { echo "::error::PWA_VAPID_PUBLIC_KEY secret is missing"; exit 1; }
           flutter clean
           flutter pub get
+          dart run build_runner build --delete-conflicting-outputs
           flutter build web --release --no-wasm-dry-run --base-href "/istishara-platform/" \
             --dart-define=SUPABASE_URL="$SUPABASE_URL" \
             --dart-define=SUPABASE_ANON_KEY="$SUPABASE_ANON_KEY" \
