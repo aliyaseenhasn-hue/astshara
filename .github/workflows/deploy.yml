@@ -16,11 +16,12 @@ permissions:
 
 concurrency:
   group: pages
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   analyze:
     runs-on: ubuntu-latest
+    timeout-minutes: 25
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
@@ -28,11 +29,24 @@ jobs:
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
+          flutter-version: '3.47.0'
           channel: stable
           cache: true
 
+      - name: Clean Flutter build artifacts
+        run: flutter clean
+
       - name: Install dependencies
         run: flutter pub get
+
+      # Generated Dart sources are committed to the repository. Do not run
+      # build_runner here: the pinned Riverpod generator/analyzer combination
+      # is not compatible with the Dart analyzer bundled by Flutter 3.47.
+      - name: Verify committed generated sources
+        run: |
+          set -euo pipefail
+          test -f lib/app/router.g.dart
+          test -f lib/shared/providers/global_loading_provider.g.dart
 
       - name: Create .env file for analyzer
         env:
@@ -47,11 +61,12 @@ jobs:
       - name: Analyze Dart and Flutter code
         run: flutter analyze --no-fatal-infos --no-fatal-warnings
 
-      - name: Run Flutter tests (expanded output)
+      - name: Run Flutter tests
         run: flutter test -r expanded
 
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
@@ -59,11 +74,23 @@ jobs:
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
+          flutter-version: '3.47.0'
           channel: stable
           cache: true
 
+      - name: Clean Flutter build artifacts
+        run: flutter clean
+
       - name: Install dependencies
         run: flutter pub get
+
+      # Generated Dart sources are committed to the repository. Keep CI
+      # deterministic and avoid invoking the incompatible code generator.
+      - name: Verify committed generated sources
+        run: |
+          set -euo pipefail
+          test -f lib/app/router.g.dart
+          test -f lib/shared/providers/global_loading_provider.g.dart
 
       - name: Create .env file from GitHub Secrets
         env:
@@ -86,8 +113,6 @@ jobs:
         run: |
           set -euo pipefail
           test -n "${PWA_VAPID_PUBLIC_KEY:-}" || { echo "::error::PWA_VAPID_PUBLIC_KEY secret is missing"; exit 1; }
-          flutter clean
-          flutter pub get
           flutter build web --release --no-wasm-dry-run --base-href "/istishara-platform/" \
             --dart-define=SUPABASE_URL="$SUPABASE_URL" \
             --dart-define=SUPABASE_ANON_KEY="$SUPABASE_ANON_KEY" \
@@ -112,6 +137,7 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - name: Deploy to GitHub Pages
         id: deployment
