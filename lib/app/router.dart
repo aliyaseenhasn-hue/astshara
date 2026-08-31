@@ -19,6 +19,7 @@ import '../features/admin/presentation/pages/cancellation_requests_page.dart';
 import '../features/admin/presentation/pages/no_show_reviews_page.dart';
 import '../features/admin/presentation/pages/financial_management_page.dart';
 import '../features/home/presentation/pages/landing_page.dart';
+import '../features/home/presentation/pages/public_info_page.dart';
 import '../features/home/presentation/pages/home_page.dart';
 import '../features/lawyers/presentation/pages/lawyers_list_page.dart';
 import '../features/lawyers/presentation/pages/lawyer_details_page.dart';
@@ -89,9 +90,8 @@ GoRouter router(RouterRef ref) {
       final manualPaymentGate = location == '/manual-payment-required';
       final manualPayment = location == '/manual-payment';
       final admin = location.startsWith('/admin') && location != '/admin-login';
-      final publicRoute = location == '/' || location == '/lawyers' || location.startsWith('/lawyers/') || location == '/legal-categories' || location == '/help-center';
+      final publicRoute = location == '/' || location == '/how-it-works' || location == '/privacy' || location == '/terms' || location == '/contact' || location == '/lawyers' || location.startsWith('/lawyers/') || location == '/legal-categories' || location == '/help-center';
       final isClient = user?.role == 'user' || user?.role == 'client';
-
       if (paymentResult) return null;
       if (user == null) return (login || signup || otp || publicRoute) ? null : '/login';
       if (user.role == 'admin') { if (complete || onboarding || login || signup) return '/admin'; return admin ? null : '/admin'; }
@@ -110,6 +110,10 @@ GoRouter router(RouterRef ref) {
     },
     routes: [
       GoRoute(path: '/', builder: (c, s) => const LandingPage()),
+      GoRoute(path: '/how-it-works', builder: (c, s) => PublicInfoPage.howItWorks()),
+      GoRoute(path: '/privacy', builder: (c, s) => PublicInfoPage.privacy()),
+      GoRoute(path: '/terms', builder: (c, s) => PublicInfoPage.terms()),
+      GoRoute(path: '/contact', builder: (c, s) => PublicInfoPage.contact()),
       GoRoute(path: '/login', builder: (c, s) => const LoginPage()),
       GoRoute(path: '/admin-login', builder: (c, s) => const LoginPage(isAdminLogin: true)),
       GoRoute(path: '/signup', builder: (c, s) => const SignupPage()),
