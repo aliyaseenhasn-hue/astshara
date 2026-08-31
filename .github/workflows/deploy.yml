@@ -16,11 +16,12 @@ permissions:
 
 concurrency:
   group: pages
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   analyze:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
@@ -34,9 +35,6 @@ jobs:
 
       - name: Install dependencies
         run: flutter pub get
-
-      - name: Regenerate generated Dart files
-        run: dart run build_runner build --delete-conflicting-outputs
 
       - name: Create .env file for analyzer
         env:
@@ -51,11 +49,12 @@ jobs:
       - name: Analyze Dart and Flutter code
         run: flutter analyze --no-fatal-infos --no-fatal-warnings
 
-      - name: Run Flutter tests (expanded output)
+      - name: Run Flutter tests
         run: flutter test -r expanded
 
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
@@ -69,9 +68,6 @@ jobs:
 
       - name: Install dependencies
         run: flutter pub get
-
-      - name: Regenerate generated Dart files
-        run: dart run build_runner build --delete-conflicting-outputs
 
       - name: Create .env file from GitHub Secrets
         env:
@@ -94,9 +90,6 @@ jobs:
         run: |
           set -euo pipefail
           test -n "${PWA_VAPID_PUBLIC_KEY:-}" || { echo "::error::PWA_VAPID_PUBLIC_KEY secret is missing"; exit 1; }
-          flutter clean
-          flutter pub get
-          dart run build_runner build --delete-conflicting-outputs
           flutter build web --release --no-wasm-dry-run --base-href "/istishara-platform/" \
             --dart-define=SUPABASE_URL="$SUPABASE_URL" \
             --dart-define=SUPABASE_ANON_KEY="$SUPABASE_ANON_KEY" \
@@ -121,6 +114,7 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - name: Deploy to GitHub Pages
         id: deployment
