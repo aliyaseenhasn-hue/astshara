@@ -355,7 +355,7 @@ class _SignupForm extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           TextButton(
-            onPressed: loading ? null : () => context.push('/login'),
+            onPressed: loading ? null : () => context.go('/login'),
             child: Text('لديك حساب بالفعل؟ تسجيل الدخول', style: TextStyle(color: s.primary, fontWeight: FontWeight.w700)),
           ),
           const SizedBox(height: 8),
