@@ -21,7 +21,7 @@ concurrency:
 jobs:
   analyze:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 25
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
@@ -33,11 +33,15 @@ jobs:
           channel: stable
           cache: true
 
-      - name: Install dependencies
-        run: flutter pub get
+      - name: Clean Flutter build artifacts
+        run: flutter clean
 
-      - name: Generate Dart code
-        run: timeout 5m dart run build_runner build --delete-conflicting-outputs
+      - name: Install dependencies and upgrade lockfile
+        run: flutter pub upgrade --major-versions
+
+      - name: Run build_runner
+        run: dart run build_runner build --delete-conflicting-outputs
+        timeout-minutes: 20
 
       - name: Create .env file for analyzer
         env:
@@ -57,7 +61,7 @@ jobs:
 
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 30
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
@@ -69,11 +73,15 @@ jobs:
           channel: stable
           cache: true
 
-      - name: Install dependencies
-        run: flutter pub get
+      - name: Clean Flutter build artifacts
+        run: flutter clean
 
-      - name: Generate Dart code
-        run: timeout 5m dart run build_runner build --delete-conflicting-outputs
+      - name: Install dependencies and upgrade lockfile
+        run: flutter pub upgrade --major-versions
+
+      - name: Run build_runner
+        run: dart run build_runner build --delete-conflicting-outputs
+        timeout-minutes: 20
 
       - name: Create .env file from GitHub Secrets
         env:
