@@ -39,9 +39,14 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
-      - name: Run build_runner
-        run: dart run build_runner build --delete-conflicting-outputs
-        timeout-minutes: 20
+      # Generated Dart sources are committed to the repository. Do not run
+      # build_runner here: the pinned Riverpod generator/analyzer combination
+      # is not compatible with the Dart analyzer bundled by Flutter 3.47.
+      - name: Verify committed generated sources
+        run: |
+          set -euo pipefail
+          test -f lib/app/router.g.dart
+          test -f lib/shared/providers/global_loading_provider.g.dart
 
       - name: Create .env file for analyzer
         env:
@@ -79,9 +84,13 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
-      - name: Run build_runner
-        run: dart run build_runner build --delete-conflicting-outputs
-        timeout-minutes: 20
+      # Generated Dart sources are committed to the repository. Keep CI
+      # deterministic and avoid invoking the incompatible code generator.
+      - name: Verify committed generated sources
+        run: |
+          set -euo pipefail
+          test -f lib/app/router.g.dart
+          test -f lib/shared/providers/global_loading_provider.g.dart
 
       - name: Create .env file from GitHub Secrets
         env:
