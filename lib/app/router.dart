@@ -90,7 +90,7 @@ GoRouter router(RouterRef ref) {
       final manualPaymentGate = location == '/manual-payment-required';
       final manualPayment = location == '/manual-payment';
       final admin = location.startsWith('/admin') && location != '/admin-login';
-      final publicRoute = location == '/' || location == '/how-it-works' || location == '/privacy' || location == '/terms' || location == '/contact' || location == '/lawyers' || location.startsWith('/lawyers/') || location == '/legal-categories' || location == '/help-center';
+      final publicRoute = location == '/' || location == '/how-it-works' || location == '/privacy' || location == '/terms' || location == '/contact' || location == '/faq' || location == '/lawyers' || location.startsWith('/lawyers/') || location == '/legal-categories' || location == '/help-center';
       final isClient = user?.role == 'user' || user?.role == 'client';
       if (paymentResult) return null;
       if (user == null) return (login || signup || otp || publicRoute) ? null : '/login';
@@ -114,6 +114,7 @@ GoRouter router(RouterRef ref) {
       GoRoute(path: '/privacy', builder: (c, s) => PublicInfoPage.privacy()),
       GoRoute(path: '/terms', builder: (c, s) => PublicInfoPage.terms()),
       GoRoute(path: '/contact', builder: (c, s) => PublicInfoPage.contact()),
+      GoRoute(path: '/faq', builder: (c, s) => PublicInfoPage.faq()),
       GoRoute(path: '/login', builder: (c, s) => const LoginPage()),
       GoRoute(path: '/admin-login', builder: (c, s) => const LoginPage(isAdminLogin: true)),
       GoRoute(path: '/signup', builder: (c, s) => const SignupPage()),
