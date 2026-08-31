@@ -46,6 +46,7 @@ class LawyerDashboardPage extends ConsumerWidget {
               ]),
             ),
           ),
+          SliverToBoxAdapter(child: Padding(padding: const EdgeInsets.fromLTRB(20, 18, 20, 0), child: _ProfessionalProfileCard(onTap: () => context.push('/lawyer-profile-edit')))),
           SliverToBoxAdapter(child: FutureBuilder<_SetupState>(future: _loadSetupState(ref), builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) return const SizedBox(height: 8);
             final setup = snapshot.data;
@@ -99,7 +100,33 @@ class LawyerDashboardPage extends ConsumerWidget {
 
   Widget _metric(String value, String label, IconData icon) => Expanded(child: Column(children: [Icon(icon, color: AppColors.gold, size: 24), const SizedBox(height: 6), Text(value, style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w700)), const SizedBox(height: 2), Text(label, textAlign: TextAlign.center, style: const TextStyle(color: Color(0xFFDDE5ED), fontSize: 10))]));
 
-  Widget _emptyState() => Container(width: double.infinity, padding: const EdgeInsets.all(24), decoration: BoxDecoration(color: AppColors.surface, borderRadius: BorderRadius.circular(16), border: Border.all(color: AppColors.divider)), child: const Column(children: [Icon(Icons.event_available_rounded, color: AppColors.gold, size: 34), SizedBox(height: 8), Text('لا توجد طلبات استشارة حالياً', style: TextStyle(fontWeight: FontWeight.w600))]));
+  Widget _emptyState() => Container(width: double.infinity, padding: const EdgeInsets.all(24), decoration: BoxDecoration(color: AppColors.surface, borderRadius: BorderRadius.circular(16), border: Border.all(color: AppColors.divider)), child: const Column(children: [Icon(Icons.event_available_rounded, color: AppColors.gold, size: 34), SizedBox(height: 8), Text('لا توجد طلبات استشارة حالياً', style: TextStyle(fontWeight: FontWeight.w600))]);
+}
+
+class _ProfessionalProfileCard extends StatelessWidget {
+  final VoidCallback onTap;
+  const _ProfessionalProfileCard({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) => Card(
+        color: AppColors.surface,
+        elevation: 0,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20), side: const BorderSide(color: AppColors.divider)),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(20),
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.all(18),
+            child: Row(textDirection: TextDirection.rtl, children: [
+              Container(width: 48, height: 48, decoration: const BoxDecoration(color: AppColors.goldLight, shape: BoxShape.circle), child: const Icon(Icons.badge_outlined, color: AppColors.primary)),
+              const SizedBox(width: 12),
+              const Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [Text('ملفي المهني', style: TextStyle(color: AppColors.primary, fontSize: 16, fontWeight: FontWeight.w900)), SizedBox(height: 5), Text('أضف نبذتك المهنية وارفع صور القرارات والإنجازات والشهادات التي تريد عرضها لطالبي الاستشارة.', textAlign: TextAlign.right, style: TextStyle(color: AppColors.textSecondary, fontSize: 12, height: 1.5))])),
+              const SizedBox(width: 8),
+              const Icon(Icons.arrow_back_ios_new_rounded, size: 17, color: AppColors.textSecondary),
+            ]),
+          ),
+        ),
+      );
 }
 
 class _SetupState {
