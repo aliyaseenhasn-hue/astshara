@@ -21,6 +21,7 @@ class LawyerDetailsPage extends ConsumerWidget {
           if (lawyer == null) return Center(child: Text('المحامي غير موجود', style: TextStyle(color: scheme.onSurface)));
           final name = lawyer.fullName?.trim().isNotEmpty == true ? lawyer.fullName!.trim() : 'محامي';
           final avatar = lawyer.avatarUrl;
+          final bio = lawyer.bio?.trim() ?? '';
           return Stack(
             children: [
               CustomScrollView(
@@ -42,14 +43,17 @@ class LawyerDetailsPage extends ConsumerWidget {
                         Padding(
                           padding: const EdgeInsets.fromLTRB(20, 225, 20, 110),
                           child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
                               Row(mainAxisAlignment: MainAxisAlignment.center, children: [Flexible(child: Text(name, textAlign: TextAlign.center, style: TextStyle(color: scheme.onSurface, fontSize: 22, fontWeight: FontWeight.w900))), if (lawyer.verified) Padding(padding: const EdgeInsets.only(right: 6), child: Icon(Icons.verified_rounded, color: scheme.primary, size: 20))]),
                               const SizedBox(height: 6),
                               Text(lawyer.specializations.isEmpty ? 'محامي ومستشار قانوني' : lawyer.specializations.join('، '), textAlign: TextAlign.center, style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 14, height: 1.4)),
                               const SizedBox(height: 16),
                               _Stats(lawyer: lawyer),
-                              const SizedBox(height: 18),
-                              LawyerAchievementsGallery(lawyerId: lawyer.profileId, editable: false),
+                              const SizedBox(height: 22),
+                              _BioSection(bio: bio),
+                              const SizedBox(height: 24),
+                              LawyerAchievementsGallery(lawyerId: lawyer.id, editable: false),
                               const SizedBox(height: 20),
                               _ActionPanel(lawyer: lawyer),
                               const SizedBox(height: 90),
@@ -65,6 +69,40 @@ class LawyerDetailsPage extends ConsumerWidget {
             ],
           );
         },
+      ),
+    );
+  }
+}
+
+class _BioSection extends StatelessWidget {
+  final String bio;
+  const _BioSection({required this.bio});
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Card(
+      elevation: 0,
+      color: scheme.surfaceContainerLowest,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20), side: BorderSide(color: scheme.outlineVariant)),
+      child: Padding(
+        padding: const EdgeInsets.all(18),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(textDirection: TextDirection.rtl, children: [
+              Icon(Icons.badge_outlined, color: scheme.primary),
+              const SizedBox(width: 8),
+              Text('نبذة عن المحامي', textAlign: TextAlign.right, style: TextStyle(color: scheme.onSurface, fontSize: 17, fontWeight: FontWeight.w900)),
+            ]),
+            const SizedBox(height: 10),
+            Text(
+              bio.isEmpty ? 'لم يضف المحامي نبذة مهنية بعد.' : bio,
+              textAlign: TextAlign.right,
+              style: TextStyle(color: scheme.onSurfaceVariant, height: 1.7, fontSize: 13),
+            ),
+          ],
+        ),
       ),
     );
   }
