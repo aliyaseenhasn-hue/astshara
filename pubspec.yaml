@@ -13,8 +13,8 @@ dependencies:
     sdk: flutter
 
   # State Management - keep the API compatible with the existing generated providers
-  flutter_riverpod: 2.5.3
-  riverpod_annotation: 2.5.3
+  flutter_riverpod: 2.6.1
+  riverpod_annotation: 2.6.1
 
   # Backend (Supabase)
   supabase_flutter: ^2.6.0
@@ -51,7 +51,7 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
 
-  # Code Generation - use a published generator compatible with Dart 3.13
+  # Code Generation - aligned with Riverpod 2.6.1
   build_runner: ^2.5.4
   freezed: ^3.1.0
   riverpod_generator: 2.6.5
