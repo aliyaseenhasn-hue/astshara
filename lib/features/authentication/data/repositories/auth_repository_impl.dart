@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:web/web.dart' as web;
+import '../../../../core/services/auth_browser_history.dart';
 import '../../domain/entities/app_user.dart';
 import '../../domain/repositories/auth_repository.dart';
 import '../models/app_user_model.dart';
@@ -38,7 +38,7 @@ class AuthRepositoryImpl implements AuthRepository {
         uri.fragment.contains('error=');
     if (!hasOAuthParams) return;
     final cleanUri = uri.replace(query: '', fragment: '');
-    web.window.history.replaceState(null, '', cleanUri.toString());
+    replaceBrowserUrl(cleanUri.toString());
   }
 
   @override
