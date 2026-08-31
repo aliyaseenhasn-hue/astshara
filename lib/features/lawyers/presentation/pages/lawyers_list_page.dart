@@ -18,6 +18,7 @@ class _LawyersListPageState extends ConsumerState<LawyersListPage> {
   static const _pageSize = 20;
   late final ScrollController _scrollController;
   late final LawyersRepositoryImpl _repository;
+  final TextEditingController _searchController = TextEditingController();
   final List<LawyerProfile> _lawyers = [];
   String _query = '';
   bool _loading = false;
@@ -35,6 +36,7 @@ class _LawyersListPageState extends ConsumerState<LawyersListPage> {
   @override
   void dispose() {
     _scrollController.dispose();
+    _searchController.dispose();
     super.dispose();
   }
 
@@ -90,6 +92,15 @@ class _LawyersListPageState extends ConsumerState<LawyersListPage> {
     return list;
   }
 
+  void _setSearch(String value) {
+    setState(() => _query = value);
+  }
+
+  void _clearSearch() {
+    _searchController.clear();
+    _setSearch('');
+  }
+
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
@@ -113,7 +124,7 @@ class _LawyersListPageState extends ConsumerState<LawyersListPage> {
                 const SizedBox(height: 6),
                 Text('ابحث عن نخبة المحامين والمستشارين القانونيين المعتمدين.', textAlign: TextAlign.right, style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 12, height: 1.5)),
                 const SizedBox(height: 16),
-                _SearchField(onChanged: (value) => setState(() => _query = value)),
+                _SearchField(controller: _searchController, onChanged: _setSearch, onClear: _clearSearch),
                 const SizedBox(height: 12),
                 _FilterChips(selectedCategory: selectedCategory, onSelect: (value) => ref.read(selectedCategoryProvider.notifier).setCategory(value)),
                 const SizedBox(height: 20),
@@ -124,7 +135,7 @@ class _LawyersListPageState extends ConsumerState<LawyersListPage> {
             else if (_lawyers.isEmpty && !_loading)
               const SliverToBoxAdapter(child: _Message(text: 'لا يوجد محامون موثقون حالياً'))
             else if (lawyers.isEmpty)
-              const SliverToBoxAdapter(child: _Message(text: 'لا توجد نتائج مطابقة'))
+              SliverToBoxAdapter(child: _NoResults(query: _query, onClear: _clearSearch))
             else
               SliverPadding(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -155,12 +166,34 @@ class _DirectoryHeader extends StatelessWidget {
 }
 
 class _SearchField extends StatelessWidget {
+  final TextEditingController controller;
   final ValueChanged<String> onChanged;
-  const _SearchField({required this.onChanged});
+  final VoidCallback onClear;
+  const _SearchField({required this.controller, required this.onChanged, required this.onClear});
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    return TextField(onChanged: onChanged, textDirection: TextDirection.rtl, style: TextStyle(color: scheme.onSurface, fontWeight: FontWeight.w500), decoration: InputDecoration(hintText: 'ابحث بالاسم، التخصص أو المدينة', hintStyle: TextStyle(color: scheme.onSurfaceVariant, fontSize: 12), prefixIcon: Icon(Icons.search_rounded, color: scheme.primary), suffixIcon: Icon(Icons.tune_rounded, color: scheme.onSurfaceVariant), fillColor: scheme.surfaceContainerLowest, filled: true, contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 15), border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: scheme.outlineVariant)), enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: scheme.outlineVariant)), focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: scheme.primary, width: 1.7))));
+    return TextField(
+      controller: controller,
+      onChanged: onChanged,
+      textDirection: TextDirection.rtl,
+      textInputAction: TextInputAction.search,
+      style: TextStyle(color: scheme.onSurface, fontWeight: FontWeight.w500),
+      decoration: InputDecoration(
+        hintText: 'ابحث بالاسم أو التخصص',
+        hintStyle: TextStyle(color: scheme.onSurfaceVariant, fontSize: 12),
+        prefixIcon: Icon(Icons.search_rounded, color: scheme.primary),
+        suffixIcon: controller.text.isEmpty
+            ? Icon(Icons.tune_rounded, color: scheme.onSurfaceVariant)
+            : IconButton(tooltip: 'مسح البحث', onPressed: onClear, icon: Icon(Icons.clear_rounded, color: scheme.onSurfaceVariant)),
+        fillColor: scheme.surfaceContainerLowest,
+        filled: true,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 15),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: scheme.outlineVariant)),
+        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: scheme.outlineVariant)),
+        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: scheme.primary, width: 1.7)),
+      ),
+    );
   }
 }
 
@@ -186,6 +219,34 @@ class _LawyerCard extends StatelessWidget {
     final hasAvatar = avatar != null && avatar.isNotEmpty;
     final tags = lawyer.specializations.isNotEmpty ? lawyer.specializations.take(2).toList() : ['قانون عام'];
     return Container(margin: const EdgeInsets.only(bottom: 14), padding: const EdgeInsets.all(15), decoration: BoxDecoration(color: scheme.surfaceContainerLowest, borderRadius: BorderRadius.circular(18), border: Border.all(color: scheme.outlineVariant)), child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [InkWell(onTap: () => context.push('/lawyer-details/${lawyer.profileId}'), borderRadius: BorderRadius.circular(12), child: Row(textDirection: TextDirection.rtl, crossAxisAlignment: CrossAxisAlignment.start, children: [Container(width: 66, height: 66, decoration: BoxDecoration(shape: BoxShape.circle, color: scheme.surfaceContainerHighest, border: Border.all(color: scheme.primary.withValues(alpha: .55), width: 1.5), image: hasAvatar ? DecorationImage(image: NetworkImage(avatar), fit: BoxFit.cover) : null), child: hasAvatar ? null : Icon(Icons.person_rounded, color: scheme.onSurfaceVariant, size: 32)), const SizedBox(width: 12), Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [Row(textDirection: TextDirection.rtl, children: [Expanded(child: Text(lawyer.fullName ?? 'محامي', textAlign: TextAlign.right, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: scheme.onSurface, fontSize: 16, fontWeight: FontWeight.w900))), if (lawyer.verified) ...[const SizedBox(width: 5), Icon(Icons.verified_rounded, color: scheme.primary, size: 17)]]), const SizedBox(height: 4), Text(lawyer.specializations.isNotEmpty ? 'محامي ${tags.first}' : 'محامي ومستشار قانوني', textAlign: TextAlign.right, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: scheme.primary, fontSize: 11, fontWeight: FontWeight.w700)), const SizedBox(height: 8), Row(mainAxisAlignment: MainAxisAlignment.end, children: [Icon(Icons.star_rounded, color: scheme.tertiary, size: 16), const SizedBox(width: 2), Text(lawyer.rating.toStringAsFixed(1), style: TextStyle(color: scheme.onSurface, fontSize: 11, fontWeight: FontWeight.w800)), const SizedBox(width: 7), Text('تقييم المحامي', style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 10))])]))])), const SizedBox(height: 12), Wrap(alignment: WrapAlignment.end, spacing: 6, runSpacing: 6, children: tags.map<Widget>((tag) => Container(padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5), decoration: BoxDecoration(color: scheme.secondaryContainer, borderRadius: BorderRadius.circular(8)), child: Text(tag.toString(), style: TextStyle(color: scheme.onSecondaryContainer, fontSize: 9, fontWeight: FontWeight.w600)))).toList()), const SizedBox(height: 10), Row(textDirection: TextDirection.rtl, children: [Icon(Icons.location_on_outlined, color: scheme.onSurfaceVariant, size: 15), const SizedBox(width: 4), Text('العراق', style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 10)), const Spacer(), Icon(Icons.payments_outlined, color: scheme.onSurfaceVariant, size: 15), const SizedBox(width: 4), Text('${(lawyer.consultationPrice ?? 0).toStringAsFixed(0)} د.ع / الجلسة', style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 10, fontWeight: FontWeight.w600))]), const SizedBox(height: 12), SizedBox(height: 46, child: ElevatedButton(onPressed: () => context.push('/lawyer-details/${lawyer.profileId}'), style: ElevatedButton.styleFrom(backgroundColor: scheme.primary, foregroundColor: scheme.onPrimary, textStyle: const TextStyle(fontWeight: FontWeight.w800), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))), child: const Text('عرض الملف الشخصي')))]));
+  }
+}
+
+class _NoResults extends StatelessWidget {
+  final String query;
+  final VoidCallback onClear;
+  const _NoResults({required this.query, required this.onClear});
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(24, 45, 24, 100),
+      child: Center(
+        child: Column(
+          children: [
+            Icon(Icons.person_search_outlined, size: 48, color: scheme.onSurfaceVariant),
+            const SizedBox(height: 12),
+            Text('لا توجد نتائج مطابقة', style: TextStyle(color: scheme.onSurface, fontWeight: FontWeight.w900, fontSize: 16)),
+            if (query.trim().isNotEmpty) ...[
+              const SizedBox(height: 6),
+              Text('لم نجد محامياً يطابق «${query.trim()}» ضمن البيانات المحمّلة.', textAlign: TextAlign.center, style: TextStyle(color: scheme.onSurfaceVariant, height: 1.5, fontSize: 12)),
+              const SizedBox(height: 14),
+              OutlinedButton.icon(onPressed: onClear, icon: const Icon(Icons.clear_rounded), label: const Text('مسح البحث')),
+            ],
+          ],
+        ),
+      ),
+    );
   }
 }
 
