@@ -51,10 +51,10 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
 
-  # Code Generation - compatible with the existing Ref-based generated/source code
+  # Code Generation - use a published generator compatible with Dart 3.13
   build_runner: ^2.5.4
   freezed: ^3.1.0
-  riverpod_generator: 2.5.3
+  riverpod_generator: 2.6.5
   json_serializable: ^6.9.5
 
   # Linting
