@@ -96,8 +96,6 @@ GoRouter router(RouterRef ref) {
 
       if (paymentResult) return null;
 
-      // Lawyer profiles are discoverable publicly, but their details are protected.
-      // Preserve the exact profile URL so authentication can return the user to it.
       if (user == null) {
         if (lawyerProfileRoute) {
           final returnTo = state.uri.toString();
@@ -118,7 +116,7 @@ GoRouter router(RouterRef ref) {
 
       if (login || signup || otp || (complete && user.isOnboardingComplete)) {
         final returnTo = state.uri.queryParameters['returnTo'];
-        if (returnTo != null && returnTo.isNotEmpty && returnTo.startsWith('/')) return Uri.decodeComponent(returnTo);
+        if (returnTo != null && returnTo.isNotEmpty && returnTo.startsWith('/')) return returnTo;
         return user.role == 'lawyer' && user.isVerified ? '/lawyer-home' : '/home';
       }
       if (location == '/' && user.role == 'lawyer' && user.isVerified) return '/lawyer-home';
@@ -132,7 +130,7 @@ GoRouter router(RouterRef ref) {
       GoRoute(path: '/terms', builder: (c, s) => PublicInfoPage.terms()),
       GoRoute(path: '/contact', builder: (c, s) => PublicInfoPage.contact()),
       GoRoute(path: '/faq', builder: (c, s) => PublicInfoPage.faq()),
-      GoRoute(path: '/login', builder: (c, s) => LoginPage(returnTo: s.uri.queryParameters['returnTo'])),
+      GoRoute(path: '/login', builder: (c, s) => const LoginPage()),
       GoRoute(path: '/admin-login', builder: (c, s) => const LoginPage(isAdminLogin: true)),
       GoRoute(path: '/signup', builder: (c, s) => const SignupPage()),
       GoRoute(path: '/complete-profile', builder: (c, s) => const CompleteProfilePage()),
