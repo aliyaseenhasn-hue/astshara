@@ -12,7 +12,13 @@ part 'auth_provider.g.dart';
 AuthRepository authRepository(AuthRepositoryRef ref) => AuthRepositoryImpl(SupabaseConfig.client);
 
 @riverpod
-Stream<AppUser?> authStateChanges(AuthStateChangesRef ref) => ref.watch(authRepositoryProvider).authStateChanges();
+Stream<AppUser?> authStateChanges(AuthStateChangesRef ref) async* {
+  final repository = ref.watch(authRepositoryProvider);
+  // Emit the already-restored OAuth session first. This is important on web,
+  // where the browser returns from Google by creating a fresh Flutter app.
+  yield await repository.getCurrentUser();
+  yield* repository.authStateChanges();
+}
 
 final currentProfileIdProvider = FutureProvider<String?>((ref) async {
   final user = ref.watch(authStateChangesProvider).value;
