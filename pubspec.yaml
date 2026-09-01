@@ -11,25 +11,15 @@ dependencies:
     sdk: flutter
   flutter_localizations:
     sdk: flutter
-
-  # State Management - keep the API compatible with the existing generated providers
   flutter_riverpod: 2.6.1
   riverpod_annotation: 2.6.1
-
-  # Backend (Supabase)
   supabase_flutter: ^2.6.0
   storage_client: ^2.6.0
-
-  # Navigation
   go_router: ^14.2.0
-
-  # Local Storage
   hive: ^2.2.3
   hive_flutter: 1.1.0
   flutter_secure_storage: ^9.2.2
   shared_preferences: ^2.2.3
-
-  # UI & Utilities
   cached_network_image: ^3.3.1
   flutter_svg: ^2.0.10+1
   intl: ^0.20.2
@@ -42,25 +32,20 @@ dependencies:
   file_picker: ^10.3.8
   url_launcher: ^6.3.0
   web: ^1.1.1
-
-  # Functional Programming & Models
   freezed_annotation: ^3.1.0
   json_annotation: ^4.9.0
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
-
-  # Code Generation - aligned with Riverpod 2.6.1
   build_runner: ^2.5.4
   freezed: ^3.1.0
   riverpod_generator: 2.6.5
   json_serializable: ^6.9.5
-
-  # Linting
   flutter_lints: ^4.0.0
 
 flutter:
   uses-material-design: true
   assets:
     - assets/icons/app_icon.png
+    - assets/landing/lawyer_client.svg
