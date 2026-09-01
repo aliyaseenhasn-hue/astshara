@@ -8,8 +8,24 @@ import '../../../../core/config/supabase_config.dart';
 class AuthRepositoryImpl implements AuthRepository {
   final SupabaseClient _supabase;
   final _userStateController = StreamController<AppUser?>.broadcast();
+  late final StreamSubscription<AuthState> _authSubscription;
 
-  AuthRepositoryImpl([SupabaseClient? client]) : _supabase = client ?? SupabaseConfig.client;
+  AuthRepositoryImpl([SupabaseClient? client]) : _supabase = client ?? SupabaseConfig.client {
+    _authSubscription = _supabase.auth.onAuthStateChange.listen((data) async {
+      try {
+        final sessionUser = data.session?.user;
+        if (sessionUser == null) {
+          _userStateController.add(null);
+          return;
+        }
+        final profile = await _supabase.from('profiles').select().eq('auth_id', sessionUser.id).maybeSingle();
+        _userStateController.add(_toAppUser(sessionUser, profile));
+      } catch (e) {
+        debugPrint('Auth state profile sync failed: $e');
+      }
+    });
+    Future.microtask(refreshUser);
+  }
 
   AppUser _toAppUser(User user, Map<String, dynamic>? profile) {
     return AppUser(
@@ -36,20 +52,25 @@ class AuthRepositoryImpl implements AuthRepository {
 
   @override
   Future<void> signInWithEmail({required String email, required String password}) async => _supabase.auth.signInWithPassword(email: email, password: password);
+
   @override
   Future<void> signUpWithEmail({required String email, required String password, required String fullName, required String role}) async {
     final response = await _supabase.auth.signUp(email: email, password: password, data: {'full_name': fullName, 'role': role});
     if (response.user == null) throw Exception('تعذر إنشاء الحساب');
     await updateProfile(fullName: fullName, role: role);
   }
+
   @override Future<void> signOut() async => _supabase.auth.signOut();
   @override Future<void> signInWithPhone(String phone) async => _supabase.auth.signInWithOtp(phone: phone);
-  @override Future<void> signInWithGoogle() async {
+
+  @override
+  Future<void> signInWithGoogle() async {
     final redirectUrl = kIsWeb
         ? Uri.parse('${Uri.base.origin}${Uri.base.path.startsWith('/istishara-platform') ? '/istishara-platform/' : '/'}')
         : Uri.parse('io.supabase.astshara://login-callback/');
     await _supabase.auth.signInWithOAuth(OAuthProvider.google, redirectTo: redirectUrl.toString(), queryParams: {'prompt': 'select_account'});
   }
+
   @override Future<void> signInWithTelegram() async => throw UnsupportedError('استخدم تسجيل Telegram عبر رمز التحقق داخل التطبيق');
 
   @override
@@ -89,7 +110,9 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override Future<void> verifyOTP({required String phone, required String token}) async => _supabase.auth.verifyOTP(phone: phone, token: token, type: OtpType.sms);
-  @override Future<void> updateProfile({String? fullName, String? email, String? role, String? avatarUrl, bool? onboardingCompleted, String? walletNumber}) async {
+
+  @override
+  Future<void> updateProfile({String? fullName, String? email, String? role, String? avatarUrl, bool? onboardingCompleted, String? walletNumber}) async {
     final user = _supabase.auth.currentUser;
     if (user == null) throw Exception('لا يوجد مستخدم مسجل دخول');
     final data = <String, dynamic>{};
@@ -103,13 +126,26 @@ class AuthRepositoryImpl implements AuthRepository {
     await _supabase.from('profiles').upsert({...data, 'auth_id': user.id, 'id': user.id, 'updated_at': DateTime.now().toIso8601String()}, onConflict: 'auth_id');
     await refreshUser();
   }
-  @override Future<void> refreshUser() async { if (_supabase.auth.currentUser != null) _userStateController.add(await getCurrentUser()); }
-  @override Future<void> deleteAccount() async {
+
+  @override
+  Future<void> refreshUser() async {
+    final current = await getCurrentUser();
+    _userStateController.add(current);
+  }
+
+  @override
+  Future<void> deleteAccount() async {
     final user = _supabase.auth.currentUser;
     if (user == null) return;
     await _supabase.from('profiles').delete().eq('auth_id', user.id);
     try { await _supabase.rpc('delete_user_account'); } catch (e) { debugPrint('RPC delete failed: $e'); }
     await signOut();
   }
+
   @override Stream<AppUser?> authStateChanges() => _userStateController.stream;
+
+  void dispose() {
+    _authSubscription.cancel();
+    _userStateController.close();
+  }
 }
