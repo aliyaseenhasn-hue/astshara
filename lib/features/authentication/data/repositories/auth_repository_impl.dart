@@ -19,7 +19,10 @@ class AuthRepositoryImpl implements AuthRepository {
           return;
         }
         final profile = await _supabase.from('profiles').select().eq('auth_id', sessionUser.id).maybeSingle();
-        _userStateController.add(_toAppUser(sessionUser, profile));
+        final lawyerProfile = profile?['role']?.toString() == 'lawyer'
+            ? await _supabase.from('lawyer_profiles').select('verified').eq('profile_id', profile?['id']).maybeSingle()
+            : null;
+        _userStateController.add(_toAppUser(sessionUser, profile, lawyerProfile));
       } catch (e) {
         debugPrint('Auth state profile sync failed: $e');
       }
@@ -27,7 +30,8 @@ class AuthRepositoryImpl implements AuthRepository {
     Future.microtask(refreshUser);
   }
 
-  AppUser _toAppUser(User user, Map<String, dynamic>? profile) {
+  AppUser _toAppUser(User user, Map<String, dynamic>? profile, [Map<String, dynamic>? lawyerProfile]) {
+    final lawyerVerified = profile?['role']?.toString() == 'lawyer' && lawyerProfile?['verified'] == true;
     return AppUser(
       id: user.id,
       email: profile?['email']?.toString() ?? user.email,
@@ -35,7 +39,7 @@ class AuthRepositoryImpl implements AuthRepository {
       phone: profile?['phone']?.toString() ?? user.phone,
       avatarUrl: profile?['avatar_url']?.toString(),
       role: profile?['role']?.toString() ?? user.userMetadata?['role']?.toString() ?? 'user',
-      isVerified: profile?['is_verified'] == true,
+      isVerified: lawyerVerified || profile?['is_verified'] == true,
       hasProfessionalProfile: profile?['has_professional_profile'] == true,
       isOnboardingComplete: profile?['onboarding_completed'] == true,
       walletNumber: profile?['wallet_number']?.toString(),
@@ -47,7 +51,10 @@ class AuthRepositoryImpl implements AuthRepository {
     final user = _supabase.auth.currentUser;
     if (user == null) return null;
     final profile = await _supabase.from('profiles').select().eq('auth_id', user.id).maybeSingle();
-    return _toAppUser(user, profile);
+    final lawyerProfile = profile?['role']?.toString() == 'lawyer'
+        ? await _supabase.from('lawyer_profiles').select('verified').eq('profile_id', profile?['id']).maybeSingle()
+        : null;
+    return _toAppUser(user, profile, lawyerProfile);
   }
 
   @override
