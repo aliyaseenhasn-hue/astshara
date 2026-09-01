@@ -232,34 +232,11 @@ class _HeroVisual extends StatelessWidget {
   Widget build(BuildContext context) => Container(
         height: 330,
         decoration: BoxDecoration(color: Colors.white.withValues(alpha: .055), borderRadius: BorderRadius.circular(28), border: Border.all(color: Colors.white.withValues(alpha: .1))),
-        child: Stack(alignment: Alignment.center, children: [
-          const Positioned(top: 22, left: 18, child: _FloatingCard(Icons.search_rounded, 'ابحث', 'عن تخصصك')),
-          const Positioned(bottom: 22, right: 18, child: _FloatingCard(Icons.forum_rounded, 'تابع', 'طلبك بسهولة')),
-          Container(width: 154, height: 154, decoration: BoxDecoration(shape: BoxShape.circle, gradient: const LinearGradient(colors: [_goldLight, _gold]), boxShadow: [BoxShadow(color: _gold.withValues(alpha: .3), blurRadius: 42, spreadRadius: 5)]), child: const Icon(Icons.balance_rounded, size: 70, color: _navy)),
-          Positioned(bottom: 54, child: Container(padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8), decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(99)), child: const Text('قانونك • بوضوح', style: TextStyle(color: _navy, fontWeight: FontWeight.w900, fontSize: 12)))),
-        ]),
+        child: const Center(
+          child: Icon(Icons.balance_rounded, size: 120, color: _gold),
+        ),
       );
-}
 
-class _FloatingCard extends StatelessWidget {
-  final IconData icon;
-  final String title;
-  final String subtitle;
-  const _FloatingCard(this.icon, this.title, this.subtitle);
-
-  @override
-  Widget build(BuildContext context) => Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: .08), blurRadius: 18, offset: const Offset(0, 8))]),
-        child: Row(children: [
-          Container(width: 34, height: 34, decoration: BoxDecoration(color: const Color(0xFFE8EDF4), borderRadius: BorderRadius.circular(10)), child: Icon(icon, color: _navy, size: 18)),
-          const SizedBox(width: 8),
-          Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-            Text(title, style: const TextStyle(color: _navy, fontWeight: FontWeight.w900, fontSize: 12)),
-            Text(subtitle, style: const TextStyle(color: _textMid, fontSize: 9)),
-          ]),
-        ]),
-      );
 }
 
 class _TrustBar extends StatelessWidget {
