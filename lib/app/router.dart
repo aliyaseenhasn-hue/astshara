@@ -90,10 +90,22 @@ GoRouter router(RouterRef ref) {
       final manualPaymentGate = location == '/manual-payment-required';
       final manualPayment = location == '/manual-payment';
       final admin = location.startsWith('/admin') && location != '/admin-login';
-      final publicRoute = location == '/' || location == '/how-it-works' || location == '/privacy' || location == '/terms' || location == '/contact' || location == '/faq' || location == '/lawyers' || location.startsWith('/lawyers/') || location == '/legal-categories' || location == '/help-center';
+      final publicRoute = location == '/' || location == '/how-it-works' || location == '/privacy' || location == '/terms' || location == '/contact' || location == '/faq' || location == '/lawyers' || location == '/legal-categories' || location == '/help-center';
+      final lawyerProfileRoute = location.startsWith('/lawyers/') || location.startsWith('/lawyer-details/');
       final isClient = user?.role == 'user' || user?.role == 'client';
+
       if (paymentResult) return null;
-      if (user == null) return (login || signup || otp || publicRoute) ? null : '/login';
+
+      // Lawyer profiles are discoverable publicly, but their details are protected.
+      // Preserve the exact profile URL so authentication can return the user to it.
+      if (user == null) {
+        if (lawyerProfileRoute) {
+          final returnTo = state.uri.toString();
+          return '/login?returnTo=${Uri.encodeComponent(returnTo)}';
+        }
+        return (login || signup || otp || publicRoute) ? null : '/login';
+      }
+
       if (user.role == 'admin') { if (complete || onboarding || login || signup) return '/admin'; return admin ? null : '/admin'; }
       if (!user.isOnboardingComplete) return (complete || onboarding) ? null : '/complete-profile';
       if (admin && user.role != 'admin') return '/';
@@ -103,7 +115,12 @@ GoRouter router(RouterRef ref) {
         if (location == '/lawyers' || location.startsWith('/lawyer-details/') || location.startsWith('/lawyers/')) return '/lawyer-home';
         if (!manualPaymentGate && !manualPayment && await _lawyerHasPendingManualPayment()) return '/manual-payment-required';
       }
-      if (login || signup || otp || (complete && user.isOnboardingComplete)) return user.role == 'lawyer' && user.isVerified ? '/lawyer-home' : '/home';
+
+      if (login || signup || otp || (complete && user.isOnboardingComplete)) {
+        final returnTo = state.uri.queryParameters['returnTo'];
+        if (returnTo != null && returnTo.isNotEmpty && returnTo.startsWith('/')) return Uri.decodeComponent(returnTo);
+        return user.role == 'lawyer' && user.isVerified ? '/lawyer-home' : '/home';
+      }
       if (location == '/' && user.role == 'lawyer' && user.isVerified) return '/lawyer-home';
       if (location == '/') return '/home';
       return null;
@@ -115,7 +132,7 @@ GoRouter router(RouterRef ref) {
       GoRoute(path: '/terms', builder: (c, s) => PublicInfoPage.terms()),
       GoRoute(path: '/contact', builder: (c, s) => PublicInfoPage.contact()),
       GoRoute(path: '/faq', builder: (c, s) => PublicInfoPage.faq()),
-      GoRoute(path: '/login', builder: (c, s) => const LoginPage()),
+      GoRoute(path: '/login', builder: (c, s) => LoginPage(returnTo: s.uri.queryParameters['returnTo'])),
       GoRoute(path: '/admin-login', builder: (c, s) => const LoginPage(isAdminLogin: true)),
       GoRoute(path: '/signup', builder: (c, s) => const SignupPage()),
       GoRoute(path: '/complete-profile', builder: (c, s) => const CompleteProfilePage()),
