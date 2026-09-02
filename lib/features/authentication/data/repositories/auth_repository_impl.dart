@@ -94,23 +94,35 @@ class AuthRepositoryImpl implements AuthRepository {
 
   @override
   Future<Map<String, dynamic>> verifyTelegramLogin({required String requestToken, required String code}) async {
-    final result = await _supabase.functions.invoke('telegram-auth-v2', body: {'action': 'verify', 'request_token': requestToken, 'code': code});
-    if (result.data is! Map) throw Exception('تعذر التحقق من الرمز');
+    final result = await _supabase.functions.invoke(
+      'telegram-auth-v2',
+      body: {'action': 'verify', 'request_token': requestToken, 'code': code},
+    );
+    if (result.data is! Map) throw Exception('تعذر التحقق من Telegram');
     final data = Map<String, dynamic>.from(result.data as Map);
-    if (data['ok'] != true) throw Exception(data['error'] ?? 'رمز التحقق غير صحيح');
+    if (data['ok'] != true) throw Exception(data['error'] ?? 'تعذر إكمال تسجيل الدخول');
+
     final accessToken = data['access_token'];
     final refreshToken = data['refresh_token'];
     if (accessToken is String && accessToken.isNotEmpty && refreshToken is String && refreshToken.isNotEmpty) {
       await _supabase.auth.setSession(refreshToken);
-      final current = _supabase.auth.currentSession;
-      if (current == null || current.accessToken != accessToken) await _supabase.auth.refreshSession();
+      var current = _supabase.auth.currentSession;
+      if (current == null) {
+        await _supabase.auth.refreshSession();
+        current = _supabase.auth.currentSession;
+      }
+      if (current == null || _supabase.auth.currentUser == null) {
+        throw Exception('تم التحقق من Telegram لكن تعذر تثبيت جلسة الدخول في التطبيق');
+      }
       await refreshUser();
       return data;
     }
+
     final syntheticEmail = data['syntheticEmail'];
     final password = data['password'];
     if (syntheticEmail is String && syntheticEmail.isNotEmpty && password is String && password.isNotEmpty) {
       await signInWithEmail(email: syntheticEmail, password: password);
+      await refreshUser();
       return data;
     }
     throw Exception('تم التحقق من Telegram لكن تعذر إنشاء جلسة الدخول');
