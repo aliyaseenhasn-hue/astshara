@@ -49,11 +49,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     final start = uri.queryParameters['start'] ?? '';
 
     if (kIsWeb) {
-      if (!await launchUrl(
-        uri,
-        mode: LaunchMode.externalApplication,
-        webOnlyWindowName: '_self',
-      )) {
+      if (!await launchUrl(uri, mode: LaunchMode.externalApplication, webOnlyWindowName: '_self')) {
         throw Exception('تعذر فتح Telegram. اضغط «فتح Telegram» وحاول مرة أخرى.');
       }
       return;
@@ -105,17 +101,21 @@ class _LoginPageState extends ConsumerState<LoginPage> {
           code: '',
         );
 
-    // Do not rely only on GoRouter's auth stream here. Explicitly refresh the
-    // auth model and navigate after the Supabase session has been installed.
     final repository = ref.read(authRepositoryProvider);
     final user = await repository.getCurrentUser();
     if (user == null) {
       throw Exception('تم التحقق من Telegram لكن لم يتم تثبيت جلسة الدخول.');
     }
+
+    // Force the Riverpod auth stream to rebuild from the newly-created
+    // Supabase session before asking GoRouter to perform the redirect.
+    ref.invalidate(authStateChangesProvider);
+    final syncedUser = await ref.read(authStateChangesProvider.future);
+    if (syncedUser == null) {
+      throw Exception('تم التحقق من Telegram لكن لم تتم مزامنة جلسة التطبيق.');
+    }
     if (!mounted) return;
 
-    // /home is intentional: the router will redirect a verified lawyer to
-    // /lawyer-home and a normal user to their authenticated home.
     context.go('/home');
   }
 
@@ -145,9 +145,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
             await _finishTelegramLogin(requestToken);
             poller?.cancel();
             closed = true;
-            if (mounted && Navigator.of(context).canPop()) {
-              Navigator.of(context).pop();
-            }
+            if (mounted && Navigator.of(context).canPop()) Navigator.of(context).pop();
           } catch (e) {
             if (mounted) {
               setDialogState(() {
@@ -155,7 +153,6 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                 message = 'تم التحقق من Telegram لكن تعذر فتح الحساب. سيتم إعادة المحاولة تلقائياً.';
               });
             }
-            rethrow;
           }
         } else if (status == 'code_sent' && !showCode && !closed) {
           setDialogState(() {
@@ -165,9 +162,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
         } else if (status == 'expired' && !closed) {
           poller?.cancel();
           closed = true;
-          if (mounted && Navigator.of(context).canPop()) {
-            Navigator.of(context).pop();
-          }
+          if (mounted && Navigator.of(context).canPop()) Navigator.of(context).pop();
           if (mounted) _showError(Exception('انتهت صلاحية طلب Telegram. حاول مرة أخرى.'));
         }
       } catch (_) {}
@@ -179,11 +174,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
         barrierDismissible: false,
         builder: (dialogContext) => StatefulBuilder(
           builder: (dialogContext, setDialogState) {
-            poller ??= Timer.periodic(
-              const Duration(seconds: 1),
-              (_) => checkStatus(setDialogState),
-            );
-
+            poller ??= Timer.periodic(const Duration(seconds: 1), (_) => checkStatus(setDialogState));
             return AlertDialog(
               title: const Text('تسجيل الدخول عبر Telegram', textAlign: TextAlign.right),
               content: Directionality(
@@ -195,10 +186,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                     const Icon(Icons.telegram, size: 48),
                     const SizedBox(height: 12),
                     Text(message, textAlign: TextAlign.right),
-                    if (!showCode) ...[
-                      const SizedBox(height: 16),
-                      const LinearProgressIndicator(),
-                    ],
+                    if (!showCode) ...[const SizedBox(height: 16), const LinearProgressIndicator()],
                     if (showCode) ...[
                       const SizedBox(height: 16),
                       TextField(
@@ -242,11 +230,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                 if (showCode)
                   FilledButton.icon(
                     icon: verifying
-                        ? const SizedBox(
-                            width: 18,
-                            height: 18,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
+                        ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
                         : const Icon(Icons.verified_rounded),
                     label: Text(verifying ? 'جارٍ التحقق...' : 'تحقق ودخول'),
                     onPressed: verifying
@@ -352,22 +336,14 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                             child: ElevatedButton.icon(
                               onPressed: (_telegramStarting || state.isLoading) ? null : _telegramLogin,
                               icon: _telegramStarting
-                                  ? const SizedBox(
-                                      width: 20,
-                                      height: 20,
-                                      child: CircularProgressIndicator(strokeWidth: 2),
-                                    )
+                                  ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
                                   : const Icon(Icons.send_rounded),
-                              label: Text(
-                                _telegramStarting ? 'جارٍ فتح Telegram...' : 'تسجيل الدخول عبر Telegram',
-                              ),
+                              label: Text(_telegramStarting ? 'جارٍ فتح Telegram...' : 'تسجيل الدخول عبر Telegram'),
                             ),
                           ),
                           const SizedBox(height: 10),
                           OutlinedButton.icon(
-                            onPressed: state.isLoading
-                                ? null
-                                : () => ref.read(authControllerProvider.notifier).signInWithGoogle(),
+                            onPressed: state.isLoading ? null : () => ref.read(authControllerProvider.notifier).signInWithGoogle(),
                             icon: const Icon(Icons.account_circle_outlined),
                             label: const Text('المتابعة باستخدام Google'),
                           ),
