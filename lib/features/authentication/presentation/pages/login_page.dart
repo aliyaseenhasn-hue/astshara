@@ -42,6 +42,28 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     return '964$phone';
   }
 
+  Future<void> _openTelegram(String telegramUrl) async {
+    final uri = Uri.parse(telegramUrl);
+    final bot = uri.pathSegments.isNotEmpty ? uri.pathSegments.first : '';
+    final start = uri.queryParameters['start'] ?? '';
+
+    // Prefer Telegram's native deep link so iOS/Android opens the installed app.
+    if (bot.isNotEmpty && start.isNotEmpty) {
+      final deepLink = Uri.parse(
+        'tg://resolve?domain=${Uri.encodeComponent(bot)}&start=${Uri.encodeComponent(start)}',
+      );
+      try {
+        if (await launchUrl(deepLink, mode: LaunchMode.externalApplication)) return;
+      } catch (_) {
+        // Fall back to the universal HTTPS link below.
+      }
+    }
+
+    if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
+      throw Exception('تعذر فتح Telegram. اضغط «فتح Telegram» وحاول مرة أخرى.');
+    }
+  }
+
   Future<void> _telegramLogin() async {
     if (_telegramStarting || !(_formKey.currentState?.validate() ?? false)) return;
     setState(() => _telegramStarting = true);
@@ -49,9 +71,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
       final data = await ref.read(authControllerProvider.notifier).startTelegramLogin(_normalizePhone());
       final token = data['request_token'] as String;
       final telegramUrl = data['telegram_url'] as String;
-      if (!await launchUrl(Uri.parse(telegramUrl), mode: LaunchMode.externalApplication)) {
-        throw Exception('تعذر فتح Telegram. تأكد من تثبيت التطبيق ثم حاول مرة أخرى.');
-      }
+      await _openTelegram(telegramUrl);
       if (mounted) await _showTelegramDialog(token);
     } catch (e) {
       if (mounted) _showError(e);
