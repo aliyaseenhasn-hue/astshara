@@ -178,6 +178,6 @@ class _LoginPageState extends ConsumerState<LoginPage> {
         const SizedBox(height: 16), SizedBox(height: 52, child: ElevatedButton.icon(onPressed: (_telegramStarting || state.isLoading) ? null : _telegramLogin, icon: _telegramStarting ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)) : const Icon(Icons.send_rounded), label: Text(_telegramStarting ? 'جارٍ فتح Telegram...' : 'تسجيل الدخول عبر Telegram'))),
         const SizedBox(height: 10), OutlinedButton.icon(onPressed: state.isLoading ? null : _googleLogin, icon: const Icon(Icons.account_circle_outlined), label: const Text('المتابعة باستخدام Google')), const SizedBox(height: 16),
         TextButton(onPressed: () => context.go('/signup'), child: const Text('ليس لديك حساب؟ إنشاء حساب جديد')),
-      ])))))))));
+      ]))))))))));
   }
 }
