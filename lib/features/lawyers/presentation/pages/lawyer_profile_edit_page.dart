@@ -30,17 +30,25 @@ class _LawyerProfileEditPageState extends ConsumerState<LawyerProfileEditPage> {
   Future<void> _loadProfile() async {
     final user = ref.read(authStateChangesProvider).value;
     if (user == null) return;
-    final profile = await ref.read(lawyersRepositoryProvider).getLawyerProfile(user.id);
-    if (profile != null && mounted) {
-      setState(() {
-        _services = List<LawyerService>.from(profile.services);
-        _bioController.text = profile.bio ?? '';
-        final price = profile.consultationPrice ?? 0;
-        _differentConsultationPriceController.text = price > 0 ? price.toStringAsFixed(0) : '';
-        // lawyer_achievements.lawyer_id references lawyer_profiles.id,
-        // not profiles.id (profile.profileId).
-        _lawyerProfileId = profile.id;
-      });
+    try {
+      final profile = await ref.read(lawyersRepositoryProvider).getLawyerProfile(user.id);
+      if (profile != null && mounted) {
+        setState(() {
+          _services = List<LawyerService>.from(profile.services);
+          _bioController.text = profile.bio ?? '';
+          final price = profile.consultationPrice ?? 0;
+          _differentConsultationPriceController.text = price > 0 ? price.toStringAsFixed(0) : '';
+          // lawyer_achievements.lawyer_id references lawyer_profiles.id,
+          // not profiles.id (profile.profileId).
+          _lawyerProfileId = profile.id;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('تعذر تحميل الملف المهني: $e'), backgroundColor: AppColors.error),
+        );
+      }
     }
   }
 
@@ -68,10 +76,16 @@ class _LawyerProfileEditPageState extends ConsumerState<LawyerProfileEditPage> {
     setState(() => _isLoading = true);
     try {
       final user = ref.read(authStateChangesProvider).value;
-      if (user == null) return false;
+      if (user == null) {
+        if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('انتهت جلسة تسجيل الدخول، يرجى تسجيل الدخول مرة أخرى'), backgroundColor: AppColors.error));
+        return false;
+      }
       final repo = ref.read(lawyersRepositoryProvider);
       final profile = await repo.getLawyerProfile(user.id);
-      if (profile == null) return false;
+      if (profile == null) {
+        if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('لم يتم العثور على الملف المهني للمحامي'), backgroundColor: AppColors.error));
+        return false;
+      }
       await repo.updateLawyerProfile(profile.copyWith(bio: _bioController.text.trim(), services: _services, consultationPrice: price));
       ref.invalidate(lawyerProfileProvider(profile.profileId));
       return true;
@@ -85,8 +99,10 @@ class _LawyerProfileEditPageState extends ConsumerState<LawyerProfileEditPage> {
 
   Future<void> _save() async {
     if (!await _persist() || !mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تم حفظ الباقات والتعديلات بنجاح')));
-    Navigator.pop(context);
+    // The check icon means "finish". Do not pop to an arbitrary previous
+    // route; return to the authenticated lawyer entry point so GoRouter can
+    // send verified lawyers home and unverified lawyers to the review page.
+    context.go('/lawyer-home');
   }
 
   Future<void> _saveAndContinue() async {
@@ -109,7 +125,7 @@ class _LawyerProfileEditPageState extends ConsumerState<LawyerProfileEditPage> {
       appBar: AppBar(
         title: const Text('الخطوة ١ من ٢: باقات الاستشارات', style: TextStyle(fontWeight: FontWeight.w800)),
         centerTitle: true,
-        actions: [if (!_isLoading) IconButton(tooltip: 'حفظ', icon: const Icon(Icons.check_rounded), onPressed: _save)],
+        actions: [if (!_isLoading) IconButton(tooltip: 'حفظ وإنهاء', icon: const Icon(Icons.check_rounded), onPressed: _save)],
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
