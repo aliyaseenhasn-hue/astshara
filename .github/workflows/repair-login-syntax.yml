@@ -1,0 +1,47 @@
+name: Repair login_page.dart syntax
+
+on:
+  push:
+    paths:
+      - 'lib/features/authentication/presentation/pages/login_page.dart'
+      - '.github/workflows/repair-login-syntax.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  repair:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Repair unmatched closing parenthesis
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('lib/features/authentication/presentation/pages/login_page.dart')
+          s = p.read_text()
+          old = "      ])))))))));\n  }\n}"
+          new = "      ]))))))))));\n  }\n}"
+          if old not in s:
+              raise SystemExit('Expected malformed closing sequence was not found')
+          p.write_text(s.replace(old, new, 1))
+          PY
+      - name: Commit repair
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add lib/features/authentication/presentation/pages/login_page.dart
+          git commit -m 'fix: repair login page web build syntax'
+          git push
+      - name: Remove temporary repair workflow
+        if: success()
+        shell: bash
+        run: |
+          set -euo pipefail
+          git rm .github/workflows/repair-login-syntax.yml
+          git commit -m 'chore: remove temporary syntax repair workflow'
+          git push
