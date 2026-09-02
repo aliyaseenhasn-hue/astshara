@@ -43,6 +43,29 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     return '964$phone';
   }
 
+  bool _isNetworkError(Object error) {
+    final text = error.toString().toLowerCase();
+    return text.contains('socketexception') ||
+        text.contains('failed host lookup') ||
+        text.contains('failed to fetch') ||
+        text.contains('networkerror') ||
+        text.contains('network error') ||
+        text.contains('connection closed') ||
+        text.contains('connection reset') ||
+        text.contains('connection refused') ||
+        text.contains('timed out') ||
+        text.contains('timeout') ||
+        text.contains('offline') ||
+        text.contains('xmlhttprequest');
+  }
+
+  String _errorMessage(Object error) {
+    if (_isNetworkError(error)) {
+      return 'تعذر الاتصال بالإنترنت. تحقق من اتصالك بالإنترنت ثم حاول تسجيل الدخول مرة أخرى.';
+    }
+    return error.toString().replaceFirst('Exception: ', '');
+  }
+
   Future<void> _openTelegram(String telegramUrl) async {
     final uri = Uri.parse(telegramUrl);
     final bot = uri.pathSegments.isNotEmpty ? uri.pathSegments.first : '';
@@ -85,8 +108,16 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     }
   }
 
+  Future<void> _googleLogin() async {
+    try {
+      await ref.read(authControllerProvider.notifier).signInWithGoogle();
+    } catch (e) {
+      if (mounted) _showError(e);
+    }
+  }
+
   void _showError(Object error) {
-    final message = error.toString().replaceFirst('Exception: ', '');
+    final message = _errorMessage(error);
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message, textDirection: TextDirection.rtl),
@@ -107,8 +138,6 @@ class _LoginPageState extends ConsumerState<LoginPage> {
       throw Exception('تم التحقق من Telegram لكن لم يتم تثبيت جلسة الدخول.');
     }
 
-    // Force the Riverpod auth stream to rebuild from the newly-created
-    // Supabase session before asking GoRouter to perform the redirect.
     ref.invalidate(authStateChangesProvider);
     final syncedUser = await ref.read(authStateChangesProvider.future);
     if (syncedUser == null) {
@@ -150,7 +179,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
             if (mounted) {
               setDialogState(() {
                 verifying = false;
-                message = 'تم التحقق من Telegram لكن تعذر فتح الحساب. سيتم إعادة المحاولة تلقائياً.';
+                message = _errorMessage(e);
               });
             }
           }
@@ -165,7 +194,13 @@ class _LoginPageState extends ConsumerState<LoginPage> {
           if (mounted && Navigator.of(context).canPop()) Navigator.of(context).pop();
           if (mounted) _showError(Exception('انتهت صلاحية طلب Telegram. حاول مرة أخرى.'));
         }
-      } catch (_) {}
+      } catch (e) {
+        if (_isNetworkError(e) && mounted && !closed) {
+          setDialogState(() {
+            message = 'تعذر الاتصال بالإنترنت. تحقق من اتصالك بالإنترنت ثم حاول مرة أخرى.';
+          });
+        }
+      }
     }
 
     try {
@@ -343,7 +378,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                           ),
                           const SizedBox(height: 10),
                           OutlinedButton.icon(
-                            onPressed: state.isLoading ? null : () => ref.read(authControllerProvider.notifier).signInWithGoogle(),
+                            onPressed: state.isLoading ? null : _googleLogin,
                             icon: const Icon(Icons.account_circle_outlined),
                             label: const Text('المتابعة باستخدام Google'),
                           ),
