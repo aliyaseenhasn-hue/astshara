@@ -52,9 +52,6 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     final start = uri.queryParameters['start'] ?? '';
 
     if (kIsWeb) {
-      // Keep the web app in the current browsing context. Safari/iOS can hand
-      // the t.me universal link to the installed Telegram app from _self,
-      // while _blank is commonly blocked as a popup after an awaited request.
       final opened = await launchUrl(uri, mode: LaunchMode.externalApplication, webOnlyWindowName: '_self');
       if (!opened) throw Exception('تعذر فتح Telegram. اضغط «فتح Telegram» وحاول مرة أخرى.');
       return;
@@ -86,8 +83,8 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(_errorMessage(error), textDirection: TextDirection.rtl), backgroundColor: Theme.of(context).colorScheme.error));
   }
 
-  Future<void> _finishTelegramLogin(String requestToken) async {
-    await ref.read(authControllerProvider.notifier).verifyTelegramLogin(requestToken: requestToken, code: '');
+  Future<void> _finishTelegramLogin(String requestToken, {String code = ''}) async {
+    await ref.read(authControllerProvider.notifier).verifyTelegramLogin(requestToken: requestToken, code: code);
     final repository = ref.read(authRepositoryProvider);
     final user = await repository.getCurrentUser();
     if (user == null) throw Exception('تم التحقق من Telegram لكن لم يتم تثبيت جلسة الدخول.');
@@ -214,7 +211,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                             }
                             setDialogState(() => verifying = true);
                             try {
-                              await _finishTelegramLogin(requestToken);
+                              await _finishTelegramLogin(requestToken, code: code);
                               poller?.cancel();
                               closed = true;
                               if (dialogContext.mounted) Navigator.of(dialogContext).pop();
