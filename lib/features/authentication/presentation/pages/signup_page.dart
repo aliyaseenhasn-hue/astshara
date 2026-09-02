@@ -22,6 +22,46 @@ class _SignupPageState extends ConsumerState<SignupPage> {
   @override
   void dispose() { _nameController.dispose(); _phoneController.dispose(); super.dispose(); }
 
+  bool _isNetworkError(Object error) {
+    final text = error.toString().toLowerCase();
+    return text.contains('socketexception') ||
+        text.contains('failed host lookup') ||
+        text.contains('failed to fetch') ||
+        text.contains('networkerror') ||
+        text.contains('network error') ||
+        text.contains('connection closed') ||
+        text.contains('connection reset') ||
+        text.contains('connection refused') ||
+        text.contains('timed out') ||
+        text.contains('timeout') ||
+        text.contains('offline') ||
+        text.contains('xmlhttprequest');
+  }
+
+  String _errorMessage(Object error) {
+    if (_isNetworkError(error)) {
+      return 'تعذر الاتصال بالإنترنت. تحقق من اتصالك بالإنترنت ثم حاول التسجيل مرة أخرى.';
+    }
+    return error.toString().replaceFirst('Exception: ', '');
+  }
+
+  void _showError(Object error) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(_errorMessage(error), textDirection: TextDirection.rtl),
+        backgroundColor: Theme.of(context).colorScheme.error,
+      ),
+    );
+  }
+
+  Future<void> _googleSignup() async {
+    try {
+      await ref.read(authControllerProvider.notifier).signInWithGoogle();
+    } catch (e) {
+      if (mounted) _showError(e);
+    }
+  }
+
   String _normalizePhone() {
     var phone = _phoneController.text.trim().replaceAll(RegExp(r'\s+'), '');
     if (phone.startsWith('+964')) phone = phone.substring(4);
@@ -48,12 +88,7 @@ class _SignupPageState extends ConsumerState<SignupPage> {
       if (mounted) await _showCodeDialog(token);
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(e.toString().replaceFirst('Exception: ', '')),
-          backgroundColor: Theme.of(context).colorScheme.error,
-        ),
-      );
+      _showError(e);
     } finally {
       if (mounted) setState(() => _telegramStarting = false);
     }
@@ -100,14 +135,7 @@ class _SignupPageState extends ConsumerState<SignupPage> {
                           if (dialogContext.mounted) Navigator.of(dialogContext).pop();
                         } catch (e) {
                           if (dialogContext.mounted) setDialogState(() => verifying = false);
-                          if (context.mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(e.toString().replaceFirst('Exception: ', '')),
-                                backgroundColor: Theme.of(context).colorScheme.error,
-                              ),
-                            );
-                          }
+                          if (context.mounted) _showError(e);
                         }
                       },
                 child: verifying
@@ -148,7 +176,7 @@ class _SignupPageState extends ConsumerState<SignupPage> {
                       loading: _telegramStarting || state.isLoading,
                       onRoleChanged: (role) => setState(() => _selectedRole = role),
                       onPhoneSignup: _startPhoneSignup,
-                      onGoogle: () => ref.read(authControllerProvider.notifier).signInWithGoogle(),
+                      onGoogle: _googleSignup,
                     );
                     return wide
                         ? Row(children: [
