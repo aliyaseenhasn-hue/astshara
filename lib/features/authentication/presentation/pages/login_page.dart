@@ -48,10 +48,6 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     final bot = uri.pathSegments.isNotEmpty ? uri.pathSegments.first : '';
     final start = uri.queryParameters['start'] ?? '';
 
-    // Flutter Web browsers may block a new external window after an awaited
-    // Supabase request because the original user gesture is no longer active.
-    // Opening the HTTPS Telegram link in the current tab avoids that popup
-    // restriction and lets Telegram's universal link hand off to the app.
     if (kIsWeb) {
       if (!await launchUrl(
         uri,
@@ -63,16 +59,13 @@ class _LoginPageState extends ConsumerState<LoginPage> {
       return;
     }
 
-    // Native iOS/Android: prefer Telegram's native deep link.
     if (bot.isNotEmpty && start.isNotEmpty) {
       final deepLink = Uri.parse(
         'tg://resolve?domain=${Uri.encodeComponent(bot)}&start=${Uri.encodeComponent(start)}',
       );
       try {
         if (await launchUrl(deepLink, mode: LaunchMode.externalApplication)) return;
-      } catch (_) {
-        // Fall back to the universal HTTPS link below.
-      }
+      } catch (_) {}
     }
 
     if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
@@ -106,6 +99,26 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     );
   }
 
+  Future<void> _finishTelegramLogin(String requestToken) async {
+    await ref.read(authControllerProvider.notifier).verifyTelegramLogin(
+          requestToken: requestToken,
+          code: '',
+        );
+
+    // Do not rely only on GoRouter's auth stream here. Explicitly refresh the
+    // auth model and navigate after the Supabase session has been installed.
+    final repository = ref.read(authRepositoryProvider);
+    final user = await repository.getCurrentUser();
+    if (user == null) {
+      throw Exception('تم التحقق من Telegram لكن لم يتم تثبيت جلسة الدخول.');
+    }
+    if (!mounted) return;
+
+    // /home is intentional: the router will redirect a verified lawyer to
+    // /lawyer-home and a normal user to their authenticated home.
+    context.go('/home');
+  }
+
   Future<void> _showTelegramDialog(String requestToken) async {
     final codeController = TextEditingController();
     var verifying = false;
@@ -128,13 +141,21 @@ class _LoginPageState extends ConsumerState<LoginPage> {
             verifying = true;
             message = 'تم التحقق من Telegram. جارٍ تسجيل الدخول...';
           });
-          await ref.read(authControllerProvider.notifier).verifyTelegramLogin(
-                requestToken: requestToken,
-                code: '',
-              );
-          poller?.cancel();
-          if (mounted && Navigator.of(context).canPop()) {
-            Navigator.of(context).pop();
+          try {
+            await _finishTelegramLogin(requestToken);
+            poller?.cancel();
+            closed = true;
+            if (mounted && Navigator.of(context).canPop()) {
+              Navigator.of(context).pop();
+            }
+          } catch (e) {
+            if (mounted) {
+              setDialogState(() {
+                verifying = false;
+                message = 'تم التحقق من Telegram لكن تعذر فتح الحساب. سيتم إعادة المحاولة تلقائياً.';
+              });
+            }
+            rethrow;
           }
         } else if (status == 'code_sent' && !showCode && !closed) {
           setDialogState(() {
@@ -143,6 +164,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
           });
         } else if (status == 'expired' && !closed) {
           poller?.cancel();
+          closed = true;
           if (mounted && Navigator.of(context).canPop()) {
             Navigator.of(context).pop();
           }
@@ -237,11 +259,9 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                             }
                             setDialogState(() => verifying = true);
                             try {
-                              await ref.read(authControllerProvider.notifier).verifyTelegramLogin(
-                                    requestToken: requestToken,
-                                    code: code,
-                                  );
+                              await _finishTelegramLogin(requestToken);
                               poller?.cancel();
+                              closed = true;
                               if (dialogContext.mounted) Navigator.of(dialogContext).pop();
                             } catch (e) {
                               if (dialogContext.mounted) setDialogState(() => verifying = false);
