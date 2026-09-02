@@ -72,7 +72,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     final start = uri.queryParameters['start'] ?? '';
 
     if (kIsWeb) {
-      if (!await launchUrl(uri, mode: LaunchMode.externalApplication, webOnlyWindowName: '_self')) {
+      if (!await launchUrl(uri, mode: LaunchMode.externalApplication, webOnlyWindowName: '_blank')) {
         throw Exception('تعذر فتح Telegram. اضغط «فتح Telegram» وحاول مرة أخرى.');
       }
       return;
