@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -47,7 +48,22 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     final bot = uri.pathSegments.isNotEmpty ? uri.pathSegments.first : '';
     final start = uri.queryParameters['start'] ?? '';
 
-    // Prefer Telegram's native deep link so iOS/Android opens the installed app.
+    // Flutter Web browsers may block a new external window after an awaited
+    // Supabase request because the original user gesture is no longer active.
+    // Opening the HTTPS Telegram link in the current tab avoids that popup
+    // restriction and lets Telegram's universal link hand off to the app.
+    if (kIsWeb) {
+      if (!await launchUrl(
+        uri,
+        mode: LaunchMode.externalApplication,
+        webOnlyWindowName: '_self',
+      )) {
+        throw Exception('تعذر فتح Telegram. اضغط «فتح Telegram» وحاول مرة أخرى.');
+      }
+      return;
+    }
+
+    // Native iOS/Android: prefer Telegram's native deep link.
     if (bot.isNotEmpty && start.isNotEmpty) {
       final deepLink = Uri.parse(
         'tg://resolve?domain=${Uri.encodeComponent(bot)}&start=${Uri.encodeComponent(start)}',
