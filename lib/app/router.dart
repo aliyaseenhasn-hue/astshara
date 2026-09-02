@@ -78,7 +78,14 @@ GoRouter router(RouterRef ref) {
     initialLocation: '/',
     refreshListenable: GoRouterRefreshStream(ref.watch(authRepositoryProvider).authStateChanges()),
     redirect: (context, state) async {
-      final user = authState.valueOrNull;
+      var user = authState.valueOrNull;
+      // Supabase may already have a valid session immediately after Telegram/Google
+      // while the Riverpod stream is still catching up. Resolve it before routing.
+      if (user == null && SupabaseConfig.client.auth.currentUser != null) {
+        try {
+          user = await ref.read(authRepositoryProvider).getCurrentUser();
+        } catch (_) {}
+      }
       final location = state.matchedLocation;
       final login = location == '/login' || location == '/admin-login';
       final signup = location == '/signup';
@@ -155,7 +162,8 @@ GoRouter router(RouterRef ref) {
         GoRoute(path: '/booking-details', builder: (c, s) { final b = s.extra as Booking?; return b == null ? const BookingsListPage() : BookingDetailsWithCancellation(booking: b); }),
         GoRoute(path: '/manual-payment-required', builder: (c, s) => const ManualPaymentRequiredPage()),
         GoRoute(path: '/manual-payment', builder: (c, s) { final b = s.extra as Booking?; return b == null ? const ManualPaymentRequiredPage() : ManualPaymentPage(booking: b); }),
-        GoRoute(path: '/chat/:id', builder: (c, s) => ChatPage(conversationId: s.pathParameters['id']!)),
+        GoRoute(path: '/chat/:id', builder: (c, s) => ChatPage(conversationId: s.pathParameters['id']!),
+        ),
         GoRoute(path: '/upload-payment', builder: (c, s) { final b = s.extra as Booking?; return b == null ? const BookingsListPage() : PaymentUploadPage(booking: b); }),
         GoRoute(path: '/payment-result', builder: (c, s) => PaymentResultPage(status: s.uri.queryParameters['status'], bookingId: s.uri.queryParameters['booking_id'])),
         GoRoute(path: '/profile', builder: (c, s) => const ProfilePage()),
