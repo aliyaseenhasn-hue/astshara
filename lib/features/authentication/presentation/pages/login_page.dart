@@ -23,6 +23,7 @@ class _LoginPageState extends ConsumerState<LoginPage> with WidgetsBindingObserv
   bool _busy = false;
   bool _checking = false;
   bool _telegramReady = false;
+  ValueNotifier<bool>? _telegramReadyNotifier;
 
   @override
   void initState() {
@@ -34,6 +35,7 @@ class _LoginPageState extends ConsumerState<LoginPage> with WidgetsBindingObserv
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _timer?.cancel();
+    _telegramReadyNotifier?.dispose();
     _phone.dispose();
     super.dispose();
   }
@@ -98,6 +100,8 @@ class _LoginPageState extends ConsumerState<LoginPage> with WidgetsBindingObserv
       _busy = true;
       _telegramReady = false;
     });
+    _telegramReadyNotifier?.dispose();
+    _telegramReadyNotifier = ValueNotifier<bool>(false);
     try {
       final d = await ref.read(authControllerProvider.notifier).startTelegramLogin(_normalizedPhone());
       _token = d['request_token'] as String?;
@@ -111,34 +115,37 @@ class _LoginPageState extends ConsumerState<LoginPage> with WidgetsBindingObserv
       await showDialog<void>(
         context: context,
         barrierDismissible: false,
-        builder: (dialogContext) => AlertDialog(
-          title: const Text('تسجيل الدخول عبر Telegram', textAlign: TextAlign.right),
-          content: Directionality(
-            textDirection: TextDirection.rtl,
-            child: Text(
-              _telegramReady
-                  ? 'تم التحقق من رقم الهاتف بنجاح. اضغط «متابعة» لإكمال تسجيل الدخول.'
-                  : 'افتح Telegram واضغط «بدء» ثم اختر «مشاركة رقم الهاتف». بعد نجاح التحقق اضغط «متابعة» هنا.',
+        builder: (dialogContext) => ValueListenableBuilder<bool>(
+          valueListenable: _telegramReadyNotifier!,
+          builder: (context, ready, _) => AlertDialog(
+            title: const Text('تسجيل الدخول عبر Telegram', textAlign: TextAlign.right),
+            content: Directionality(
+              textDirection: TextDirection.rtl,
+              child: Text(
+                ready
+                    ? 'تم التحقق من رقم الهاتف بنجاح. اضغط «متابعة» لإكمال تسجيل الدخول.'
+                    : 'افتح Telegram واضغط «بدء» ثم اختر «مشاركة رقم الهاتف». بعد نجاح التحقق اضغط «متابعة» هنا.',
+              ),
             ),
+            actions: [
+              TextButton(
+                onPressed: _checking ? null : () {
+                  _cancelTelegram();
+                  Navigator.of(dialogContext).pop();
+                },
+                child: const Text('إلغاء'),
+              ),
+              FilledButton.icon(
+                onPressed: _checking ? null : _openTelegram,
+                icon: const Icon(Icons.telegram),
+                label: const Text('فتح Telegram'),
+              ),
+              FilledButton(
+                onPressed: _checking || !ready ? null : () => _completeTelegram(dialogContext),
+                child: Text(_checking ? 'جارٍ الدخول...' : 'متابعة'),
+              ),
+            ],
           ),
-          actions: [
-            TextButton(
-              onPressed: _checking ? null : () {
-                _cancelTelegram();
-                Navigator.of(dialogContext).pop();
-              },
-              child: const Text('إلغاء'),
-            ),
-            FilledButton.icon(
-              onPressed: _checking ? null : _openTelegram,
-              icon: const Icon(Icons.telegram),
-              label: const Text('فتح Telegram'),
-            ),
-            FilledButton(
-              onPressed: _checking || !_telegramReady ? null : () => _completeTelegram(dialogContext),
-              child: Text(_checking ? 'جارٍ الدخول...' : 'متابعة'),
-            ),
-          ],
         ),
       );
     } catch (e) {
@@ -161,6 +168,7 @@ class _LoginPageState extends ConsumerState<LoginPage> with WidgetsBindingObserv
       if (status == 'telegram_verified') {
         if (mounted) {
           setState(() => _telegramReady = true);
+          _telegramReadyNotifier?.value = true;
         }
         return;
       }
@@ -197,6 +205,7 @@ class _LoginPageState extends ConsumerState<LoginPage> with WidgetsBindingObserv
       _token = null;
       _telegramUrl = null;
       _telegramReady = false;
+      _telegramReadyNotifier?.value = false;
       if (!mounted) return;
       Navigator.of(dialogContext).pop();
       await Future<void>.delayed(const Duration(milliseconds: 100));
@@ -216,6 +225,7 @@ class _LoginPageState extends ConsumerState<LoginPage> with WidgetsBindingObserv
     _telegramUrl = null;
     _checking = false;
     _telegramReady = false;
+    _telegramReadyNotifier?.value = false;
   }
 
   Future<void> _google() async {
