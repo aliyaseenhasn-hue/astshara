@@ -1,8 +1,9 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
-
 import '../../../../core/constants/app_colors.dart';
 import '../providers/auth_provider.dart';
 
@@ -12,67 +13,76 @@ class SignupPage extends ConsumerStatefulWidget {
   ConsumerState<SignupPage> createState() => _SignupPageState();
 }
 
-class _SignupPageState extends ConsumerState<SignupPage> {
+class _SignupPageState extends ConsumerState<SignupPage> with WidgetsBindingObserver {
   final _nameController = TextEditingController();
   final _phoneController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
   String _selectedRole = 'user';
   bool _telegramStarting = false;
+  bool _telegramChecking = false;
+  bool _telegramReady = false;
+  String? _telegramToken;
+  String? _telegramUrl;
+  Timer? _telegramTimer;
+  ValueNotifier<bool>? _telegramReadyNotifier;
 
   @override
-  void dispose() { _nameController.dispose(); _phoneController.dispose(); super.dispose(); }
-
-  bool _isNetworkError(Object error) {
-    final text = error.toString().toLowerCase();
-    return text.contains('socketexception') ||
-        text.contains('failed host lookup') ||
-        text.contains('failed to fetch') ||
-        text.contains('networkerror') ||
-        text.contains('network error') ||
-        text.contains('connection closed') ||
-        text.contains('connection reset') ||
-        text.contains('connection refused') ||
-        text.contains('timed out') ||
-        text.contains('timeout') ||
-        text.contains('offline') ||
-        text.contains('xmlhttprequest');
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
   }
 
-  String _errorMessage(Object error) {
-    if (_isNetworkError(error)) {
-      return 'تعذر الاتصال بالإنترنت. تحقق من اتصالك بالإنترنت ثم حاول التسجيل مرة أخرى.';
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _telegramTimer?.cancel();
+    _telegramReadyNotifier?.dispose();
+    _nameController.dispose();
+    _phoneController.dispose();
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed && _telegramToken != null) {
+      Future.delayed(const Duration(milliseconds: 300), () {
+        if (mounted) _pollTelegramStatus();
+      });
     }
-    return error.toString().replaceFirst('Exception: ', '');
   }
 
   void _showError(Object error) {
+    if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(_errorMessage(error), textDirection: TextDirection.rtl),
-        backgroundColor: Theme.of(context).colorScheme.error,
-      ),
+      SnackBar(content: Text(error.toString().replaceFirst('Exception: ', ''), textDirection: TextDirection.rtl)),
     );
+  }
+
+  String _normalizePhone() {
+    var phone = _phoneController.text.trim().replaceAll(RegExp(r'\s+'), '');
+    if (phone.startsWith('+964')) phone = phone.substring(4);
+    if (phone.startsWith('00964')) phone = phone.substring(5);
+    if (phone.startsWith('964')) phone = phone.substring(3);
+    if (phone.startsWith('0')) phone = phone.substring(1);
+    return '964$phone';
   }
 
   Future<void> _googleSignup() async {
     try {
       await ref.read(authControllerProvider.notifier).signInWithGoogle();
     } catch (e) {
-      if (mounted) _showError(e);
+      _showError(e);
     }
-  }
-
-  String _normalizePhone() {
-    var phone = _phoneController.text.trim().replaceAll(RegExp(r'\s+'), '');
-    if (phone.startsWith('+964')) phone = phone.substring(4);
-    if (phone.startsWith('964')) phone = phone.substring(3);
-    if (phone.startsWith('0')) phone = phone.substring(1);
-    return '964$phone';
   }
 
   Future<void> _startPhoneSignup() async {
     if (_telegramStarting || !(_formKey.currentState?.validate() ?? false)) return;
-    setState(() => _telegramStarting = true);
+    setState(() {
+      _telegramStarting = true;
+      _telegramReady = false;
+    });
+    _telegramReadyNotifier?.dispose();
+    _telegramReadyNotifier = ValueNotifier<bool>(false);
     try {
       final data = await ref.read(authControllerProvider.notifier).startTelegramLogin(
         _normalizePhone(),
@@ -80,81 +90,135 @@ class _SignupPageState extends ConsumerState<SignupPage> {
         fullName: _nameController.text.trim(),
         role: _selectedRole,
       );
-      final token = data['request_token'] as String;
-      final telegramUrl = data['telegram_url'] as String;
-      if (!await launchUrl(Uri.parse(telegramUrl), mode: LaunchMode.externalApplication)) {
-        throw Exception('تعذر فتح Telegram. تأكد من تثبيت التطبيق ثم حاول مرة أخرى.');
+      final token = data['request_token'] as String?;
+      final url = data['telegram_url'] as String?;
+      if (token == null || token.isEmpty || url == null || url.isEmpty) {
+        throw Exception('تعذر إنشاء طلب Telegram. حاول مرة أخرى.');
       }
-      if (mounted) await _showCodeDialog(token);
+      _telegramToken = token;
+      _telegramUrl = url;
+      _telegramTimer?.cancel();
+      _telegramTimer = Timer.periodic(const Duration(seconds: 1), (_) => _pollTelegramStatus());
+      final opened = await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
+      if (!opened) throw Exception('تعذر فتح Telegram. تأكد من تثبيت التطبيق ثم حاول مرة أخرى.');
+      if (mounted) await _showTelegramDialog();
     } catch (e) {
-      if (!mounted) return;
+      _cancelTelegram();
       _showError(e);
     } finally {
       if (mounted) setState(() => _telegramStarting = false);
     }
   }
 
-  Future<void> _showCodeDialog(String requestToken) async {
-    final controller = TextEditingController();
-    var verifying = false;
+  Future<void> _pollTelegramStatus() async {
+    final token = _telegramToken;
+    if (token == null || token.isEmpty || _telegramChecking || _telegramReady) return;
     try {
-      await showDialog<void>(
-        context: context,
-        barrierDismissible: false,
-        builder: (dialogContext) => StatefulBuilder(
-          builder: (context, setDialogState) => AlertDialog(
-            title: const Text('تأكيد رقم الهاتف', textAlign: TextAlign.right),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: const [
-                Text(
-                  'تم فتح Telegram. اضغط «بدء» إذا ظهرت، وسيصلك رمز تحقق من 6 أرقام داخل محادثة بوت استشارة.',
-                  textAlign: TextAlign.right,
-                ),
-                SizedBox(height: 16),
-                Text('أدخل الرمز هنا بعد وصوله.', textAlign: TextAlign.right),
-              ],
-            ),
-            actions: [
-              TextButton(
-                onPressed: verifying ? null : () => Navigator.of(dialogContext).pop(),
-                child: const Text('إلغاء'),
-              ),
-              FilledButton(
-                onPressed: verifying
-                    ? null
-                    : () async {
-                        if (!RegExp(r'^\d{6}$').hasMatch(controller.text.trim())) return;
-                        setDialogState(() => verifying = true);
-                        try {
-                          await ref.read(authControllerProvider.notifier).verifyTelegramLogin(
-                            requestToken: requestToken,
-                            code: controller.text.trim(),
-                          );
-                          if (dialogContext.mounted) Navigator.of(dialogContext).pop();
-                        } catch (e) {
-                          if (dialogContext.mounted) setDialogState(() => verifying = false);
-                          if (context.mounted) _showError(e);
-                        }
-                      },
-                child: verifying
-                    ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
-                    : const Text('تأكيد وإنشاء الحساب'),
-              ),
-            ],
-          ),
-        ),
+      final result = await Supabase.instance.client.functions.invoke(
+        'telegram-auth-v2',
+        body: {'action': 'status', 'request_token': token},
       );
-    } finally {
-      controller.dispose();
+      if (result.data is! Map) return;
+      final data = Map<String, dynamic>.from(result.data as Map);
+      final status = data['status']?.toString();
+      if (status == 'telegram_verified') {
+        if (!mounted) return;
+        setState(() => _telegramReady = true);
+        _telegramReadyNotifier?.value = true;
+      } else if (status == 'expired') {
+        _cancelTelegram();
+        if (mounted && Navigator.of(context).canPop()) Navigator.of(context).pop();
+        _showError(Exception('انتهت صلاحية طلب Telegram. حاول مرة أخرى.'));
+      }
+    } catch (_) {
+      // Transient polling errors are retried automatically by the timer.
     }
+  }
+
+  Future<void> _showTelegramDialog() async {
+    final notifier = _telegramReadyNotifier;
+    if (notifier == null) return;
+    await showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) => ValueListenableBuilder<bool>(
+        valueListenable: notifier,
+        builder: (context, ready, _) => AlertDialog(
+          title: const Text('تأكيد رقم الهاتف', textAlign: TextAlign.right),
+          content: Directionality(
+            textDirection: TextDirection.rtl,
+            child: Text(
+              ready
+                  ? 'تم التحقق من رقم الهاتف بنجاح. اضغط «متابعة» لإكمال إنشاء الحساب.'
+                  : 'افتح Telegram واضغط «بدء» ثم اختر «مشاركة رقم الهاتف». بعد نجاح التحقق عُد إلى التطبيق واضغط «متابعة».',
+              textAlign: TextAlign.right,
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: _telegramChecking ? null : () {
+                _cancelTelegram();
+                Navigator.of(dialogContext).pop();
+              },
+              child: const Text('إلغاء'),
+            ),
+            if (!ready)
+              FilledButton.icon(
+                onPressed: _telegramChecking || _telegramUrl == null ? null : () => launchUrl(Uri.parse(_telegramUrl!), mode: LaunchMode.externalApplication),
+                icon: const Icon(Icons.telegram),
+                label: const Text('فتح Telegram'),
+              ),
+            FilledButton(
+              onPressed: _telegramChecking || !ready ? null : () => _completeTelegram(dialogContext),
+              child: Text(_telegramChecking ? 'جارٍ إنشاء الحساب...' : 'متابعة'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _completeTelegram(BuildContext dialogContext) async {
+    final token = _telegramToken;
+    if (token == null || token.isEmpty || _telegramChecking || !_telegramReady) return;
+    setState(() => _telegramChecking = true);
+    try {
+      await ref.read(authControllerProvider.notifier).verifyTelegramLogin(
+        requestToken: token,
+        code: '',
+      );
+      final client = Supabase.instance.client;
+      if (client.auth.currentSession == null || client.auth.currentUser == null) {
+        throw Exception('تم التحقق من Telegram لكن لم يتم تثبيت جلسة الدخول.');
+      }
+      await ref.read(authRepositoryProvider).refreshUser();
+      _cancelTelegram();
+      if (!mounted) return;
+      Navigator.of(dialogContext).pop();
+      await Future<void>.delayed(const Duration(milliseconds: 100));
+      if (!mounted) return;
+      context.go('/home');
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _telegramChecking = false);
+      _showError(e);
+    }
+  }
+
+  void _cancelTelegram() {
+    _telegramTimer?.cancel();
+    _telegramTimer = null;
+    _telegramToken = null;
+    _telegramUrl = null;
+    _telegramChecking = false;
+    _telegramReady = false;
+    _telegramReadyNotifier?.value = false;
   }
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final state = ref.watch(authControllerProvider);
+    final auth = ref.watch(authControllerProvider);
     return Scaffold(
       backgroundColor: scheme.surface,
       body: SafeArea(
@@ -167,24 +231,20 @@ class _SignupPageState extends ConsumerState<SignupPage> {
                 constraints: const BoxConstraints(maxWidth: 1120),
                 child: LayoutBuilder(
                   builder: (context, constraints) {
-                    final wide = constraints.maxWidth >= 900;
                     final form = _SignupForm(
                       formKey: _formKey,
                       nameController: _nameController,
                       phoneController: _phoneController,
                       selectedRole: _selectedRole,
-                      loading: _telegramStarting || state.isLoading,
+                      loading: _telegramStarting || auth.isLoading,
                       onRoleChanged: (role) => setState(() => _selectedRole = role),
                       onPhoneSignup: _startPhoneSignup,
                       onGoogle: _googleSignup,
                     );
-                    return wide
-                        ? Row(children: [
-                            const Expanded(child: _SignupBrand()),
-                            const SizedBox(width: 44),
-                            SizedBox(width: 480, child: form),
-                          ])
-                        : form;
+                    if (constraints.maxWidth >= 900) {
+                      return Row(children: [const Expanded(child: _SignupBrand()), const SizedBox(width: 44), SizedBox(width: 480, child: form)]);
+                    }
+                    return form;
                   },
                 ),
               ),
@@ -199,72 +259,13 @@ class _SignupPageState extends ConsumerState<SignupPage> {
 class _SignupBrand extends StatelessWidget {
   const _SignupBrand();
   @override
-  Widget build(BuildContext context) {
-    final s = Theme.of(context).colorScheme;
-    return Container(
-      padding: const EdgeInsets.all(42),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topRight,
-          end: Alignment.bottomLeft,
-          colors: [s.primaryContainer, s.surfaceContainerHighest],
-        ),
-        borderRadius: BorderRadius.circular(34),
-        border: Border.all(color: s.outlineVariant),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.end,
-        children: const [
-          Icon(Icons.balance_rounded, size: 58),
-          SizedBox(height: 24),
-          Text('أنشئ حسابك في استشارة', style: TextStyle(fontSize: 30, fontWeight: FontWeight.w900)),
-          SizedBox(height: 10),
-          Text(
-            'ابدأ باستخدام رقم هاتفك عبر Telegram أو حساب Google، ثم أكمل بياناتك المهنية عند الحاجة.',
-            style: TextStyle(fontSize: 15, height: 1.8),
-          ),
-          SizedBox(height: 28),
-          _SignupBenefit(icon: Icons.phone_android_rounded, title: 'رقم الهاتف', text: 'تحقق سريع وآمن من خلال رمز Telegram.'),
-          SizedBox(height: 14),
-          _SignupBenefit(icon: Icons.account_circle_outlined, title: 'حساب Google', text: 'تسجيل سريع دون الحاجة إلى كلمة مرور جديدة.'),
-          SizedBox(height: 14),
-          _SignupBenefit(icon: Icons.gavel_rounded, title: 'حساب المحامي', text: 'اختر نوع الحساب وأكمل الملف المهني بعد التسجيل.'),
-        ],
-      ),
-    );
-  }
-}
-
-class _SignupBenefit extends StatelessWidget {
-  final IconData icon;
-  final String title;
-  final String text;
-  const _SignupBenefit({required this.icon, required this.title, required this.text});
-  @override
-  Widget build(BuildContext context) {
-    final s = Theme.of(context).colorScheme;
-    return Row(
-      textDirection: TextDirection.rtl,
-      children: [
-        Container(
-          width: 42,
-          height: 42,
-          decoration: BoxDecoration(color: s.surface.withValues(alpha: .7), borderRadius: BorderRadius.circular(13)),
-          child: Icon(icon, color: s.primary),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text(title, style: TextStyle(fontWeight: FontWeight.w900, color: s.onSurface)),
-              Text(text, textAlign: TextAlign.right, style: TextStyle(fontSize: 11, color: s.onSurfaceVariant)),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
+  Widget build(BuildContext context) => const Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
+    Icon(Icons.balance_rounded, size: 58),
+    SizedBox(height: 20),
+    Text('أنشئ حسابك في استشارة', style: TextStyle(fontSize: 30, fontWeight: FontWeight.w900)),
+    SizedBox(height: 10),
+    Text('سجّل باستخدام رقم هاتفك عبر Telegram أو حساب Google.'),
+  ]);
 }
 
 class _SignupForm extends StatelessWidget {
@@ -277,120 +278,34 @@ class _SignupForm extends StatelessWidget {
   final VoidCallback onPhoneSignup;
   final VoidCallback onGoogle;
 
-  const _SignupForm({
-    required this.formKey,
-    required this.nameController,
-    required this.phoneController,
-    required this.selectedRole,
-    required this.loading,
-    required this.onRoleChanged,
-    required this.onPhoneSignup,
-    required this.onGoogle,
-  });
+  const _SignupForm({required this.formKey, required this.nameController, required this.phoneController, required this.selectedRole, required this.loading, required this.onRoleChanged, required this.onPhoneSignup, required this.onGoogle});
 
   @override
   Widget build(BuildContext context) {
     final s = Theme.of(context).colorScheme;
-    return Form(
-      key: formKey,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Align(
-            alignment: Alignment.centerRight,
-            child: TextButton.icon(
-              onPressed: () => context.canPop() ? context.pop() : context.go('/'),
-              icon: const Icon(Icons.arrow_forward_rounded),
-              label: const Text('العودة'),
-            ),
-          ),
-          const SizedBox(height: 8),
-          Container(
-            width: 68,
-            height: 68,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(color: s.primaryContainer, borderRadius: BorderRadius.circular(21)),
-            child: Icon(Icons.person_add_alt_1_rounded, size: 34, color: s.primary),
-          ),
-          const SizedBox(height: 18),
-          const Text('إنشاء حساب', textAlign: TextAlign.right, style: TextStyle(fontSize: 30, fontWeight: FontWeight.w900)),
-          const SizedBox(height: 7),
-          Text('اختر نوع حسابك ثم سجّل باستخدام رقم الهاتف أو Google.', textAlign: TextAlign.right, style: TextStyle(color: s.onSurfaceVariant, height: 1.6, fontSize: 13)),
-          const SizedBox(height: 22),
-          Card(
-            elevation: 0,
-            child: Padding(
-              padding: const EdgeInsets.all(18),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  TextFormField(
-                    controller: nameController,
-                    decoration: const InputDecoration(labelText: 'الاسم الكامل', prefixIcon: Icon(Icons.person_outline_rounded)),
-                    validator: (v) => v == null || v.trim().length < 3 ? 'أدخل الاسم الكامل' : null,
-                  ),
-                  const SizedBox(height: 14),
-                  Text('نوع الحساب', textAlign: TextAlign.right, style: TextStyle(fontWeight: FontWeight.w800, color: s.onSurface)),
-                  const SizedBox(height: 10),
-                  Row(
-                    children: [
-                      Expanded(child: _RoleCard(title: 'طالب استشارة', subtitle: 'أبحث عن مساعدة قانونية', icon: Icons.person_search_outlined, selected: selectedRole == 'user', onTap: () => onRoleChanged('user'))),
-                      const SizedBox(width: 10),
-                      Expanded(child: _RoleCard(title: 'محامي', subtitle: 'أقدم خدمات قانونية', icon: Icons.gavel_rounded, selected: selectedRole == 'lawyer', onTap: () => onRoleChanged('lawyer'))),
-                    ],
-                  ),
-                  const SizedBox(height: 18),
-                  TextFormField(
-                    controller: phoneController,
-                    keyboardType: TextInputType.phone,
-                    textDirection: TextDirection.ltr,
-                    decoration: const InputDecoration(labelText: 'رقم الهاتف العراقي', hintText: '07xxxxxxxxx', prefixIcon: Icon(Icons.phone_android_rounded)),
-                    validator: (v) {
-                      final value = v?.replaceAll(RegExp(r'\s+'), '') ?? '';
-                      if (!RegExp(r'^(?:\+?964|0)?7\d{9}$').hasMatch(value)) return 'أدخل رقم هاتف عراقي صحيح';
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 14),
-                  SizedBox(
-                    height: 52,
-                    child: ElevatedButton.icon(
-                      onPressed: loading ? null : onPhoneSignup,
-                      icon: loading ? const SizedBox(width: 19, height: 19, child: CircularProgressIndicator(strokeWidth: 2)) : const Icon(Icons.send_rounded),
-                      label: Text(loading ? 'جارٍ تجهيز التسجيل...' : 'التسجيل برقم الهاتف عبر Telegram', style: const TextStyle(fontWeight: FontWeight.w800)),
-                    ),
-                  ),
-                  const SizedBox(height: 18),
-                  Row(
-                    children: [
-                      Expanded(child: Divider(color: s.outlineVariant)),
-                      Padding(padding: const EdgeInsets.symmetric(horizontal: 12), child: Text('أو', style: TextStyle(color: s.onSurfaceVariant))),
-                      Expanded(child: Divider(color: s.outlineVariant)),
-                    ],
-                  ),
-                  const SizedBox(height: 18),
-                  SizedBox(
-                    height: 52,
-                    child: OutlinedButton.icon(
-                      onPressed: loading ? null : onGoogle,
-                      icon: const Icon(Icons.account_circle_outlined),
-                      label: const Text('المتابعة باستخدام Google', style: TextStyle(fontWeight: FontWeight.w800)),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(height: 12),
-          TextButton(
-            onPressed: loading ? null : () => context.go('/login'),
-            child: Text('لديك حساب بالفعل؟ تسجيل الدخول', style: TextStyle(color: s.primary, fontWeight: FontWeight.w700)),
-          ),
-          const SizedBox(height: 8),
-          Text('بالمتابعة، أنت توافق على شروط الاستخدام وسياسة الخصوصية.', textAlign: TextAlign.center, style: TextStyle(fontSize: 10.5, color: s.onSurfaceVariant)),
-        ],
-      ),
-    );
+    return Form(key: formKey, child: Card(child: Padding(padding: const EdgeInsets.all(24), child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+      Text('إنشاء حساب', textAlign: TextAlign.right, style: const TextStyle(fontSize: 30, fontWeight: FontWeight.w900)),
+      const SizedBox(height: 20),
+      TextFormField(controller: nameController, decoration: const InputDecoration(labelText: 'الاسم الكامل', prefixIcon: Icon(Icons.person_outline_rounded)), validator: (v) => v == null || v.trim().length < 3 ? 'أدخل الاسم الكامل' : null),
+      const SizedBox(height: 16),
+      Row(children: [
+        Expanded(child: _RoleCard(title: 'طالب استشارة', subtitle: 'أبحث عن مساعدة قانونية', icon: Icons.person_search_outlined, selected: selectedRole == 'user', onTap: () => onRoleChanged('user'))),
+        const SizedBox(width: 10),
+        Expanded(child: _RoleCard(title: 'محامي', subtitle: 'أقدم خدمات قانونية', icon: Icons.gavel_rounded, selected: selectedRole == 'lawyer', onTap: () => onRoleChanged('lawyer'))),
+      ]),
+      const SizedBox(height: 16),
+      TextFormField(controller: phoneController, keyboardType: TextInputType.phone, textDirection: TextDirection.ltr, decoration: const InputDecoration(labelText: 'رقم الهاتف العراقي', hintText: '07xxxxxxxxx', prefixIcon: Icon(Icons.phone_android_rounded)), validator: (v) {
+        final value = v?.replaceAll(RegExp(r'\s+'), '') ?? '';
+        return RegExp(r'^(?:\+?964|0)?7\d{9}$').hasMatch(value) ? null : 'أدخل رقم هاتف عراقي صحيح';
+      }),
+      const SizedBox(height: 16),
+      SizedBox(height: 52, child: ElevatedButton.icon(onPressed: loading ? null : onPhoneSignup, icon: loading ? const SizedBox(width: 19, height: 19, child: CircularProgressIndicator(strokeWidth: 2)) : const Icon(Icons.send_rounded), label: Text(loading ? 'جارٍ تجهيز التسجيل...' : 'التسجيل برقم الهاتف عبر Telegram'))),
+      const SizedBox(height: 14),
+      OutlinedButton.icon(onPressed: loading ? null : onGoogle, icon: const Icon(Icons.account_circle_outlined), label: const Text('المتابعة باستخدام Google')),
+      const SizedBox(height: 12),
+      TextButton(onPressed: loading ? null : () => context.go('/login'), child: const Text('لديك حساب بالفعل؟ تسجيل الدخول')),
+      Text('بالمتابعة، أنت توافق على شروط الاستخدام وسياسة الخصوصية.', textAlign: TextAlign.center, style: TextStyle(fontSize: 10.5, color: s.onSurfaceVariant)),
+    ])));
   }
 }
 
@@ -403,32 +318,6 @@ class _RoleCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final s = Theme.of(context).colorScheme;
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 180),
-          padding: const EdgeInsets.all(12),
-          constraints: const BoxConstraints(minHeight: 108),
-          decoration: BoxDecoration(
-            color: selected ? s.primaryContainer : s.surfaceContainerLowest,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: selected ? s.primary : s.outlineVariant, width: selected ? 1.6 : 1),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Icon(icon, color: selected ? s.primary : s.onSurfaceVariant),
-              const Spacer(),
-              Text(title, style: TextStyle(fontWeight: FontWeight.w800, color: s.onSurface)),
-              const SizedBox(height: 3),
-              Text(subtitle, textAlign: TextAlign.right, style: TextStyle(fontSize: 9.5, color: s.onSurfaceVariant)),
-            ],
-          ),
-        ),
-      ),
-    );
+    return Material(color: Colors.transparent, child: InkWell(onTap: onTap, borderRadius: BorderRadius.circular(16), child: Container(padding: const EdgeInsets.all(12), constraints: const BoxConstraints(minHeight: 105), decoration: BoxDecoration(color: selected ? s.primaryContainer : s.surfaceContainerLowest, borderRadius: BorderRadius.circular(16), border: Border.all(color: selected ? s.primary : s.outlineVariant, width: selected ? 1.6 : 1)), child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [Icon(icon, color: selected ? s.primary : s.onSurfaceVariant), const Spacer(), Text(title, style: const TextStyle(fontWeight: FontWeight.w800)), const SizedBox(height: 3), Text(subtitle, textAlign: TextAlign.right, style: TextStyle(fontSize: 9.5, color: s.onSurfaceVariant))]))));
   }
 }
