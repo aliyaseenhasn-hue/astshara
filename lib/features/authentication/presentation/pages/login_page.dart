@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -24,7 +23,9 @@ class _LoginPageState extends ConsumerState<LoginPage> with WidgetsBindingObserv
   @override void initState() { super.initState(); WidgetsBinding.instance.addObserver(this); }
   @override void dispose() { WidgetsBinding.instance.removeObserver(this); _timer?.cancel(); _phone.dispose(); super.dispose(); }
   @override void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed && _token != null) Future.delayed(const Duration(milliseconds: 250), _check);
+    if (state == AppLifecycleState.resumed && _token != null) {
+      Future.delayed(const Duration(milliseconds: 250), () { if (mounted) _check(); });
+    }
   }
 
   String _digits(String v) => v
@@ -85,14 +86,16 @@ class _LoginPageState extends ConsumerState<LoginPage> with WidgetsBindingObserv
         if (mounted) setState(() {});
         try {
           await ref.read(authControllerProvider.notifier).verifyTelegramLogin(requestToken: token, code: '');
-          final user = await ref.read(authRepositoryProvider).getCurrentUser();
-          if (user == null) throw Exception('تم التحقق لكن لم يتم تثبيت جلسة الدخول.');
-          ref.invalidate(authStateChangesProvider);
-          final synced = await ref.read(authStateChangesProvider.future);
-          if (synced == null) throw Exception('تم التحقق لكن لم تتم مزامنة جلسة التطبيق.');
-          _timer?.cancel(); _token = null;
+          final session = Supabase.instance.client.auth.currentSession;
+          final user = Supabase.instance.client.auth.currentUser;
+          if (session == null || user == null) throw Exception('تم التحقق لكن لم يتم تثبيت جلسة الدخول.');
+          await ref.read(authRepositoryProvider).refreshUser();
+          _timer?.cancel();
+          _token = null;
           if (!mounted) return;
           Navigator.of(context).pop();
+          await Future<void>.delayed(const Duration(milliseconds: 50));
+          if (!mounted) return;
           context.go('/home');
         } catch (e) {
           _checking = false;
@@ -103,7 +106,14 @@ class _LoginPageState extends ConsumerState<LoginPage> with WidgetsBindingObserv
         if (mounted && Navigator.of(context).canPop()) Navigator.of(context).pop();
         if (mounted) _error(Exception('انتهت صلاحية طلب Telegram. حاول مرة أخرى.'));
       }
-    } catch (_) {}
+    } catch (e) {
+      // Keep polling on transient network errors; show an error only when the user explicitly presses متابعة.
+      if (_checking && mounted) {
+        _checking = false;
+        setState(() {});
+        _error(e);
+      }
+    }
   }
 
   void _cancelTelegram() { _timer?.cancel(); _timer = null; _token = null; _checking = false; }
