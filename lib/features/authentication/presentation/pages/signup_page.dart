@@ -173,7 +173,7 @@ class _SignupPageState extends ConsumerState<SignupPage> with WidgetsBindingObse
                   label: const Text('فتح Telegram'),
                 ),
               FilledButton(
-                onPressed: _telegramChecking || !ready ? null : () => _completeTelegram(dialogContext),
+                onPressed: _telegramChecking ? null : () => _continueTelegram(dialogContext),
                 child: Text(_telegramChecking ? 'جارٍ إنشاء الحساب...' : 'متابعة'),
               ),
             ],
@@ -183,6 +183,16 @@ class _SignupPageState extends ConsumerState<SignupPage> with WidgetsBindingObse
     } finally {
       _telegramDialogOpen = false;
     }
+  }
+
+  Future<void> _continueTelegram(BuildContext dialogContext) async {
+    if (_telegramChecking) return;
+    await _pollTelegramStatus();
+    if (!mounted || !_telegramReady) {
+      _showError(Exception('لم يكتمل التحقق من Telegram بعد. أكمل مشاركة رقم الهاتف ثم اضغط «متابعة» مرة أخرى.'));
+      return;
+    }
+    await _completeTelegram(dialogContext);
   }
 
   Future<void> _completeTelegram(BuildContext dialogContext) async {
