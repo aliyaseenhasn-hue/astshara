@@ -4,7 +4,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
-import '../../../../core/constants/app_colors.dart';
 import '../providers/auth_provider.dart';
 
 class SignupPage extends ConsumerStatefulWidget {
@@ -21,6 +20,7 @@ class _SignupPageState extends ConsumerState<SignupPage> with WidgetsBindingObse
   bool _telegramStarting = false;
   bool _telegramChecking = false;
   bool _telegramReady = false;
+  bool _telegramDialogOpen = false;
   String? _telegramToken;
   String? _telegramUrl;
   Timer? _telegramTimer;
@@ -127,7 +127,9 @@ class _SignupPageState extends ConsumerState<SignupPage> with WidgetsBindingObse
         _telegramReadyNotifier?.value = true;
       } else if (status == 'expired') {
         _cancelTelegram();
-        if (mounted && Navigator.of(context).canPop()) Navigator.of(context).pop();
+        if (mounted && _telegramDialogOpen && Navigator.of(context).canPop()) {
+          Navigator.of(context).pop();
+        }
         _showError(Exception('انتهت صلاحية طلب Telegram. حاول مرة أخرى.'));
       }
     } catch (_) {
@@ -138,44 +140,49 @@ class _SignupPageState extends ConsumerState<SignupPage> with WidgetsBindingObse
   Future<void> _showTelegramDialog() async {
     final notifier = _telegramReadyNotifier;
     if (notifier == null) return;
-    await showDialog<void>(
-      context: context,
-      barrierDismissible: false,
-      builder: (dialogContext) => ValueListenableBuilder<bool>(
-        valueListenable: notifier,
-        builder: (context, ready, _) => AlertDialog(
-          title: const Text('تأكيد رقم الهاتف', textAlign: TextAlign.right),
-          content: Directionality(
-            textDirection: TextDirection.rtl,
-            child: Text(
-              ready
-                  ? 'تم التحقق من رقم الهاتف بنجاح. اضغط «متابعة» لإكمال إنشاء الحساب.'
-                  : 'افتح Telegram واضغط «بدء» ثم اختر «مشاركة رقم الهاتف». بعد نجاح التحقق عُد إلى التطبيق واضغط «متابعة».',
-              textAlign: TextAlign.right,
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: _telegramChecking ? null : () {
-                _cancelTelegram();
-                Navigator.of(dialogContext).pop();
-              },
-              child: const Text('إلغاء'),
-            ),
-            if (!ready)
-              FilledButton.icon(
-                onPressed: _telegramChecking || _telegramUrl == null ? null : () => launchUrl(Uri.parse(_telegramUrl!), mode: LaunchMode.externalApplication),
-                icon: const Icon(Icons.telegram),
-                label: const Text('فتح Telegram'),
+    _telegramDialogOpen = true;
+    try {
+      await showDialog<void>(
+        context: context,
+        barrierDismissible: false,
+        builder: (dialogContext) => ValueListenableBuilder<bool>(
+          valueListenable: notifier,
+          builder: (context, ready, _) => AlertDialog(
+            title: const Text('تأكيد رقم الهاتف', textAlign: TextAlign.right),
+            content: Directionality(
+              textDirection: TextDirection.rtl,
+              child: Text(
+                ready
+                    ? 'تم التحقق من رقم الهاتف بنجاح. اضغط «متابعة» لإكمال إنشاء الحساب.'
+                    : 'افتح Telegram واضغط «بدء» ثم اختر «مشاركة رقم الهاتف». بعد نجاح التحقق عُد إلى التطبيق واضغط «متابعة».',
+                textAlign: TextAlign.right,
               ),
-            FilledButton(
-              onPressed: _telegramChecking || !ready ? null : () => _completeTelegram(dialogContext),
-              child: Text(_telegramChecking ? 'جارٍ إنشاء الحساب...' : 'متابعة'),
             ),
-          ],
+            actions: [
+              TextButton(
+                onPressed: _telegramChecking ? null : () {
+                  _cancelTelegram();
+                  Navigator.of(dialogContext).pop();
+                },
+                child: const Text('إلغاء'),
+              ),
+              if (!ready)
+                FilledButton.icon(
+                  onPressed: _telegramChecking || _telegramUrl == null ? null : () => launchUrl(Uri.parse(_telegramUrl!), mode: LaunchMode.externalApplication),
+                  icon: const Icon(Icons.telegram),
+                  label: const Text('فتح Telegram'),
+                ),
+              FilledButton(
+                onPressed: _telegramChecking || !ready ? null : () => _completeTelegram(dialogContext),
+                child: Text(_telegramChecking ? 'جارٍ إنشاء الحساب...' : 'متابعة'),
+              ),
+            ],
+          ),
         ),
-      ),
-    );
+      );
+    } finally {
+      _telegramDialogOpen = false;
+    }
   }
 
   Future<void> _completeTelegram(BuildContext dialogContext) async {
@@ -193,9 +200,8 @@ class _SignupPageState extends ConsumerState<SignupPage> with WidgetsBindingObse
       }
       await ref.read(authRepositoryProvider).refreshUser();
       _cancelTelegram();
-      if (!mounted) return;
+      if (!mounted || !dialogContext.mounted) return;
       Navigator.of(dialogContext).pop();
-      await Future<void>.delayed(const Duration(milliseconds: 100));
       if (!mounted) return;
       context.go('/home');
     } catch (e) {
@@ -305,7 +311,7 @@ class _SignupForm extends StatelessWidget {
       const SizedBox(height: 12),
       TextButton(onPressed: loading ? null : () => context.go('/login'), child: const Text('لديك حساب بالفعل؟ تسجيل الدخول')),
       Text('بالمتابعة، أنت توافق على شروط الاستخدام وسياسة الخصوصية.', textAlign: TextAlign.center, style: TextStyle(fontSize: 10.5, color: s.onSurfaceVariant)),
-    ])));
+    ]))));
   }
 }
 
