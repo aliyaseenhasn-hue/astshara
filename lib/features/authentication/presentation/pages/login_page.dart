@@ -158,8 +158,11 @@ class _LoginPageState extends ConsumerState<LoginPage> with WidgetsBindingObserv
                 icon: const Icon(Icons.telegram),
                 label: const Text('فتح Telegram'),
               ),
+              // Keep the action clickable after returning from Telegram.
+              // The authoritative status is checked when the user taps it;
+              // the UI must not depend on a dialog-local notifier update.
               FilledButton(
-                onPressed: _checking || _redirectingToSignup || !ready ? null : () => _completeTelegram(dialogContext),
+                onPressed: _checking || _redirectingToSignup ? null : () => _completeTelegram(dialogContext),
                 child: Text(_checking ? 'جارٍ الدخول...' : 'متابعة'),
               ),
             ],
@@ -175,7 +178,7 @@ class _LoginPageState extends ConsumerState<LoginPage> with WidgetsBindingObserv
 
   Future<void> _pollTelegramStatus() async {
     final token = _token;
-    if (token == null || token.isEmpty || _checking || _telegramReady || _redirectingToSignup) return;
+    if (token == null || token.isEmpty || _checking || _redirectingToSignup) return;
     try {
       final r = await Supabase.instance.client.functions.invoke(
         'telegram-auth-v2',
@@ -188,9 +191,6 @@ class _LoginPageState extends ConsumerState<LoginPage> with WidgetsBindingObserv
         final mode = data['mode']?.toString();
         final verifiedProfileId = data['verified_profile_id']?.toString();
 
-        // Login requests for a phone that is not registered are verified by
-        // Telegram, but have no profile. Send that user to the real signup flow
-        // instead of attempting to create a login session for a non-existent user.
         if (mode == 'login' && (verifiedProfileId == null || verifiedProfileId.isEmpty || verifiedProfileId == 'null')) {
           _redirectingToSignup = true;
           _timer?.cancel();
@@ -222,9 +222,20 @@ class _LoginPageState extends ConsumerState<LoginPage> with WidgetsBindingObserv
   Future<void> _completeTelegram(BuildContext dialogContext) async {
     final token = _token;
     if (token == null || token.isEmpty || _checking) return;
+
+    // Always refresh the server-side status when the user returns from Telegram.
+    // This makes the Continue action reliable even if the periodic timer missed
+    // the webhook transition while the app was in the background.
+    await _pollTelegramStatus();
+    if (!mounted || _token == null || _token!.isEmpty) return;
+    if (!_telegramReady) {
+      _error(Exception('لم يكتمل التحقق من Telegram بعد. أكمل مشاركة رقم الهاتف ثم حاول الضغط على «متابعة» مرة أخرى.'));
+      return;
+    }
+
     setState(() => _checking = true);
     try {
-      await ref.read(authControllerProvider.notifier).verifyTelegramLogin(requestToken: token, code: '');
+      await ref.read(authControllerProvider.notifier).verifyTelegramLogin(requestToken: _token!, code: '');
       final client = Supabase.instance.client;
       final session = client.auth.currentSession;
       final user = client.auth.currentUser;
