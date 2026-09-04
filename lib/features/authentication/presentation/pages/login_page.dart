@@ -23,6 +23,7 @@ class _LoginPageState extends ConsumerState<LoginPage> with WidgetsBindingObserv
   bool _busy = false;
   bool _checking = false;
   bool _telegramReady = false;
+  bool _redirectingToSignup = false;
   ValueNotifier<bool>? _telegramReadyNotifier;
 
   @override
@@ -66,11 +67,31 @@ class _LoginPageState extends ConsumerState<LoginPage> with WidgetsBindingObserv
 
   void _error(Object e) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
+    var message = e.toString().replaceFirst('Exception: ', '').trim();
+    if (message.isEmpty) message = 'حدث خطأ غير متوقع أثناء تسجيل الدخول.';
+    final messenger = ScaffoldMessenger.of(context);
+    messenger.removeCurrentSnackBar();
+    messenger.showSnackBar(
       SnackBar(
-        content: Text(
-          e.toString().replaceFirst('Exception: ', ''),
+        behavior: SnackBarBehavior.floating,
+        margin: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+        duration: const Duration(seconds: 7),
+        backgroundColor: Theme.of(context).colorScheme.error,
+        showCloseIcon: true,
+        closeIconColor: Theme.of(context).colorScheme.onError,
+        content: Directionality(
           textDirection: TextDirection.rtl,
+          child: Text(
+            message,
+            textAlign: TextAlign.right,
+            maxLines: 5,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              color: Theme.of(context).colorScheme.onError,
+              fontSize: 15,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
         ),
       ),
     );
@@ -83,11 +104,7 @@ class _LoginPageState extends ConsumerState<LoginPage> with WidgetsBindingObserv
       return;
     }
     try {
-      final ok = await launchUrl(
-        Uri.parse(url),
-        mode: LaunchMode.externalApplication,
-        webOnlyWindowName: '_blank',
-      );
+      final ok = await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication, webOnlyWindowName: '_blank');
       if (!ok) throw Exception('تعذر فتح Telegram. اضغط «فتح Telegram» مرة أخرى.');
     } catch (e) {
       _error(e);
@@ -99,6 +116,7 @@ class _LoginPageState extends ConsumerState<LoginPage> with WidgetsBindingObserv
     setState(() {
       _busy = true;
       _telegramReady = false;
+      _redirectingToSignup = false;
     });
     _telegramReadyNotifier?.dispose();
     _telegramReadyNotifier = ValueNotifier<bool>(false);
@@ -123,25 +141,25 @@ class _LoginPageState extends ConsumerState<LoginPage> with WidgetsBindingObserv
               textDirection: TextDirection.rtl,
               child: Text(
                 ready
-                    ? 'تم التحقق من رقم الهاتف بنجاح. اضغط «متابعة» لإكمال تسجيل الدخول.'
-                    : 'افتح Telegram واضغط «بدء» ثم اختر «مشاركة رقم الهاتف». بعد نجاح التحقق اضغط «متابعة» هنا.',
+                    ? 'تم التحقق من رقم الهاتف. جارٍ تحديد الحساب المرتبط به.'
+                    : 'افتح Telegram واضغط «بدء» ثم اختر «مشاركة رقم الهاتف». بعد نجاح التحقق سيحدد النظام الحساب المرتبط تلقائياً.',
               ),
             ),
             actions: [
               TextButton(
-                onPressed: _checking ? null : () {
+                onPressed: _checking || _redirectingToSignup ? null : () {
                   _cancelTelegram();
                   Navigator.of(dialogContext).pop();
                 },
                 child: const Text('إلغاء'),
               ),
               FilledButton.icon(
-                onPressed: _checking ? null : _openTelegram,
+                onPressed: _checking || _redirectingToSignup ? null : _openTelegram,
                 icon: const Icon(Icons.telegram),
                 label: const Text('فتح Telegram'),
               ),
               FilledButton(
-                onPressed: _checking || !ready ? null : () => _completeTelegram(dialogContext),
+                onPressed: _checking || _redirectingToSignup || !ready ? null : () => _completeTelegram(dialogContext),
                 child: Text(_checking ? 'جارٍ الدخول...' : 'متابعة'),
               ),
             ],
@@ -157,15 +175,34 @@ class _LoginPageState extends ConsumerState<LoginPage> with WidgetsBindingObserv
 
   Future<void> _pollTelegramStatus() async {
     final token = _token;
-    if (token == null || token.isEmpty || _checking || _telegramReady) return;
+    if (token == null || token.isEmpty || _checking || _telegramReady || _redirectingToSignup) return;
     try {
       final r = await Supabase.instance.client.functions.invoke(
         'telegram-auth-v2',
         body: {'action': 'status', 'request_token': token},
       );
       if (r.data is! Map) return;
-      final status = (r.data as Map)['status']?.toString();
+      final data = Map<String, dynamic>.from(r.data as Map);
+      final status = data['status']?.toString();
       if (status == 'telegram_verified') {
+        final mode = data['mode']?.toString();
+        final verifiedProfileId = data['verified_profile_id']?.toString();
+
+        // Login requests for a phone that is not registered are verified by
+        // Telegram, but have no profile. Send that user to the real signup flow
+        // instead of attempting to create a login session for a non-existent user.
+        if (mode == 'login' && (verifiedProfileId == null || verifiedProfileId.isEmpty || verifiedProfileId == 'null')) {
+          _redirectingToSignup = true;
+          _timer?.cancel();
+          _timer = null;
+          if (mounted && Navigator.of(context).canPop()) Navigator.of(context).pop();
+          _token = null;
+          _telegramUrl = null;
+          if (!mounted) return;
+          context.go('/signup');
+          return;
+        }
+
         if (mounted) {
           setState(() => _telegramReady = true);
           _telegramReadyNotifier?.value = true;
@@ -178,7 +215,7 @@ class _LoginPageState extends ConsumerState<LoginPage> with WidgetsBindingObserv
         if (mounted) _error(Exception('انتهت صلاحية طلب Telegram. حاول مرة أخرى.'));
       }
     } catch (_) {
-      // Polling errors are transient; the user can press متابعة after the next successful poll.
+      // Polling errors are transient; retry on the next timer tick.
     }
   }
 
@@ -187,18 +224,11 @@ class _LoginPageState extends ConsumerState<LoginPage> with WidgetsBindingObserv
     if (token == null || token.isEmpty || _checking) return;
     setState(() => _checking = true);
     try {
-      // The polling step only observes telegram_verified. It never calls verify(),
-      // so the refresh token cannot be consumed by a background timer.
-      await ref.read(authControllerProvider.notifier).verifyTelegramLogin(
-        requestToken: token,
-        code: '',
-      );
+      await ref.read(authControllerProvider.notifier).verifyTelegramLogin(requestToken: token, code: '');
       final client = Supabase.instance.client;
       final session = client.auth.currentSession;
       final user = client.auth.currentUser;
-      if (session == null || user == null) {
-        throw Exception('تم التحقق من Telegram لكن لم يتم تثبيت جلسة الدخول.');
-      }
+      if (session == null || user == null) throw Exception('تم التحقق من Telegram لكن لم يتم تثبيت جلسة الدخول.');
       await ref.read(authRepositoryProvider).refreshUser();
       _timer?.cancel();
       _timer = null;
@@ -210,7 +240,7 @@ class _LoginPageState extends ConsumerState<LoginPage> with WidgetsBindingObserv
       Navigator.of(dialogContext).pop();
       await Future<void>.delayed(const Duration(milliseconds: 100));
       if (!mounted) return;
-      context.go('/home');
+      context.go('/profile');
     } catch (e) {
       if (!mounted) return;
       setState(() => _checking = false);
@@ -225,6 +255,7 @@ class _LoginPageState extends ConsumerState<LoginPage> with WidgetsBindingObserv
     _telegramUrl = null;
     _checking = false;
     _telegramReady = false;
+    _redirectingToSignup = false;
     _telegramReadyNotifier?.value = false;
   }
 
@@ -278,10 +309,7 @@ class _LoginPageState extends ConsumerState<LoginPage> with WidgetsBindingObserv
                             style: const TextStyle(fontSize: 28, fontWeight: FontWeight.w900),
                           ),
                           const SizedBox(height: 8),
-                          const Text(
-                            'أدخل رقم هاتفك العراقي لإتمام الدخول بأمان عبر Telegram.',
-                            textAlign: TextAlign.center,
-                          ),
+                          const Text('أدخل رقم هاتفك العراقي لإتمام الدخول بأمان عبر Telegram.', textAlign: TextAlign.center),
                           const SizedBox(height: 24),
                           TextFormField(
                             controller: _phone,
@@ -295,9 +323,7 @@ class _LoginPageState extends ConsumerState<LoginPage> with WidgetsBindingObserv
                             validator: (v) {
                               final p = _digits(v ?? '').replaceAll(RegExp(r'\s+'), '');
                               final d = p.replaceFirst(RegExp(r'^\+964|^00964|^964|^0'), '');
-                              return RegExp(r'^7\d{9}$').hasMatch(d)
-                                  ? null
-                                  : 'أدخل رقم هاتف عراقي صحيح مثل 07701234567';
+                              return RegExp(r'^7\d{9}$').hasMatch(d) ? null : 'أدخل رقم هاتف عراقي صحيح مثل 07701234567';
                             },
                           ),
                           const SizedBox(height: 16),
@@ -305,9 +331,7 @@ class _LoginPageState extends ConsumerState<LoginPage> with WidgetsBindingObserv
                             height: 52,
                             child: ElevatedButton.icon(
                               onPressed: (_busy || auth.isLoading) ? null : _start,
-                              icon: _busy
-                                  ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
-                                  : const Icon(Icons.send_rounded),
+                              icon: _busy ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)) : const Icon(Icons.send_rounded),
                               label: Text(_busy ? 'جارٍ تجهيز Telegram...' : 'تسجيل الدخول عبر Telegram'),
                             ),
                           ),
@@ -318,10 +342,7 @@ class _LoginPageState extends ConsumerState<LoginPage> with WidgetsBindingObserv
                             label: const Text('المتابعة باستخدام Google'),
                           ),
                           const SizedBox(height: 16),
-                          TextButton(
-                            onPressed: () => context.go('/signup'),
-                            child: const Text('ليس لديك حساب؟ إنشاء حساب جديد'),
-                          ),
+                          TextButton(onPressed: () => context.go('/signup'), child: const Text('ليس لديك حساب؟ إنشاء حساب جديد')),
                         ],
                       ),
                     ),
