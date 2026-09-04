@@ -21,6 +21,7 @@ class _SignupPageState extends ConsumerState<SignupPage> with WidgetsBindingObse
   bool _telegramChecking = false;
   bool _telegramReady = false;
   bool _telegramDialogOpen = false;
+  bool _telegramAutoCompleting = false;
   String? _telegramToken;
   String? _telegramUrl;
   Timer? _telegramTimer;
@@ -112,7 +113,7 @@ class _SignupPageState extends ConsumerState<SignupPage> with WidgetsBindingObse
 
   Future<void> _pollTelegramStatus() async {
     final token = _telegramToken;
-    if (token == null || token.isEmpty || _telegramChecking || _telegramReady) return;
+    if (token == null || token.isEmpty || _telegramChecking || _telegramReady || _telegramAutoCompleting) return;
     try {
       final result = await Supabase.instance.client.functions.invoke(
         'telegram-auth-v2',
@@ -125,6 +126,10 @@ class _SignupPageState extends ConsumerState<SignupPage> with WidgetsBindingObse
         if (!mounted) return;
         setState(() => _telegramReady = true);
         _telegramReadyNotifier?.value = true;
+        if (_telegramDialogOpen && !_telegramAutoCompleting) {
+          _telegramAutoCompleting = true;
+          await _completeTelegram(context);
+        }
       } else if (status == 'expired') {
         _cancelTelegram();
         if (mounted && _telegramDialogOpen && Navigator.of(context).canPop()) {
@@ -153,14 +158,14 @@ class _SignupPageState extends ConsumerState<SignupPage> with WidgetsBindingObse
               textDirection: TextDirection.rtl,
               child: Text(
                 ready
-                    ? 'تم التحقق من رقم الهاتف بنجاح. اضغط «متابعة» لإكمال إنشاء الحساب.'
-                    : 'افتح Telegram واضغط «بدء» ثم اختر «مشاركة رقم الهاتف». بعد نجاح التحقق عُد إلى التطبيق واضغط «متابعة».',
+                    ? 'تم التحقق من رقم الهاتف بنجاح. جارٍ إنشاء الحساب تلقائياً...'
+                    : 'افتح Telegram واضغط «بدء» ثم اختر «مشاركة رقم الهاتف». بعد نجاح التحقق سيتم إنشاء الحساب وتحويلك تلقائياً إلى ملفك الشخصي.',
                 textAlign: TextAlign.right,
               ),
             ),
             actions: [
               TextButton(
-                onPressed: _telegramChecking ? null : () {
+                onPressed: _telegramChecking || _telegramAutoCompleting ? null : () {
                   _cancelTelegram();
                   Navigator.of(dialogContext).pop();
                 },
@@ -168,14 +173,15 @@ class _SignupPageState extends ConsumerState<SignupPage> with WidgetsBindingObse
               ),
               if (!ready)
                 FilledButton.icon(
-                  onPressed: _telegramChecking || _telegramUrl == null ? null : () => launchUrl(Uri.parse(_telegramUrl!), mode: LaunchMode.externalApplication),
+                  onPressed: _telegramChecking || _telegramAutoCompleting || _telegramUrl == null ? null : () => launchUrl(Uri.parse(_telegramUrl!), mode: LaunchMode.externalApplication),
                   icon: const Icon(Icons.telegram),
                   label: const Text('فتح Telegram'),
                 ),
-              FilledButton(
-                onPressed: _telegramChecking ? null : () => _continueTelegram(dialogContext),
-                child: Text(_telegramChecking ? 'جارٍ إنشاء الحساب...' : 'متابعة'),
-              ),
+              if (!ready)
+                FilledButton(
+                  onPressed: _telegramChecking || _telegramAutoCompleting ? null : () => _continueTelegram(dialogContext),
+                  child: const Text('متابعة'),
+                ),
             ],
           ),
         ),
@@ -186,10 +192,10 @@ class _SignupPageState extends ConsumerState<SignupPage> with WidgetsBindingObse
   }
 
   Future<void> _continueTelegram(BuildContext dialogContext) async {
-    if (_telegramChecking) return;
+    if (_telegramChecking || _telegramAutoCompleting) return;
     await _pollTelegramStatus();
     if (!mounted || !_telegramReady) {
-      _showError(Exception('لم يكتمل التحقق من Telegram بعد. أكمل مشاركة رقم الهاتف ثم اضغط «متابعة» مرة أخرى.'));
+      _showError(Exception('لم يكتمل التحقق من Telegram بعد. أكمل مشاركة رقم الهاتف ثم انتظر لحظات.'));
       return;
     }
     await _completeTelegram(dialogContext);
@@ -210,12 +216,15 @@ class _SignupPageState extends ConsumerState<SignupPage> with WidgetsBindingObse
       }
       await ref.read(authRepositoryProvider).refreshUser();
       _cancelTelegram();
-      if (!mounted || !dialogContext.mounted) return;
-      Navigator.of(dialogContext).pop();
       if (!mounted) return;
-      context.go('/home');
+      if (dialogContext.mounted && Navigator.of(dialogContext).canPop()) {
+        Navigator.of(dialogContext).pop();
+      }
+      if (!mounted) return;
+      context.go('/profile');
     } catch (e) {
       if (!mounted) return;
+      _telegramAutoCompleting = false;
       setState(() => _telegramChecking = false);
       _showError(e);
     }
@@ -228,6 +237,7 @@ class _SignupPageState extends ConsumerState<SignupPage> with WidgetsBindingObse
     _telegramUrl = null;
     _telegramChecking = false;
     _telegramReady = false;
+    _telegramAutoCompleting = false;
     _telegramReadyNotifier?.value = false;
   }
 
