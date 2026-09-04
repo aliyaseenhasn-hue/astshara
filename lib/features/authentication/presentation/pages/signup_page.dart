@@ -54,8 +54,33 @@ class _SignupPageState extends ConsumerState<SignupPage> with WidgetsBindingObse
 
   void _showError(Object error) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(error.toString().replaceFirst('Exception: ', ''), textDirection: TextDirection.rtl)),
+    var message = error.toString().replaceFirst('Exception: ', '').trim();
+    if (message.isEmpty) message = 'حدث خطأ غير متوقع أثناء إنشاء الحساب.';
+    final messenger = ScaffoldMessenger.of(context);
+    messenger.removeCurrentSnackBar();
+    messenger.showSnackBar(
+      SnackBar(
+        behavior: SnackBarBehavior.floating,
+        margin: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+        duration: const Duration(seconds: 7),
+        backgroundColor: Theme.of(context).colorScheme.error,
+        showCloseIcon: true,
+        closeIconColor: Theme.of(context).colorScheme.onError,
+        content: Directionality(
+          textDirection: TextDirection.rtl,
+          child: Text(
+            message,
+            textAlign: TextAlign.right,
+            maxLines: 5,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              color: Theme.of(context).colorScheme.onError,
+              fontSize: 15,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+      ),
     );
   }
 
