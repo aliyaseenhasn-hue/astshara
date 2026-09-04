@@ -44,7 +44,7 @@ class _LoginPageState extends ConsumerState<LoginPage> with WidgetsBindingObserv
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed && _token != null) {
-      Future.delayed(const Duration(milliseconds: 300), () {
+      Future.delayed(const Duration(milliseconds: 250), () {
         if (mounted) _pollTelegramStatus();
       });
     }
@@ -69,30 +69,19 @@ class _LoginPageState extends ConsumerState<LoginPage> with WidgetsBindingObserv
     if (message.isEmpty) message = 'حدث خطأ غير متوقع أثناء تسجيل الدخول.';
     final messenger = ScaffoldMessenger.of(context);
     messenger.removeCurrentSnackBar();
-    messenger.showSnackBar(
-      SnackBar(
-        behavior: SnackBarBehavior.floating,
-        margin: const EdgeInsets.fromLTRB(16, 16, 16, 24),
-        duration: const Duration(seconds: 7),
-        backgroundColor: Theme.of(context).colorScheme.error,
-        showCloseIcon: true,
-        closeIconColor: Theme.of(context).colorScheme.onError,
-        content: Directionality(
-          textDirection: TextDirection.rtl,
-          child: Text(
-            message,
-            textAlign: TextAlign.right,
-            maxLines: 5,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              color: Theme.of(context).colorScheme.onError,
-              fontSize: 15,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ),
+    messenger.showSnackBar(SnackBar(
+      behavior: SnackBarBehavior.floating,
+      margin: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+      duration: const Duration(seconds: 7),
+      backgroundColor: Theme.of(context).colorScheme.error,
+      showCloseIcon: true,
+      closeIconColor: Theme.of(context).colorScheme.onError,
+      content: Directionality(
+        textDirection: TextDirection.rtl,
+        child: Text(message, textAlign: TextAlign.right, maxLines: 5, overflow: TextOverflow.ellipsis,
+          style: TextStyle(color: Theme.of(context).colorScheme.onError, fontSize: 15, fontWeight: FontWeight.w600)),
       ),
-    );
+    ));
   }
 
   Future<void> _openTelegram() async {
@@ -124,6 +113,7 @@ class _LoginPageState extends ConsumerState<LoginPage> with WidgetsBindingObserv
       _busy = true;
       _telegramReady = false;
       _redirectingToSignup = false;
+      _checking = false;
     });
     _telegramReadyNotifier?.dispose();
     _telegramReadyNotifier = ValueNotifier<bool>(false);
@@ -135,7 +125,7 @@ class _LoginPageState extends ConsumerState<LoginPage> with WidgetsBindingObserv
         throw Exception('تعذر إنشاء طلب Telegram. حاول مرة أخرى.');
       }
       _timer?.cancel();
-      _timer = Timer.periodic(const Duration(seconds: 1), (_) => _pollTelegramStatus());
+      _timer = Timer.periodic(const Duration(milliseconds: 900), (_) => _pollTelegramStatus());
       if (!mounted) return;
       await showDialog<void>(
         context: context,
@@ -146,20 +136,16 @@ class _LoginPageState extends ConsumerState<LoginPage> with WidgetsBindingObserv
             title: const Text('تسجيل الدخول عبر Telegram', textAlign: TextAlign.right),
             content: Directionality(
               textDirection: TextDirection.rtl,
-              child: Text(
-                ready
-                    ? 'تم التحقق من رقم الهاتف. جارٍ تحديد الحساب المرتبط به.'
-                    : 'افتح Telegram واضغط «بدء» ثم اختر «مشاركة رقم الهاتف». بعد نجاح التحقق سيحدد النظام الحساب المرتبط تلقائياً.',
-              ),
+              child: Text(ready
+                  ? 'تم التحقق من رقم الهاتف. جارٍ تحديد الحساب المرتبط به.'
+                  : 'افتح Telegram واضغط «بدء» ثم اختر «مشاركة رقم الهاتف». بعد نجاح التحقق سيحدد النظام الحساب المرتبط تلقائياً.'),
             ),
             actions: [
               TextButton(
-                onPressed: _checking || _redirectingToSignup
-                    ? null
-                    : () {
-                        _cancelTelegram();
-                        Navigator.of(dialogContext).pop();
-                      },
+                onPressed: _checking || _redirectingToSignup ? null : () {
+                  _cancelTelegram();
+                  Navigator.of(dialogContext).pop();
+                },
                 child: const Text('إلغاء'),
               ),
               FilledButton.icon(
@@ -182,61 +168,90 @@ class _LoginPageState extends ConsumerState<LoginPage> with WidgetsBindingObserv
     }
   }
 
+  Future<Map<String, dynamic>?> _fetchTelegramStatus() async {
+    final token = _token;
+    if (token == null || token.isEmpty) return null;
+    final r = await Supabase.instance.client.functions.invoke('telegram-auth-v2', body: {'action': 'status', 'request_token': token});
+    if (r.data is! Map) return null;
+    return Map<String, dynamic>.from(r.data as Map);
+  }
+
   Future<void> _pollTelegramStatus() async {
     final token = _token;
     if (token == null || token.isEmpty || _checking || _redirectingToSignup) return;
     try {
-      final r = await Supabase.instance.client.functions.invoke(
-        'telegram-auth-v2',
-        body: {'action': 'status', 'request_token': token},
-      );
-      if (r.data is! Map) return;
-      final data = Map<String, dynamic>.from(r.data as Map);
-      final status = data['status']?.toString();
-      if (status == 'telegram_verified') {
-        final mode = data['mode']?.toString();
-        final verifiedProfileId = data['verified_profile_id']?.toString();
-        if (mode == 'login' && (verifiedProfileId == null || verifiedProfileId.isEmpty || verifiedProfileId == 'null')) {
-          _redirectingToSignup = true;
-          _timer?.cancel();
-          _timer = null;
-          if (mounted && Navigator.of(context).canPop()) Navigator.of(context).pop();
-          _token = null;
-          _telegramUrl = null;
-          if (!mounted) return;
-          context.go('/signup');
-          return;
-        }
-        if (mounted) {
-          setState(() => _telegramReady = true);
-          _telegramReadyNotifier?.value = true;
-        }
+      final data = await _fetchTelegramStatus();
+      if (data == null) return;
+      await _handleTelegramStatus(data);
+    } catch (_) {}
+  }
+
+  Future<void> _handleTelegramStatus(Map<String, dynamic> data) async {
+    final status = data['status']?.toString();
+    if (status == 'telegram_verified') {
+      final mode = data['mode']?.toString();
+      final verifiedProfileId = data['verified_profile_id']?.toString();
+      if (mode == 'login' && (verifiedProfileId == null || verifiedProfileId.isEmpty || verifiedProfileId == 'null')) {
+        _redirectingToSignup = true;
+        _timer?.cancel();
+        _timer = null;
+        if (mounted && Navigator.of(context).canPop()) Navigator.of(context).pop();
+        _token = null;
+        _telegramUrl = null;
+        if (mounted) context.go('/signup');
         return;
       }
-      if (status == 'expired') {
-        _cancelTelegram();
-        if (mounted && Navigator.of(context).canPop()) Navigator.of(context).pop();
-        if (mounted) _error(Exception('انتهت صلاحية طلب Telegram. حاول مرة أخرى.'));
+      if (mounted) {
+        setState(() => _telegramReady = true);
+        _telegramReadyNotifier?.value = true;
       }
-    } catch (_) {}
+      return;
+    }
+    if (status == 'expired') {
+      _cancelTelegram();
+      if (mounted && Navigator.of(context).canPop()) Navigator.of(context).pop();
+      if (mounted) _error(Exception('انتهت صلاحية طلب Telegram. حاول مرة أخرى.'));
+    }
+  }
+
+  Future<bool> _waitForTelegramVerification() async {
+    for (var attempt = 0; attempt < 8; attempt++) {
+      if (!mounted || _token == null || _token!.isEmpty) return false;
+      try {
+        final data = await _fetchTelegramStatus();
+        if (data == null) return false;
+        final status = data['status']?.toString();
+        if (status == 'telegram_verified') {
+          await _handleTelegramStatus(data);
+          return _telegramReady;
+        }
+        if (status == 'expired') {
+          await _handleTelegramStatus(data);
+          return false;
+        }
+      } catch (_) {}
+      await Future<void>.delayed(const Duration(milliseconds: 600));
+    }
+    return _telegramReady;
   }
 
   Future<void> _completeTelegram(BuildContext dialogContext) async {
     final token = _token;
-    if (token == null || token.isEmpty || _checking) return;
-    await _pollTelegramStatus();
-    if (!mounted || _token == null || _token!.isEmpty) return;
-    if (!_telegramReady) {
-      _error(Exception('لم يكتمل التحقق من Telegram بعد. أكمل مشاركة رقم الهاتف ثم حاول الضغط على «متابعة» مرة أخرى.'));
+    if (token == null || token.isEmpty || _checking || _redirectingToSignup) return;
+    setState(() => _checking = true);
+    final verified = await _waitForTelegramVerification();
+    if (!mounted || _redirectingToSignup || _token == null || _token!.isEmpty) return;
+    if (!verified) {
+      setState(() => _checking = false);
+      _error(Exception('لم يكتمل التحقق من Telegram بعد. تأكد من الضغط على «مشاركة رقم الهاتف» داخل Telegram، ثم حاول «متابعة» مرة أخرى.'));
       return;
     }
-    setState(() => _checking = true);
     try {
       await ref.read(authControllerProvider.notifier).verifyTelegramLogin(requestToken: _token!, code: '');
       final client = Supabase.instance.client;
-      final session = client.auth.currentSession;
-      final user = client.auth.currentUser;
-      if (session == null || user == null) throw Exception('تم التحقق من Telegram لكن لم يتم تثبيت جلسة الدخول.');
+      if (client.auth.currentSession == null || client.auth.currentUser == null) {
+        throw Exception('تم التحقق من Telegram لكن لم يتم تثبيت جلسة الدخول.');
+      }
       await ref.read(authRepositoryProvider).refreshUser();
       _timer?.cancel();
       _timer = null;
@@ -247,8 +262,7 @@ class _LoginPageState extends ConsumerState<LoginPage> with WidgetsBindingObserv
       if (!mounted) return;
       Navigator.of(dialogContext).pop();
       await Future<void>.delayed(const Duration(milliseconds: 100));
-      if (!mounted) return;
-      context.go('/profile');
+      if (mounted) context.go('/profile');
     } catch (e) {
       if (!mounted) return;
       setState(() => _checking = false);
@@ -261,9 +275,17 @@ class _LoginPageState extends ConsumerState<LoginPage> with WidgetsBindingObserv
     _timer = null;
     _token = null;
     _telegramUrl = null;
-    _checking = false;
-    _telegramReady = false;
-    _redirectingToSignup = false;
+    if (mounted) {
+      setState(() {
+        _checking = false;
+        _telegramReady = false;
+        _redirectingToSignup = false;
+      });
+    } else {
+      _checking = false;
+      _telegramReady = false;
+      _redirectingToSignup = false;
+    }
     _telegramReadyNotifier?.value = false;
   }
 
@@ -297,25 +319,11 @@ class _LoginPageState extends ConsumerState<LoginPage> with WidgetsBindingObserv
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          Align(
-                            alignment: Alignment.centerRight,
-                            child: TextButton.icon(
-                              onPressed: () => context.canPop() ? context.pop() : context.go('/'),
-                              icon: const Icon(Icons.arrow_forward_rounded),
-                              label: const Text('العودة'),
-                            ),
-                          ),
+                          Align(alignment: Alignment.centerRight, child: TextButton.icon(onPressed: () => context.canPop() ? context.pop() : context.go('/'), icon: const Icon(Icons.arrow_forward_rounded), label: const Text('العودة'))),
                           const SizedBox(height: 12),
-                          Align(
-                            alignment: Alignment.center,
-                            child: Icon(Icons.balance_rounded, size: 54, color: AppColors.primary),
-                          ),
+                          Align(alignment: Alignment.center, child: Icon(Icons.balance_rounded, size: 54, color: AppColors.primary)),
                           const SizedBox(height: 14),
-                          Text(
-                            widget.isAdminLogin ? 'دخول الإدارة' : 'تسجيل الدخول',
-                            textAlign: TextAlign.center,
-                            style: const TextStyle(fontSize: 28, fontWeight: FontWeight.w900),
-                          ),
+                          Text(widget.isAdminLogin ? 'دخول الإدارة' : 'تسجيل الدخول', textAlign: TextAlign.center, style: const TextStyle(fontSize: 28, fontWeight: FontWeight.w900)),
                           const SizedBox(height: 8),
                           const Text('أدخل رقم هاتفك العراقي لإتمام الدخول بأمان عبر Telegram.', textAlign: TextAlign.center),
                           const SizedBox(height: 24),
@@ -323,11 +331,7 @@ class _LoginPageState extends ConsumerState<LoginPage> with WidgetsBindingObserv
                             controller: _phone,
                             keyboardType: TextInputType.phone,
                             textDirection: TextDirection.ltr,
-                            decoration: const InputDecoration(
-                              labelText: 'رقم الهاتف العراقي',
-                              hintText: '07xxxxxxxxx أو ٠٧xxxxxxxxx',
-                              prefixIcon: Icon(Icons.phone_android_rounded),
-                            ),
+                            decoration: const InputDecoration(labelText: 'رقم الهاتف العراقي', hintText: '07xxxxxxxxx أو ٠٧xxxxxxxxx', prefixIcon: Icon(Icons.phone_android_rounded)),
                             validator: (v) {
                               final p = _digits(v ?? '').replaceAll(RegExp(r'\s+'), '');
                               final d = p.replaceFirst(RegExp(r'^\+964|^00964|^964|^0'), '');
@@ -335,22 +339,9 @@ class _LoginPageState extends ConsumerState<LoginPage> with WidgetsBindingObserv
                             },
                           ),
                           const SizedBox(height: 16),
-                          SizedBox(
-                            height: 52,
-                            child: ElevatedButton.icon(
-                              onPressed: (_busy || auth.isLoading) ? null : _start,
-                              icon: _busy
-                                  ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
-                                  : const Icon(Icons.send_rounded),
-                              label: Text(_busy ? 'جارٍ تجهيز Telegram...' : 'تسجيل الدخول عبر Telegram'),
-                            ),
-                          ),
+                          SizedBox(height: 52, child: ElevatedButton.icon(onPressed: (_busy || auth.isLoading) ? null : _start, icon: _busy ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)) : const Icon(Icons.send_rounded), label: Text(_busy ? 'جارٍ تجهيز Telegram...' : 'تسجيل الدخول عبر Telegram'))),
                           const SizedBox(height: 10),
-                          OutlinedButton.icon(
-                            onPressed: auth.isLoading ? null : _google,
-                            icon: const Icon(Icons.account_circle_outlined),
-                            label: const Text('المتابعة باستخدام Google'),
-                          ),
+                          OutlinedButton.icon(onPressed: auth.isLoading ? null : _google, icon: const Icon(Icons.account_circle_outlined), label: const Text('المتابعة باستخدام Google')),
                           const SizedBox(height: 16),
                           TextButton(onPressed: () => context.go('/signup'), child: const Text('ليس لديك حساب؟ إنشاء حساب جديد')),
                         ],
