@@ -99,11 +99,29 @@ class _LoginPageState extends ConsumerState<LoginPage> with WidgetsBindingObserv
 
   Future<void> _openTelegram() async {
     final url = _telegramUrl;
-    if (url == null || url.isEmpty) {
+    final token = _token;
+    if (url == null || url.isEmpty || token == null || token.isEmpty) {
       _error(Exception('رابط Telegram غير متوفر. ابدأ محاولة جديدة.'));
       return;
     }
+
     try {
+      // Use Telegram's native tg:// deep link first. Telegram documents this
+      // form for bot start parameters and it avoids routing the user through a
+      // browser, which can otherwise open an existing bot chat without firing
+      // the current /start <token> update.
+      final httpsUri = Uri.tryParse(url);
+      final username = httpsUri?.pathSegments.isNotEmpty == true ? httpsUri!.pathSegments.first : null;
+      final start = httpsUri?.queryParameters['start'];
+      if (username != null && username.isNotEmpty && start != null && start.isNotEmpty) {
+        final tgUri = Uri.parse(
+          'tg://resolve?domain=${Uri.encodeQueryComponent(username)}&start=${Uri.encodeQueryComponent(start)}',
+        );
+        final nativeOpened = await launchUrl(tgUri, mode: LaunchMode.externalApplication);
+        if (nativeOpened) return;
+      }
+
+      // Safe fallback for platforms that do not expose Telegram's tg:// scheme.
       final ok = await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication, webOnlyWindowName: '_blank');
       if (!ok) throw Exception('تعذر فتح Telegram. اضغط «فتح Telegram» مرة أخرى.');
     } catch (e) {
@@ -158,9 +176,6 @@ class _LoginPageState extends ConsumerState<LoginPage> with WidgetsBindingObserv
                 icon: const Icon(Icons.telegram),
                 label: const Text('فتح Telegram'),
               ),
-              // Keep the action clickable after returning from Telegram.
-              // The authoritative status is checked when the user taps it;
-              // the UI must not depend on a dialog-local notifier update.
               FilledButton(
                 onPressed: _checking || _redirectingToSignup ? null : () => _completeTelegram(dialogContext),
                 child: Text(_checking ? 'جارٍ الدخول...' : 'متابعة'),
@@ -222,10 +237,6 @@ class _LoginPageState extends ConsumerState<LoginPage> with WidgetsBindingObserv
   Future<void> _completeTelegram(BuildContext dialogContext) async {
     final token = _token;
     if (token == null || token.isEmpty || _checking) return;
-
-    // Always refresh the server-side status when the user returns from Telegram.
-    // This makes the Continue action reliable even if the periodic timer missed
-    // the webhook transition while the app was in the background.
     await _pollTelegramStatus();
     if (!mounted || _token == null || _token!.isEmpty) return;
     if (!_telegramReady) {
