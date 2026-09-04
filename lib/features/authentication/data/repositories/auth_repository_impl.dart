@@ -37,7 +37,18 @@ class AuthRepositoryImpl implements AuthRepository {
     const networkHints = ['socketexception','failed host lookup','network is unreachable','network request failed','networkerror','failed to fetch','xmlhttprequest','connection reset','connection refused','connection closed','connection timed out','timed out','timeout','clientexception','no internet','internet connection'];
     if (networkHints.any(text.contains)) return Exception('تعذر إكمال العملية بسبب انقطاع الاتصال بالإنترنت. تحقق من اتصالك بالإنترنت وحاول مرة أخرى.');
     if (error is AuthException) return Exception(error.message);
-    if (error is FunctionException) return Exception(error.reasonPhrase ?? 'تعذر الاتصال بالخدمة. تحقق من اتصالك بالإنترنت وحاول مرة أخرى.');
+    if (error is FunctionException) {
+      final details = error.details;
+      if (details is Map) {
+        final message = details['error']?.toString().trim();
+        if (message != null && message.isNotEmpty) return Exception(message);
+        final messageAlt = details['message']?.toString().trim();
+        if (messageAlt != null && messageAlt.isNotEmpty) return Exception(messageAlt);
+      }
+      final detailText = details?.toString().trim();
+      if (detailText != null && detailText.isNotEmpty && detailText != 'null') return Exception(detailText);
+      return Exception(error.reasonPhrase ?? 'تعذر الاتصال بالخدمة. تحقق من اتصالك بالإنترنت وحاول مرة أخرى.');
+    }
     return Exception(error.toString().replaceFirst('Exception: ', ''));
   }
 
