@@ -55,7 +55,7 @@ Future<List<LawyerProfile>> lawyersList(LawyersListRef ref) async {
   return list;
 }
 
-@Riverpod
+@riverpod
 class SelectedCategory extends _$SelectedCategory {
   @override
   String? build() => null;
