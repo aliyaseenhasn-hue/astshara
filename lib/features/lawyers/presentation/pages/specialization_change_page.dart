@@ -167,6 +167,10 @@ class _SpecializationChangePageState extends ConsumerState<SpecializationChangeP
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
+                      labelStyle: TextStyle(
+                        color: selected ? AppColors.textOnPrimary : AppColors.textPrimary,
+                        fontWeight: selected ? FontWeight.w800 : FontWeight.w500,
+                      ),
                       onSelected: (value) {
                         setState(() {
                           if (value) {
@@ -302,7 +306,7 @@ class _SectionTitle extends StatelessWidget {
           height: 34,
           alignment: Alignment.center,
           decoration: BoxDecoration(
-            color: AppColors.primaryLight,
+            color: AppColors.primaryFixed,
             borderRadius: BorderRadius.circular(11),
           ),
           child: Text(
