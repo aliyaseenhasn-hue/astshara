@@ -84,7 +84,10 @@ class AppTheme {
             if (states.contains(WidgetState.pressed)) return AppColors.secondaryLight;
             return AppColors.ctaGold;
           }),
-          foregroundColor: const WidgetStatePropertyAll(AppColors.primary),
+          foregroundColor: WidgetStateProperty.resolveWith((states) {
+            if (states.contains(WidgetState.disabled)) return AppColors.primary;
+            return AppColors.primary;
+          }),
           minimumSize: const WidgetStatePropertyAll(Size.fromHeight(52)),
           padding: const WidgetStatePropertyAll(EdgeInsets.symmetric(horizontal: 24)),
           shape: WidgetStatePropertyAll(RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
@@ -94,8 +97,8 @@ class AppTheme {
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: ButtonStyle(
-          foregroundColor: const WidgetStatePropertyAll(AppColors.primary),
-          side: const WidgetStatePropertyAll(BorderSide(color: AppColors.teal, width: 1)),
+          foregroundColor: WidgetStateProperty.resolveWith((states) => states.contains(WidgetState.disabled) ? AppColors.textSecondary : AppColors.primary),
+          side: WidgetStateProperty.resolveWith((states) => BorderSide(color: states.contains(WidgetState.disabled) ? AppColors.outline : AppColors.teal, width: 1)),
           minimumSize: const WidgetStatePropertyAll(Size.fromHeight(48)),
           padding: const WidgetStatePropertyAll(EdgeInsets.symmetric(horizontal: 20)),
           shape: WidgetStatePropertyAll(RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
@@ -104,7 +107,7 @@ class AppTheme {
       ),
       textButtonTheme: TextButtonThemeData(
         style: ButtonStyle(
-          foregroundColor: const WidgetStatePropertyAll(AppColors.primary),
+          foregroundColor: WidgetStateProperty.resolveWith((states) => states.contains(WidgetState.disabled) ? AppColors.textSecondary : AppColors.primary),
           textStyle: WidgetStatePropertyAll(GoogleFonts.ibmPlexSansArabic(fontSize: 14, fontWeight: FontWeight.w600)),
         ),
       ),
@@ -193,8 +196,28 @@ class AppTheme {
       scaffoldBackgroundColor: darkBackground,
       appBarTheme: AppBarTheme(backgroundColor: darkBackground, foregroundColor: darkText, elevation: 0, centerTitle: false, scrolledUnderElevation: 0, surfaceTintColor: Colors.transparent, titleTextStyle: GoogleFonts.ibmPlexSansArabic(fontSize: 20, fontWeight: FontWeight.w600, color: darkText)),
       cardTheme: CardThemeData(color: darkSurface, elevation: 0, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(_cardRadius), side: const BorderSide(color: Color(0xFF42474D)))),
-      elevatedButtonTheme: ElevatedButtonThemeData(style: ButtonStyle(backgroundColor: const WidgetStatePropertyAll(AppColors.ctaGold), foregroundColor: const WidgetStatePropertyAll(AppColors.primary), minimumSize: const WidgetStatePropertyAll(Size.fromHeight(52)), shape: WidgetStatePropertyAll(RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))), elevation: const WidgetStatePropertyAll(0))),
-      outlinedButtonTheme: OutlinedButtonThemeData(style: ButtonStyle(foregroundColor: const WidgetStatePropertyAll(cyan), side: const WidgetStatePropertyAll(BorderSide(color: cyan)), minimumSize: const WidgetStatePropertyAll(Size.fromHeight(48)), shape: WidgetStatePropertyAll(RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))))),
+      elevatedButtonTheme: ElevatedButtonThemeData(
+        style: ButtonStyle(
+          backgroundColor: WidgetStateProperty.resolveWith((states) => states.contains(WidgetState.disabled) ? const Color(0xFF303536) : AppColors.ctaGold),
+          foregroundColor: WidgetStateProperty.resolveWith((states) => states.contains(WidgetState.disabled) ? darkText : AppColors.primary),
+          minimumSize: const WidgetStatePropertyAll(Size.fromHeight(52)),
+          shape: WidgetStatePropertyAll(RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+          elevation: const WidgetStatePropertyAll(0),
+        ),
+      ),
+      outlinedButtonTheme: OutlinedButtonThemeData(
+        style: ButtonStyle(
+          foregroundColor: WidgetStateProperty.resolveWith((states) => states.contains(WidgetState.disabled) ? darkVariant : cyan),
+          side: WidgetStateProperty.resolveWith((states) => BorderSide(color: states.contains(WidgetState.disabled) ? const Color(0xFF74777E) : cyan)),
+          minimumSize: const WidgetStatePropertyAll(Size.fromHeight(48)),
+          shape: WidgetStatePropertyAll(RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+        ),
+      ),
+      textButtonTheme: TextButtonThemeData(
+        style: ButtonStyle(
+          foregroundColor: WidgetStateProperty.resolveWith((states) => states.contains(WidgetState.disabled) ? darkVariant : darkText),
+        ),
+      ),
       inputDecorationTheme: InputDecorationTheme(filled: true, fillColor: darkSurface, contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15), border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFF42474D))), enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFF42474D))), focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: cyan, width: 2))),
       dividerTheme: const DividerThemeData(color: Color(0xFF42474D)),
     );
