@@ -45,6 +45,9 @@ class LawyerVerificationPage extends ConsumerWidget {
                 itemCount: lawyers.length,
                 itemBuilder: (context, index) {
                   final lawyer = lawyers[index];
+                  final specializationText = lawyer.specializations.isEmpty
+                      ? 'غير محدد'
+                      : lawyer.specializations.join('، ');
                   return Card(
                     margin: const EdgeInsets.only(bottom: 16),
                     child: Padding(
@@ -56,76 +59,52 @@ class LawyerVerificationPage extends ConsumerWidget {
                             children: [
                               const CircleAvatar(
                                 backgroundColor: AppColors.surfaceVariant,
-                                child: Icon(Icons.person,
-                                    color: AppColors.primary),
+                                child: Icon(Icons.person, color: AppColors.primary),
                               ),
                               const SizedBox(width: 12),
                               Expanded(
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Text(lawyer.fullName ?? 'محامي جديد',
-                                        style: const TextStyle(
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: 16)),
-                                    Text('رقم الإجازة: ${lawyer.licenseNumber}',
-                                        style: const TextStyle(
-                                            color: AppColors.outline,
-                                            fontSize: 12)),
+                                    Text(lawyer.fullName ?? 'محامي جديد', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                                    Text('رقم الإجازة: ${lawyer.licenseNumber}', style: const TextStyle(color: AppColors.outline, fontSize: 12)),
                                   ],
                                 ),
                               ),
                             ],
                           ),
                           const Divider(height: 24),
-                          Text('الخبرة: ${lawyer.yearsExperience} سنوات',
-                              style: const TextStyle(fontSize: 14)),
+                          Text('الصلاحية: ${lawyer.practiceLicenseClass ?? 'غير محددة'}', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700)),
                           const SizedBox(height: 4),
-                          Text('السعر: ${lawyer.consultationPrice} د.ع',
-                              style: const TextStyle(fontSize: 14)),
+                          Text('التخصص: $specializationText', style: const TextStyle(fontSize: 14)),
+                          const SizedBox(height: 4),
+                          Text('الخبرة: ${lawyer.yearsExperience} سنوات', style: const TextStyle(fontSize: 14)),
+                          const SizedBox(height: 4),
+                          Text('السعر: ${lawyer.consultationPrice} د.ع', style: const TextStyle(fontSize: 14)),
                           const SizedBox(height: 8),
-                          Text('النبذة: ${lawyer.bio}',
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
-                                  color: Colors.grey, fontSize: 13)),
+                          Text('النبذة: ${lawyer.bio}', maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Colors.grey, fontSize: 13)),
                           const SizedBox(height: 16),
-                          const Text('الوثائق المرفوعة:',
-                              style: TextStyle(
-                                  fontWeight: FontWeight.bold, fontSize: 13)),
+                          const Text('الوثائق المرفوعة:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
                           const SizedBox(height: 8),
                           Row(
                             children: [
                               if (lawyer.idCardUrl != null)
                                 Expanded(
                                   child: InkWell(
-                                                                        onTap: () {
-                                      if (lawyer.idCardUrl != null) {
-                                        _showImageDialog(
-                                            context, lawyer.idCardUrl!);
-                                      }
+                                    onTap: () {
+                                      if (lawyer.idCardUrl != null) _showImageDialog(context, lawyer.idCardUrl!);
                                     },
                                     child: Container(
                                       height: 100,
-                                      decoration: BoxDecoration(
-                                        border: Border.all(
-                                            color: AppColors.surfaceVariant),
-                                        borderRadius: BorderRadius.circular(8),
-                                      ),
+                                      decoration: BoxDecoration(border: Border.all(color: AppColors.surfaceVariant), borderRadius: BorderRadius.circular(8)),
                                       child: ClipRRect(
                                         borderRadius: BorderRadius.circular(8),
-                                        child: Image.network(
-                                          lawyer.idCardUrl!,
-                                          fit: BoxFit.cover,
-                                          errorBuilder: (_, __, ___) =>
-                                              const Icon(Icons.broken_image),
-                                        ),
+                                        child: Image.network(lawyer.idCardUrl!, fit: BoxFit.cover, errorBuilder: (_, __, ___) => const Icon(Icons.broken_image)),
                                       ),
                                     ),
                                   ),
                                 ),
                               const SizedBox(width: 8),
-                              // يمكن إضافة الصورة الشخصية هنا أيضاً إذا لزم الأمر
                             ],
                           ),
                           const SizedBox(height: 16),
@@ -133,25 +112,16 @@ class LawyerVerificationPage extends ConsumerWidget {
                             children: [
                               Expanded(
                                 child: ElevatedButton(
-                                  onPressed: () => ref
-                                      .read(lawyerVerificationProvider.notifier)
-                                      .approveLawyer(lawyer.profileId),
-                                  style: ElevatedButton.styleFrom(
-                                      backgroundColor: AppColors.success,
-                                      foregroundColor: Colors.white),
+                                  onPressed: () => ref.read(lawyerVerificationProvider.notifier).approveLawyer(lawyer.profileId),
+                                  style: ElevatedButton.styleFrom(backgroundColor: AppColors.success, foregroundColor: Colors.white),
                                   child: const Text('موافقة وتوثيق'),
                                 ),
                               ),
                               const SizedBox(width: 12),
                               Expanded(
                                 child: OutlinedButton(
-                                  onPressed: () => ref
-                                      .read(lawyerVerificationProvider.notifier)
-                                      .rejectLawyer(lawyer.profileId),
-                                  style: OutlinedButton.styleFrom(
-                                      foregroundColor: AppColors.error,
-                                      side: const BorderSide(
-                                          color: AppColors.error)),
+                                  onPressed: () => ref.read(lawyerVerificationProvider.notifier).rejectLawyer(lawyer.profileId),
+                                  style: OutlinedButton.styleFrom(foregroundColor: AppColors.error, side: const BorderSide(color: AppColors.error)),
                                   child: const Text('رفض الطلب'),
                                 ),
                               ),
