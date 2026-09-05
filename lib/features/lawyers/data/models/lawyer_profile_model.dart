@@ -5,6 +5,7 @@ class LawyerProfileModel {
   final String? profileId;
   final String? fullName;
   final String? licenseNumber;
+  final String? practiceLicenseClass;
   final String? bio;
   final List<String> specializations;
   final int? yearsExperience;
@@ -22,6 +23,7 @@ class LawyerProfileModel {
     this.profileId,
     this.fullName,
     this.licenseNumber,
+    this.practiceLicenseClass,
     this.bio,
     this.specializations = const [],
     this.yearsExperience,
@@ -41,6 +43,7 @@ class LawyerProfileModel {
       profileId: json['profile_id'] as String?,
       fullName: json['full_name'] as String?,
       licenseNumber: json['license_number'] as String?,
+      practiceLicenseClass: json['practice_license_class'] as String?,
       bio: json['bio'] as String?,
       specializations: _specializationsFromJson(json['specialization']),
       yearsExperience: _intFromPossibleString(json['years_experience']),
@@ -107,6 +110,7 @@ class LawyerProfileModel {
         profileId: profileId ?? '',
         fullName: fullName,
         licenseNumber: licenseNumber,
+        practiceLicenseClass: practiceLicenseClass,
         bio: bio,
         specializations: specializations,
         yearsExperience: yearsExperience,
