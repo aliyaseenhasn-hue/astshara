@@ -121,3 +121,10 @@
 - الإصلاح: إضافة استيراد `go_router` المطلوب لاستخدام `context.go('/lawyer-home')`، مع إبقاء منطق التحويل بعد رسالة النجاح كما هو.
 - النتيجة: إزالة خطأ الترجمة دون تغيير تصميم الصفحة أو منطق المواعيد.
 - CI: تم دفع الإصلاح إلى `main` وتبدأ الآن دورة تحقق جديدة لـAndroid وGitHub Pages وCodeQL.
+
+### إصلاح تحذير دورة حياة السياق في التحويل
+- الملف: `lib/features/lawyers/presentation/pages/lawyer_availability_page.dart`.
+- commit: `64e2a4a4c2d549207f47eb528e78223fc07ffc2c`.
+- التعديل: استبدال فحص `mounted` داخل مؤجل `Future.delayed` بفحص `context.mounted` قبل تنفيذ `context.go`، لإزالة تحذير `use_build_context_synchronously` مع الحفاظ على نفس مسار التحويل بعد رسالة النجاح.
+- النتيجة: لا تغيير في واجهة الصفحة أو منطق الحجز؛ أصبح التحويل محمياً من استخدام `BuildContext` بعد التخلص من الصفحة.
+- CI: تشغيل Android Release Build وGitHub Pages وCodeQL بدأ على هذا الـcommit.
