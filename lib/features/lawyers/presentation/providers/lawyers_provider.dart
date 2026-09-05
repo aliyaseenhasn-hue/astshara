@@ -55,7 +55,7 @@ Future<List<LawyerProfile>> lawyersList(LawyersListRef ref) async {
   return list;
 }
 
-@riverpod
+@Riverpod
 class SelectedCategory extends _$SelectedCategory {
   @override
   String? build() => null;
@@ -64,6 +64,10 @@ class SelectedCategory extends _$SelectedCategory {
 
 @Riverpod(keepAlive: true)
 Future<LawyerProfile?> lawyerProfile(LawyerProfileRef ref, String profileId) => ref.watch(lawyersRepositoryProvider).getLawyerProfile(profileId);
+
+final ownLawyerProfileProvider = FutureProvider.family<LawyerProfile?, String>((ref, profileId) async {
+  return ref.read(lawyersRepositoryProvider).getOwnLawyerProfile(profileId);
+});
 
 final userNameProvider = FutureProvider.family<String?, String>((ref, profileId) async {
   final profile = await SupabaseConfig.client.from('profiles').select('full_name').eq('id', profileId).maybeSingle();
