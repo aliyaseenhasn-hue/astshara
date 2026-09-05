@@ -15,12 +15,14 @@ class LawyerProfileEditPage extends ConsumerStatefulWidget {
 }
 
 class _LawyerProfileEditPageState extends ConsumerState<LawyerProfileEditPage> {
+  static const _licenseClasses = <String>['أ', 'ب', 'ج', 'مطلقة'];
   final _formKey = GlobalKey<FormState>();
   final _bioController = TextEditingController();
   final _differentConsultationPriceController = TextEditingController();
   late List<LawyerService> _services;
   bool _isLoading = false;
   String? _lawyerProfileId;
+  String? _practiceLicenseClass;
 
   @override
   void initState() { super.initState(); _services = []; _loadProfile(); }
@@ -36,10 +38,11 @@ class _LawyerProfileEditPageState extends ConsumerState<LawyerProfileEditPage> {
         setState(() {
           _services = List<LawyerService>.from(profile.services);
           _bioController.text = profile.bio ?? '';
+          _practiceLicenseClass = _licenseClasses.contains(profile.practiceLicenseClass)
+              ? profile.practiceLicenseClass
+              : null;
           final price = profile.consultationPrice ?? 0;
           _differentConsultationPriceController.text = price > 0 ? price.toStringAsFixed(0) : '';
-          // lawyer_achievements.lawyer_id references lawyer_profiles.id,
-          // not profiles.id (profile.profileId).
           _lawyerProfileId = profile.id;
         });
       }
@@ -58,6 +61,10 @@ class _LawyerProfileEditPageState extends ConsumerState<LawyerProfileEditPage> {
   Future<bool> _persist() async {
     if (!_formKey.currentState!.validate()) return false;
     _formKey.currentState!.save();
+    if (_practiceLicenseClass == null) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('يرجى اختيار صلاحية المحامي'), backgroundColor: AppColors.error));
+      return false;
+    }
     final price = double.tryParse(_differentConsultationPriceController.text.trim()) ?? 0;
     if (price <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('يرجى تحديد سعر الاستشارة المختلفة بشكل صحيح'), backgroundColor: AppColors.error));
@@ -86,11 +93,16 @@ class _LawyerProfileEditPageState extends ConsumerState<LawyerProfileEditPage> {
         if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('لم يتم العثور على الملف المهني للمحامي'), backgroundColor: AppColors.error));
         return false;
       }
-      await repo.updateLawyerProfile(profile.copyWith(bio: _bioController.text.trim(), services: _services, consultationPrice: price));
+      await repo.updateLawyerProfile(profile.copyWith(
+        bio: _bioController.text.trim(),
+        services: _services,
+        consultationPrice: price,
+        practiceLicenseClass: _practiceLicenseClass,
+      ));
       ref.invalidate(lawyerProfileProvider(profile.profileId));
       return true;
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('خطأ في حفظ الباقات: $e'), backgroundColor: AppColors.error));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('خطأ في حفظ الملف المهني: $e'), backgroundColor: AppColors.error));
       return false;
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -99,9 +111,6 @@ class _LawyerProfileEditPageState extends ConsumerState<LawyerProfileEditPage> {
 
   Future<void> _save() async {
     if (!await _persist() || !mounted) return;
-    // The check icon means "finish". Do not pop to an arbitrary previous
-    // route; return to the authenticated lawyer entry point so GoRouter can
-    // send verified lawyers home and unverified lawyers to the review page.
     context.go('/lawyer-home');
   }
 
@@ -123,7 +132,7 @@ class _LawyerProfileEditPageState extends ConsumerState<LawyerProfileEditPage> {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: const Text('الخطوة ١ من ٢: باقات الاستشارات', style: TextStyle(fontWeight: FontWeight.w800)),
+        title: const Text('الخطوة ١ من ٢: الملف المهني', style: TextStyle(fontWeight: FontWeight.w800)),
         centerTitle: true,
         actions: [if (!_isLoading) IconButton(tooltip: 'حفظ وإنهاء', icon: const Icon(Icons.check_rounded), onPressed: _save)],
       ),
@@ -142,8 +151,31 @@ class _LawyerProfileEditPageState extends ConsumerState<LawyerProfileEditPage> {
                       child: const Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                         Text('أكمل إعداد استقبال الاستشارات', style: TextStyle(color: AppColors.gold, fontSize: 18, fontWeight: FontWeight.w900)),
                         SizedBox(height: 7),
-                        Text('أضف باقاتك وأسعارك ومدة الاستشارة. بعد إكمال هذه الخطوة اضغط التالي لتحديد أوقات التوفر.', style: TextStyle(color: Colors.white70, height: 1.5, fontSize: 12)),
+                        Text('أضف بياناتك المهنية وباقاتك وأسعارك. صلاحية المحامي بيانات مهنية خاصة تظهر للإدارة فقط.', style: TextStyle(color: Colors.white70, height: 1.5, fontSize: 12)),
                       ]),
+                    ),
+                    const SizedBox(height: 24),
+                    const Text('صلاحية المحامي', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: AppColors.secondary)),
+                    const SizedBox(height: 8),
+                    const Text('اختر صلاحية واحدة فقط. هذه المعلومة مهنية داخلية ولا تظهر لطالب الاستشارة.', style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+                    const SizedBox(height: 10),
+                    DropdownButtonFormField<String>(
+                      value: _practiceLicenseClass,
+                      decoration: _input('الصلاحية'),
+                      items: _licenseClasses.map((value) => DropdownMenuItem<String>(value: value, child: Text(value == 'مطلقة' ? 'مطلقة' : 'الفئة $value'))).toList(),
+                      onChanged: (value) => setState(() => _practiceLicenseClass = value),
+                      validator: (value) => value == null ? 'اختر صلاحية واحدة' : null,
+                    ),
+                    const SizedBox(height: 24),
+                    const Text('تغيير التخصص', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: AppColors.secondary)),
+                    const SizedBox(height: 8),
+                    const Text('يُرسل طلب تغيير التخصص إلى الإدارة للمراجعة قبل اعتماده.', style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+                    const SizedBox(height: 10),
+                    OutlinedButton.icon(
+                      onPressed: _isLoading ? null : () => context.push('/lawyer-specialization-change'),
+                      icon: const Icon(Icons.gavel_rounded),
+                      label: const Text('طلب تغيير التخصص'),
+                      style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 15), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))),
                     ),
                     const SizedBox(height: 24),
                     const Text('السيرة الذاتية', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: AppColors.secondary)),
