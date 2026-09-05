@@ -8,6 +8,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_sizes.dart';
+import '../../../../core/constants/legal_specializations.dart';
 import '../../../../shared/providers/global_loading_provider.dart';
 import '../../../../shared/widgets/loading_widget.dart';
 import '../../../lawyers/presentation/providers/lawyer_setup_provider.dart';
@@ -25,9 +26,7 @@ class _CompleteProfilePageState extends ConsumerState<CompleteProfilePage> {
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
   final List<String> _selectedSpecializations = [];
-  final List<String> _specializations = const [
-    'جنائي', 'أحوال شخصية', 'مدني', 'تجاري', 'عمل', 'عقارات', 'إداري', 'عسكري',
-  ];
+  final List<String> _specializations = LegalSpecializations.all;
 
   String _selectedRole = 'user';
   Uint8List? _profilePhotoBytes;
