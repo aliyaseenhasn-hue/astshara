@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/config/supabase_config.dart';
 
@@ -27,6 +28,49 @@ final notificationsProvider = FutureProvider<List<AppNotification>>((ref) async 
   if (profileId == null) return const [];
   final rows = await SupabaseConfig.client.from('notifications').select('id,title,body,type,is_read,created_at,reference_id,reference_type').eq('user_id', profileId).order('created_at', ascending: false).limit(100);
   return (rows as List).map((row) => AppNotification.fromMap(Map<String, dynamic>.from(row as Map))).toList();
+});
+
+/// Emits only newly-created notifications for the signed-in profile.
+/// Used by the app shell to surface immediate in-app/local notifications.
+final realtimeNotificationsProvider = StreamProvider.autoDispose<AppNotification>((ref) {
+  late final StreamController<AppNotification> controller;
+  RealtimeChannel? channel;
+  String? profileId;
+
+  Future<void> start() async {
+    profileId = await _currentProfileId();
+    if (profileId == null || controller.isClosed) return;
+    channel = SupabaseConfig.client
+        .channel('notifications:${profileId!}')
+        .onPostgresChanges(
+          event: PostgresChangeEvent.insert,
+          schema: 'public',
+          table: 'notifications',
+          filter: PostgresChangeFilter(
+            type: PostgresChangeFilterType.eq,
+            column: 'user_id',
+            value: profileId!,
+          ),
+          callback: (payload) {
+            if (controller.isClosed) return;
+            controller.add(AppNotification.fromMap(Map<String, dynamic>.from(payload.newRecord)));
+          },
+        )
+        .subscribe();
+  }
+
+  controller = StreamController<AppNotification>(
+    onListen: start,
+    onCancel: () async {
+      await channel?.unsubscribe();
+      await controller.close();
+    },
+  );
+  ref.onDispose(() async {
+    await channel?.unsubscribe();
+    if (!controller.isClosed) await controller.close();
+  });
+  return controller.stream;
 });
 
 final unreadNotificationsCountProvider = FutureProvider<int>((ref) async {
