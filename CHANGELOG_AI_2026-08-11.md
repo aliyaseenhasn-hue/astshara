@@ -252,3 +252,31 @@
 
 ### 9. تنبيه سلامة التنفيذ
 هذه السلسلة غيّرت منطق المحادثة المرتبط مباشرة بالحجز والتنبيهات، لذلك لا تُعتبر مكتملة إنتاجياً قبل نجاح Flutter Analyze/Tests وWorkflow CI وتطبيق migrations على Supabase والتأكد من سيناريو: حجز → تأكيد → ظهور زر المحادثة → فتح المحادثة → إرسال الرسالة → وصول إشعار للطرف الآخر → ظهور حالة الاتصال.
+
+## تحديث 2026-09-06 — إضافة التخصص والصلاحية الخاصة بالمحامي
+
+### 10. إضافة طلب تغيير التخصص داخل ملف المحامي
+- الملف: `lib/features/lawyers/presentation/pages/lawyer_profile_edit_page.dart`
+- commit: `e55af4a5a9447ccbebe20a348c1a51a8798606bb`
+- التعديل: إضافة قسم «تغيير التخصص» داخل الملف المهني وربطه بمسار طلب تغيير التخصص الموجود مسبقاً، بحيث يرسل المحامي الطلب للإدارة للمراجعة بدلاً من تغيير التخصص المعتمد مباشرة.
+- الحفاظ: لم تتم إعادة إنشاء شاشة تغيير التخصص ولم يتغير مسار مراجعة الإدارة الموجود.
+
+### 11. إضافة صلاحية المحامي كاختيار واحد فقط
+- الملفات: `lib/features/lawyers/domain/entities/lawyer_profile.dart`, `lib/features/lawyers/data/models/lawyer_profile_model.dart`, `lib/features/lawyers/data/repositories/lawyers_repository_impl.dart`, `lib/features/lawyers/presentation/pages/lawyer_profile_edit_page.dart`
+- commits: `93e5ffe5be31a97267198f9800831ed815a15379`, `4297a5ae3636a2b9c3e91394c45360c85ca28200`, `db6ca65c9bc72bb30c5278a688b773583f104d48`, `10ffb9129b2eaa2347e0acc0a58474c60ecfdb6f`, `3f3aa9b7376ef7e2e6d0e4868ef82a9e93bf2ebe`, `12a202143ee172ffe5e0ea137d45bd2b6b40481d`, `e55af4a5a9447ccbebe20a348c1a51a8798606bb`
+- التعديل: إضافة `practice_license_class` مع اختيار واحد من: `أ`، `ب`، `ج`، `مطلقة`.
+- التحقق: قاعدة قاعدة البيانات تمنع أي قيمة أخرى، والواجهة تمنع الحفظ دون اختيار قيمة.
+- الحفاظ: صلاحية المحامي لا تُستخدم في بيانات العرض العامة للمحامي.
+
+### 12. إظهار الصلاحية للإدارة فقط
+- الملفات: `lib/features/admin/presentation/pages/lawyer_verification_page.dart`, `supabase/migrations/20260906030000_add_lawyer_practice_license_class.sql`
+- commits: `3ae0a916e7dac0677ffc43ed6e3e3dad760f068a`, `d627c24445e0d7a1523e11d07339c457223fcf93`
+- التعديل: عرض الصلاحية في شاشة توثيق المحامين للإدارة فقط، مع إبقائها خارج واجهات بيانات المحامي العامة.
+- قاعدة البيانات: إضافة `practice_license_class` مع CHECK على القيم الأربع فقط.
+- Supabase: تم تطبيق migration بنجاح على مشروع الإنتاج `iidxqrnrazkyfgzelzhb`، وتم التحقق من وجود قيد القيم المسموح بها.
+- ملاحظة الخصوصية: شاشة العميل تعتمد على RPC العامة ولا تعرض هذا الحقل، بينما قراءة الملف الخاص بالمحامي تستخدم مساراً منفصلاً `getOwnLawyerProfile` حتى لا نضطر إلى كشف الصلاحية في RPC العامة.
+
+### 13. حالة التحقق
+- Supabase migration: `PASS`.
+- Flutter Analyze / Tests / GitHub Actions للـcommits الجديدة: `PENDING` حتى تظهر نتيجة CI فعلية.
+- لا يعتبر هذا التعديل مكتمل الإنتاج قبل مراجعة نتيجة CI النهائية.
