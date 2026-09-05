@@ -356,7 +356,7 @@ class _SignupForm extends StatelessWidget {
       const SizedBox(height: 12),
       TextButton(onPressed: loading ? null : () => context.go('/login'), child: const Text('لديك حساب بالفعل؟ تسجيل الدخول')),
       Text('بالمتابعة، أنت توافق على شروط الاستخدام وسياسة الخصوصية.', textAlign: TextAlign.center, style: TextStyle(fontSize: 10.5, color: s.onSurfaceVariant)),
-    ])));
+    ]))));
   }
 }
 
