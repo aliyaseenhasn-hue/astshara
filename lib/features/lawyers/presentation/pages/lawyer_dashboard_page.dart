@@ -43,7 +43,11 @@ class LawyerDashboardPage extends ConsumerWidget {
           final active = items.where((b) => b.status == 'مؤكد' || b.status == 'قيد التنفيذ').length;
           final total = items.fold<double>(0, (sum, booking) => sum + booking.price);
           final profile = profileAsync.value;
-          final name = profile?.fullName?.trim().isNotEmpty == true ? profile!.fullName!.trim() : (user?.fullName ?? 'أستاذ قانون');
+          final registeredName = user?.fullName?.trim();
+          final profileName = profile?.fullName?.trim();
+          final name = registeredName != null && registeredName.isNotEmpty
+              ? registeredName
+              : (profileName != null && profileName.isNotEmpty ? profileName : 'أستاذ قانون');
           final specialization = profile?.specializations.isNotEmpty == true ? profile!.specializations.join('، ') : 'محامي ومستشار قانوني';
           final license = profile?.practiceLicenseClass;
           final avatar = user?.avatarUrl;
@@ -142,6 +146,8 @@ class _ProfileHero extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 12),
+          const Text('محامي', textAlign: TextAlign.center, style: TextStyle(color: AppColors.goldLight, fontSize: 13, fontWeight: FontWeight.w800)),
+          const SizedBox(height: 3),
           Text(name, textAlign: TextAlign.center, style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w900)),
           const SizedBox(height: 5),
           Text(specialization, textAlign: TextAlign.center, style: const TextStyle(color: AppColors.goldLight, fontSize: 13, fontWeight: FontWeight.w700, height: 1.4)),
