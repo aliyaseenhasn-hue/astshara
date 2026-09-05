@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../shared/widgets/loading_widget.dart';
+import '../../../chat/presentation/providers/chat_provider.dart';
 import '../providers/lawyers_provider.dart';
 import '../widgets/lawyer_achievements_gallery.dart';
 
@@ -12,6 +13,7 @@ class LawyerDetailsPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final scheme = Theme.of(context).colorScheme;
+    final chatAvailability = ref.watch(chatAvailabilityForLawyerProvider(profileId));
     return ColoredBox(
       color: scheme.surface,
       child: ref.watch(lawyerProfileProvider(profileId)).when(
@@ -65,7 +67,56 @@ class LawyerDetailsPage extends ConsumerWidget {
                   ),
                 ],
               ),
-              Positioned(left: 14, right: 14, bottom: 8, child: SafeArea(top: false, child: Material(color: Colors.transparent, child: Row(children: [Expanded(child: SizedBox(height: 52, child: ElevatedButton.icon(onPressed: () => context.push('/create-booking', extra: {'lawyer': lawyer}), icon: const Icon(Icons.calendar_month_rounded), label: const Text('حجز موعد استشارة', style: TextStyle(fontWeight: FontWeight.w900))))), const SizedBox(width: 10), SizedBox(width: 100, height: 52, child: OutlinedButton.icon(onPressed: () => context.push('/chats'), icon: const Icon(Icons.chat_bubble_outline_rounded, size: 18), label: const Text('مراسلة', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700))))])))),
+              Positioned(
+                left: 14,
+                right: 14,
+                bottom: 8,
+                child: SafeArea(
+                  top: false,
+                  child: Material(
+                    color: Colors.transparent,
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: SizedBox(
+                            height: 52,
+                            child: ElevatedButton.icon(
+                              onPressed: () => context.push('/create-booking', extra: {'lawyer': lawyer}),
+                              icon: const Icon(Icons.calendar_month_rounded),
+                              label: const Text('حجز موعد استشارة', style: TextStyle(fontWeight: FontWeight.w900)),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        SizedBox(
+                          width: 112,
+                          height: 52,
+                          child: chatAvailability.when(
+                            loading: () => OutlinedButton.icon(
+                              onPressed: null,
+                              icon: const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)),
+                              label: const Text('محادثة', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700)),
+                            ),
+                            error: (_, __) => OutlinedButton.icon(
+                              onPressed: null,
+                              icon: const Icon(Icons.lock_outline_rounded, size: 18),
+                              label: const Text('محادثة', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700)),
+                            ),
+                            data: (conversationId) {
+                              final enabled = conversationId != null;
+                              return OutlinedButton.icon(
+                                onPressed: enabled ? () => context.push('/chat/$conversationId') : null,
+                                icon: const Icon(Icons.chat_bubble_outline_rounded, size: 18),
+                                label: Text(enabled ? 'محادثة' : 'بعد الحجز', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700)),
+                              );
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
             ],
           );
         },
