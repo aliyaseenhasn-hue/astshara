@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/config/supabase_config.dart';
 import '../../../../core/constants/app_colors.dart';
+import '../../../../core/constants/legal_specializations.dart';
 import '../../data/repositories/lawyers_repository_impl.dart';
 
 class SpecializationChangePage extends ConsumerStatefulWidget {
@@ -13,9 +14,7 @@ class SpecializationChangePage extends ConsumerStatefulWidget {
 }
 
 class _SpecializationChangePageState extends ConsumerState<SpecializationChangePage> {
-  static const _options = <String>[
-    'مدني', 'جنائي', 'تجاري', 'أحوال شخصية', 'عمالي', 'إداري', 'عقاري', 'دولي',
-  ];
+  static const _options = LegalSpecializations.all;
 
   final Set<String> _selected = <String>{};
   PlatformFile? _idCard;
