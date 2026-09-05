@@ -5,6 +5,7 @@ import '../../../../core/constants/app_colors.dart';
 import '../../../authentication/presentation/providers/auth_provider.dart';
 import '../../../bookings/presentation/providers/bookings_provider.dart';
 import '../../../bookings/domain/entities/booking.dart';
+import '../../domain/entities/lawyer_profile.dart';
 import '../providers/lawyers_provider.dart';
 
 class LawyerDashboardPage extends ConsumerWidget {
