@@ -33,25 +33,19 @@ class _LawyerProfileEditPageState extends ConsumerState<LawyerProfileEditPage> {
     final user = ref.read(authStateChangesProvider).value;
     if (user == null) return;
     try {
-      final profile = await ref.read(lawyersRepositoryProvider).getLawyerProfile(user.id);
+      final profile = await ref.read(lawyersRepositoryProvider).getOwnLawyerProfile(user.id);
       if (profile != null && mounted) {
         setState(() {
           _services = List<LawyerService>.from(profile.services);
           _bioController.text = profile.bio ?? '';
-          _practiceLicenseClass = _licenseClasses.contains(profile.practiceLicenseClass)
-              ? profile.practiceLicenseClass
-              : null;
+          _practiceLicenseClass = _licenseClasses.contains(profile.practiceLicenseClass) ? profile.practiceLicenseClass : null;
           final price = profile.consultationPrice ?? 0;
           _differentConsultationPriceController.text = price > 0 ? price.toStringAsFixed(0) : '';
           _lawyerProfileId = profile.id;
         });
       }
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('تعذر تحميل الملف المهني: $e'), backgroundColor: AppColors.error),
-        );
-      }
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('تعذر تحميل الملف المهني: $e'), backgroundColor: AppColors.error));
     }
   }
 
@@ -88,7 +82,7 @@ class _LawyerProfileEditPageState extends ConsumerState<LawyerProfileEditPage> {
         return false;
       }
       final repo = ref.read(lawyersRepositoryProvider);
-      final profile = await repo.getLawyerProfile(user.id);
+      final profile = await repo.getOwnLawyerProfile(user.id);
       if (profile == null) {
         if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('لم يتم العثور على الملف المهني للمحامي'), backgroundColor: AppColors.error));
         return false;
