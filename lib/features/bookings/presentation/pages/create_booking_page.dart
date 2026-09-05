@@ -446,7 +446,9 @@ class _BottomActions extends StatelessWidget {
       ],
       Expanded(child: SizedBox(height: 52, child: FilledButton.icon(
         onPressed: loading ? null : onContinue,
-        icon: loading ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)) : Icon(last ? Icons.check_rounded : Icons.arrow_forward_rounded),
+        icon: loading
+            ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary))
+            : Icon(last ? Icons.check_rounded : Icons.arrow_forward_rounded),
         label: Text(last ? 'إرسال طلب الاستشارة' : 'متابعة', style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
       ))),
     ]);
