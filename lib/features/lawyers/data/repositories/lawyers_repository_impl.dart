@@ -150,6 +150,29 @@ class LawyersRepositoryImpl implements LawyersRepository {
   }
 
   @override
+  Future<LawyerProfile?> getOwnLawyerProfile(String profileId) async {
+    final key = profileId.trim();
+    if (key.isEmpty) return null;
+    try {
+      final row = await _supabase
+          .from('lawyer_profiles')
+          .select()
+          .eq('profile_id', key)
+          .maybeSingle();
+      if (row == null) return null;
+      final json = Map<String, dynamic>.from(row);
+      final model = LawyerProfileModel.fromJson(json);
+      return model.toEntity().copyWith(
+            fullName: json['full_name'] as String? ?? 'محامي',
+            avatarUrl: json['avatar_url'] as String?,
+          );
+    } catch (e) {
+      debugPrint('❌ LawyersRepo: Own profile fetch error: $e');
+      return null;
+    }
+  }
+
+  @override
   Future<void> updateLawyerProfile(LawyerProfile profile) async {
     final data = <String, dynamic>{
       'profile_id': profile.profileId,
