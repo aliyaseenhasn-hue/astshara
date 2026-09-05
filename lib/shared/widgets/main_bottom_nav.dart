@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../core/constants/app_colors.dart';
 
 /// الشريط السفلي الثابت. الإشعارات تبقى في أعلى التطبيق.
+/// التغيير هنا بصري وتنظيمي فقط؛ المسارات وترتيب التبويبات كما هي.
 class MainBottomNav extends ConsumerWidget {
   final int currentIndex;
   final bool isLawyer;
@@ -39,29 +40,52 @@ class MainBottomNav extends ConsumerWidget {
 
     return Container(
       color: Colors.transparent,
-      padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+      padding: const EdgeInsets.fromLTRB(14, 4, 14, 8),
       child: SafeArea(
         top: false,
         child: Container(
           decoration: BoxDecoration(
-            color: AppColors.surface,
-            borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: scheme.outlineVariant),
-            boxShadow: [BoxShadow(color: AppColors.primary.withValues(alpha: .05), blurRadius: 24, offset: const Offset(0, 8))],
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                AppColors.surface,
+                AppColors.surfaceContainerLow,
+              ],
+            ),
+            borderRadius: BorderRadius.circular(28),
+            border: Border.all(color: scheme.outlineVariant.withValues(alpha: .65)),
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.primary.withValues(alpha: .07),
+                blurRadius: 28,
+                spreadRadius: 1,
+                offset: const Offset(0, 10),
+              ),
+            ],
           ),
-          padding: const EdgeInsets.fromLTRB(8, 8, 8, 7),
+          padding: const EdgeInsets.fromLTRB(9, 9, 9, 8),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               if (isLawyer) ...[
                 _QuickActionsRow(actions: _lawyerQuickActions, direction: direction),
-                const SizedBox(height: 7),
-                Divider(height: 1, color: scheme.outlineVariant),
-                const SizedBox(height: 4),
+                const SizedBox(height: 8),
+                Divider(height: 1, color: scheme.outlineVariant.withValues(alpha: .7)),
+                const SizedBox(height: 5),
               ],
               Row(
                 textDirection: direction,
-                children: List.generate(items.length, (index) => Expanded(child: _NavDestination(item: items[index], selected: index == selectedIndex, onTap: () => _navigate(context, index)))),
+                children: List.generate(
+                  items.length,
+                  (index) => Expanded(
+                    child: _NavDestination(
+                      item: items[index],
+                      selected: index == selectedIndex,
+                      onTap: () => _navigate(context, index),
+                    ),
+                  ),
+                ),
               ),
             ],
           ),
@@ -99,30 +123,52 @@ class _QuickActionsRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       textDirection: direction,
-      children: actions.map((action) => Expanded(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 3),
-          child: Material(
-            color: AppColors.surfaceContainerLow,
-            borderRadius: BorderRadius.circular(12),
-            child: InkWell(
-              borderRadius: BorderRadius.circular(12),
-              onTap: () => context.go(action.route),
+      children: actions
+          .map(
+            (action) => Expanded(
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 7),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(action.icon, size: 18, color: AppColors.secondaryDark),
-                    const SizedBox(width: 6),
-                    Flexible(child: Text(action.label, maxLines: 1, overflow: TextOverflow.ellipsis, textAlign: TextAlign.center, style: const TextStyle(color: AppColors.primary, fontSize: 11, fontWeight: FontWeight.w600, height: 1.2))),
-                  ],
+                padding: const EdgeInsets.symmetric(horizontal: 3),
+                child: Material(
+                  color: Colors.transparent,
+                  borderRadius: BorderRadius.circular(14),
+                  child: Ink(
+                    decoration: BoxDecoration(
+                      color: AppColors.surface,
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: AppColors.secondary.withValues(alpha: .12)),
+                    ),
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(14),
+                      onTap: () => context.go(action.route),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 7),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(action.icon, size: 18, color: AppColors.secondaryDark),
+                            const SizedBox(height: 3),
+                            Text(
+                              action.label,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              textAlign: TextAlign.center,
+                              style: const TextStyle(
+                                color: AppColors.primary,
+                                fontSize: 10.5,
+                                fontWeight: FontWeight.w600,
+                                height: 1.15,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
                 ),
               ),
             ),
-          ),
-        ),
-      )).toList(growable: false),
+          )
+          .toList(growable: false),
     );
   }
 }
@@ -151,33 +197,89 @@ class _NavDestination extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final iconColor = selected ? AppColors.secondaryDark : AppColors.textSecondary;
+
     return Semantics(
       button: true,
       selected: selected,
       label: item.label,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 2),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              AnimatedContainer(
-                duration: const Duration(milliseconds: 180),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 3),
+        child: Material(
+          color: Colors.transparent,
+          borderRadius: BorderRadius.circular(18),
+          child: InkWell(
+            onTap: onTap,
+            borderRadius: BorderRadius.circular(18),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 220),
+              curve: Curves.easeOutCubic,
+              constraints: const BoxConstraints(minHeight: 48),
+              padding: EdgeInsets.symmetric(
+                horizontal: selected ? 8 : 5,
+                vertical: 5,
+              ),
+              decoration: BoxDecoration(
+                gradient: selected
+                    ? LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [
+                          AppColors.secondaryContainer,
+                          AppColors.secondaryContainer.withValues(alpha: .72),
+                        ],
+                      )
+                    : null,
+                borderRadius: BorderRadius.circular(18),
+                border: selected
+                    ? Border.all(color: AppColors.secondary.withValues(alpha: .16))
+                    : Border.all(color: Colors.transparent),
+              ),
+              child: AnimatedSize(
+                duration: const Duration(milliseconds: 220),
                 curve: Curves.easeOutCubic,
-                constraints: const BoxConstraints(minHeight: 34),
-                padding: EdgeInsets.symmetric(horizontal: selected ? 16 : 12, vertical: 5),
-                decoration: BoxDecoration(color: selected ? AppColors.secondaryContainer : Colors.transparent, borderRadius: BorderRadius.circular(14)),
-                child: Icon(selected ? item.activeIcon : item.icon, color: iconColor, size: 23),
+                child: selected
+                    ? Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(item.activeIcon, color: iconColor, size: 21),
+                          const SizedBox(width: 5),
+                          Flexible(
+                            child: Text(
+                              item.label,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                color: iconColor,
+                                fontSize: 10.5,
+                                fontWeight: FontWeight.w700,
+                                height: 1.15,
+                              ),
+                            ),
+                          ),
+                        ],
+                      )
+                    : Column(
+                        mainAxisSize: MainAxisSize.min,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(item.icon, color: iconColor, size: 21),
+                          const SizedBox(height: 2),
+                          Text(
+                            item.label,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              color: iconColor,
+                              fontSize: 10,
+                              fontWeight: FontWeight.w500,
+                              height: 1.15,
+                            ),
+                          ),
+                        ],
+                      ),
               ),
-              const SizedBox(height: 2),
-              AnimatedDefaultTextStyle(
-                duration: const Duration(milliseconds: 180),
-                style: TextStyle(color: iconColor, fontSize: selected ? 11 : 10.5, fontWeight: selected ? FontWeight.w700 : FontWeight.w500, height: 1.2),
-                child: Text(item.label),
-              ),
-            ],
+            ),
           ),
         ),
       ),
