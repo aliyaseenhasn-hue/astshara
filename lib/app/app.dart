@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/providers/theme_mode_provider.dart';
+import '../core/services/notification_service.dart';
 import '../shared/widgets/loading_widget.dart';
 import '../shared/providers/global_loading_provider.dart';
 import '../features/profile/presentation/providers/notifications_provider.dart';
@@ -17,8 +18,19 @@ class LawConnectApp extends ConsumerWidget {
     final router = ref.watch(routerProvider);
     final isLoading = ref.watch(globalLoadingProvider);
     final themeMode = ref.watch(themeModeProvider);
-    // Keep the notification provider alive for its existing realtime flow.
     ref.watch(unreadNotificationsCountProvider);
+
+    ref.listen<AsyncValue<AppNotification>>(realtimeNotificationsProvider, (_, next) {
+      next.whenData((notification) {
+        NotificationService.showNotification(
+          title: notification.title,
+          body: notification.body,
+          payload: notification.id,
+        );
+        ref.invalidate(notificationsProvider);
+        ref.invalidate(unreadNotificationsCountProvider);
+      });
+    });
 
     return MaterialApp.router(
       title: 'LawConnect',
