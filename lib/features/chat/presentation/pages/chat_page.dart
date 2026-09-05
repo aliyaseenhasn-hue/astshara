@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_sizes.dart';
+import '../../../../core/config/supabase_config.dart';
 import '../../../../core/utils/app_time_format.dart';
 import '../../../../shared/widgets/loading_widget.dart';
 import '../../../authentication/presentation/providers/auth_provider.dart';
@@ -18,19 +20,86 @@ class ChatPage extends ConsumerStatefulWidget {
 
 class _ChatPageState extends ConsumerState<ChatPage> {
   final _messageController = TextEditingController();
+  RealtimeChannel? _presenceChannel;
+  String? _currentProfileId;
+  bool _otherPartyOnline = false;
+  bool _sending = false;
+
+  @override
+  void initState() {
+    super.initState();
+    Future.microtask(() async {
+      await ref.read(chatControllerProvider.notifier).markRead(widget.conversationId);
+      await _setupPresence();
+    });
+  }
+
+  Future<void> _setupPresence() async {
+    final currentUser = SupabaseConfig.client.auth.currentUser;
+    if (currentUser == null || !mounted) return;
+    final profile = await SupabaseConfig.client
+        .from('profiles')
+        .select('id')
+        .eq('auth_id', currentUser.id)
+        .maybeSingle();
+    _currentProfileId = profile?['id']?.toString();
+    if (_currentProfileId == null || !mounted) return;
+
+    final channel = SupabaseConfig.client.channel('chat-presence:${widget.conversationId}');
+    _presenceChannel = channel;
+    void refreshPresence() {
+      final otherId = ref.read(chatOtherPartyProfileIdProvider(widget.conversationId)).valueOrNull;
+      if (otherId == null || !mounted) return;
+      var online = false;
+      for (final state in channel.presenceState()) {
+        for (final presence in state.presences) {
+          final payload = presence.payload;
+          if (payload['profile_id']?.toString() == otherId) {
+            online = true;
+          }
+        }
+      }
+      if (mounted && online != _otherPartyOnline) {
+        setState(() => _otherPartyOnline = online);
+      }
+    }
+
+    channel
+        .onPresenceSync((_) => refreshPresence())
+        .onPresenceJoin((_) => refreshPresence())
+        .onPresenceLeave((_) => refreshPresence())
+        .subscribe((status, _) async {
+          if (status == RealtimeSubscribeStatus.subscribed) {
+            await channel.track({'profile_id': _currentProfileId, 'online_at': DateTime.now().toUtc().toIso8601String()});
+            refreshPresence();
+          }
+        });
+  }
 
   @override
   void dispose() {
     _messageController.dispose();
+    _presenceChannel?.unsubscribe();
     super.dispose();
   }
 
-  void _send() {
+  Future<void> _send() async {
     final text = _messageController.text.trim();
-    if (text.isEmpty) return;
-    ref.read(chatControllerProvider.notifier).send(widget.conversationId, text);
-    _messageController.clear();
-    setState(() {});
+    if (text.isEmpty || _sending) return;
+    setState(() => _sending = true);
+    try {
+      await ref.read(chatControllerProvider.notifier).send(widget.conversationId, text);
+      _messageController.clear();
+      if (mounted) setState(() {});
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.toString().replaceFirst('Exception: ', ''))),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _sending = false);
+    }
   }
 
   @override
@@ -60,41 +129,39 @@ class _ChatPageState extends ConsumerState<ChatPage> {
               child: Icon(Icons.person_rounded, color: scheme.primary),
             ),
             const SizedBox(width: 12),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  otherPartyNameAsync.maybeWhen(
-                    data: (name) => name ?? 'محادثة',
-                    orElse: () => '...',
-                  ),
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w800,
-                    color: scheme.onSurface,
-                  ),
-                ),
-                Row(
-                  children: [
-                    Container(
-                      width: 7,
-                      height: 7,
-                      decoration: const BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: Colors.green,
-                      ),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    otherPartyNameAsync.maybeWhen(
+                      data: (name) => name ?? 'محادثة',
+                      orElse: () => '...',
                     ),
-                    const SizedBox(width: 5),
-                    Text(
-                      'متصل الآن',
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: scheme.onSurfaceVariant,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: scheme.onSurface),
+                  ),
+                  const SizedBox(height: 2),
+                  Row(
+                    children: [
+                      Container(
+                        width: 7,
+                        height: 7,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: _otherPartyOnline ? Colors.green : scheme.outline,
+                        ),
                       ),
-                    ),
-                  ],
-                ),
-              ],
+                      const SizedBox(width: 5),
+                      Text(
+                        _otherPartyOnline ? 'متصل الآن' : 'غير متصل',
+                        style: TextStyle(fontSize: 11, color: scheme.onSurfaceVariant),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
           ],
         ),
@@ -118,16 +185,12 @@ class _ChatPageState extends ConsumerState<ChatPage> {
                   return _MessageBubble(
                     message: msg.content,
                     isMe: isMe,
-                    time: msg.createdAt != null
-                        ? AppTimeFormat.time12(msg.createdAt!)
-                        : '...',
+                    time: msg.createdAt != null ? AppTimeFormat.time12(msg.createdAt!) : '...',
                   );
                 },
               ),
               loading: () => const LoadingWidget(),
-              error: (err, stack) => Center(
-                child: Text('خطأ: $err', style: TextStyle(color: scheme.error)),
-              ),
+              error: (err, stack) => Center(child: Text('خطأ: $err', style: TextStyle(color: scheme.error))),
             ),
           ),
           _buildInputArea(context),
@@ -144,9 +207,7 @@ class _ChatPageState extends ConsumerState<ChatPage> {
       padding: const EdgeInsets.fromLTRB(14, 10, 14, 12),
       decoration: BoxDecoration(
         color: scheme.surface,
-        border: Border(
-          top: BorderSide(color: scheme.outlineVariant.withValues(alpha: .7)),
-        ),
+        border: Border(top: BorderSide(color: scheme.outlineVariant.withValues(alpha: .7))),
       ),
       child: SafeArea(
         child: Row(
@@ -192,21 +253,13 @@ class _ChatPageState extends ConsumerState<ChatPage> {
               decoration: BoxDecoration(
                 color: AppColors.gold,
                 shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(
-                    color: AppColors.gold.withValues(alpha: .22),
-                    blurRadius: 12,
-                    offset: const Offset(0, 5),
-                  ),
-                ],
+                boxShadow: [BoxShadow(color: AppColors.gold.withValues(alpha: .22), blurRadius: 12, offset: const Offset(0, 5))],
               ),
               child: IconButton(
-                onPressed: _send,
-                icon: Icon(
-                  hasText ? Icons.send_rounded : Icons.mic_none_rounded,
-                  color: AppColors.textOnPrimary,
-                  size: 21,
-                ),
+                onPressed: hasText && !_sending ? _send : null,
+                icon: _sending
+                    ? SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.textOnPrimary))
+                    : Icon(hasText ? Icons.send_rounded : Icons.mic_none_rounded, color: AppColors.textOnPrimary, size: 21),
               ),
             ),
           ],
@@ -221,11 +274,7 @@ class _MessageBubble extends StatelessWidget {
   final bool isMe;
   final String time;
 
-  const _MessageBubble({
-    required this.message,
-    required this.isMe,
-    required this.time,
-  });
+  const _MessageBubble({required this.message, required this.isMe, required this.time});
 
   @override
   Widget build(BuildContext context) {
@@ -251,11 +300,7 @@ class _MessageBubble extends StatelessWidget {
               ),
               border: isMe ? null : Border.all(color: scheme.outlineVariant),
             ),
-            child: Text(
-              message,
-              textDirection: TextDirection.rtl,
-              style: TextStyle(color: textColor, fontSize: 14, height: 1.45),
-            ),
+            child: Text(message, textDirection: TextDirection.rtl, style: TextStyle(color: textColor, fontSize: 14, height: 1.45)),
           ),
           const SizedBox(height: 4),
           Text(time, style: TextStyle(fontSize: 10, color: scheme.onSurfaceVariant)),
