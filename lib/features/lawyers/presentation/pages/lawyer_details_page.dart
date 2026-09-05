@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../shared/widgets/loading_widget.dart';
+import '../../../authentication/presentation/providers/auth_provider.dart';
 import '../../../chat/presentation/providers/chat_provider.dart';
 import '../providers/lawyers_provider.dart';
 import '../widgets/lawyer_achievements_gallery.dart';
@@ -14,16 +15,22 @@ class LawyerDetailsPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final scheme = Theme.of(context).colorScheme;
     final chatAvailability = ref.watch(chatAvailabilityForLawyerProvider(profileId));
+    final currentUserId = ref.watch(authStateChangesProvider).value?.id;
+    final isOwnProfile = currentUserId == profileId;
+    final ownProfileAsync = isOwnProfile ? ref.watch(ownLawyerProfileProvider(profileId)) : null;
     return ColoredBox(
       color: scheme.surface,
       child: ref.watch(lawyerProfileProvider(profileId)).when(
         loading: () => const Center(child: LoadingWidget()),
         error: (_, __) => Center(child: Text('تعذر تحميل الملف الشخصي', style: TextStyle(color: scheme.onSurfaceVariant))),
-        data: (lawyer) {
-          if (lawyer == null) return Center(child: Text('المحامي غير موجود', style: TextStyle(color: scheme.onSurface)));
+        data: (publicLawyer) {
+          if (publicLawyer == null) return Center(child: Text('المحامي غير موجود', style: TextStyle(color: scheme.onSurface)));
+          final lawyer = ownProfileAsync?.value ?? publicLawyer;
           final name = lawyer.fullName?.trim().isNotEmpty == true ? lawyer.fullName!.trim() : 'محامي';
           final avatar = lawyer.avatarUrl;
           final bio = lawyer.bio?.trim() ?? '';
+          final specializationText = lawyer.specializations.isEmpty ? 'محامي ومستشار قانوني' : lawyer.specializations.join('، ');
+          final licenseClass = lawyer.practiceLicenseClass;
           return Stack(
             children: [
               CustomScrollView(
@@ -48,8 +55,19 @@ class LawyerDetailsPage extends ConsumerWidget {
                             crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
                               Row(mainAxisAlignment: MainAxisAlignment.center, children: [Flexible(child: Text(name, textAlign: TextAlign.center, style: TextStyle(color: scheme.onSurface, fontSize: 22, fontWeight: FontWeight.w900))), if (lawyer.verified) Padding(padding: const EdgeInsets.only(right: 6), child: Icon(Icons.verified_rounded, color: scheme.primary, size: 20))]),
-                              const SizedBox(height: 6),
-                              Text(lawyer.specializations.isEmpty ? 'محامي ومستشار قانوني' : lawyer.specializations.join('، '), textAlign: TextAlign.center, style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 14, height: 1.4)),
+                              const SizedBox(height: 8),
+                              Text(specializationText, textAlign: TextAlign.center, style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 14, height: 1.4)),
+                              if (isOwnProfile && licenseClass != null && licenseClass.trim().isNotEmpty) ...[
+                                const SizedBox(height: 12),
+                                Align(
+                                  alignment: Alignment.center,
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                                    decoration: BoxDecoration(color: scheme.primaryContainer, borderRadius: BorderRadius.circular(14), border: Border.all(color: scheme.outlineVariant)),
+                                    child: Text('الصلاحية: ${licenseClass == 'مطلقة' ? 'مطلقة' : 'الفئة $licenseClass'}', style: TextStyle(color: scheme.onPrimaryContainer, fontSize: 13, fontWeight: FontWeight.w800)),
+                                  ),
+                                ),
+                              ],
                               const SizedBox(height: 16),
                               _Stats(lawyer: lawyer),
                               const SizedBox(height: 22),
@@ -67,56 +85,57 @@ class LawyerDetailsPage extends ConsumerWidget {
                   ),
                 ],
               ),
-              Positioned(
-                left: 14,
-                right: 14,
-                bottom: 8,
-                child: SafeArea(
-                  top: false,
-                  child: Material(
-                    color: Colors.transparent,
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: SizedBox(
+              if (!isOwnProfile)
+                Positioned(
+                  left: 14,
+                  right: 14,
+                  bottom: 8,
+                  child: SafeArea(
+                    top: false,
+                    child: Material(
+                      color: Colors.transparent,
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: SizedBox(
+                              height: 52,
+                              child: ElevatedButton.icon(
+                                onPressed: () => context.push('/create-booking', extra: {'lawyer': lawyer}),
+                                icon: const Icon(Icons.calendar_month_rounded),
+                                label: const Text('حجز موعد استشارة', style: TextStyle(fontWeight: FontWeight.w900)),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          SizedBox(
+                            width: 112,
                             height: 52,
-                            child: ElevatedButton.icon(
-                              onPressed: () => context.push('/create-booking', extra: {'lawyer': lawyer}),
-                              icon: const Icon(Icons.calendar_month_rounded),
-                              label: const Text('حجز موعد استشارة', style: TextStyle(fontWeight: FontWeight.w900)),
+                            child: chatAvailability.when(
+                              loading: () => OutlinedButton.icon(
+                                onPressed: null,
+                                icon: const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)),
+                                label: const Text('محادثة', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700)),
+                              ),
+                              error: (_, __) => OutlinedButton.icon(
+                                onPressed: null,
+                                icon: const Icon(Icons.lock_outline_rounded, size: 18),
+                                label: const Text('محادثة', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700)),
+                              ),
+                              data: (conversationId) {
+                                final enabled = conversationId != null;
+                                return OutlinedButton.icon(
+                                  onPressed: enabled ? () => context.push('/chat/$conversationId') : null,
+                                  icon: const Icon(Icons.chat_bubble_outline_rounded, size: 18),
+                                  label: Text(enabled ? 'محادثة' : 'بعد الحجز', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700)),
+                                );
+                              },
                             ),
                           ),
-                        ),
-                        const SizedBox(width: 10),
-                        SizedBox(
-                          width: 112,
-                          height: 52,
-                          child: chatAvailability.when(
-                            loading: () => OutlinedButton.icon(
-                              onPressed: null,
-                              icon: const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)),
-                              label: const Text('محادثة', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700)),
-                            ),
-                            error: (_, __) => OutlinedButton.icon(
-                              onPressed: null,
-                              icon: const Icon(Icons.lock_outline_rounded, size: 18),
-                              label: const Text('محادثة', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700)),
-                            ),
-                            data: (conversationId) {
-                              final enabled = conversationId != null;
-                              return OutlinedButton.icon(
-                                onPressed: enabled ? () => context.push('/chat/$conversationId') : null,
-                                icon: const Icon(Icons.chat_bubble_outline_rounded, size: 18),
-                                label: Text(enabled ? 'محادثة' : 'بعد الحجز', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700)),
-                              );
-                            },
-                          ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
                 ),
-              ),
             ],
           );
         },
