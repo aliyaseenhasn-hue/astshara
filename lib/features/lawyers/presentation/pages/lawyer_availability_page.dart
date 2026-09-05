@@ -334,7 +334,10 @@ class _LawyerAvailabilityPageState extends ConsumerState<LawyerAvailabilityPage>
                 onPressed: hasFutureAvailable
                     ? () {
                         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تم إكمال إعداد استقبال الاستشارات بنجاح')));
-                        Navigator.pop(context);
+                        Future<void>.delayed(const Duration(milliseconds: 700), () {
+                          if (!mounted) return;
+                          context.go('/lawyer-home');
+                        });
                       }
                     : null,
                 icon: const Icon(Icons.check_circle_outline_rounded),
