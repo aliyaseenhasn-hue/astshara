@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/config/supabase_config.dart';
 
 class AppNotification {
@@ -31,7 +32,6 @@ final notificationsProvider = FutureProvider<List<AppNotification>>((ref) async 
 });
 
 /// Emits only newly-created notifications for the signed-in profile.
-/// Used by the app shell to surface immediate in-app/local notifications.
 final realtimeNotificationsProvider = StreamProvider.autoDispose<AppNotification>((ref) {
   late final StreamController<AppNotification> controller;
   RealtimeChannel? channel;
@@ -59,13 +59,7 @@ final realtimeNotificationsProvider = StreamProvider.autoDispose<AppNotification
         .subscribe();
   }
 
-  controller = StreamController<AppNotification>(
-    onListen: start,
-    onCancel: () async {
-      await channel?.unsubscribe();
-      await controller.close();
-    },
-  );
+  controller = StreamController<AppNotification>(onListen: start);
   ref.onDispose(() async {
     await channel?.unsubscribe();
     if (!controller.isClosed) await controller.close();
