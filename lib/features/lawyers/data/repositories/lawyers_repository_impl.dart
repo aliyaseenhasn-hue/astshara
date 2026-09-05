@@ -98,10 +98,6 @@ class LawyersRepositoryImpl implements LawyersRepository {
     }
 
     try {
-      // The deployed Supabase RPC currently exposes get_public_lawyers() without
-      // pagination arguments. Keep the repository compatible with that contract
-      // and paginate the returned public rows locally until the database RPC is
-      // migrated to a paginated signature.
       final response = await _supabase.rpc('get_public_lawyers');
       final allRows = List<dynamic>.from(response as List);
       final start = safeOffset.clamp(0, allRows.length);
@@ -155,7 +151,18 @@ class LawyersRepositoryImpl implements LawyersRepository {
 
   @override
   Future<void> updateLawyerProfile(LawyerProfile profile) async {
-    final data = <String, dynamic>{'profile_id': profile.profileId, 'license_number': profile.licenseNumber, 'bio': profile.bio, 'years_experience': profile.yearsExperience, 'consultation_price': profile.consultationPrice, 'whatsapp': profile.whatsapp, 'id_card_url': profile.idCardUrl, 'availability': profile.availability, 'services': profile.services.map((s) => s.toJson()).toList()};
+    final data = <String, dynamic>{
+      'profile_id': profile.profileId,
+      'license_number': profile.licenseNumber,
+      'practice_license_class': profile.practiceLicenseClass,
+      'bio': profile.bio,
+      'years_experience': profile.yearsExperience,
+      'consultation_price': profile.consultationPrice,
+      'whatsapp': profile.whatsapp,
+      'id_card_url': profile.idCardUrl,
+      'availability': profile.availability,
+      'services': profile.services.map((s) => s.toJson()).toList(),
+    };
     if (profile.specializations.isNotEmpty) data['specialization'] = profile.specializations;
     await _supabase.from('lawyer_profiles').upsert(data, onConflict: 'profile_id');
     try {
@@ -180,17 +187,15 @@ class LawyersRepositoryImpl implements LawyersRepository {
   }
 
   @override
-  Future<void> requestSpecializationChange(List<String> newSpecs, {String? unionIdCardUrl}) async {
+  Future<void> requestSpecializationChange(List<String> specializations, {String? unionIdCardUrl}) async {
     final user = _supabase.auth.currentUser;
     if (user == null) throw Exception('المستخدم غير مسجل دخول');
-    final profile = await _supabase.from('profiles').select('id').eq('auth_id', user.id).maybeSingle();
-    final profileId = profile?['id'] as String?;
-    if (profileId == null) throw Exception('ملف المحامي غير مكتمل');
-    if (newSpecs.isEmpty) throw Exception('يجب اختيار تخصص واحد على الأقل');
-    if (unionIdCardUrl == null || unionIdCardUrl.trim().isEmpty) throw Exception('صورة هوية النقابة مطلوبة');
-    await _supabase.from('specialization_change_requests').insert({'lawyer_id': profileId, 'requested_specializations': newSpecs, 'union_id_card_url': unionIdCardUrl, 'status': 'pending'});
-    final admins = await _supabase.from('profiles').select('id').eq('role', 'admin');
-    for (final row in (admins as List)) await _supabase.from('notifications').insert({'user_id': row['id'], 'title': 'طلب تغيير تخصص جديد', 'body': 'وصل طلب جديد من محامٍ لتغيير التخصص ويحتاج إلى مراجعة صورة هوية النقابة.', 'type': 'specialization_change'});
+    await _supabase.from('specialization_change_requests').insert({
+      'lawyer_id': user.id,
+      'requested_specializations': specializations,
+      'union_id_card_url': unionIdCardUrl,
+      'status': 'pending',
+    });
   }
 }
 
