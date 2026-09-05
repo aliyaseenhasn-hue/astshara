@@ -30,7 +30,7 @@ class LandingPage extends ConsumerWidget {
               pinned: true,
               backgroundColor: _navy,
               elevation: 0,
-              title: const Text('استشارة', style: TextStyle(fontWeight: FontWeight.w800)),
+              title: const Text('استشارة', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 24)),
               actions: [
                 TextButton(
                   onPressed: () => context.push('/login'),
