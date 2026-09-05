@@ -193,9 +193,24 @@ class _EmptyState extends StatelessWidget {
   Widget build(BuildContext context) => Container(padding: const EdgeInsets.all(28), decoration: BoxDecoration(color: AppColors.surface, borderRadius: BorderRadius.circular(18), border: Border.all(color: AppColors.divider)), child: const Column(children: [Icon(Icons.event_available_rounded, color: AppColors.tertiary, size: 34), SizedBox(height: 8), Text('لا توجد طلبات استشارة حالياً', style: TextStyle(fontWeight: FontWeight.w700))]));
 }
 
-class _BookingCard extends StatelessWidget {
+class _BookingCard extends ConsumerWidget {
   final Booking booking;
   const _BookingCard({required this.booking});
+
   @override
-  Widget build(BuildContext context) => Card(margin: const EdgeInsets.only(bottom: 10), child: ListTile(onTap: () => context.push('/booking-details', extra: booking), title: Text(booking.consultationType ?? 'استشارة قانونية', textDirection: TextDirection.rtl, textAlign: TextAlign.right), subtitle: Text(booking.status, textDirection: TextDirection.rtl, textAlign: TextAlign.right), trailing: const Icon(Icons.chevron_left_rounded)));
+  Widget build(BuildContext context, WidgetRef ref) {
+    final clientNameAsync = ref.watch(bookingClientNameProvider(booking.id));
+    final clientName = clientNameAsync.value?.trim();
+    final title = clientName != null && clientName.isNotEmpty ? clientName : 'اسم طالب الاستشارة غير متوفر';
+
+    return Card(
+      margin: const EdgeInsets.only(bottom: 10),
+      child: ListTile(
+        onTap: () => context.push('/booking-details', extra: booking),
+        title: Text(title, textDirection: TextDirection.rtl, textAlign: TextAlign.right),
+        subtitle: Text(booking.status, textDirection: TextDirection.rtl, textAlign: TextAlign.right),
+        trailing: const Icon(Icons.chevron_left_rounded),
+      ),
+    );
+  }
 }
