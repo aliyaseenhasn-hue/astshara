@@ -16,6 +16,16 @@ For help getting started with Flutter development, view the
 [online documentation](https://docs.flutter.dev/), which offers tutorials,
 examples, guidance on mobile development, and a full API reference.
 
+## Latest Production Fix — PWA Notification State
+
+- Repository commit: `6163de41167b005a982603a01db558bae5a4299c`
+- Root cause: the PWA notification service exposed `isEnabled()` on the web implementation but not on the non-web stub, which caused Flutter analysis/build failures and prevented the corrected web notification behavior from being deployed.
+- Fix: aligned the notification service API across web and non-web platforms by adding `isEnabled()` to the stub and keeping the settings screen state synchronized after enable/disable operations.
+- Web behavior: the service reads both browser notification permission and the active Push API subscription before reporting notifications as enabled.
+- Security: the existing `pwa_push_subscriptions` RLS policy remains scoped to `auth.uid() = user_id`; no public access was added.
+- Verification: GitHub Actions run `34036615327` completed successfully for build, analysis/tests, and GitHub Pages deployment.
+- Scope: no authentication, Telegram, booking, payment, database schema, or existing PWA subscription security rules were weakened.
+
 ## Latest Production Fix — Consultation Type Compatibility
 
 - Migration: `supabase/migrations/20260906160000_normalize_video_consultation_type_for_booking.sql`
