@@ -206,7 +206,7 @@ class LawyersRepositoryImpl implements LawyersRepository {
     final ext = fileName.split('.').last.toLowerCase();
     final contentType = switch (ext) {'png' => 'image/png', 'webp' => 'image/webp', 'pdf' => 'application/pdf', 'jpg' || 'jpeg' => 'image/jpeg', _ => 'application/octet-stream'};
     await _supabase.storage.from(bucket).uploadBinary(path, bytes, fileOptions: FileOptions(upsert: false, contentType: contentType));
-    return _supabase.storage.from(bucket).createSignedUrl(path, 31536000);
+    return _supabase.storage.from(bucket).createSignedUrl(path, 3600);
   }
 
   @override
