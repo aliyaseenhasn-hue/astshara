@@ -31,12 +31,45 @@ class HelpCenterPage extends StatelessWidget {
             Container(
               padding: const EdgeInsets.fromLTRB(22, 24, 22, 22),
               decoration: BoxDecoration(
-                color: dark ? scheme.surfaceContainerHighest : scheme.primaryContainer,
+                gradient: LinearGradient(
+                  begin: Alignment.topRight,
+                  end: Alignment.bottomLeft,
+                  colors: dark
+                      ? [scheme.primary.withValues(alpha: .28), scheme.tertiary.withValues(alpha: .20)]
+                      : [scheme.primary.withValues(alpha: .16), scheme.tertiary.withValues(alpha: .10)],
+                ),
                 borderRadius: BorderRadius.circular(28),
-                border: Border.all(color: scheme.outlineVariant.withValues(alpha: .7)),
+                border: Border.all(color: scheme.primary.withValues(alpha: dark ? .42 : .22)),
+                boxShadow: [
+                  BoxShadow(
+                    color: scheme.primary.withValues(alpha: dark ? .16 : .10),
+                    blurRadius: 22,
+                    offset: const Offset(0, 8),
+                  ),
+                ],
               ),
               child: Column(children: [
-                Container(width: 64, height: 64, alignment: Alignment.center, decoration: BoxDecoration(color: scheme.primary.withValues(alpha: .12), shape: BoxShape.circle), child: Icon(Icons.support_agent_rounded, size: 34, color: scheme.primary)),
+                Container(
+                  width: 66,
+                  height: 66,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topRight,
+                      end: Alignment.bottomLeft,
+                      colors: [scheme.primary, scheme.tertiary],
+                    ),
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: scheme.primary.withValues(alpha: .22),
+                        blurRadius: 14,
+                        offset: const Offset(0, 6),
+                      ),
+                    ],
+                  ),
+                  child: Icon(Icons.support_agent_rounded, size: 35, color: scheme.onPrimary),
+                ),
                 const SizedBox(height: 15),
                 Text('كيف يمكننا مساعدتك؟', textAlign: TextAlign.center, style: TextStyle(fontSize: 24, fontWeight: FontWeight.w900, color: scheme.onSurface)),
                 const SizedBox(height: 7),
