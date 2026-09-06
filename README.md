@@ -9,7 +9,7 @@ This project is a starting point for a Flutter application.
 A few resources to get you started if this is your first Flutter project:
 
 - [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Learn Flutter](https://docs.flutter.dev/get-started/codelab)
+- [Learn Flutter](https://docs.flutter.dev/codelab)
 - [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
 
 For help getting started with Flutter development, view the
@@ -67,3 +67,16 @@ examples, guidance on mobile development, and a full API reference.
 - Supabase production migration: applied successfully.
 - Database verification: `anon_exec=false`, `auth_exec=false`, `service_exec=true` for both functions.
 - Scope: no booking data, archive logic, ownership predicates, authentication flow, Telegram flow, or payment integration was changed.
+
+## Production UI Contrast Hardening — 2026-09-06
+
+- Commit `e0303b040854b0d240aaa1b5c00c728ec4fcb7be`: corrected lawyer setup surfaces that used `AppColors.secondary` backgrounds with gold foreground text. The affected hero and primary submission button now use white foreground text for clearer contrast while preserving the existing brand background.
+- Commit `54e9ff533794d8deb5ee89cd832fe3b693cbb294`: corrected the lawyer onboarding hero, verification indicators, step badges, camera action, success dialog action, and submission button where gold text/icons were placed directly on the dark secondary background. White foreground content is now used on those dark controls/surfaces.
+- Scope: visual contrast only; authentication, onboarding validation, storage, database calls, and navigation behavior were not intentionally changed.
+- Verification status: **WARNING — NOT FULLY TESTED** pending CI/rendered-device verification for these latest commits.
+
+## Production UI Responsive Fix — Landing Login Action — 2026-09-06
+
+- Commit `09977f2308b8755b2a805d13a5d78c0eeadd376f`: reduced AppBar action padding/minimum sizing and tightened title spacing so `تسجيل الدخول` remains visible on narrow mobile layouts without removing the action or changing its `/login` route.
+- Scope: responsive presentation only; login/signup actions remain functional.
+- Verification status: **WARNING — NOT FULLY TESTED** until the latest main-branch commit is covered by CI and rendered-device verification.
