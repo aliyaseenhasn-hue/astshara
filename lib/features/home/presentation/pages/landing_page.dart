@@ -30,19 +30,39 @@ class LandingPage extends ConsumerWidget {
               pinned: true,
               backgroundColor: _navy,
               elevation: 0,
-              title: const Text('استشارة', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 24)),
+              titleSpacing: 4,
+              title: const Text(
+                'استشارة',
+                maxLines: 1,
+                overflow: TextOverflow.clip,
+                style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 22),
+              ),
               actions: [
                 TextButton(
                   onPressed: () => context.push('/login'),
-                  child: const Text('تسجيل الدخول', style: TextStyle(color: _goldLight)),
+                  style: TextButton.styleFrom(
+                    foregroundColor: _goldLight,
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                    minimumSize: const Size(0, 48),
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  ),
+                  child: const Text(
+                    'تسجيل الدخول',
+                    maxLines: 1,
+                    style: TextStyle(color: _goldLight, fontWeight: FontWeight.w700, fontSize: 14),
+                  ),
                 ),
-                const SizedBox(width: 4),
                 Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
+                  padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 6),
                   child: FilledButton(
                     onPressed: () => context.push('/signup'),
-                    style: FilledButton.styleFrom(backgroundColor: _gold, foregroundColor: _navy),
-                    child: const Text('إنشاء حساب', style: TextStyle(fontWeight: FontWeight.w800)),
+                    style: FilledButton.styleFrom(
+                      backgroundColor: _gold,
+                      foregroundColor: _navy,
+                      padding: const EdgeInsets.symmetric(horizontal: 10),
+                      minimumSize: const Size(0, 40),
+                    ),
+                    child: const Text('إنشاء حساب', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13)),
                   ),
                 ),
               ],
