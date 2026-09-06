@@ -114,7 +114,7 @@
 
 **Database Test:** الدالتان أصبحتا `anon_exec=false`, `auth_exec=false`, `service_exec=true`، إضافة إلى استمرار نفس النتيجة لدالة تنظيف Telegram.
 **Supabase Migration:** تم تطبيق التغيير فعلياً على المشروع.
-**Repository Migration:** تم حفظ Migration المقابلة في المستودع: `20260906131500_lock_down_internal_booking_helpers.sql`.
+**Repository Migration:** `20260906131500_lock_down_internal_booking_helpers.sql`.
 
 **الحالة:** `PASS — TESTED` بالنسبة لحدود صلاحية الدالتين وحفظ Migration؛ ويبقى CI بعد هذا التغيير مطلوباً قبل اعتماد النقطة ضمن بوابة الإصدار.
 
@@ -127,6 +127,15 @@
 - دوال دليل المحامين العامة فقط هي التي بقيت متاحة للعملاء عمداً، مع توثيق منح `anon` و`authenticated` لها صراحةً في Migration `20260906140000_lock_down_public_security_definer_functions.sql`.
 
 **الحالة:** `PASS — TESTED` بالنسبة للتدقيق البنيوي الحالي؛ لا يعني ذلك اختبار اختراق E2E كاملاً.
+
+## تدقيق أمني P0.5 — إغلاق دالة trigger داخلية
+أظهر التدقيق أن `sync_slot_after_booking_change()` كانت `SECURITY DEFINER` وممنوحة لـ`authenticated` رغم أنها دالة trigger داخلية لا تمثل API للمستخدم. تم سحب `EXECUTE` من `public` و`anon` و`authenticated` والإبقاء على `service_role` فقط، دون تغيير trigger نفسه أو منطق مزامنة المواعيد.
+
+**Database Test:** `auth_exec=false`, `anon_exec=false`, `service_exec=true`.
+**Supabase Migration:** `lock_down_internal_booking_sync_trigger_function`.
+**Repository Migration:** `20260906150000_lock_down_internal_booking_sync_trigger_function.sql`.
+
+**الحالة:** `PASS — TESTED` بالنسبة لحدود صلاحية الدالة؛ ويبقى CI بعد هذا التغيير مطلوباً قبل اعتماد النقطة ضمن بوابة الإصدار.
 
 ## تدقيق Qi Card — حدود ما يمكن اعتماده حالياً
 تمت مراجعة إنشاء الدفع وWebhook والتحقق من ملكية الحجز قبل الدفع، وربط Webhook بالتوقيع والمبلغ/العملة وحماية الانتقال النهائي من حالة الدفع الناجحة إلى حالة أقدم.
