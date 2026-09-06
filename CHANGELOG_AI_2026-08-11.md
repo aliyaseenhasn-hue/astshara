@@ -118,3 +118,29 @@
 - GitHub: لا توجد status checks مسجلة حتى الآن على commit `8e1d618f42adcffd4069bb3f1b3d6c7b8e354f69`، لذلك لم يتم الادعاء بأن CI مر بنجاح.
 - المطلوب قبل إعلان الإشعارات الأصلية مكتملة 100%: إضافة Firebase Service Account كـSupabase secret باسم `FCM_SERVICE_ACCOUNT_JSON`، ثم إنشاء Database Webhook من `public.notifications` حدث `INSERT` إلى `send-native-push` مع Authorization/service key، وبعدها اختبار جهاز Android فعلي في foreground/background/terminated.
 - iOS يحتاج لاحقاً `GoogleService-Info.plist` الصحيح وAPNs key وPush Notifications/Background Modes قبل إعلان دعم iOS الإنتاجي؛ هذا لا يؤثر على عدم كسر Web/PWA الحالي.
+
+## استكمال إصلاح FCM — 2026-09-06
+### تسجيل معالج الخلفية قبل تشغيل التطبيق
+- الملف: `lib/main.dart`.
+- commits: `e4855c07b8ef7ddeb8333f586640200f3d446c0f` ثم `4bd3e4f61e8fe7671c8449390a117a05ed6d746b`.
+- التعديل: تسجيل `FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler)` قبل `runApp()`، مع إضافة الاستيراد الصريح لـ`firebase_messaging`.
+- السبب: Firebase يتطلب تسجيل معالج background كدالة top-level قبل تشغيل التطبيق حتى يعمل استقبال الرسائل في الخلفية/الحالة المنتهية بصورة صحيحة.
+- النتيجة: أصبح مسار background handler مسجلاً في نقطة الدخول الفعلية للتطبيق.
+
+### إعادة تسجيل token بعد المصادقة
+- الملف: `lib/core/services/push_notification_service.dart`.
+- commit: `4b1fc8528ff46830bafbea2ff917a4cac9db07cd`.
+- التعديل: إضافة مراقبة `Supabase Auth` وإعادة تسجيل FCM token عند `signedIn` و`tokenRefreshed` و`initialSession`، مع إلغاء الاشتراك عند dispose، وإضافة استيراد صريح لأنواع أحداث Supabase Auth.
+- السبب: bootstrap يبدأ قبل اكتمال تسجيل الدخول في بعض المسارات؛ تسجيل token مرة واحدة كان قد يفشل بصمت إذا لم يكن المستخدم مصادقاً وقتها.
+- النتيجة: يصبح token قابلاً للتسجيل مباشرة بعد نجاح جلسة المستخدم مع استمرار دعم تحديث token.
+
+### ربط Database Webhook
+- تم فحص triggers على `public.notifications` في Production ولم يوجد trigger فعلياً وقت التدقيق.
+- تمت محاولة إنشاء trigger SQL آمن، لكن إنشاء Authorization header ديناميكي باستخدام مفتاح الخدمة غير متاح عبر مسار migration الحالي؛ لذلك لم يتم إنشاء webhook غير مؤمّن.
+- وفق بنية Supabase الرسمية، الربط الصحيح هو Database Webhook على `notifications INSERT` مع Authorization/service key إلى `send-native-push`، وليس فتح Edge Function للعامة دون تحقق. راجع توثيق Supabase الرسمي عند إعداد webhook.
+- النتيجة: لم يتم الادعاء أن الإرسال الخلفي مكتمل؛ يبقى إعداد السر `FCM_SERVICE_ACCOUNT_JSON` والـDatabase Webhook شرطين للإرسال الفعلي.
+
+### حالة التحقق لهذه الدفعة
+- لم يتم إعلان CI ناجحاً لهذه commits حتى يتم الحصول على نتيجة GitHub Actions فعلية.
+- لم يتم تغيير Web/PWA Push أو Supabase Realtime.
+- لم يتم تخزين أي Firebase service-account credential داخل GitHub.
