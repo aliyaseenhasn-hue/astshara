@@ -113,6 +113,15 @@ class _LawyerProfileEditPageState extends ConsumerState<LawyerProfileEditPage> {
     context.push('/lawyer-availability');
   }
 
+  void _cancel() {
+    if (_isLoading) return;
+    if (context.canPop()) {
+      context.pop();
+    } else {
+      context.go('/lawyer-home');
+    }
+  }
+
   InputDecoration _input(String label, {String? hint}) => InputDecoration(
     labelText: label,
     hintText: hint,
@@ -316,11 +325,33 @@ class _LawyerProfileEditPageState extends ConsumerState<LawyerProfileEditPage> {
         child: Container(
           padding: const EdgeInsets.fromLTRB(20, 8, 20, 14),
           decoration: const BoxDecoration(color: AppColors.surface, boxShadow: [BoxShadow(color: Color(0x14000000), blurRadius: 16, offset: Offset(0, -4))]),
-          child: FilledButton.icon(
-            onPressed: _isLoading ? null : _saveAndContinue,
-            icon: const Icon(Icons.arrow_back_rounded),
-            label: const Text('التالي: أوقات التوفر', style: TextStyle(fontWeight: FontWeight.w900)),
-            style: FilledButton.styleFrom(backgroundColor: AppColors.secondary, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 16), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))),
+          child: Row(
+            children: [
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: _isLoading ? null : _cancel,
+                  icon: const Icon(Icons.close_rounded),
+                  label: const Text('إلغاء', style: TextStyle(fontWeight: FontWeight.w900)),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AppColors.error,
+                    side: const BorderSide(color: AppColors.error),
+                    backgroundColor: AppColors.surface,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                flex: 2,
+                child: FilledButton.icon(
+                  onPressed: _isLoading ? null : _saveAndContinue,
+                  icon: const Icon(Icons.arrow_back_rounded),
+                  label: const Text('التالي: أوقات التوفر', style: TextStyle(fontWeight: FontWeight.w900)),
+                  style: FilledButton.styleFrom(backgroundColor: AppColors.secondary, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 16), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))),
+                ),
+              ),
+            ],
           ),
         ),
       ),
