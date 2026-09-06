@@ -85,3 +85,10 @@
 - التعديل: توحيد `namespace` و`applicationId` إلى `com.istishara.app`، وتحديث package لمسار `MainActivity` بما يطابق الـnamespace، وتفعيل `com.google.gms.google-services` داخل وحدة التطبيق.
 - السبب: مطابقة هوية Android مع حزمة Firebase الموجودة في `google-services.json` ومنع فشل ربط Google Services أو عدم العثور على `MainActivity`.
 - النتيجة: إعداد Android أصبح متوافقاً مبدئياً مع ملف Firebase المرفوع. لم يُعلن نجاح CI بعد؛ يجب فحص البناء قبل متابعة إضافة Firebase Messaging.
+
+### إضافة Firebase Core وFirebase Messaging
+- الملف: `pubspec.yaml`.
+- commit: `55426f11b2ff491f320fabb70ae185ef0895402d`.
+- التعديل: إضافة `firebase_core: ^4.14.0` و`firebase_messaging: ^16.6.0` دون تغيير بقية الاعتمادات.
+- السبب: إصدارات متوافقة مع حد Dart `>=3.12.0` وFlutter `>=3.47.0` في المشروع؛ صفحة الإصدارات الحالية لـFlutterFire توضح أن كلا الإصدارين يتطلبان Dart 3.6 على الأقل، كما أن سجل `firebase_messaging` يذكر مواءمة أدوات Android مع Flutter 3.47. citeturn0search0turn0search2turn0search3
+- النتيجة: تم تعديل `pubspec.yaml` فقط في هذه الخطوة. لم تتم إضافة منطق FCM أو تغيير نظام الإشعارات الحالي بعد. يلزم تشغيل `flutter pub get`/البناء وفحص CI لتحديث `pubspec.lock` والتحقق من عدم وجود تعارضات قبل متابعة تكامل FCM.
