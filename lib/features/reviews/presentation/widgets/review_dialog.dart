@@ -16,6 +16,13 @@ class ReviewDialog extends ConsumerStatefulWidget {
 class _ReviewDialogState extends ConsumerState<ReviewDialog> {
   double _rating = 5.0;
   final _commentController = TextEditingController();
+  bool _submitting = false;
+
+  @override
+  void dispose() {
+    _commentController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -26,29 +33,74 @@ class _ReviewDialogState extends ConsumerState<ReviewDialog> {
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
-            children: List.generate(5, (index) => IconButton(
-              onPressed: () => setState(() => _rating = index + 1.0),
-              icon: Icon(index < _rating ? Icons.star : Icons.star_border, color: AppColors.secondaryLight, size: 32),
-            )),
+            children: List.generate(
+              5,
+              (index) => IconButton(
+                onPressed: _submitting ? null : () => setState(() => _rating = index + 1.0),
+                icon: Icon(
+                  index < _rating ? Icons.star : Icons.star_border,
+                  color: AppColors.secondaryLight,
+                  size: 32,
+                ),
+              ),
+            ),
           ),
           const SizedBox(height: AppSizes.p16),
           TextField(
             controller: _commentController,
-            decoration: const InputDecoration(hintText: 'اكتب رأيك هنا...', border: OutlineInputBorder()),
+            enabled: !_submitting,
+            decoration: const InputDecoration(
+              hintText: 'اكتب رأيك هنا...',
+              border: OutlineInputBorder(),
+            ),
             maxLines: 3,
           ),
         ],
       ),
       actions: [
-        TextButton(onPressed: () => Navigator.pop(context), child: const Text('إلغاء')),
+        TextButton(
+          onPressed: _submitting ? null : () => Navigator.pop(context),
+          child: const Text('إلغاء'),
+        ),
         ElevatedButton(
-          onPressed: () async {
-            await ref.read(reviewControllerProvider.notifier).submitReview(bookingId: widget.bookingId, lawyerId: widget.lawyerId, rating: _rating, comment: _commentController.text);
-            if (context.mounted) Navigator.pop(context);
-          },
-          child: const Text('إرسال التقييم'),
+          onPressed: _submitting ? null : _submit,
+          child: _submitting
+              ? const SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : const Text('إرسال التقييم'),
         ),
       ],
     );
+  }
+
+  Future<void> _submit() async {
+    setState(() => _submitting = true);
+
+    try {
+      await ref.read(reviewControllerProvider.notifier).submitReview(
+            bookingId: widget.bookingId,
+            lawyerId: widget.lawyerId,
+            rating: _rating,
+            comment: _commentController.text,
+          );
+
+      final state = ref.read(reviewControllerProvider);
+      if (!mounted) return;
+
+      if (state.hasError) {
+        throw state.error!;
+      }
+
+      Navigator.pop(context, true);
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _submitting = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.toString().replaceFirst('Exception: ', ''))),
+      );
+    }
   }
 }
