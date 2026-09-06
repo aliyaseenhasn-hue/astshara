@@ -5,6 +5,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import '../core/config/supabase_config.dart';
 import '../core/services/notification_service.dart';
+import '../core/services/push_notification_service.dart';
 import '../core/services/realtime_notification_service.dart';
 
 const _buildSupabaseUrl = String.fromEnvironment('SUPABASE_URL');
@@ -20,9 +21,6 @@ Future<ProviderContainer> bootstrap() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   try {
-    // Only critical local/bootstrap work is awaited here. Optional services
-    // must never block runApp(), otherwise a slow network request can leave
-    // Flutter Web showing only the HTML background indefinitely.
     await Hive.initFlutter();
     await Hive.openBox('app_cache');
 
@@ -48,12 +46,19 @@ Future<ProviderContainer> bootstrap() async {
       anonKey: supabaseAnonKey,
     );
 
-    // These services are intentionally started after bootstrap has completed.
-    // Realtime startup can perform an authenticated profiles query; awaiting
-    // it here can block the entire Flutter tree on a slow/unavailable network.
+    // Optional notification services must never block runApp().
     unawaited(
       NotificationService.initialize().catchError((error, stackTrace) {
-        debugPrint('⚠️ Notification services unavailable: $error');
+        debugPrint('⚠️ Local notification service unavailable: $error');
+        debugPrintStack(stackTrace: stackTrace);
+      }),
+    );
+
+    // Native FCM is intentionally disabled on Web so the existing PWA/Web Push
+    // implementation remains untouched. Android/iOS register their FCM token.
+    unawaited(
+      PushNotificationService.initialize().catchError((error, stackTrace) {
+        debugPrint('⚠️ Native FCM unavailable: $error');
         debugPrintStack(stackTrace: stackTrace);
       }),
     );
