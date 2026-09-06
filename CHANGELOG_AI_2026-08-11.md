@@ -78,3 +78,10 @@
 - التعديل: إضافة `com.google.gms.google-services` بالإصدار `4.5.0` ضمن plugins مع `apply false`.
 - السبب: تجهيز مشروع Android لمعالجة `android/app/google-services.json` ضمن تكامل Firebase الرسمي قبل إضافة Firebase Messaging.
 - النتيجة: تم تعديل ملف الإعداد الأصلي فقط، دون تغيير منطق التطبيق أو استبدال نظام الإشعارات الحالي. لم يُعلن نجاح CI بعد، ويجب فحص CI المرتبط بهذا commit قبل اعتبار الخطوة مكتملة.
+
+### توحيد Android Application ID
+- الملفات: `android/app/build.gradle.kts`، `android/app/src/main/kotlin/com/istishara/app/MainActivity.kt`، وحذف الملف القديم من `android/app/src/main/kotlin/com/example/astshara/MainActivity.kt`.
+- commits: `d956e64f553e89434ebf347c6db61da9e88e8db1` و`4c1178aa778de9a1f02a8e81df78446395a64b92` و`88def2b9e83be318adefb6b02d5f9cf51147f6cb`.
+- التعديل: توحيد `namespace` و`applicationId` إلى `com.istishara.app`، وتحديث package لمسار `MainActivity` بما يطابق الـnamespace، وتفعيل `com.google.gms.google-services` داخل وحدة التطبيق.
+- السبب: مطابقة هوية Android مع حزمة Firebase الموجودة في `google-services.json` ومنع فشل ربط Google Services أو عدم العثور على `MainActivity`.
+- النتيجة: إعداد Android أصبح متوافقاً مبدئياً مع ملف Firebase المرفوع. لم يُعلن نجاح CI بعد؛ يجب فحص البناء قبل متابعة إضافة Firebase Messaging.
