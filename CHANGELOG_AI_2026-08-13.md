@@ -35,11 +35,11 @@
 
 ### النقطة 5 — اختصاصات قانونية
 تمت إضافة قائمة واسعة للاختصاصات، صفحة `legal_categories_page.dart`، route مستقل، كروت إضافية في الرئيسية وزر «عرض جميع الفئات»، وربط الاختصاص بالبحث.
-**Commits:** `aca03fac4043559bfb424fbb2db4706bf5b3bb29`, `231894f2cc468044d11b04def2d3ef73d0623a1f`, `09d3c9976d16cdea9d0b5d0cc87c60a5a702721f`, `8164aff16b682545c8b267c3491c4efe096f6fe6`
+**Commits:** `aca03fac4043559bfb424fbb2db4706bf5b3bb29`, `231894f2cc46804413c4efe096f6fe6`, `09d3c9976d16cdea9d0b5d0cc87c60a5a702721f`, `8164aff16b682545c8b267c3491c4efe096f6fe6`
 
 ### النقطة 6 — أرشفة المواعيد
 تم تنفيذ الأرشفة على مستوى قاعدة البيانات وRepository وController، ثم إضافة شاشة **«أرشيف الاستشارات»** مع فتح التفاصيل وإعادة الاستشارة إلى القائمة، وإضافة زر الأرشيف إلى صفحة «استشاراتي» وزر «أرشفة الاستشارة» للحالات المنتهية/الملغاة/المستردة.
-**Commits:** `59dc5b971e93e792584357547441cb2379abdfc3`, `5c24c8170234f7754902667f2b41d223a68f8fb3`, `089ff398422053750e9dd8ce9c0a72aa3215b499`, `4e846366e7cd28f679a0066de52f4db88da52cc9`, `02ca3a1ff684060fa63a65bf35710cc68f35ec09`, `8256780a9b4f354cc257aee02645f4822dfac8cc`
+**Commits:** `59dc5b971e93e792584357547441cb2379abdfc3`, `5c24c8170234f7754902667b2b41d223a68f8fb3`, `089ff398422053750e9dd8ce9c0a72aa3215b499`, `4e846366e7cd28f679a0066de52f4db88da52cc9`, `02ca3a1ff684060fa63a65bf35710cc68f35ec09`, `8256780a9b4f354cc257aee02645f4822dfac8cc`
 
 ### النقطة 7 — دقة فلتر البحث
 تم استبدال المطابقة الجزئية الواسعة بمطابقة عربية مطبّعة وأكثر دقة للاختصاصات والأسماء.
@@ -67,3 +67,24 @@
 
 ## قاعدة الاعتماد
 أي نقطة لا تعتبر «ناجحة» نهائياً حتى يمر `flutter analyze` والبناء/CI. عند ظهور خطأ، يتم إصلاحه ثم مواصلة النقطة التالية تلقائياً.
+
+## إصلاح أمني P0.1 — منع إعادة استخدام طلب Telegram وإصدار جلسات متزامنة
+تم اكتشاف أن مسار `telegram-auth-v2` كان يقرأ حالة `telegram_verified` ثم يصدر الجلسة قبل وجود حجز ذري للطلب، ما كان يسمح نظرياً لطلبين متزامنين بالوصول إلى إصدار الجلسة نفسها قبل تحويل الحالة إلى `verified`.
+
+تم تنفيذ إصلاح متوافق مع المسار الحالي:
+- إضافة `session_claimed_at` إلى `telegram_login_requests` عبر Migration إضافية.
+- إضافة RPC ذرية `claim_telegram_login_session(uuid, bigint)` بصلاحية `SECURITY DEFINER` و`search_path` آمن.
+- السماح بتنفيذ RPC لـ`service_role` فقط.
+- ربط إصدار الجلسة بـone-time claim ذري يمنع replay وconcurrent verification.
+- منع بدء طلب Telegram جديد من إلغاء طلب تم حجزه بالفعل لإصدار جلسة.
+- منع `/start` من اعتبار حساب Telegram المرتبط مسبقاً موثوقاً دون مشاركة رقم الهاتف والتحقق من تطابقه.
+- تشديد binding بين Telegram user وphone/profile.
+- إرجاع حالة `used` للطلب الذي تم استهلاكه بدلاً من إعادة السماح بإصداره.
+- نشر Edge Function `telegram-auth-v2` الجديدة على Supabase كإصدار 28.
+
+**Code Commit:** `33e45cc4643e99da83a3e63e586a21efca9c7143`
+**Supabase Migration:** `telegram_auth_one_time_session_claim`
+**Database Test:** `first_claim=true`, `second_claim=false` على صف اختبار داخل transaction مع rollback.
+**CI:** Android Release Build رقم `414` قيد التنفيذ وقت التسجيل؛ لذلك لم تُعلن نتيجة Flutter analyze/test/build بعد.
+
+**الحالة:** `WARNING — NOT FULLY TESTED` حتى اكتمال CI واختبار integration فعلي لمسار Telegram.
