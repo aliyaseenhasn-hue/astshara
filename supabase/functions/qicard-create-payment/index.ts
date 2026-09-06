@@ -13,8 +13,9 @@ Deno.serve(async(req:Request)=>{
   if(!username||!password||!terminalId) throw new Error("لم يتم إعداد بيانات بوابة كي كارد كاملة");
   const admin=createClient(url,serviceRoleKey),client=createClient(url,anonKey,{global:{headers:{Authorization:authHeader}}});
   const {data:userData,error:authError}=await client.auth.getUser(); if(authError||!userData.user) throw new Error("المستخدم غير مسجل دخول");
+  const {data:profile,error:profileError}=await admin.from("profiles").select("id").eq("auth_id",userData.user.id).maybeSingle(); if(profileError) throw profileError; if(!profile) throw new Error("ملف المستخدم غير مكتمل");
   const body=await req.json(),bookingId=body?.booking_id; if(!bookingId) throw new Error("معرّف الحجز مطلوب");
-  const {data:booking,error:be}=await admin.from("bookings").select("id,user_id,price,status,lawyer_approved").eq("id",bookingId).maybeSingle(); if(be) throw be; if(!booking||booking.user_id!==userData.user.id) throw new Error("لا تملك صلاحية الدفع لهذا الحجز");
+  const {data:booking,error:be}=await admin.from("bookings").select("id,user_id,price,status,lawyer_approved").eq("id",bookingId).maybeSingle(); if(be) throw be; if(!booking||booking.user_id!==profile.id) throw new Error("لا تملك صلاحية الدفع لهذا الحجز");
   if(booking.status!=="قيد انتظار الدفع") throw new Error("الحجز غير متاح للدفع في حالته الحالية"); if(booking.price==null||Number(booking.price)<=0) throw new Error("قيمة الحجز غير صالحة للدفع");
   const {data:existing,error:ee}=await admin.from("payments").select("id,qicard_payment_id,status").eq("booking_id",bookingId).order("created_at",{ascending:false}).limit(1); if(ee) throw ee;
   const latest=existing?.[0]; if(latest?.qicard_payment_id&&latest.status==="تم الدفع") throw new Error("تم دفع هذا الحجز مسبقاً");
