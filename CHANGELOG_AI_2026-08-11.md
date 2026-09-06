@@ -90,5 +90,31 @@
 - الملف: `pubspec.yaml`.
 - commit: `55426f11b2ff491f320fabb70ae185ef0895402d`.
 - التعديل: إضافة `firebase_core: ^4.14.0` و`firebase_messaging: ^16.6.0` دون تغيير بقية الاعتمادات.
-- السبب: إصدارات متوافقة مع حد Dart `>=3.12.0` وFlutter `>=3.47.0` في المشروع؛ صفحة الإصدارات الحالية لـFlutterFire توضح أن كلا الإصدارين يتطلبان Dart 3.6 على الأقل، كما أن سجل `firebase_messaging` يذكر مواءمة أدوات Android مع Flutter 3.47. citeturn0search0turn0search2turn0search3
+- السبب: إصدارات متوافقة مع حد Dart `>=3.12.0` وFlutter `>=3.47.0` في المشروع؛ صفحة الإصدارات الحالية لـFlutterFire توضح أن كلا الإصدارين يتطلبان Dart 3.6 على الأقل، كما أن سجل `firebase_messaging` يذكر مواءمة أدوات Android مع Flutter 3.47.
 - النتيجة: تم تعديل `pubspec.yaml` فقط في هذه الخطوة. لم تتم إضافة منطق FCM أو تغيير نظام الإشعارات الحالي بعد. يلزم تشغيل `flutter pub get`/البناء وفحص CI لتحديث `pubspec.lock` والتحقق من عدم وجود تعارضات قبل متابعة تكامل FCM.
+
+### دمج FCM داخل التطبيق
+- الملفات: `lib/core/services/push_notification_service.dart`, `lib/core/services/notification_service.dart`, `lib/app/bootstrap.dart`, `android/app/src/main/AndroidManifest.xml`.
+- commits: `3a56c2b0fa1f169701d3ec6951bd892ff835f6e7`, `315b0c08ea8627d491d1b0ab0a01b2ad2b82174f`, `8e1d618f42adcffd4069bb3f1b3d6c7b8e354f69`, `7321c58d09c72cecec7db4b6a28f751d50468188`.
+- التعديل: إضافة تسجيل FCM، طلب صلاحية الإشعارات، الاستماع للرسائل في المقدمة، معالجة فتح التطبيق من الخلفية/الحالة المنتهية، وتسجيل معالج FCM للخلفية. تمت المحافظة على `flutter_local_notifications` وSupabase Realtime وعدم استبدال Web/PWA Push.
+- Android: إضافة `POST_NOTIFICATIONS` وربط قناة `law_connect_channel` عالية الأهمية بقناة FCM الافتراضية.
+- النتيجة: أصبح التطبيق جاهزاً من جهة العميل لتسجيل FCM token واستقبال رسائل FCM الأصلية؛ الإشعار في الخلفية/الحالة المنتهية يعتمد على notification payload الذي يعرضه نظام التشغيل.
+
+### تخزين رموز الأجهزة في Supabase
+- الملف: `supabase/migrations/20260906230000_add_push_device_tokens.sql`.
+- commit: `30af23b4caaf8be0b00bf9c31819129a28c12a6a`.
+- التعديل: إنشاء `push_device_tokens` مع Unique token وRLS مقيد بمالك الجهاز، وفهارس للحسابات النشطة، وتحديث `updated_at` تلقائياً.
+- النتيجة: تم تطبيق migration فعلياً على Supabase Production والتحقق من وجود الجدول. لا يسمح الجدول للعميل بالوصول إلى رموز مستخدمين آخرين.
+
+### خادم إرسال FCM
+- الملفات: `supabase/functions/send-native-push/index.ts`, `supabase/config.toml`.
+- commits: `5bae72e211d5c072e8b99f6fa08988fff8893c91`, `67548391d11fcc241d79d5e7b7d99683483aa7f3`.
+- التعديل: إنشاء Edge Function ترسل FCM HTTP v1 باستخدام Service Account مخزن كسِر، وتقرأ فقط الأجهزة النشطة للمستخدم، وترسل title/body/data، وتستخدم قناة Android عالية الأولوية وصوت default، وتبطل الرموز غير المسجلة. تم تقييد endpoint بالتحقق من Service Role Authorization داخل الوظيفة مع تعطيل تحقق JWT الخاص بالمنصة لأن الاستدعاء المقصود هو Database Webhook.
+- النتيجة: تم نشر `send-native-push` على Supabase Production بنجاح، لكن الإرسال الفعلي لا يعتبر مكتملاً بعد حتى يتم ضبط `FCM_SERVICE_ACCOUNT_JSON` وربط Database Webhook على `public.notifications`.
+
+### حالة التحقق الحالية
+- Supabase: جدول `push_device_tokens` موجود فعلياً في Production.
+- Supabase: Edge Function `send-native-push` حالتها `ACTIVE`.
+- GitHub: لا توجد status checks مسجلة حتى الآن على commit `8e1d618f42adcffd4069bb3f1b3d6c7b8e354f69`، لذلك لم يتم الادعاء بأن CI مر بنجاح.
+- المطلوب قبل إعلان الإشعارات الأصلية مكتملة 100%: إضافة Firebase Service Account كـSupabase secret باسم `FCM_SERVICE_ACCOUNT_JSON`، ثم إنشاء Database Webhook من `public.notifications` حدث `INSERT` إلى `send-native-push` مع Authorization/service key، وبعدها اختبار جهاز Android فعلي في foreground/background/terminated.
+- iOS يحتاج لاحقاً `GoogleService-Info.plist` الصحيح وAPNs key وPush Notifications/Background Modes قبل إعلان دعم iOS الإنتاجي؛ هذا لا يؤثر على عدم كسر Web/PWA الحالي.
