@@ -43,7 +43,7 @@ class BookingsRepositoryImpl implements BookingsRepository {
     final safeFileName = fileName.replaceAll(RegExp(r'[^A-Za-z0-9._-]'), '_');
     final filePath = '${user.id}/docs/${DateTime.now().microsecondsSinceEpoch}_$safeFileName';
     await _supabase.storage.from('lawyer_documents').uploadBinary(filePath, fileBytes, fileOptions: const FileOptions(upsert: false));
-    return _supabase.storage.from('lawyer_documents').createSignedUrl(filePath, 31536000);
+    return _supabase.storage.from('lawyer_documents').createSignedUrl(filePath, 3600);
   }
 
   @override
