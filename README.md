@@ -21,7 +21,7 @@ examples, guidance on mobile development, and a full API reference.
 - Migration: `supabase/migrations/20260906160000_normalize_video_consultation_type_for_booking.sql`
 - Repository commit: `197e37f1acbedba7e075554dc0fbe9ee0e8702c2`
 - Root cause: the booking screen sends the Arabic label `مرئية` for video consultation, while the booking RPC validates the canonical value `فيديو`.
-- Fix: `create_booking` now normalizes `مرئية` to `فيديو` before validation and storage. This preserves the existing database value and package compatibility rules.
+- Fix: `create_booking` now normalizes `مرئية` to `فيديو` before validation and storage, and accepts existing package configurations that still advertise `مرئية` as the video alias.
 - Supabase production migration: applied successfully.
-- Database verification: the deployed function definition was checked and contains the normalization rule.
+- Database verification: the deployed function was updated successfully; the normalization and compatibility rules are present.
 - Scope: no change to authentication, WhatsApp eligibility, lawyer availability, slot locking, payment state, or booking ownership rules.
