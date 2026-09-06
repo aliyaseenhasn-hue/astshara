@@ -5,7 +5,7 @@ plugins {
 }
 
 android {
-    namespace = "com.example.astshara"
+    namespace = "com.istishara.app"
     // file_picker / flutter_plugin_android_lifecycle now require API 36 at compile time.
     compileSdk = 36
     ndkVersion = flutter.ndkVersion
@@ -17,8 +17,7 @@ android {
     }
 
     defaultConfig {
-        // TODO: Specify your own unique Application ID.
-        applicationId = "com.example.astshara"
+        applicationId = "com.istishara.app"
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
