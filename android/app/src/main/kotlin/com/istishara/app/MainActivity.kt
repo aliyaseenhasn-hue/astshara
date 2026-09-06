@@ -1,4 +1,4 @@
-package com.example.astshara
+package com.istishara.app
 
 import io.flutter.embedding.android.FlutterActivity
 

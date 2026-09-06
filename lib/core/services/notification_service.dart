@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:audioplayers/audioplayers.dart';
@@ -19,9 +20,9 @@ class NotificationService {
   static Future<void> initialize() async {
     const android = AndroidInitializationSettings('@mipmap/ic_launcher');
     const ios = DarwinInitializationSettings(
-      requestAlertPermission: true,
-      requestBadgePermission: true,
-      requestSoundPermission: true,
+      requestAlertPermission: false,
+      requestBadgePermission: false,
+      requestSoundPermission: false,
     );
 
     await _notificationsPlugin.initialize(
@@ -52,6 +53,38 @@ class NotificationService {
     await _notificationsPlugin
         .resolvePlatformSpecificImplementation<IOSFlutterLocalNotificationsPlugin>()
         ?.requestPermissions(alert: true, badge: true, sound: true);
+  }
+
+  static Future<void> handleForegroundRemoteMessage(RemoteMessage message) async {
+    final title = message.notification?.title ?? message.data['title']?.toString();
+    final body = message.notification?.body ?? message.data['body']?.toString();
+    if (title == null && body == null) return;
+
+    final notificationId = message.data['notification_id']?.toString() ?? message.messageId;
+    await showNotification(
+      title: title ?? 'إشعار جديد',
+      body: body ?? '',
+      payload: jsonEncode(_remotePayload(message, notificationId)),
+      notificationId: notificationId,
+    );
+  }
+
+  static Future<void> handleRemoteMessageTap(RemoteMessage message) async {
+    final notificationId = message.data['notification_id']?.toString() ?? message.messageId;
+    final payload = jsonEncode(_remotePayload(message, notificationId));
+    _pendingPayload = payload;
+    _schedulePendingNavigation();
+  }
+
+  static Map<String, dynamic> _remotePayload(
+    RemoteMessage message,
+    String? notificationId,
+  ) {
+    final data = Map<String, dynamic>.from(message.data);
+    if (notificationId != null && notificationId.isNotEmpty) {
+      data['notification_id'] = notificationId;
+    }
+    return data;
   }
 
   static void _onNotificationResponse(NotificationResponse response) {
@@ -156,9 +189,16 @@ class NotificationService {
     required String title,
     required String body,
     String? payload,
+    String? notificationId,
   }) async {
     try {
       final prefs = await SharedPreferences.getInstance();
+      if (notificationId != null && notificationId.isNotEmpty) {
+        final dedupeKey = 'shown_notification_$notificationId';
+        if (prefs.getBool(dedupeKey) == true) return;
+        await prefs.setBool(dedupeKey, true);
+      }
+
       final soundType = prefs.getString('notification_sound') ?? 'default';
 
       if (soundType != 'default') {
@@ -183,8 +223,10 @@ class NotificationService {
         presentSound: true,
       );
 
+      final localId = notificationId?.hashCode.abs() ??
+          DateTime.now().microsecondsSinceEpoch.remainder(2147483647);
       await _notificationsPlugin.show(
-        DateTime.now().microsecondsSinceEpoch.remainder(2147483647),
+        localId,
         title,
         body,
         const NotificationDetails(android: androidDetails, iOS: iosDetails),

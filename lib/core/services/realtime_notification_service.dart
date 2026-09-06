@@ -42,10 +42,12 @@ class RealtimeNotificationService {
           ),
           callback: (payload) {
             final row = payload.newRecord;
+            final notificationId = row['id']?.toString();
             NotificationService.showNotification(
               title: (row['title'] ?? 'إشعار جديد').toString(),
               body: (row['body'] ?? '').toString(),
-              payload: row['id']?.toString(),
+              payload: notificationId,
+              notificationId: notificationId,
             );
           },
         )

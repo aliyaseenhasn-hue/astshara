@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import '../core/config/supabase_config.dart';
+import '../core/services/fcm_service.dart';
 import '../core/services/notification_service.dart';
 import '../core/services/realtime_notification_service.dart';
 
@@ -49,11 +50,18 @@ Future<ProviderContainer> bootstrap() async {
     );
 
     // These services are intentionally started after bootstrap has completed.
-    // Realtime startup can perform an authenticated profiles query; awaiting
-    // it here can block the entire Flutter tree on a slow/unavailable network.
+    // Realtime/FCM startup must never block the Flutter tree on network or
+    // platform configuration that may not have been supplied yet.
     unawaited(
       NotificationService.initialize().catchError((error, stackTrace) {
         debugPrint('⚠️ Notification services unavailable: $error');
+        debugPrintStack(stackTrace: stackTrace);
+      }),
+    );
+
+    unawaited(
+      FcmService.instance.initialize().catchError((error, stackTrace) {
+        debugPrint('⚠️ FCM unavailable: $error');
         debugPrintStack(stackTrace: stackTrace);
       }),
     );
