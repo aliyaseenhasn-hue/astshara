@@ -82,6 +82,7 @@ class AppTheme {
           backgroundColor: WidgetStateProperty.resolveWith((states) {
             if (states.contains(WidgetState.disabled)) return AppColors.surfaceDim;
             if (states.contains(WidgetState.pressed)) return AppColors.secondaryLight;
+            if (states.contains(WidgetState.hovered)) return AppColors.secondaryLight;
             return AppColors.ctaGold;
           }),
           foregroundColor: WidgetStateProperty.resolveWith((states) {
@@ -92,23 +93,27 @@ class AppTheme {
           padding: const WidgetStatePropertyAll(EdgeInsets.symmetric(horizontal: 24)),
           shape: WidgetStatePropertyAll(RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
           elevation: const WidgetStatePropertyAll(0),
-          textStyle: WidgetStatePropertyAll(GoogleFonts.ibmPlexSansArabic(fontSize: 14, height: 20 / 14, fontWeight: FontWeight.w600)),
+          textStyle: WidgetStatePropertyAll(GoogleFonts.ibmPlexSansArabic(fontSize: 14, height: 20 / 14, fontWeight: FontWeight.w700)),
+          overlayColor: const WidgetStatePropertyAll(Color(0x14082B49)),
         ),
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: ButtonStyle(
           foregroundColor: WidgetStateProperty.resolveWith((states) => states.contains(WidgetState.disabled) ? AppColors.textSecondary : AppColors.primary),
-          side: WidgetStateProperty.resolveWith((states) => BorderSide(color: states.contains(WidgetState.disabled) ? AppColors.outline : AppColors.teal, width: 1)),
+          side: WidgetStateProperty.resolveWith((states) => BorderSide(color: states.contains(WidgetState.disabled) ? AppColors.outline : AppColors.teal, width: states.contains(WidgetState.focused) ? 2 : 1)),
           minimumSize: const WidgetStatePropertyAll(Size.fromHeight(48)),
           padding: const WidgetStatePropertyAll(EdgeInsets.symmetric(horizontal: 20)),
           shape: WidgetStatePropertyAll(RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
-          textStyle: WidgetStatePropertyAll(GoogleFonts.ibmPlexSansArabic(fontSize: 14, height: 20 / 14, fontWeight: FontWeight.w600)),
+          textStyle: WidgetStatePropertyAll(GoogleFonts.ibmPlexSansArabic(fontSize: 14, height: 20 / 14, fontWeight: FontWeight.w700)),
+          overlayColor: const WidgetStatePropertyAll(Color(0x14082B49)),
         ),
       ),
       textButtonTheme: TextButtonThemeData(
         style: ButtonStyle(
           foregroundColor: WidgetStateProperty.resolveWith((states) => states.contains(WidgetState.disabled) ? AppColors.textSecondary : AppColors.primary),
-          textStyle: WidgetStatePropertyAll(GoogleFonts.ibmPlexSansArabic(fontSize: 14, fontWeight: FontWeight.w600)),
+          textStyle: WidgetStatePropertyAll(GoogleFonts.ibmPlexSansArabic(fontSize: 14, fontWeight: FontWeight.w700)),
+          minimumSize: const WidgetStatePropertyAll(Size.fromHeight(44)),
+          overlayColor: const WidgetStatePropertyAll(Color(0x14082B49)),
         ),
       ),
       inputDecorationTheme: InputDecorationTheme(
@@ -201,24 +206,31 @@ class AppTheme {
           backgroundColor: WidgetStateProperty.resolveWith((states) => states.contains(WidgetState.disabled) ? const Color(0xFF303536) : AppColors.ctaGold),
           foregroundColor: WidgetStateProperty.resolveWith((states) => states.contains(WidgetState.disabled) ? darkText : AppColors.primary),
           minimumSize: const WidgetStatePropertyAll(Size.fromHeight(52)),
+          padding: const WidgetStatePropertyAll(EdgeInsets.symmetric(horizontal: 24)),
           shape: WidgetStatePropertyAll(RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
           elevation: const WidgetStatePropertyAll(0),
+          textStyle: WidgetStatePropertyAll(GoogleFonts.ibmPlexSansArabic(fontSize: 14, fontWeight: FontWeight.w700)),
+          overlayColor: const WidgetStatePropertyAll(Color(0x14082B49)),
         ),
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: ButtonStyle(
           foregroundColor: WidgetStateProperty.resolveWith((states) => states.contains(WidgetState.disabled) ? darkVariant : cyan),
-          side: WidgetStateProperty.resolveWith((states) => BorderSide(color: states.contains(WidgetState.disabled) ? const Color(0xFF74777E) : cyan)),
+          side: WidgetStateProperty.resolveWith((states) => BorderSide(color: states.contains(WidgetState.disabled) ? const Color(0xFF74777E) : cyan, width: states.contains(WidgetState.focused) ? 2 : 1)),
           minimumSize: const WidgetStatePropertyAll(Size.fromHeight(48)),
+          padding: const WidgetStatePropertyAll(EdgeInsets.symmetric(horizontal: 20)),
           shape: WidgetStatePropertyAll(RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+          textStyle: WidgetStatePropertyAll(GoogleFonts.ibmPlexSansArabic(fontSize: 14, fontWeight: FontWeight.w700)),
         ),
       ),
       textButtonTheme: TextButtonThemeData(
         style: ButtonStyle(
           foregroundColor: WidgetStateProperty.resolveWith((states) => states.contains(WidgetState.disabled) ? darkVariant : darkText),
+          textStyle: WidgetStatePropertyAll(GoogleFonts.ibmPlexSansArabic(fontSize: 14, fontWeight: FontWeight.w700)),
+          minimumSize: const WidgetStatePropertyAll(Size.fromHeight(44)),
         ),
       ),
-      inputDecorationTheme: InputDecorationTheme(filled: true, fillColor: darkSurface, contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15), border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFF42474D))), enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFF42474D))), focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: cyan, width: 2))),
+      inputDecorationTheme: InputDecorationTheme(filled: true, fillColor: darkSurface, contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15), border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFF42474D))), enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFF42474D))), focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: cyan, width: 2)), labelStyle: GoogleFonts.ibmPlexSansArabic(fontSize: 14, fontWeight: FontWeight.w600, color: darkText), hintStyle: GoogleFonts.ibmPlexSansArabic(fontSize: 14, color: darkVariant)),
       dividerTheme: const DividerThemeData(color: Color(0xFF42474D)),
     );
 
