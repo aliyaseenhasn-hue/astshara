@@ -61,6 +61,14 @@ class NotificationService {
     _schedulePendingNavigation();
   }
 
+  /// Handles a push payload received from FCM when the app is backgrounded or
+  /// terminated and subsequently opened by the user.
+  static Future<void> handleExternalPayload(String payload) async {
+    if (payload.trim().isEmpty) return;
+    _pendingPayload = payload;
+    _schedulePendingNavigation();
+  }
+
   static void _schedulePendingNavigation() {
     _pendingNavigationTimer?.cancel();
     _pendingNavigationTimer = Timer.periodic(const Duration(milliseconds: 350),
