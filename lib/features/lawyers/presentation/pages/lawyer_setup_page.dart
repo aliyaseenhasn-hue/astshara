@@ -96,9 +96,9 @@ class _LawyerSetupPageState extends ConsumerState<LawyerSetupPage> {
               padding: const EdgeInsets.all(22),
               decoration: BoxDecoration(color: AppColors.secondary, borderRadius: BorderRadius.circular(26)),
               child: const Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text('مرحباً بك في استشارة', style: TextStyle(color: AppColors.gold, fontSize: 20, fontWeight: FontWeight.w900)),
+                Text('مرحباً بك في استشارة', style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w900)),
                 SizedBox(height: 8),
-                Text('أكمل بياناتك المهنية حتى يظهر ملفك بصورة موثوقة وتتمكن من استقبال طلبات الاستشارة.', style: TextStyle(color: Colors.white70, height: 1.55, fontSize: 13)),
+                Text('أكمل بياناتك المهنية حتى يظهر ملفك بصورة موثوقة وتتمكن من استقبال طلبات الاستشارة.', style: TextStyle(color: Colors.white, height: 1.55, fontSize: 13)),
               ]),
             ),
             const SizedBox(height: 24),
@@ -144,7 +144,7 @@ class _LawyerSetupPageState extends ConsumerState<LawyerSetupPage> {
             const SizedBox(height: 28),
             state.isLoading
                 ? const LoadingWidget()
-                : FilledButton.icon(onPressed: _submit, icon: const Icon(Icons.verified_outlined), label: const Text('حفظ وإرسال للمراجعة', style: TextStyle(fontWeight: FontWeight.w800)), style: FilledButton.styleFrom(backgroundColor: AppColors.secondary, foregroundColor: AppColors.gold, padding: const EdgeInsets.symmetric(vertical: 16), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)))),
+                : FilledButton.icon(onPressed: _submit, icon: const Icon(Icons.verified_outlined), label: const Text('حفظ وإرسال للمراجعة', style: TextStyle(fontWeight: FontWeight.w800)), style: FilledButton.styleFrom(backgroundColor: AppColors.secondary, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 16), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)))),
           ]),
         ),
       ),
