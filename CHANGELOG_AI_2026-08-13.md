@@ -85,6 +85,22 @@
 **Code Commit:** `33e45cc4643e99da83a3e63e586a21efca9c7143`
 **Supabase Migration:** `telegram_auth_one_time_session_claim`
 **Database Test:** `first_claim=true`, `second_claim=false` على صف اختبار داخل transaction مع rollback.
-**CI:** Android Release Build رقم `414` قيد التنفيذ وقت التسجيل؛ لذلك لم تُعلن نتيجة Flutter analyze/test/build بعد.
+**CI:** Android Release Build رقم `414` اكتمل فيه Analyze وTest بنجاح، بينما أُلغي Build release APK؛ لذلك لا تُعلن نتيجة بناء APK/AAB كنجاح.
 
-**الحالة:** `WARNING — NOT FULLY TESTED` حتى اكتمال CI واختبار integration فعلي لمسار Telegram.
+**الحالة:** `WARNING — NOT FULLY TESTED` حتى اكتمال اختبار البناء ومسار Telegram integration فعلي.
+
+## إصلاح أمني P0.2 — منع إساءة استخدام تنظيف طلبات Telegram
+تم اكتشاف أن `cleanup_expired_telegram_login_requests()` كانت `SECURITY DEFINER` وممنوحة للتنفيذ للمستخدمين المصادق عليهم، رغم أنها عملية صيانة داخلية تستطيع تغيير حالة طلبات Telegram المنتهية.
+
+تم الإصلاح بأقل تغيير آمن:
+- سحب `EXECUTE` من `anon` و`authenticated` و`public`.
+- إبقاء التنفيذ متاحاً لـ`service_role` فقط.
+- عدم تغيير منطق تنظيف الطلبات نفسه.
+- تطبيق التغيير على مشروع Supabase الفعلي.
+- حفظ Migration في المستودع لإعادة الإنتاج والنشر بأمان.
+
+**Database Test:** `anon_exec=false`, `auth_exec=false`, `service_exec=true`.
+**Supabase Migration:** `20260906130000_lock_down_telegram_cleanup_function.sql`
+**Repository Commit:** `5f5e478b389e7e449129bb287cd969d36f6db50c`
+
+**الحالة:** `PASS — TESTED` بالنسبة لحدود صلاحية الدالة؛ ويبقى CI بعد هذا التغيير مطلوباً قبل اعتماد النقطة ضمن بوابة الإصدار.
