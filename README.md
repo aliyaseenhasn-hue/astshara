@@ -25,3 +25,12 @@ examples, guidance on mobile development, and a full API reference.
 - Supabase production migration: applied successfully.
 - Database verification: the deployed function was updated successfully; the normalization and compatibility rules are present.
 - Scope: no change to authentication, WhatsApp eligibility, lawyer availability, slot locking, payment state, or booking ownership rules.
+
+## Latest Security Hardening — Booking Archive/Restore RPCs
+
+- Migration: `supabase/migrations/20260906162000_lock_down_booking_archive_restore_functions.sql`
+- Root cause: `archive_booking_for_user(uuid)` and `restore_booking_from_archive(uuid)` had unnecessary SQL EXECUTE grants to `anon` and `authenticated` even though these operations are intended for trusted application flows.
+- Fix: revoked EXECUTE from `anon`, `authenticated`, and `public`; retained `service_role` for trusted maintenance paths.
+- Supabase production migration: applied successfully.
+- Database verification: `anon_exec=false`, `auth_exec=false`, `service_exec=true` for both functions.
+- Scope: no booking data, archive logic, ownership predicates, authentication flow, Telegram flow, or payment integration was changed.
