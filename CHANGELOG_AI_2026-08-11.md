@@ -70,3 +70,11 @@
 - إصلاح دليل المحامين العام طُبق بنجاح على Supabase production.
 - commit الأخير: `122b551bace1310677d6fd6fd0d232d026ca1f31`.
 - يجب فحص CI المرتبط بالـcommit قبل إعلان الإصلاح البرمجي متحققاً بالكامل.
+
+## ربط Firebase للإشعارات الأصلية — 2026-09-06
+### تسجيل Google Services Gradle Plugin
+- الملف: `android/settings.gradle.kts`.
+- commit: `749dfe808269f9a6ab5f406a071c53bbc9a2f7ee`.
+- التعديل: إضافة `com.google.gms.google-services` بالإصدار `4.5.0` ضمن plugins مع `apply false`.
+- السبب: تجهيز مشروع Android لمعالجة `android/app/google-services.json` ضمن تكامل Firebase الرسمي قبل إضافة Firebase Messaging.
+- النتيجة: تم تعديل ملف الإعداد الأصلي فقط، دون تغيير منطق التطبيق أو استبدال نظام الإشعارات الحالي. لم يُعلن نجاح CI بعد، ويجب فحص CI المرتبط بهذا commit قبل اعتبار الخطوة مكتملة.
