@@ -16,6 +16,20 @@ For help getting started with Flutter development, view the
 [online documentation](https://docs.flutter.dev/), which offers tutorials,
 examples, guidance on mobile development, and a full API reference.
 
+## Production Audit — 2026-09-06
+
+- Latest main-branch CI run: `34043144047` — **SUCCESS** (analyze/tests/build/deployment workflow completed successfully).
+- Latest verified commit: `c1d164a34bb88eee9b38bca7352b62df1030f8f8` (`fix: import go_router for booking action navigation`).
+- Public database tables were checked: all exposed `public` tables currently have RLS enabled.
+- Booking/payment authorization was rechecked after the booking hardening work. Direct payment INSERT remains blocked by RLS, while payment submission is performed through the guarded `submit_payment` RPC.
+- Supabase security-advisor findings were reviewed. The remaining `SECURITY DEFINER` warnings are concentrated on intentionally callable application RPCs whose function bodies contain role/ownership checks, plus the two intentionally public lawyer-directory RPCs. They are not being blindly revoked because doing so would break the existing authenticated booking/admin flows.
+- `telegram_login_requests` intentionally has RLS enabled without direct table policies; the application accesses it through trusted security-definer functions. No direct table access was added.
+- Supabase Auth currently reports leaked-password protection as disabled. This is an Auth project setting rather than repository code; it must be enabled from the Supabase Auth security settings before the production security audit can be marked fully clean.
+- The security advisor also reports anonymous-access policy warnings. These are tied to the project's authenticated-role policy model/anonymous-sign-in setting and require verification of the Auth anonymous-sign-in configuration before changing any RLS policy. No destructive RLS changes were made.
+- Storage policies were reviewed for avatars, lawyer documents, lawyer achievements, and receipts. Ownership checks are present for writes; receipt and lawyer-document reads are restricted to the owner or admin/moderator.
+- No Telegram flow was changed.
+- Qi Card integration remains configuration-dependent; no production credentials or payment behavior were fabricated or changed.
+
 ## Latest Production Fix — Booking Actions
 
 - Repository commit: `f24fb0e74c4e3dbf9c0a32ff4c5d7d3b409acd8a`
@@ -23,7 +37,7 @@ examples, guidance on mobile development, and a full API reference.
 - Fix: added a guarded action layer for lawyer approval/rejection and cancellation requests, added client cancellation for eligible future bookings, prevented duplicate submissions while an action is running, and invalidated booking providers after successful state changes.
 - Database: existing `review_booking`, `request_booking_cancellation`, and `change_booking_status` RPC authorization was preserved; no public execute grants were added.
 - Verification: Supabase production RPCs were inspected and their `authenticated` execute grants were verified while `anon` execute remained disabled. `review_booking` was also exercised inside a transaction and rolled back successfully.
-- CI: GitHub Actions run `34037317840` is currently executing analyze/build verification for this commit; final CI status is intentionally not marked PASS until completion.
+- CI: the later main-branch workflow `34043144047` completed successfully, including the analyze/tests/build/deployment pipeline.
 
 ## Latest Production Fix — PWA Notification State
 
