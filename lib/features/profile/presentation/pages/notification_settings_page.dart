@@ -23,10 +23,20 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
 
   Future<void> _loadSettings() async {
     final prefs = await SharedPreferences.getInstance();
+    var pwaEnabled = prefs.getBool('pwa_notifications_enabled') ?? false;
+
+    if (kIsWeb && PwaNotificationService.supported) {
+      // The browser subscription is the source of truth. This also repairs
+      // stale local preference state after reinstall/clearing site data.
+      final browserEnabled = await PwaNotificationService.isEnabled();
+      pwaEnabled = browserEnabled;
+      await prefs.setBool('pwa_notifications_enabled', browserEnabled);
+    }
+
     if (mounted) {
       setState(() {
         _selectedSound = prefs.getString('notification_sound') ?? 'default';
-        _pwaNotificationsEnabled = prefs.getBool('pwa_notifications_enabled') ?? false;
+        _pwaNotificationsEnabled = pwaEnabled;
       });
     }
   }
@@ -41,12 +51,9 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
     if (!kIsWeb || _pwaBusy) return;
     setState(() => _pwaBusy = true);
     try {
-      bool success;
-      if (enabled) {
-        success = await PwaNotificationService.enable();
-      } else {
-        success = await PwaNotificationService.disable();
-      }
+      final success = enabled
+          ? await PwaNotificationService.enable()
+          : await PwaNotificationService.disable();
 
       if (!success) {
         if (mounted) {
@@ -54,7 +61,7 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
             SnackBar(
               content: Text(
                 enabled
-                    ? 'تعذر تفعيل إشعارات الويب. تأكد من السماح بالإشعارات ثم أعد المحاولة.'
+                    ? 'تعذر تفعيل إشعارات الويب. إذا كان الإذن مرفوضاً من المتصفح، فعّله من إعدادات الموقع ثم أعد المحاولة.'
                     : 'تعذر إيقاف إشعارات الويب. حاول مرة أخرى.',
               ),
             ),
@@ -63,13 +70,20 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
         return;
       }
 
+      final browserEnabled = enabled && await PwaNotificationService.isEnabled();
       final prefs = await SharedPreferences.getInstance();
-      await prefs.setBool('pwa_notifications_enabled', enabled);
-      if (mounted) setState(() => _pwaNotificationsEnabled = enabled);
-    } catch (e) {
+      await prefs.setBool('pwa_notifications_enabled', browserEnabled);
+      if (mounted) setState(() => _pwaNotificationsEnabled = browserEnabled);
+
+      if (enabled && !browserEnabled && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('لم يكتمل تفعيل إشعارات المتصفح. تحقق من إذن الإشعارات ثم أعد المحاولة.')),
+        );
+      }
+    } catch (_) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('تعذر إعداد إشعارات الويب: $e')),
+          const SnackBar(content: Text('تعذر إعداد إشعارات الويب. تحقق من إذن المتصفح ثم أعد المحاولة.')),
         );
       }
     } finally {
@@ -120,8 +134,15 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
                   contentPadding: EdgeInsets.zero,
                   value: _pwaNotificationsEnabled,
                   onChanged: _pwaBusy ? null : _togglePwaNotifications,
-                  title: Text('إشعارات PWA', style: TextStyle(fontWeight: FontWeight.w700, color: scheme.onSurface)),
-                  subtitle: Text('استقبال إشعارات الطلبات والرسائل حتى عند تشغيل التطبيق في الخلفية، حسب دعم المتصفح.', style: TextStyle(color: scheme.onSurfaceVariant, height: 1.4)),
+                  activeColor: scheme.onPrimary,
+                  activeTrackColor: scheme.primary,
+                  inactiveThumbColor: scheme.outline,
+                  inactiveTrackColor: scheme.surfaceContainerHighest,
+                  title: Row(children: [
+                    Expanded(child: Text(_pwaNotificationsEnabled ? 'إشعارات PWA مفعّلة' : 'إشعارات PWA', style: TextStyle(fontWeight: FontWeight.w700, color: scheme.onSurface))),
+                    if (_pwaBusy) const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2)),
+                  ]),
+                  subtitle: Text(_pwaNotificationsEnabled ? 'تم السماح بالإشعارات وتسجيل اشتراك هذا المتصفح.' : 'استقبال إشعارات الطلبات والرسائل حتى عند تشغيل التطبيق في الخلفية، حسب دعم المتصفح.', style: TextStyle(color: scheme.onSurfaceVariant, height: 1.4)),
                 ),
               ),
               const SizedBox(height: 14),
