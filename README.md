@@ -16,6 +16,15 @@ For help getting started with Flutter development, view the
 [online documentation](https://docs.flutter.dev/), which offers tutorials,
 examples, guidance on mobile development, and a full API reference.
 
+## Latest Production Fix — Booking Actions
+
+- Repository commit: `f24fb0e74c4e3dbf9c0a32ff4c5d7d3b409acd8a`
+- Root cause: the booking details route wrapped the core details page with cancellation state, but review/cancellation actions were not reliably exposed as a single actionable flow; client cancellation was also missing from the details route.
+- Fix: added a guarded action layer for lawyer approval/rejection and cancellation requests, added client cancellation for eligible future bookings, prevented duplicate submissions while an action is running, and invalidated booking providers after successful state changes.
+- Database: existing `review_booking`, `request_booking_cancellation`, and `change_booking_status` RPC authorization was preserved; no public execute grants were added.
+- Verification: Supabase production RPCs were inspected and their `authenticated` execute grants were verified while `anon` execute remained disabled. `review_booking` was also exercised inside a transaction and rolled back successfully.
+- CI: GitHub Actions run `34037317840` is currently executing analyze/build verification for this commit; final CI status is intentionally not marked PASS until completion.
+
 ## Latest Production Fix — PWA Notification State
 
 - Repository commit: `6163de41167b005a982603a01db558bae5a4299c`
