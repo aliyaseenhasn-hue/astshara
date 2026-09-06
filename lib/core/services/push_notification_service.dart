@@ -15,6 +15,7 @@ class PushNotificationService {
   static StreamSubscription<String>? _tokenSubscription;
   static StreamSubscription<RemoteMessage>? _foregroundSubscription;
   static StreamSubscription<RemoteMessage>? _openedSubscription;
+  static StreamSubscription<AuthState>? _authSubscription;
   static bool _initialized = false;
 
   static Future<void> initialize() async {
@@ -67,6 +68,15 @@ class PushNotificationService {
     _tokenSubscription = _messaging.onTokenRefresh.listen((token) {
       unawaited(_registerToken(token));
     });
+
+    _authSubscription = SupabaseConfig.client.auth.onAuthStateChange.listen((data) {
+      final event = data.event;
+      if (event == AuthChangeEvent.signedIn ||
+          event == AuthChangeEvent.tokenRefreshed ||
+          event == AuthChangeEvent.initialSession) {
+        unawaited(refreshForCurrentUser());
+      }
+    });
   }
 
   static String _notificationPayload(RemoteMessage message) {
@@ -110,9 +120,11 @@ class PushNotificationService {
     await _tokenSubscription?.cancel();
     await _foregroundSubscription?.cancel();
     await _openedSubscription?.cancel();
+    await _authSubscription?.cancel();
     _tokenSubscription = null;
     _foregroundSubscription = null;
     _openedSubscription = null;
+    _authSubscription = null;
     _initialized = false;
   }
 }
