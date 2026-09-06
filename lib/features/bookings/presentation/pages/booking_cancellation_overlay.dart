@@ -63,7 +63,7 @@ class _BookingDetailsWithCancellationState extends ConsumerState<BookingDetailsW
     final controller = TextEditingController();
     final reason = await showDialog<String>(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         title: const Text('طلب إلغاء الحجز'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
@@ -80,14 +80,14 @@ class _BookingDetailsWithCancellationState extends ConsumerState<BookingDetailsW
           ],
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('إلغاء')),
+          TextButton(onPressed: () => Navigator.of(dialogContext).pop(), child: const Text('إلغاء')),
           FilledButton(
             onPressed: () {
               if (controller.text.trim().isEmpty) {
-                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('سبب الإلغاء إلزامي')));
+                ScaffoldMessenger.of(dialogContext).showSnackBar(const SnackBar(content: Text('سبب الإلغاء إلزامي')));
                 return;
               }
-              Navigator.pop(context, controller.text.trim());
+              Navigator.of(dialogContext).pop(controller.text.trim());
             },
             child: const Text('إرسال طلب الإلغاء'),
           ),
@@ -131,7 +131,7 @@ class _BookingDetailsWithCancellationState extends ConsumerState<BookingDetailsW
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(approved ? 'تمت الموافقة على الحجز بنجاح' : 'تم رفض الحجز بنجاح')),
       );
-      context.pop();
+      Navigator.of(context).pop();
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString().replaceFirst('Exception: ', ''))));
@@ -144,12 +144,12 @@ class _BookingDetailsWithCancellationState extends ConsumerState<BookingDetailsW
     if (_actionLoading) return;
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         title: const Text('إلغاء الحجز'),
         content: const Text('هل تريد إلغاء هذا الحجز؟ لا يمكن التراجع عن الإلغاء بعد تنفيذه.'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('تراجع')),
-          FilledButton(onPressed: () => Navigator.pop(context, true), child: const Text('تأكيد الإلغاء')),
+          TextButton(onPressed: () => Navigator.of(dialogContext).pop(false), child: const Text('تراجع')),
+          FilledButton(onPressed: () => Navigator.of(dialogContext).pop(true), child: const Text('تأكيد الإلغاء')),
         ],
       ),
     );
@@ -165,7 +165,7 @@ class _BookingDetailsWithCancellationState extends ConsumerState<BookingDetailsW
       ref.invalidate(bookingDetailsProvider(widget.booking.id));
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تم إلغاء الحجز بنجاح')));
-      context.pop();
+      Navigator.of(context).pop();
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString().replaceFirst('Exception: ', ''))));
